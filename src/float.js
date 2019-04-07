@@ -1,14 +1,14 @@
 
-export function Float_norm(value = 0.0, min = 0.0, max = 0.0) {
+export function float_norm(value = 0.0, min = 0.0, max = 0.0) {
   return +(+(+value - +min) / +(+max - +min));
 }
 
-export function Float_lerp(norm = 0.0, min = 0.0, max = 0.0) {
+export function float_lerp(norm = 0.0, min = 0.0, max = 0.0) {
   return +(+(+max - +min) * +(+norm + +min));
 }
 
-export function Float_map(value = 0.0, smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
-  return +Float_lerp(+Float_norm(+value, +smin, +smax), +dmin, +dmax);
+export function float_map(value = 0.0, smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
+  return +float_lerp(+float_norm(+value, +smin, +smax), +dmin, +dmax);
 }
 
 /**
@@ -20,43 +20,43 @@ export function Float_map(value = 0.0, smin = 0.0, smax = 0.0, dmin = 0.0, dmax 
  * @param {float} max maximum bounds
  * @returns {float} clamped value 
  */
-export function Float_clamp(value = 0.0, min = 0.0, max = 0.0) {
+export function float_clamp(value = 0.0, min = 0.0, max = 0.0) {
   return +Math.min(+Math.max(+value, +Math.min(+min, +max)), +Math.max(+min, +max));
 }
 /**
  * Clamps a value between an unchecked boundary
  * this function needs min < max!!
- * (see Float_clamp for a checked boundary)
+ * (see float_clamp for a checked boundary)
  * 
  * @param {float} value input value
  * @param {float} min minimum bounds
  * @param {float} max maximum bounds
  * @returns {float} clamped value 
  */
-export function Float_uclamp(value = 0.0, min = 0.0, max = 0.0) {
+export function float_uclamp(value = 0.0, min = 0.0, max = 0.0) {
   return +Math.min(+Math.max(+value, +min), +max);
 }
 
-export function Float_inRange(value = 0.0, min = 0.0, max = 0.0) {
+export function float_inRange(value = 0.0, min = 0.0, max = 0.0) {
   return +(+value >= +Math.min(+min, +max) && +value <= +Math.max(+min, +max));
 }
 
-export function Float_rangeIntersect(smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
+export function float_rangeIntersect(smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
   return +(+Math.max(+smin, +smax) >= +Math.min(+dmin, +dmax) && 
        +Math.min(+smin, +smax) <= +Math.max(+dmin, +dmax));
 }
 
-export function Float_rectIntersect(ax = 0.0, ay = 0.0, aw = 0.0, ah = 0.0, bx = 0.0, by = 0.0, bw = 0.0, bh = 0.0) {
-  return +(+(+Float_rangeIntersect(+ax, +(+ax + +aw), +bx, +(+bx + +bw)) > 0.0 &&
-       +Float_rangeIntersect(+ay, +(+ay + +ah), +by, +(+by + +bh)) > 0.0) > 0.0);
+export function float_rectIntersect(ax = 0.0, ay = 0.0, aw = 0.0, ah = 0.0, bx = 0.0, by = 0.0, bw = 0.0, bh = 0.0) {
+  return +(+(+float_rangeIntersect(+ax, +(+ax + +aw), +bx, +(+bx + +bw)) > 0.0 &&
+       +float_rangeIntersect(+ay, +(+ay + +ah), +by, +(+by + +bh)) > 0.0) > 0.0);
 }
 
 
-export function Float_mag2(dx = 0.0, dy = 0.0) {
+export function float_mag2(dx = 0.0, dy = 0.0) {
   return +(+(+dx * +dx) + +(+dy * +dy));
 }
 
-export function Float_hypot(dx = 0.0, dy = 0.0) {
+export function float_hypot(dx = 0.0, dy = 0.0) {
   return +Math.sqrt(+(+(+dx * +dx) + +(+dy * +dy)));
 }
 
@@ -78,7 +78,7 @@ export function Float_hypot(dx = 0.0, dy = 0.0) {
  * @param {float} by vector B y velocity
  * @returns {float} scalar of the dot product
  */
-export function Float_dot(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
+export function float_dot(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
   return +(+(+ax * +bx) + +(+ay * +by));
 }
 
@@ -112,7 +112,7 @@ export function Float_dot(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
  * @param {float} bx 
  * @param {float} by 
  */
-export function Float_cross(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
+export function float_cross(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
   return +(+(+ax * +by) - +(+bx * +ay));
 }
 
@@ -123,38 +123,38 @@ Math.PIh = Math.PI / 2; // 1.57079632
 Math.PI_1 = 4 / Math.PI; // 1.27323954
 Math.PI_2 = 4 / (Math.PI * Math.PI); // 0.405284735
 
-export function Float_toRadian(degrees = 0.0) {
+export function float_toRadian(degrees = 0.0) {
   return +(+degrees * +Math.PI / 180.0);
 }
 
-export function Float_toDegrees(radians = 0.0) {
+export function float_toDegrees(radians = 0.0) {
   return +(+radians * 180.0 / +Math.PI);
 }
 
-export function Float_wrapRadians(r = 0.0) {
+export function float_wrapRadians(r = 0.0) {
   if (+r > Math.PI) return +(+r - +Math.PIx2);
   else if (+r < -Math.PI) return +(+r + +Math.PIx2);
   return +r;
 }
 
-export function Float_sinLpEx(r = 0.0) {
+export function float_sinLpEx(r = 0.0) {
   r = +r;
   return +((r < 0.0)
     ? +(+Math.PI_1 * +r + +Math.PI_2 * +r * +r)
     : +(+Math.PI_1 * +r - +Math.PI_2 * +r * +r));
 }
 
-export function Float_sinLp(r = 0.0) {
+export function float_sinLp(r = 0.0) {
   //always wrap input angle between -PI and PI
-  return +Float_sinLpEx(+Float_wrapRadians(+r));
+  return +float_sinLpEx(+float_wrapRadians(+r));
 }
 
-export function Float_cosLp(r = 0.0) {
+export function float_cosLp(r = 0.0) {
   //compute cosine: sin(x + PI/2) = cos(x)
-  return +Float_sinLp(+(+r + +Math.PIh));
+  return +float_sinLp(+(+r + +Math.PIh));
 }
 
-export function Float_sinMpEx(r = 0.0) {
+export function float_sinMpEx(r = 0.0) {
   r = +r;
   const sin = +((r < 0.0)
     ? +(Math.PI_1 * r + Math.PI_2 * r * r)
@@ -164,12 +164,12 @@ export function Float_sinMpEx(r = 0.0) {
     : +(0.225 * (sin *  sin - sin) + sin));
 }
 
-export function Float_sinMp(r = 0.0) {
-  return +Float_sinHpEx(+Float_wrapRadians(+r));
+export function float_sinMp(r = 0.0) {
+  return +float_sinHpEx(+float_wrapRadians(+r));
 }
-export function Float_cosMp(r = 0.0) {
+export function float_cosMp(r = 0.0) {
   //compute cosine: sin(x + PI/2) = cos(x)
-  return +Float_sinHp(+(+r + +Math.PIh));
+  return +float_sinHp(+(+r + +Math.PIh));
 }
 
 //#endregion
