@@ -1,0 +1,18 @@
+{
+  "name": "futilsjs",
+  "version": "1.0.0",
+  "description": "A collection of javascript helper functions for fast vector math and more.",
+  "main": "./src/index.js",
+  "scripts": {
+    "start": "parcel ./src/index.js"
+  },
+  "keywords": [
+    "javascript",
+    "math",
+    "float",
+    "vector",
+    "integer"
+  ],
+  "author": "jklarenbeek@gmail.com",
+  "license": "MIT"
+}
