@@ -173,30 +173,6 @@ function float_cosMp(r = 0.0) {
 
 //#endregion
 
-var Float = /*#__PURE__*/Object.freeze({
-  float_norm: float_norm,
-  float_lerp: float_lerp,
-  float_map: float_map,
-  float_clamp: float_clamp,
-  float_uclamp: float_uclamp,
-  float_inRange: float_inRange,
-  float_rangeIntersect: float_rangeIntersect,
-  float_rectIntersect: float_rectIntersect,
-  float_mag2: float_mag2,
-  float_hypot: float_hypot,
-  float_dot: float_dot,
-  float_cross: float_cross,
-  float_toRadian: float_toRadian,
-  float_toDegrees: float_toDegrees,
-  float_wrapRadians: float_wrapRadians,
-  float_sinLpEx: float_sinLpEx,
-  float_sinLp: float_sinLp,
-  float_cosLp: float_cosLp,
-  float_sinMpEx: float_sinMpEx,
-  float_sinMp: float_sinMp,
-  float_cosMp: float_cosMp
-});
-
 const def_vec3f = Object.seal({ x: 0.0, y: 0.0, z: 0.0 });
 
 function vec3f(x = 0.0, y = 0.0 , z = 0.0) {
@@ -273,23 +249,6 @@ function vec3f_crossABAB(a = def_vec3f, b = def_vec3f
     z: +(+(+a.x * +b.y) - +(+a.y * +b.x)),
   }
 }
-
-var vec3f$1 = /*#__PURE__*/Object.freeze({
-  def_vec3f: def_vec3f,
-  vec3f: vec3f,
-  vec3f_toVec2: vec3f_toVec2,
-  vec3f_fromVec2: vec3f_fromVec2,
-  vec3f_dub: vec3f_dub,
-  vec3f_div: vec3f_div,
-  vec3f_divScalar: vec3f_divScalar,
-  vec3f_idiv: vec3f_idiv,
-  vec3f_idivScalar: vec3f_idivScalar,
-  vec3f_mag2: vec3f_mag2,
-  vec3f_mag: vec3f_mag,
-  vec3f_norm: vec3f_norm,
-  vec3f_inorm: vec3f_inorm,
-  vec3f_crossABAB: vec3f_crossABAB
-});
 
 const def_vec2f = Object.seal({ x: 0.0, y: 0.0 });
 
@@ -603,55 +562,4 @@ function vec2f_irotateAboutEx(v = def_vec2f, r = 0.0, p = def_vec2f, sin = Math.
 
 //#endregion
 
-var vec2f$1 = /*#__PURE__*/Object.freeze({
-  def_vec2f: def_vec2f,
-  vec2f: vec2f,
-  vec2f_neg: vec2f_neg,
-  vec2f_ineg: vec2f_ineg,
-  vec2f_add: vec2f_add,
-  vec2f_addScalar: vec2f_addScalar,
-  vec2f_iadd: vec2f_iadd,
-  vec2f_iaddScalar: vec2f_iaddScalar,
-  vec2f_sub: vec2f_sub,
-  vec2f_subScalar: vec2f_subScalar,
-  vec2f_isub: vec2f_isub,
-  vec2f_isubScalar: vec2f_isubScalar,
-  vec2f_mul: vec2f_mul,
-  vec2f_mulScalar: vec2f_mulScalar,
-  vec2f_imul: vec2f_imul,
-  vec2f_imulScalar: vec2f_imulScalar,
-  vec2f_div: vec2f_div,
-  vec2f_divScalar: vec2f_divScalar,
-  vec2f_idiv: vec2f_idiv,
-  vec2f_idivScalar: vec2f_idivScalar$1,
-  vec2f_mag2: vec2f_mag2,
-  vec2f_dot: vec2f_dot,
-  vec2f_cross: vec2f_cross,
-  vec2f_cross3: vec2f_cross3,
-  vec2f_mag: vec2f_mag,
-  vec2f_norm: vec2f_norm,
-  vec2f_inorm: vec2f_inorm,
-  vec2f_angle: vec2f_angle,
-  vec2f_rotn90: vec2f_rotn90,
-  vec2f_irotn90: vec2f_irotn90,
-  vec2f_rot90: vec2f_rot90,
-  vec2f_perp: vec2f_perp,
-  vec2f_irot90: vec2f_irot90,
-  vec2f_iperp: vec2f_iperp,
-  vec2f_rotate: vec2f_rotate,
-  vec2f_irotate: vec2f_irotate,
-  vec2f_rotateAbout: vec2f_rotateAbout,
-  vec2f_irotateAbout: vec2f_irotateAbout,
-  vec2f_rotateEx: vec2f_rotateEx,
-  vec2f_irotateEx: vec2f_irotateEx,
-  vec2f_rotateAboutEx: vec2f_rotateAboutEx,
-  vec2f_irotateAboutEx: vec2f_irotateAboutEx
-});
-
-var index = {
-  ...Float,
-  ...vec2f$1,
-  ...vec3f$1
-};
-
-export default index;
+export { def_vec2f, def_vec3f, float_clamp, float_cosLp, float_cosMp, float_cross, float_dot, float_hypot, float_inRange, float_lerp, float_mag2, float_map, float_norm, float_rangeIntersect, float_rectIntersect, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_toDegrees, float_toRadian, float_uclamp, float_wrapRadians, vec2f, vec2f_add, vec2f_addScalar, vec2f_angle, vec2f_cross, vec2f_cross3, vec2f_div, vec2f_divScalar, vec2f_dot, vec2f_iadd, vec2f_iaddScalar, vec2f_idiv, vec2f_idivScalar$1 as vec2f_idivScalar, vec2f_imul, vec2f_imulScalar, vec2f_ineg, vec2f_inorm, vec2f_iperp, vec2f_irot90, vec2f_irotate, vec2f_irotateAbout, vec2f_irotateAboutEx, vec2f_irotateEx, vec2f_irotn90, vec2f_isub, vec2f_isubScalar, vec2f_mag, vec2f_mag2, vec2f_mul, vec2f_mulScalar, vec2f_neg, vec2f_norm, vec2f_perp, vec2f_rot90, vec2f_rotate, vec2f_rotateAbout, vec2f_rotateAboutEx, vec2f_rotateEx, vec2f_rotn90, vec2f_sub, vec2f_subScalar, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divScalar, vec3f_dub, vec3f_fromVec2, vec3f_idiv, vec3f_idivScalar, vec3f_inorm, vec3f_mag, vec3f_mag2, vec3f_norm, vec3f_toVec2 };
