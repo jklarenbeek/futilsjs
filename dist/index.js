@@ -127,6 +127,10 @@ function int_sinLp(r = 0) {
   return int_sinLpEx(int_wrapRadians(r))|0;
 }
 
+const def_vec2i = Object.seal({ x: 0, y: 0 });
+const def_vec2f = Object.seal({ x: 0.0, y: 0.0 });
+const def_vec3f = Object.seal({ x: 0.0, y: 0.0, z: 0.0 });
+
 function vec2i(x = 0, y = 0) {
   return { x: x|0, y: y|0 } 
 }
@@ -598,10 +602,6 @@ function float_atan2(y = 0.0, x = 0.0) {
 
 //#endregion
 
-const def_vec2i$1 = Object.seal({ x: 0, y: 0 });
-const def_vec2f$1 = Object.seal({ x: 0.0, y: 0.0 });
-const def_vec3f$1 = Object.seal({ x: 0.0, y: 0.0, z: 0.0 });
-
 function vec2f(x = 0.0, y = 0.0) { return { x: +x, y: +y } }
 //#region neg
 
@@ -927,7 +927,7 @@ function vec3f_toVec2(v = def_vec3f) {
   return { x: +v.x, y: +v.y };
 }
 
-function vec3f_fromVec2(v = def_vec2f$1) {
+function vec3f_fromVec2(v = def_vec2f) {
   return { x: +v.x, y: +v.y, z: 0.0 };
 }
 

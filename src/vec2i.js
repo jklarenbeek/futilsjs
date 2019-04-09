@@ -1,4 +1,5 @@
 import { int_MULTIPLIER } from "./int";
+import { def_vec2i } from './vector';
 
 export function vec2i(x = 0, y = 0) {
   return { x: x|0, y: y|0 } 

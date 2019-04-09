@@ -1,4 +1,4 @@
-import { def_vec3f } from "./vector";
+import { def_vec2f, def_vec3f } from "./vector";
 
 export function vec2f(x = 0.0, y = 0.0) { return { x: +x, y: +y } };
 
