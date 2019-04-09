@@ -1,6 +1,4 @@
-import { def_vec3f } from "./vec3f";
-
-export const def_vec2f = Object.seal({ x: 0.0, y: 0.0 });
+import { def_vec3f } from "./vector";
 
 export function vec2f(x = 0.0, y = 0.0) { return { x: +x, y: +y } };
 
@@ -208,6 +206,13 @@ export function vec2f_inorm(v = def_vec2f) {
 
 //#region rotation
 
+/**
+ * Returns the angle in radians of its vector
+ *
+ * Math.atan2(dy, dx) === Math.asin(dy/Math.sqrt(dx*dx + dy*dy))
+ * 
+ * @param {} v Vector
+ */
 export function vec2f_angle(v = def_vec2f) {
   return +Math.atan2(+v.y, +v.x);
 }

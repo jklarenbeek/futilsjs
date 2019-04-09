@@ -1,4 +1,44 @@
 
+export function float_sqrt(n = 0.0) {
+  n = +n;
+  return +Math.sqrt(+n);
+}
+
+export const float_isqrt = (function() {
+  const f = new Float32Array(1);
+  const i = new Int32Array(f.buffer);
+  return function float_isqrt_impl(n = 0.0) {
+    n = +n;
+    const n2 = +(n * 0.5);
+    f[0] = +n;
+    i[0] = (0x5f375a86 - (i[0]|0 >> 1))|0;
+    n = +f[0];
+    return +(+n * +(1.5 - (+n2 * +n * +n)));
+  };
+})();
+
+export function float_fib(n = 0.0) {
+  n = +n;
+  let c = 0.0;
+  let x = 1.0;
+  let i = 1.0;
+  for (; i !== x; i += 1.0) {
+    const t = +(+c + +x);
+    c = +x;
+    x = +t;
+  }
+  return +c;
+}
+
+// https://gist.github.com/geraldyeo/988116export 
+export const float_sqrtFive = +Math.sqrt(5);
+export function float_fib2(n = 0.0) {
+  n = +n;
+  const fh = +(1.0 / +float_sqrtFive * +Math.pow(+(+(1.0 + float_sqrtFive ) / 2.0), +n));
+  const sh = +(1.0 / +float_sqrtFive * +Math.pow(+(+(1.0 - float_sqrtFive ) / 2.0), +n));
+  return +Math.round(fh - sh);
+}
+
 export function float_norm(value = 0.0, min = 0.0, max = 0.0) {
   return +(+(+value - +min) / +(+max - +min));
 }
@@ -33,7 +73,7 @@ export function float_clamp(value = 0.0, min = 0.0, max = 0.0) {
  * @param {float} max maximum bounds
  * @returns {float} clamped value 
  */
-export function float_uclamp(value = 0.0, min = 0.0, max = 0.0) {
+export function float_clampu(value = 0.0, min = 0.0, max = 0.0) {
   return +Math.min(+Math.max(+value, +min), +max);
 }
 
@@ -41,16 +81,15 @@ export function float_inRange(value = 0.0, min = 0.0, max = 0.0) {
   return +(+value >= +Math.min(+min, +max) && +value <= +Math.max(+min, +max));
 }
 
-export function float_rangeIntersect(smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
+export function float_intersectsRange(smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
   return +(+Math.max(+smin, +smax) >= +Math.min(+dmin, +dmax) && 
-       +Math.min(+smin, +smax) <= +Math.max(+dmin, +dmax));
+           +Math.min(+smin, +smax) <= +Math.max(+dmin, +dmax));
 }
 
-export function float_rectIntersect(ax = 0.0, ay = 0.0, aw = 0.0, ah = 0.0, bx = 0.0, by = 0.0, bw = 0.0, bh = 0.0) {
-  return +(+(+float_rangeIntersect(+ax, +(+ax + +aw), +bx, +(+bx + +bw)) > 0.0 &&
-       +float_rangeIntersect(+ay, +(+ay + +ah), +by, +(+by + +bh)) > 0.0) > 0.0);
+export function float_intersectsRect(ax = 0.0, ay = 0.0, aw = 0.0, ah = 0.0, bx = 0.0, by = 0.0, bw = 0.0, bh = 0.0) {
+  return +(+(+float_intersectsRange(+ax, +(+ax + +aw), +bx, +(+bx + +bw)) > 0.0 &&
+             +float_intersectsRange(+ay, +(+ay + +ah), +by, +(+by + +bh)) > 0.0));
 }
-
 
 export function float_mag2(dx = 0.0, dy = 0.0) {
   return +(+(+dx * +dx) + +(+dy * +dy));
@@ -118,10 +157,10 @@ export function float_cross(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
 
 //#region trigonometry
 
-Math.PIx2 = Math.PI * 2; // 6.28318531
-Math.PIh = Math.PI / 2; // 1.57079632
-Math.PI_1 = 4 / Math.PI; // 1.27323954
-Math.PI_2 = 4 / (Math.PI * Math.PI); // 0.405284735
+export const float_PIx2 = Math.PI * 2; // 6.28318531
+export const float_PIh = Math.PI / 2; // 1.57079632
+export const float_PI_A = 4 / Math.PI; // 1.27323954
+export const float_PI_B = 4 / (Math.PI * Math.PI); // 0.405284735
 
 export function float_toRadian(degrees = 0.0) {
   return +(+degrees * +Math.PI / 180.0);
@@ -132,16 +171,17 @@ export function float_toDegrees(radians = 0.0) {
 }
 
 export function float_wrapRadians(r = 0.0) {
-  if (+r > Math.PI) return +(+r - +Math.PIx2);
-  else if (+r < -Math.PI) return +(+r + +Math.PIx2);
+  r = +r;
+  if (+r > Math.PI) return +(+r - +float_PIx2);
+  else if (+r < -Math.PI) return +(+r + +float_PIx2);
   return +r;
 }
 
 export function float_sinLpEx(r = 0.0) {
   r = +r;
   return +((r < 0.0)
-    ? +(+Math.PI_1 * +r + +Math.PI_2 * +r * +r)
-    : +(+Math.PI_1 * +r - +Math.PI_2 * +r * +r));
+    ? +(+float_PI_A * +r + +float_PI_B * +r * +r)
+    : +(+float_PI_A * +r - +float_PI_B * +r * +r));
 }
 
 export function float_sinLp(r = 0.0) {
@@ -151,14 +191,30 @@ export function float_sinLp(r = 0.0) {
 
 export function float_cosLp(r = 0.0) {
   //compute cosine: sin(x + PI/2) = cos(x)
-  return +float_sinLp(+(+r + +Math.PIh));
+  return +float_sinLp(+(+r + +float_PIh));
+}
+
+export function float_cosHp(r = 0.0) {
+//   template<typename T>
+// inline T cos(T x) noexcept
+// {
+//     constexpr T tp = 1./(2.*M_PI);
+//     x *= tp;
+//     x -= T(.25) + std::floor(x + T(.25));
+//     x *= T(16.) * (std::abs(x) - T(.5));
+//     #if EXTRA_PRECISION
+//     x += T(.225) * x * (std::abs(x) - T(1.));
+//     #endif
+//     return x;
+// }
+  throw new Error("float_cosHp is not implemented!");
 }
 
 export function float_sinMpEx(r = 0.0) {
   r = +r;
   const sin = +((r < 0.0)
-    ? +(Math.PI_1 * r + Math.PI_2 * r * r)
-    : +(Math.PI_1 * r - Math.PI_2 * r * r));
+    ? +(float_PI_A * r + float_PI_B * r * r)
+    : +(float_PI_A * r - float_PI_B * r * r));
   return +((sin < 0.0)
     ? +(0.225 * (sin * -sin - sin) + sin)
     : +(0.225 * (sin *  sin - sin) + sin));
@@ -169,7 +225,38 @@ export function float_sinMp(r = 0.0) {
 }
 export function float_cosMp(r = 0.0) {
   //compute cosine: sin(x + PI/2) = cos(x)
-  return +float_sinHp(+(+r + +Math.PIh));
+  return +float_sinHp(+(+r + +float_PIh));
+}
+
+export function float_atan2(y = 0.0, x = 0.0) {
+  return +Math.atan2(+y, +x);
+  /*
+    // alternative was faster, but not anymore.
+    // error < 0.005
+    y = +y;
+    x = +x;
+    if (x == 0.0) {
+      if (y > 0.0) return +(Math.PI / 2.0);
+      if (y == 0.0) return 0.0;
+      return +(-Math.PI / 2.0);
+    }
+
+    const z = +(y / x);
+    var atan = 0.0;
+    if (+Math.abs(z) < 1.0) {
+      atan = +(z / (1.0 + 0.28 * z * z));
+      if (x < 0.0) {
+        if (y < 0.0) return +(atan - Math.PI);
+        return +(atan + Math.PI);
+      }
+    }
+    else {
+      atan = +(Math.PI / 2.0 - z / (z * z + 0.28));
+      if (y < 0.0) return +(atan - Math.PI);
+    }
+    return +(atan);
+  */
 }
 
 //#endregion
+

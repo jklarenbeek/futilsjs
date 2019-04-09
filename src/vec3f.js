@@ -1,6 +1,4 @@
-import { def_vec2f } from './vec2f';
-
-export const def_vec3f = Object.seal({ x: 0.0, y: 0.0, z: 0.0 });
+import { def_vec2f } from './vector';
 
 export function vec3f(x = 0.0, y = 0.0 , z = 0.0) {
   return { x: +x, y: +y, z: +z };
