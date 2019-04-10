@@ -4,7 +4,6 @@
   "description": "A collection of javascript helper functions for fast vector math and more.",
   "main": "./dist/index.js",
   "scripts": {
-    "start": "parcel ./src/index.js",
     "build": "rollup ./src/index.js -f esm -d dist"
   },
   "keywords": [
@@ -21,5 +20,9 @@
     "last 1 chrome version",
     "last 1 chromeandroid version",
     "last 1 firefox version"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jklarenbeek/futilsjs.git"
+  }
 }
