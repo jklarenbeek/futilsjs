@@ -323,3 +323,49 @@ export function vec2f_irotateAboutEx(v = def_vec2f, r = 0.0, p = def_vec2f, sin 
 
 //#endregion
 
+//#region collision
+
+/**
+ * Tests if triangle intersects with rectangle
+ * 
+ * @param {*} l1 
+ * @param {*} l2 
+ * @param {*} l3 
+ * @param {*} r1 
+ * @param {*} r2 
+ * @param {*} normal 
+ */
+export function vec2f_intersectTriangleRect(l1 = def_vec2f, l2 = def_vec2f, l3 = def_vec2f, r1 = def_vec2f, r2 = def_vec2f, normal = 1.0) {
+  normal = +normal;
+  const dx = +(+r2.x - +r1.x);
+  const dy = +(+r2.y - +r1.y);
+  return !(
+    (((+l1.x - +r1.x) * dy - (+l1.y - +r1.y) * dx) * normal < 0) ||
+    (((+l2.x - +r1.x) * dy - (+l2.y - +r1.y) * dx) * normal < 0) ||
+    (((+l3.x - +r1.x) * dy - (+l3.y - +r1.y) * dx) * normal < 0));
+}
+
+/**
+ * Tests if 2 triangles intersect
+ * 
+ * @param {*} l1 
+ * @param {*} l2 
+ * @param {*} l3 
+ * @param {*} r1 
+ * @param {*} r2 
+ * @param {*} r3 
+ */
+export function vec2f_intersectTriangles(l1 = def_vec2f, l2 = def_vec2f, l3 = def_vec2f, r1 = def_vec2f, r2 = def_vec2f, r3 = def_vec2f) {
+  const lnorm = +(+(+(+l2.x - +l1.x) * +(+l3.y - +l1.y))
+              - +(+(+l2.y - +l1.y) * +(+l3.x - +l1.x)));
+  const rnorm = +(+(+(+r2.x - +r1.x) * +(+r3.y - +r1.y))
+              - +(+(+r2.y - +r1.y) * +(+r3.x - +r1.x)));
+  return !(vec2f_intersectTriangleRect(r1, r2, r3, l1, l2, lnorm)
+    || vec2f_intersectTriangleRect(r1, r2, r3, l2, l3, lnorm)
+    || vec2f_intersectTriangleRect(r1, r2, r3, l3, l1, lnorm)
+    || vec2f_intersectTriangleRect(l1, l2, l3, r1, r2, rnorm)
+    || vec2f_intersectTriangleRect(l1, l2, l3, r2, r3, rnorm)
+    || vec2f_intersectTriangleRect(l1, l2, l3, r3, r1, rnorm));
+}
+
+//#endregion

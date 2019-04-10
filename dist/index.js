@@ -131,6 +131,50 @@ const def_vec2i = Object.seal({ x: 0, y: 0 });
 const def_vec2f = Object.seal({ x: 0.0, y: 0.0 });
 const def_vec3f = Object.seal({ x: 0.0, y: 0.0, z: 0.0 });
 
+
+/**
+ * just some notes
+ * 
+ * 
+const fastSin_B = 1.2732395; // 4/pi
+const fastSin_C = -0.40528473; // -4 / (pi²)
+export function fastSin(value) {
+  // See  for graph and equations
+  // https://www.desmos.com/calculator/8nkxlrmp7a
+  // logic explained here : http://devmaster.net/posts/9648/fast-and-accurate-sine-cosine			
+      
+  return (value > 0)
+    ? fastSin_B * value - fastSin_C * value * value
+    : fastSin_B * value + fastSin_C * value * value;
+}
+
+export function fastSin2(a) {
+  let b, c;
+  return a *= 5214
+    , c = a << 17
+    , a -= 8192
+    , a <<= 18
+    , a >>= 18
+    , a = a * a >> 12
+    , b = 19900 - (3516 * a >> 14)
+    , b = 4096 - (a * b >> 16)
+    , 0 > c && (b = -b)
+    , 2.44E-4 * b;
+};
+  
+export function fastSin3(a) {
+  a *= 5214;
+  let b = a << 17;
+  a = a - 8192 << 18 >> 18;
+  a = a * a >> 12;
+  a = 4096 - (a * (19900 - (3516 * a >> 14)) >> 16);
+  0 > b && (a = -a);
+  return 2.44E-4 * a
+};
+
+
+ */
+
 function vec2i(x = 0, y = 0) {
   return { x: x|0, y: y|0 } 
 }
@@ -306,8 +350,13 @@ function vec2i_inorm(v = def_vec2i) {
 
 //#region rotation
 
-function vec2i_angleEx(v = def_vec2i) {
+function vec2i_thetaEx(v = def_vec2i) {
   return (int_MULTIPLIER * Math.atan2((v.y|0), (v.x|0)))|0;
+}
+const vec2i_angleEx = vec2i_thetaEx;
+
+function vec2i_phiEx(v= def_vec2i) {
+  return (int_MULTIPLIER * Math.asin((v.y|0) / vec2i_mag(v)));
 }
 
 function vec2i_rotn90(v = def_vec2i) {
@@ -340,6 +389,88 @@ function vec2i_irot90(v = def_vec2i) {
 const vec2i_iperp = vec2f_irot90;
 
 //#endregion
+
+/**
+ * Tests if triangle intersects with a rectangle
+ * 
+ * @param {*} v1 
+ * @param {*} v2 
+ * @param {*} v3 
+ * @param {*} r1 
+ * @param {*} r2 
+ * @returns {boolean} true if they intersect.
+ */
+function vec2i_triangleIntersect(v1, v2, v3, r1, r2) {
+  /*
+    This function borrowed faithfully from a wonderfl (:3) discussion on
+    calculating triangle collision with AABBs on the following blog:
+    http://sebleedelisle.com/2009/05/super-fast-trianglerectangle-intersection-test/
+  
+    This particular optimization best suits my purposes and was contributed
+    to the discussion by someone from http://lab9.fr/
+    */
+  
+    const l = r1.x|0;
+    const r = r2.x|0;
+    const t = r1.y|0;
+    const b = r2.y|0;
+  
+    const x0 = v1.x|0;
+    const y0 = v1.y|0;
+    const x1 = v2.x|0;
+    const y1 = v2.y|0;
+    const x2 = v3.x|0;
+    const y2 = v3.y|0;
+  
+    const b0 = (((x0 > l) ? 1 : 0) | (((y0 > t) ? 1 : 0) << 1) |
+        (((x0 > r) ? 1 : 0) << 2) | (((y0 > b) ? 1 : 0) << 3))|0;
+    if (b0 == 3) return true;
+  
+    const b1 = ((x1 > l) ? 1 : 0) | (((y1 > t) ? 1 : 0) << 1) |
+        (((x1 > r) ? 1 : 0) << 2) | (((y1 > b) ? 1 : 0) << 3);
+    if (b1 == 3) return true;
+  
+    const b2 = ((x2 > l) ? 1 : 0) | (((y2 > t) ? 1 : 0) << 1) |
+        (((x2 > r) ? 1 : 0) << 2) | (((y2 > b) ? 1 : 0) << 3);
+    if (b2 == 3) return true;
+  
+    let c = 0;
+    let m = 0;
+    let s = 0;
+  
+    const i0 = (b0 ^ b1)|0;
+    if (i0 != 0) {
+        m = ((y1-y0) / (x1-x0))|0;
+        c = (y0 -(m * x0))|0;
+        if (i0 & 1) { s = m * l + c; if ( s > t && s < b) return true; }
+        if (i0 & 2) { s = (t - c) / m; if ( s > l && s < r) return true; }
+        if (i0 & 4) { s = m * r + c; if ( s > t && s < b) return true; }
+        if (i0 & 8) { s = (b - c) / m; if ( s > l && s < r) return true; }
+    }
+  
+    const i1 = (b1 ^ b2)|0;
+    if (i1 != 0) {
+        m = ((y2 - y1) / (x2 - x1))|0;
+        c = (y1 -(m * x1))|0;
+        if (i1 & 1) { s = m * l + c; if ( s > t && s < b) return true; }
+        if (i1 & 2) { s = (t - c) / m; if ( s > l && s < r) return true; }
+        if (i1 & 4) { s = m * r + c; if ( s > t && s < b) return true; }
+        if (i1 & 8) { s = (b - c) / m; if ( s > l && s < r) return true; }
+    }
+  
+    const i2 = (b0 ^ b2)|0;
+    if (i2 != 0)
+    {
+        m = ((y2 - y0) / (x2 - x0))|0;
+        c = (y0 -(m * x0))|0;
+        if (i2 & 1) { s = m * l + c; if ( s > t && s < b) return true; }
+        if (i2 & 2) { s = (t - c) / m; if ( s > l && s < r) return true; }
+        if (i2 & 4) { s = m * r + c; if ( s > t && s < b) return true; }
+        if (i2 & 8) { s = (b - c) / m; if ( s > l && s < r) return true; }
+    }
+  
+    return false;
+  }
 
 function float_sqrt(n = 0.0) {
   n = +n;
@@ -929,6 +1060,53 @@ function vec2f_irotateAboutEx(v = def_vec2f, r = 0.0, p = def_vec2f, sin = Math.
 
 //#endregion
 
+//#region collision
+
+/**
+ * Tests if triangle intersects with rectangle
+ * 
+ * @param {*} l1 
+ * @param {*} l2 
+ * @param {*} l3 
+ * @param {*} r1 
+ * @param {*} r2 
+ * @param {*} normal 
+ */
+function vec2f_intersectTriangleRect(l1 = def_vec2f, l2 = def_vec2f, l3 = def_vec2f, r1 = def_vec2f, r2 = def_vec2f, normal = 1.0) {
+  normal = +normal;
+  const dx = +(+r2.x - +r1.x);
+  const dy = +(+r2.y - +r1.y);
+  return !(
+    (((+l1.x - +r1.x) * dy - (+l1.y - +r1.y) * dx) * normal < 0) ||
+    (((+l2.x - +r1.x) * dy - (+l2.y - +r1.y) * dx) * normal < 0) ||
+    (((+l3.x - +r1.x) * dy - (+l3.y - +r1.y) * dx) * normal < 0));
+}
+
+/**
+ * Tests if 2 triangles intersect
+ * 
+ * @param {*} l1 
+ * @param {*} l2 
+ * @param {*} l3 
+ * @param {*} r1 
+ * @param {*} r2 
+ * @param {*} r3 
+ */
+function vec2f_intersectTriangles(l1 = def_vec2f, l2 = def_vec2f, l3 = def_vec2f, r1 = def_vec2f, r2 = def_vec2f, r3 = def_vec2f) {
+  const lnorm = +(+(+(+l2.x - +l1.x) * +(+l3.y - +l1.y))
+              - +(+(+l2.y - +l1.y) * +(+l3.x - +l1.x)));
+  const rnorm = +(+(+(+r2.x - +r1.x) * +(+r3.y - +r1.y))
+              - +(+(+r2.y - +r1.y) * +(+r3.x - +r1.x)));
+  return !(vec2f_intersectTriangleRect(r1, r2, r3, l1, l2, lnorm)
+    || vec2f_intersectTriangleRect(r1, r2, r3, l2, l3, lnorm)
+    || vec2f_intersectTriangleRect(r1, r2, r3, l3, l1, lnorm)
+    || vec2f_intersectTriangleRect(l1, l2, l3, r1, r2, rnorm)
+    || vec2f_intersectTriangleRect(l1, l2, l3, r2, r3, rnorm)
+    || vec2f_intersectTriangleRect(l1, l2, l3, r3, r1, rnorm));
+}
+
+//#endregion
+
 function vec3f(x = 0.0, y = 0.0 , z = 0.0) {
   return { x: +x, y: +y, z: +z };
 }
@@ -1004,4 +1182,4 @@ function vec3f_crossABAB(a = def_vec3f, b = def_vec3f
   }
 }
 
-export { float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_hypot, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_mag2, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_sqrtFive, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_sinLp, int_sinLpEx, int_sqrt$1 as int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, vec2f, vec2f_add, vec2f_addScalar, vec2f_angle, vec2f_cross, vec2f_cross3, vec2f_div, vec2f_divScalar, vec2f_dot, vec2f_iadd, vec2f_iaddScalar, vec2f_idiv, vec2f_idivScalar$1 as vec2f_idivScalar, vec2f_imul, vec2f_imulScalar, vec2f_ineg, vec2f_inorm, vec2f_iperp, vec2f_irot90$1 as vec2f_irot90, vec2f_irotate, vec2f_irotateAbout, vec2f_irotateAboutEx, vec2f_irotateEx, vec2f_irotn90, vec2f_isub, vec2f_isubScalar, vec2f_mag, vec2f_mag2, vec2f_mul, vec2f_mulScalar, vec2f_neg, vec2f_norm, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotateAbout, vec2f_rotateAboutEx, vec2f_rotateEx, vec2f_rotn90, vec2f_sub, vec2f_subScalar, vec2f_theta, vec2i, vec2i_add, vec2i_addScalar, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divScalar, vec2i_dot, vec2i_iadd, vec2i_iaddScalar, vec2i_idiv, vec2i_idivScalar, vec2i_imul, vec2i_imulScalar, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubScalar, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_mulScalar, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subScalar, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divScalar, vec3f_dub, vec3f_fromVec2, vec3f_idiv, vec3f_idivScalar, vec3f_inorm, vec3f_mag, vec3f_mag2, vec3f_norm, vec3f_toVec2 };
+export { float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_hypot, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_mag2, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_sqrtFive, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_sinLp, int_sinLpEx, int_sqrt$1 as int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, vec2f, vec2f_add, vec2f_addScalar, vec2f_angle, vec2f_cross, vec2f_cross3, vec2f_div, vec2f_divScalar, vec2f_dot, vec2f_iadd, vec2f_iaddScalar, vec2f_idiv, vec2f_idivScalar$1 as vec2f_idivScalar, vec2f_imul, vec2f_imulScalar, vec2f_ineg, vec2f_inorm, vec2f_intersectTriangleRect, vec2f_intersectTriangles, vec2f_iperp, vec2f_irot90$1 as vec2f_irot90, vec2f_irotate, vec2f_irotateAbout, vec2f_irotateAboutEx, vec2f_irotateEx, vec2f_irotn90, vec2f_isub, vec2f_isubScalar, vec2f_mag, vec2f_mag2, vec2f_mul, vec2f_mulScalar, vec2f_neg, vec2f_norm, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotateAbout, vec2f_rotateAboutEx, vec2f_rotateEx, vec2f_rotn90, vec2f_sub, vec2f_subScalar, vec2f_theta, vec2i, vec2i_add, vec2i_addScalar, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divScalar, vec2i_dot, vec2i_iadd, vec2i_iaddScalar, vec2i_idiv, vec2i_idivScalar, vec2i_imul, vec2i_imulScalar, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubScalar, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_mulScalar, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subScalar, vec2i_thetaEx, vec2i_triangleIntersect, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divScalar, vec3f_dub, vec3f_fromVec2, vec3f_idiv, vec3f_idivScalar, vec3f_inorm, vec3f_mag, vec3f_mag2, vec3f_norm, vec3f_toVec2 };
