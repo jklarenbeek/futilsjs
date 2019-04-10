@@ -228,7 +228,7 @@ export function float_cosMp(r = 0.0) {
   return +float_sinHp(+(+r + +float_PIh));
 }
 
-export function float_atan2(y = 0.0, x = 0.0) {
+export function float_theta(y = 0.0, x = 0.0) {
   return +Math.atan2(+y, +x);
   /*
     // alternative was faster, but not anymore.
@@ -256,6 +256,11 @@ export function float_atan2(y = 0.0, x = 0.0) {
     }
     return +(atan);
   */
+}
+export const float_angle = float_theta;
+
+export function float_phi(y = 0.0, length = 0.0) {
+  return +Math.asin(+y / +length);
 }
 
 //#endregion

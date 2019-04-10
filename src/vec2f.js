@@ -213,8 +213,13 @@ export function vec2f_inorm(v = def_vec2f) {
  * 
  * @param {} v Vector
  */
-export function vec2f_angle(v = def_vec2f) {
+export function vec2f_theta(v = def_vec2f) {
   return +Math.atan2(+v.y, +v.x);
+}
+export const vec2f_angle = vec2f_theta;
+
+export function vec2f_phi(v = def_vec2f) {
+  return +Math.asin(+v.y / +vec2f_mag(v));
 }
 
 export function vec2f_rotn90(v = def_vec2f) {
