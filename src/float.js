@@ -4,6 +4,14 @@ export function float_sqrt(n = 0.0) {
   return +Math.sqrt(+n);
 }
 
+export function float_hypot2(dx = 0.0, dy = 0.0) {
+  return +(+(+dx * +dx) + +(+dy * +dy));
+}
+
+export function float_hypot(dx = 0.0, dy = 0.0) {
+  return +Math.sqrt(+(+(+dx * +dx) + +(+dy * +dy)));
+}
+
 export const float_isqrt = (function() {
   const f = new Float32Array(1);
   const i = new Int32Array(f.buffer);
@@ -89,14 +97,6 @@ export function float_intersectsRange(smin = 0.0, smax = 0.0, dmin = 0.0, dmax =
 export function float_intersectsRect(ax = 0.0, ay = 0.0, aw = 0.0, ah = 0.0, bx = 0.0, by = 0.0, bw = 0.0, bh = 0.0) {
   return +(+(+float_intersectsRange(+ax, +(+ax + +aw), +bx, +(+bx + +bw)) > 0.0 &&
              +float_intersectsRange(+ay, +(+ay + +ah), +by, +(+by + +bh)) > 0.0));
-}
-
-export function float_mag2(dx = 0.0, dy = 0.0) {
-  return +(+(+dx * +dx) + +(+dy * +dy));
-}
-
-export function float_hypot(dx = 0.0, dy = 0.0) {
-  return +Math.sqrt(+(+(+dx * +dx) + +(+dy * +dy)));
 }
 
 /**

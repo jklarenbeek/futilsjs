@@ -2,7 +2,10 @@
   "name": "futilsjs",
   "version": "1.0.0",
   "description": "A collection of javascript helper functions for fast vector math and more.",
-  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rollup ./src/index.js -f esm -d dist"
   },
