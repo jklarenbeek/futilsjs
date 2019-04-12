@@ -700,7 +700,7 @@ function float_cosMp(r = 0.0) {
   return +float_sinHp(+(+r + +float_PIh));
 }
 
-function float_theta(y = 0.0, x = 0.0) {
+function float_theta(x = 0.0, y = 0.0) {
   return +Math.atan2(+y, +x);
   /*
     // alternative was faster, but not anymore.
