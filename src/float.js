@@ -1,3 +1,4 @@
+export const mathf_abs = Math.abs;
 
 export const mathf_sqrt = Math.sqrt;
 export const mathf_pow = Math.pow;
@@ -11,6 +12,11 @@ export const mathf_floor = Math.floor;
 export const mathf_round = Math.round;
 export const mathf_min = Math.min;
 export const mathf_max = Math.max;
+
+export const mathf_random = Math.max;
+
+export const mathf_EPSILON = 0.000001;
+export const mathf_PI = Math.PI;
 
 export function float_sqrt(n = 0.0) {
   return +mathf_sqrt(+n);

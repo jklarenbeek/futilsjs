@@ -4,7 +4,9 @@ import {
   mathf_sin,
   mathf_cos,
   mathf_atan2,
-  mathf_asin
+  mathf_asin,
+  mathf_abs,
+  mathf_EPSILON
 } from './float';
 
 export const def_vec2f = Object.freeze(new vec2f());
@@ -325,6 +327,12 @@ export function vec2f_divs(v = def_vec2f, scalar = 1.0) {
     +(+v.y / +scalar)
   );
 }
+export function vec2f_inv(v = def_vec2f) {
+  return new vec2f(
+    1.0 / +v.x,
+    1.0 / +v.y
+  );
+}
 
 export function vec2f_ceil(v = def_vec2f) {
   return new vec2f(
@@ -376,6 +384,11 @@ export function vec2f_iadds(v = def_vec2f, scalar = 0.0) {
   v.y += +scalar;
   return v;
 }
+export function vec2f_iaddms(a = def_vec2f, b = def_vec2f, scalar = 1.0) {
+  a.x = +(+a.x + +(+b.x * +scalar));
+  a.y = +(+a.y + +(+b.y * +scalar));
+  return a;
+}
 export function vec2f_isub(a = def_vec2f, b = def_vec2f) {
   a.x -= +(+b.x);
   a.y -= +(+b.y);
@@ -408,6 +421,11 @@ export function vec2f_idivs(v = def_vec2f, scalar = 1.0) {
   v.y /= +scalar;
   return v;
 }
+export function vec2f_iinv(v = def_vec2f) {
+  v.x = 1.0 / +v.x;
+  v.y = 1.0 / +v.y;
+  return v
+}
 
 export function vec2f_iceil(v = def_vec2f) {
   v.x = +mathf_ceil(+v.x);
@@ -438,6 +456,20 @@ export function vec2f_imax(a = def_vec2f, b = def_vec2f) {
 
 //#endregion
 
+//#region flat vec2f boolean products
+export function vec2f_eqstrict(a = def_vec2f, b = def_vec2f) {
+  return a.x === b.x && a.y === b.y;
+}
+export const vec2f_eqs = vec2f_eqstrict;
+export function vec2f_eq(a = def_vec2f, b = def_vec2f) {
+  const ax = +a.x, ay = +a.y, bx = +b.x, by = +b.y;
+  return (mathf_abs(ax - bx) <= mathf_EPSILON * mathf_max(1.0, mathf_abs(ax), mathf_abs(bx))
+      && mathf_abs(ay - by) <= mathf_EPSILON * mathf_max(1.0, mathf_abs(ay), mathf_abs(by))
+    );
+}
+
+//#endregion
+
 //#region flat vec2f vector products
 
 export function vec2f_mag2(v = def_vec2f) {
@@ -445,6 +477,13 @@ export function vec2f_mag2(v = def_vec2f) {
 }
 export function vec2f_mag(v = def_vec2f) {
   return +mathf_sqrt(+vec2f_mag2(v));
+}
+export function vec2f_dist2(a = def_vec2f, b = def_vec2f) {
+  const dx = +(+b.x - +a.x), dy = +(+b.y - +a.y);
+  return +(+(+dx * +dx) + +(+dy * +dy));
+}
+export function vec2f_dist(a = def_vec2f, b = def_vec2f) {
+  return +mathf_sqrt(+vec2f_dist2(a, b));
 }
 
 export function vec2f_dot(a = def_vec2f, b = def_vec2f) {
@@ -460,18 +499,29 @@ export function vec2f_cross3(a = def_vec2f, b = def_vec2f, c = def_vec2f) {
 }
 
 export function vec2f_theta(v = def_vec2f) {
-  return +Math.atan2(+v.y, +v.x);
+  return +math_atan2(+v.y, +v.x);
 }
 export const vec2f_angle = vec2f_theta;
 export function vec2f_phi(v = def_vec2f) {
-  return +Math.asin(+v.y / +vec2f_mag(v));
+  return +math_asin(+v.y / +vec2f_mag(v));
 }
 
 //#endregion
 
 //#region flat vec2f pure advanced vector functions
 export function vec2f_unit(v = def_vec2f) {
-  return vec2f_divs(v, +vec2f_mag(v));
+  const mag = +vec2f_mag2();
+  return vec2f_divs(v,
+    +(mag > 0 ? 1.0 / +mathf_sqrt(mag2) : 1)
+  );
+}
+
+export function vec2f_lerp(v = 0.0, a = def_vec2f, b = def_vec2f) {
+  const ax = +a.x, ay = +ay.y;
+  return new vec2f(
+    +(ax + +v * (+b.x - ax)),
+    +(ay + +v * (+b.y - ay))
+  );
 }
 
 export function vec2f_rotn90(v = def_vec2f) {
