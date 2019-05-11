@@ -1,7 +1,7 @@
 import { int_MULTIPLIER } from "./int";
 import { mathf_sqrt } from "./float";
 
-// export const def_vec2i = new vec2i();
+export const def_vec2i = new vec2i();
 
 export class vec2i {
   constructor(x = 0, y = 0) {
