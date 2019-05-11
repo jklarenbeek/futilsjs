@@ -172,9 +172,6 @@ export function vec2i_phiEx(v= def_vec2i) {
 
 //#region flat vec2i pure advanced vector functions
 
-export function vec2i_mag(v = def_vec2i) {
-  return int_sqrt(vec2i_mag2(v)|0)|0;
-}
 export function vec2i_norm(v = def_vec2i) {
   return vec2i_divs(v, vec2i_mag(v)|0)|0;
 }
