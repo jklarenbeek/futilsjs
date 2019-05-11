@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+      "msjsdiag.debugger-for-chrome",
+      "dbaeumer.vscode-eslint",
+      "fknop.vscode-npm",
+      "christian-kohler.npm-intellisense"
+  ]
+}

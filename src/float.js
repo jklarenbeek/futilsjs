@@ -1,7 +1,12 @@
 
+export const mathf_sqrt = Math.sqrt;
+export const mathf_sin = Math.sin;
+export const mathf_cos = Math.cos;
+export const mathf_atan2 = Math.atan2;
+export const mathf_asin = Math.asin;
+
 export function float_sqrt(n = 0.0) {
-  n = +n;
-  return +Math.sqrt(+n);
+  return +mathf_sqrt(+n);
 }
 
 export function float_hypot2(dx = 0.0, dy = 0.0) {

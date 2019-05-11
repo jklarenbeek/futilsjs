@@ -1,117 +1,362 @@
-import { def_vec2f, def_vec3f } from "./vector";
 
-export function vec2f(x = 0.0, y = 0.0) { return { x: +x, y: +y } };
+import {
+  mathf_sqrt,
+  mathf_sin,
+  mathf_cos,
+  mathf_atan2,
+  mathf_asin
+} from './float';
 
-//#region neg
+export const def_vec2f = Object.freeze(new vec2f());
+
+export class vec2f {
+  constructor(x = 0.0, y = 0.0) {
+    this.x = +x;
+    this.y = +y;
+  }
+
+  gX() {
+    return +this.x;
+  }
+  gY() {
+    return +this.y;
+  }
+
+  //#region pure primitive vector operators
+
+  neg() {
+    return new vec2f(+(-(+this.x)), +(-(+this.y)));
+  }
+
+  add(vector = def_vec2f) {
+    return new vec2f(+(+this.x + +vector.x), +(+this.y + +vector.y));
+  }
+  adds(scalar = 0.0) {
+    return new vec2f(+(+this.x + +scalar), +(+this.y + +scalar));
+  }
+
+  sub(vector = def_vec2f) {
+    return new vec2f(+(+this.x - +vector.x), +(+this.y - +vector.y));
+  }
+  subs(scalar = 0.0) {
+    return new vec2f(+(+this.x - +scalar), +(+this.y - +scalar));
+  }
+
+  mul(vector = def_vec2f) {
+    return new vec2f(+(+this.x * +vector.x), +(+this.y * +vector.y));
+  }
+  muls(scalar = 0.0) {
+    return new vec2f(+(+this.x * +scalar), +(+this.y * +scalar));
+  }
+
+  div(vector = def_vec2f) {
+    return new vec2f(+(+this.x / +vector.x), +(+this.y / +vector.y));
+  }
+  divs(scalar = 0.0) {
+    return new vec2f(+(+this.x / +scalar), +(+this.y / +scalar));
+  }
+
+  //#endregion
+  
+  //#region impure primitive vector operators
+  ineg() {
+    this.x = +(-(+this.x));
+    this.y = +(-(+this.y));
+    return this;
+  }
+
+  iadd(vector = def_vec2f) {
+    this.x += +vector.x;
+    this.y += +vector.y;
+    return this;
+  }
+  iadds(value = 0.0) {
+    this.x += +value;
+    this.y += +value;
+    return this;
+  }
+
+  isub(vector = def_vec2f) {
+    this.x -= +vector.x;
+    this.y -= +vector.y;
+    return this;
+  }
+  isubs(value = 0.0) {
+    this.x -= +value;
+    this.y -= +value;
+    return this;
+  }
+
+  imul(vector = def_vec2f) {
+    this.x *= +vector.x;
+    this.y *= +vector.y;
+    return this;
+  }
+  imuls(value = 0.0) {
+    this.x *= +value;
+    this.y *= +value;
+    return this;
+  }
+
+  idiv(vector = def_vec2f) {
+    this.x /= +vector.x;
+    this.y /= +vector.y;
+    return this;
+  }
+  idivs(value = 0.0) {
+    this.x /= +value;
+    this.y /= +value;
+    return this;
+  }
+
+  //#endregion
+
+  //#region vector products
+  mag2() {
+    return +(+(+this.x * +this.x) + +(+this.y * +this.y));
+  }
+  mag() {
+    return +mathf_sqrt(+this.mag2());
+  }
+
+  dot(vector = def_vec2f) {
+    return +(+(+this.x * +vector.x) + +(+this.y * +vector.y));
+  }
+
+  /**
+   * Returns the cross-product of two vectors
+   *
+   * @param {vec2f} vector B
+   * @returns {double} The cross product of two vectors
+   */
+  cross(vector = def_vec2f) {
+    return +(+(+this.x * +vector.y) - +(+this.y * +vector.x));
+  }
+
+  /**
+   * Returns the cross-product of three vectors
+   * 
+   * You can determine which side of a line a point is on
+   * by converting the line to hyperplane form (implicitly
+   * or explicitly) and then computing the perpendicular
+   * (pseudo)distance from the point to the hyperplane.
+   * 
+   * With the crossproduct of two vectors A and B being the vector
+   * 
+   * AxB = (AyBz − AzBy, AzBx − AxBz, AxBy − AyBx)
+   * with Az and Bz being zero you are left with the third component of that vector
+   * 
+   *    AxBy - AyBx
+   * 
+   * With A being the vector from point a to b, and B being the vector from point a to c means
+   * 
+   *    Ax = (b[x]-a[x])
+   *    Ay = (b[y]-a[y])
+   *    Bx = (c[x]-a[x])
+   *    By = (c[y]-a[y])
+   * 
+   * giving
+   * 
+   *    AxBy - AyBx = (b[x]-a[x])*(c[y]-a[y])-(b[y]-a[y])*(c[x]-a[x])
+   * 
+   * which is a scalar, the sign of that scalar will tell you wether point c lies to the left or right of vector ab
+   * 
+   * @param {vec2f} vector B
+   * @param {vec2f} vector C
+   * @returns {double} The cross product of three vectors
+   * 
+   */
+  cross3(vector2 = def_vec2f, vector3 = def_vec2f) {
+    return +(
+      +(+(+vector2.x - +this.x) * +(+vector3.y - +this.y)) -
+      +(+(+vector2.y - +this.y) * +(+vector3.x - +this.x)) );
+  }
+
+  /**
+   * Returns the angle in radians of its vector
+   *
+   * Math.atan2(dy, dx) === Math.asin(dy/Math.sqrt(dx*dx + dy*dy))
+   * 
+   * @param {} v Vector
+   */
+  theta() {
+    return +mathf_atan2(+this.y, +this.x);
+  }
+  angle() {
+    return +this.theta();
+  }
+  phi() {
+    return +mathf_asin(+this.y / +this.mag());
+  }
+  
+  //#endregion
+
+  //#region pure advanced vector functions
+  unit() {
+    return this.divs(+this.mag());
+  }
+
+  rotn90() {
+    return new vec2f(+this.y, +(-(+this.x)));
+  }
+  rot90() {
+    return new vec2f(+(-(+this.y)), +this.x);
+  }
+  perp() {
+    return this.rot90();
+  }
+
+  /**
+   * Rotates a vector by the specified angle in radians
+   * 
+   * @param {float} r  angle in radians
+   * @returns {vec2f} transformed output vector
+   */
+  rotate(radians = 0.0) {
+    return new vec2f(
+      +(+(+this.x * +mathf_cos(+radians)) - +(+this.y * +mathf_sin(+radians))),
+      +(+(+this.x * +mathf_sin(+radians)) + +(+this.y * +mathf_cos(+radians)))
+    );
+  }
+  about(vector = def_vec2f, radians = 0.0) {
+    return new vec2f(
+      +(+vector.x + +(+(+(+this.x - +vector.x) * +mathf_cos(+radians)) - +(+(+this.y - +vector.y) * +mathf_sin(+radians)))),
+      +(+vector.y + +(+(+(+this.x - +vector.x) * +mathf_sin(+radians)) + +(+(+this.y - +vector.y) * +mathf_cos(+radians))))
+    );
+  }
+
+  //#endregion
+
+  //#region impure advanced vector functions
+  iunit() {
+    return this.idivs(+this.mag());
+  }
+
+  irotn90() {
+    this.x = +this.y;
+    this.y = +(-(+this.x));
+    return this;
+  }
+  irot90() {
+    this.x = +(-(+this.y));
+    this.y = +this.x;
+    return this;
+  }
+  iperp() {
+    return this.irot90();
+  }
+  irotate(radians = 0.0) {
+    this.x = +(+(+this.x * +mathf_cos(+radians)) - +(+this.y * +mathf_sin(+radians)));
+    this.y = +(+(+this.x * +mathf_sin(+radians)) + +(+this.y * +mathf_cos(+radians)));
+    return this;
+  }
+  iabout(vector = def_vec2f, radians = 0.0) {
+    this.x = +(+vector.x + +(+(+(+this.x - +vector.x) * +mathf_cos(+radians)) - +(+(+this.y - +vector.y) * +mathf_sin(+radians)))),
+    this.y = +(+vector.y + +(+(+(+this.x - +vector.x) * +mathf_sin(+radians)) + +(+(+this.y - +vector.y) * +mathf_cos(+radians))))
+    return this;
+  }
+
+
+  //#endregion
+}
+
+//#region flat vec2f pure primitive operators
 
 export function vec2f_neg(v = def_vec2f) {
-  return {
-    x: +(-(+v.x)),
-    y: +(-(+v.y)),
-  }
+  return new vec2f(
+    +(-(+v.x)),
+    +(-(+v.y))
+  );
 }
+export function vec2f_add(a = def_vec2f, b = def_vec2f) {
+  return new vec2f(
+    +(+a.x + +b.x),
+    +(+a.y + +b.y)
+  );
+}
+export function vec2f_adds(v = def_vec2f, scalar = 0.0) {
+  return new vec2f(
+    +(+v.x + +scalar),
+    +(+v.y + +scalar)
+  );
+}
+export function vec2f_sub(a = def_vec2f, b = def_vec2f) {
+  return new vec2f(
+    +(+a.x - +b.x),
+    +(+a.y - +b.y)
+  );
+}
+export function vec2f_subs(a = def_vec2f, scalar = 0.0) {
+  return new vec2f(
+    +(+a.x - +scalar),
+    +(+a.y - +scalar)
+  );
+}
+
+export function vec2f_mul(a = def_vec2f, b = def_vec2f) {
+  return new vec2f(
+    +(+a.x * +b.x),
+    +(+a.y * +b.y)
+  );
+}
+export function vec2f_muls(v = def_vec2f, scalar = 0.0) {
+  return new vec2f(
+    +(+v.x * +scalar),
+    +(+v.y * +scalar)
+  );
+}
+
+export function vec2f_div(a = def_vec2f, b = def_vec2f) {
+  return new vec2f(
+    +(+a.x / +b.x),
+    +(+a.y / +b.y)
+  );
+}
+export function vec2f_divs(v = def_vec2f, scalar = 0.0) {
+  return new vec2f(
+    +(+v.x / +scalar),
+    +(+v.y / +scalar)
+  );
+}
+
+//#endregion
+
+//#region flat vec2f impure primitive operators
 export function vec2f_ineg(v = def_vec2f) {
   v.x = +(-(+v.x));
   v.y = +(-(+v.y));
   return v;
 }
-
-//#endregion
-
-//#region add
-
-export function vec2f_add(a = def_vec2f, b = def_vec2f) {
-  return {
-    x: +(+a.x + +b.x),
-    y: +(+a.y + +b.y),
-  }
-}
-export function vec2f_addScalar(v = def_vec2f, scalar = 0.0) {
-  return {
-    x: +(+v.x + +scalar),
-    y: +(+v.y + +scalar),
-  }
-}
 export function vec2f_iadd(a = def_vec2f, b = def_vec2f) {
-  a.x += +(+b.x);
-  a.y += +(+b.y);
+  a.x += +b.x;
+  a.y += +b.y;
   return a;
 }
-export function vec2f_iaddScalar(v = def_vec2f, scalar = 0.0) {
+export function vec2f_iadds(v = def_vec2f, scalar = 0.0) {
   v.x += +scalar;
   v.y += +scalar;
   return v;
-}
-
-//#endregion
-
-//#region sub
-
-export function vec2f_sub(a = def_vec2f, b = def_vec2f) {
-  return {
-    x: +(+a.x - +b.x),
-    y: +(+a.y - +b.y),
-  }
-}
-export function vec2f_subScalar(a = def_vec2f, scalar = 0.0) {
-  return {
-    x: +(+a.x - +scalar),
-    y: +(+a.y - +scalar),
-  }
 }
 export function vec2f_isub(a = def_vec2f, b = def_vec2f) {
   a.x -= +(+b.x);
   a.y -= +(+b.y);
   return a;
 }
-export function vec2f_isubScalar(v = def_vec2f, scalar = 0.0) {
+export function vec2f_isubs(v = def_vec2f, scalar = 0.0) {
   v.x -= +scalar;
   v.y -= +scalar;
   return v;
 }
 
-//#endregion
-
-//#region mul
-
-export function vec2f_mul(a = def_vec2f, b = def_vec2f) {
-  return {
-    x: +(+a.x * +b.x),
-    y: +(+a.y * +b.y),
-  }
-}
-export function vec2f_mulScalar(v = def_vec2f, scalar = 0.0) {
-  return {
-    x: +(+v.x * +scalar),
-    y: +(+v.y * +scalar),
-  }
-}
 export function vec2f_imul(a = def_vec2f, b = def_vec2f) {
   a.x *= +(+b.x);
   a.y *= +(+b.y);
   return a;
 }
-export function vec2f_imulScalar(v = def_vec2f, scalar = 0.0) {
+export function vec2f_imuls(v = def_vec2f, scalar = 0.0) {
   v.x *= +scalar;
   v.y *= +scalar;
   return v;
-}
-
-//#endregion
-
-//#region div
-
-export function vec2f_div(a = def_vec2f, b = def_vec2f) {
-  return {
-    x: +(+a.x / +b.x),
-    y: +(+a.y / +b.y),
-  }  
-}
-export function vec2f_divScalar(v = def_vec2f, scalar = 0.0) {
-  return {
-    x: +(+v.x / +scalar),
-    y: +(+v.y / +scalar),
-  }
 }
 
 export function vec2f_idiv(a = def_vec2f, b = def_vec2f) {
@@ -125,247 +370,110 @@ export function vec2f_idivScalar(v = def_vec2f, scalar = 0.0) {
   return v;
 }
 
-
 //#endregion
 
-//#region mag2, dot and cross products
+//#region flat vec2f vector products
 
 export function vec2f_mag2(v = def_vec2f) {
   return +(+(+v.x * +v.x) + +(+v.y * +v.y));
 }
+export function vec2f_mag(v = def_vec2f) {
+  return +mathf_sqrt(+vec2f_mag2(v));
+}
+
 export function vec2f_dot(a = def_vec2f, b = def_vec2f) {
   return +(+(+a.x * +b.x) + +(+a.y * +b.y));
 }
-
-/**
- * Returns the cross-product of two vectors
- *
- * @param {vec2f} vector A 
- * @param {vec2f} vector B
- * @returns {double} The cross product of two vectors
- */
 export function vec2f_cross(a = def_vec2f, b = def_vec2f) {
-  return +(+(+a.x * + +b.y) - +(+a.x * + +b.y));
+  return +(+(+a.x * +b.y) - +(+a.y * +b.x));
 }
-
-/**
- * Returns the cross-product of three vectors
- * 
- * You can determine which side of a line a point is on
- * by converting the line to hyperplane form (implicitly
- * or explicitly) and then computing the perpendicular
- * (pseudo)distance from the point to the hyperplane.
- * 
- * With the crossproduct of two vectors A and B being the vector
- * 
- * AxB = (AyBz − AzBy, AzBx − AxBz, AxBy − AyBx)
- * with Az and Bz being zero you are left with the third component of that vector
- * 
- *    AxBy - AyBx
- * 
- * With A being the vector from point a to b, and B being the vector from point a to c means
- * 
- *    Ax = (b[x]-a[x])
- *    Ay = (b[y]-a[y])
- *    Bx = (c[x]-a[x])
- *    By = (c[y]-a[y])
- * 
- * giving
- * 
- *    AxBy - AyBx = (b[x]-a[x])*(c[y]-a[y])-(b[y]-a[y])*(c[x]-a[x])
- * 
- * which is a scalar, the sign of that scalar will tell you wether point c lies to the left or right of vector ab
- * 
- * @param {vec2f} vector A
- * @param {vec2f} vector B
- * @param {vec2f} vector C
- * @returns {double} The cross product of three vectors
- * 
- */
 export function vec2f_cross3(a = def_vec2f, b = def_vec2f, c = def_vec2f) {
   return +(
     +(+(+b.x - +a.x) * +(+c.y - +a.y)) -
     +(+(+b.y - +a.y) * +(+c.x - +a.x)) );
 }
 
-//#endregion
-
-//#region magnitude and normalize
-
-export function vec2f_mag(v = def_vec2f) {
-  return +Math.sqrt(+vec2f_mag2(v));
-}
-export function vec2f_norm(v = def_vec2f) {
-  return vec2f_divScalar(v, +vec2f_mag(v));
-}
-export function vec2f_inorm(v = def_vec2f) {
-  return vec2f_idivScalar(v, +vec2f_mag(v));
-}
-
-//#endregion
-
-//#region rotation
-
-/**
- * Returns the angle in radians of its vector
- *
- * Math.atan2(dy, dx) === Math.asin(dy/Math.sqrt(dx*dx + dy*dy))
- * 
- * @param {} v Vector
- */
 export function vec2f_theta(v = def_vec2f) {
   return +Math.atan2(+v.y, +v.x);
 }
 export const vec2f_angle = vec2f_theta;
-
 export function vec2f_phi(v = def_vec2f) {
   return +Math.asin(+v.y / +vec2f_mag(v));
 }
 
-export function vec2f_rotn90(v = def_vec2f) {
-  return {
-    x: +(+v.y),
-    y: +(-(+v.x)),
-  };
-}
-export function vec2f_irotn90(v = def_vec2f) {
-  const t = +v.x;
-  v.x = +(+v.y);
-  v.y = +(-(+t));
-  return v;
+//#endregion
+
+//#region flat vec2f pure advanced vector functions
+export function vec2f_unit(v = def_vec2f) {
+  return vec2f_divs(v, +vec2f_mag(v));
 }
 
+export function vec2f_rotn90(v = def_vec2f) {
+  return new vec2f(
+    +v.y,
+    +(-(+v.x))
+  );
+}
 export function vec2f_rot90(v = def_vec2f) {
-  return {
-    x: +(-(+v.y)),
-    y: +(+v.x),
-  };
+  return new vec2f(
+    +(-(+v.y)),
+    +v.x
+  );
 }
 export const vec2f_perp = vec2f_rot90;
 
+/**
+ * Rotates a vector by the specified angle in radians
+ * 
+ * @param {float} r  angle in radians
+ * @returns {vec2f} transformed output vector
+ */
+export function vec2f_rotate(v = def_vec2f, radians = 0.0) {
+  return new vec2f(
+    +(+(+v.x * +mathf_cos(+radians)) - +(+v.y * +mathf_sin(+radians))),
+    +(+(+v.x * +mathf_sin(+radians)) + +(+v.y * +mathf_cos(+radians)))
+  );
+}
+export function vec2f_about(a = def_vec2f, b = def_vec2f, radians = 0.0) {
+  return new vec2f(
+    +(+vector.x + +(+(+(+a.x - +b.x) * +mathf_cos(+radians)) - +(+(+a.y - +b.y) * +mathf_sin(+radians)))),
+    +(+vector.y + +(+(+(+a.x - +b.x) * +mathf_sin(+radians)) + +(+(+a.y - +b.y) * +mathf_cos(+radians))))
+  );
+}
+
+
+//#endregion
+
+//#region flat vec2f impure advanced vector functions
+
+export function vec2f_iunit(v = def_vec2f) {
+  return vec2f_idivs(+vec2f_mag(v));
+}
+
+export function vec2f_irotn90(v = def_vec2f) {
+  v.x = +v.y;
+  v.y = +(-(+v.x));
+  return v;
+}
 export function vec2f_irot90(v = def_vec2f) {
-  const t = +v.y;
-  v.x = +(-(+t));
-  v.y = +(+v.x);
+  v.x = +(-(+v.y));
+  v.y = +v.x;
   return v;
 }
 export const vec2f_iperp = vec2f_irot90;
 
-/**
- * Rotates a vector by the specified angle in radians
- * 
- * @param {vec2f} v vector 
- * @param {float} r  angle in radians
- * @returns {vec2f} transformed output vector
- */
-export function vec2f_rotate(v = def_vec2f, r = 0.0) {
-  return {
-    x: +(+(+v.x * +Math.cos(+r)) - +(+v.y * +Math.sin(+r))),
-    y: +(+(+v.x * +Math.sin(+r)) + +(+v.y * +Math.cos(+r))),
-  }
-}
-export function vec2f_irotate(v = def_vec2f, r = 0.0) {
-  const vx = +v.x;
-  const vy = +v.y;
-  v.x = +(+(+vx * +Math.cos(+r)) - +(+vy * +Math.sin(+r)));
-  v.y = +(+(+vx * +Math.sin(+r)) + +(+vy * +Math.cos(+r)));
+export function vec2f_irotate(v = def_vec2f, radians = 0.0) {
+  v.x = +(+(+v.x * +mathf_cos(+radians)) - +(+v.y * +mathf_sin(+radians)));
+  v.y = +(+(+v.x * +mathf_sin(+radians)) + +(+v.y * +mathf_cos(+radians)));
   return v;
 }
-
-export function vec2f_rotateAbout(v = def_vec2f, r = 0.0, p = def_vec2f) {
-  return {
-    x: +(+p.x + +(+(+v.x - +p.x) * +Math.cos(+r)) - +(+(+v.y - +p.y) * +Math.sin(+r))),
-    y: +(+p.y + +(+(+v.x - +p.x) * +Math.sin(+r)) + +(+(+v.y - +p.y) * +Math.cos(+r))),
-  }
-}
-export function vec2f_irotateAbout(v = def_vec2f, r = 0.0, p = def_vec2f) {
-  const vx = +v.x;
-  const vy = +v.y;
-  v.x = +(+p.x + +(+(+vx - +p.x) * +Math.cos(+r)) - +(+(+vy - +p.y) * +Math.sin(+r)));
-  v.y = +(+p.y + +(+(+vx - +p.x) * +Math.sin(+r)) + +(+(+vy - +p.y) * +Math.cos(+r)));
-  return v;
-}
-
-/**
- * Rotates a vector by the specified angle in radians
- * 
- * @param {vec2f} v vector 
- * @param {float} r  angle in radians
- * @returns {vec2f} transformed output vector
- */
-export function vec2f_rotateEx(v = def_vec2f, r = 0.0, sin = Math.sin, cos = Math.cos) {
-  return {
-    x: +(+(+v.x * +cos(+r)) - +(+v.y * +sin(+r))),
-    y: +(+(+v.x * +sin(+r)) + +(+v.y * +cos(+r))),
-  }
-}
-export function vec2f_irotateEx(v = def_vec2f, r = 0.0, sin = Math.sin, cos = Math.cos) {
-  const vx = +v.x;
-  const vy = +v.y;
-  v.x = +(+(+vx * +cos(+r)) - +(+vy * +sin(+r)));
-  v.y = +(+(+vx * +sin(+r)) + +(+vy * +cos(+r)));
-  return v;
-}
-
-export function vec2f_rotateAboutEx(v = def_vec2f, r = 0.0, p = def_vec2f, sin = Math.sin, cos = Math.cos) {
-  return {
-    x: +(+p.x + +(+(+v.x - +p.x) * +cos(+r)) - +(+(+v.y - +p.y) * +sin(+r))),
-    y: +(+p.y + +(+(+v.x - +p.x) * +sin(+r)) + +(+(+v.y - +p.y) * +cos(+r))),
-  }
-}
-export function vec2f_irotateAboutEx(v = def_vec2f, r = 0.0, p = def_vec2f, sin = Math.sin, cos = Math.cos) {
-  const vx = +v.x;
-  const vy = +v.y;
-  v.x = +(+p.x + +(+(+vx - +p.x) * +cos(+r)) - +(+(+vy - +p.y) * +sin(+r)));
-  v.y = +(+p.y + +(+(+vx - +p.x) * +sin(+r)) + +(+(+vy - +p.y) * +cos(+r)));
-  return v;
+export function vec2f_iabout(a = def_vec2f, b = def_vec2f, radians = 0.0) {
+  a.x = +(+b.x + +(+(+(+a.x - +b.x) * +mathf_cos(+radians)) - +(+(+a.y - +b.y) * +mathf_sin(+radians)))),
+  a.y = +(+b.y + +(+(+(+a.x - +b.x) * +mathf_sin(+radians)) + +(+(+a.y - +b.y) * +mathf_cos(+radians))))
+  return a;
 }
 
 //#endregion
 
-//#region collision
 
-/**
- * Tests if triangle intersects with rectangle
- * 
- * @param {*} l1 
- * @param {*} l2 
- * @param {*} l3 
- * @param {*} r1 
- * @param {*} r2 
- * @param {*} normal 
- */
-export function vec2f_intersectTriangleRect(l1 = def_vec2f, l2 = def_vec2f, l3 = def_vec2f, r1 = def_vec2f, r2 = def_vec2f, normal = 1.0) {
-  normal = +normal;
-  const dx = +(+r2.x - +r1.x);
-  const dy = +(+r2.y - +r1.y);
-  return !(
-    (((+l1.x - +r1.x) * dy - (+l1.y - +r1.y) * dx) * normal < 0) ||
-    (((+l2.x - +r1.x) * dy - (+l2.y - +r1.y) * dx) * normal < 0) ||
-    (((+l3.x - +r1.x) * dy - (+l3.y - +r1.y) * dx) * normal < 0));
-}
-
-/**
- * Tests if 2 triangles intersect
- * 
- * @param {*} l1 
- * @param {*} l2 
- * @param {*} l3 
- * @param {*} r1 
- * @param {*} r2 
- * @param {*} r3 
- */
-export function vec2f_intersectTriangles(l1 = def_vec2f, l2 = def_vec2f, l3 = def_vec2f, r1 = def_vec2f, r2 = def_vec2f, r3 = def_vec2f) {
-  const lnorm = +(+(+(+l2.x - +l1.x) * +(+l3.y - +l1.y))
-              - +(+(+l2.y - +l1.y) * +(+l3.x - +l1.x)));
-  const rnorm = +(+(+(+r2.x - +r1.x) * +(+r3.y - +r1.y))
-              - +(+(+r2.y - +r1.y) * +(+r3.x - +r1.x)));
-  return !(vec2f_intersectTriangleRect(r1, r2, r3, l1, l2, lnorm)
-    || vec2f_intersectTriangleRect(r1, r2, r3, l2, l3, lnorm)
-    || vec2f_intersectTriangleRect(r1, r2, r3, l3, l1, lnorm)
-    || vec2f_intersectTriangleRect(l1, l2, l3, r1, r2, rnorm)
-    || vec2f_intersectTriangleRect(l1, l2, l3, r2, r3, rnorm)
-    || vec2f_intersectTriangleRect(l1, l2, l3, r3, r1, rnorm));
-}
-
-//#endregion
+export function vec2f_new(x = 0.0, y = 0.0) { return new vec2f(+x, +y); }

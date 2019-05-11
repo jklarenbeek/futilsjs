@@ -1,37 +1,46 @@
-import { def_vec2f, def_vec3f } from './vector';
+import { vec2f } from './vec2f';
+import { mathf_sqrt } from './float';
 
-export function vec3f(x = 0.0, y = 0.0 , z = 0.0) {
-  return { x: +x, y: +y, z: +z };
+
+export const def_vec3f = Object.freeze(new vec3f());
+
+export class vec3f {
+  constructor(x = 0.0, y = 0.0, z = 0.0) {
+    if (x instanceof vec2f) {
+      this.x = +x.x;
+      this.y = +x.y;
+      this.z = +y;
+    }
+    else {
+      this.x = +x;
+      this.y = +y;
+      this.z = +z;
+    }
+  }
+  gP1() { return new vec2f(+this.x, +this.y); }
+  clone() { return Object.create(this); }
 }
 
-export function vec3f_toVec2(v = def_vec3f) {
-  return { x: +v.x, y: +v.y };
-}
-
-export function vec3f_fromVec2(v = def_vec2f) {
-  return { x: +v.x, y: +v.y, z: 0.0 };
-}
-
-export function vec3f_dub(v = def_vec3f) {
-  return { x: +v.x, y: +v.y, z: +v.z };
-}
-
-//#region div
+//#region flat vec3f pure primitive operators
 
 export function vec3f_div(a = def_vec3f, b = def_vec3f) {
-  return {
-    x: +(+a.x / +b.x),
-    y: +(+a.y / +b.y),
-    z: +(+a.z / +b.z),
-  }  
+  return new vec3f(
+    +(+a.x / +b.x),
+    +(+a.y / +b.y),
+    +(+a.z / +b.z)
+  );
 }
-export function vec3f_divScalar(v = def_vec3f, scalar = 0.0) {
-  return {
-    x: +(+v.x / +scalar),
-    y: +(+v.y / +scalar),
-    z: +(+v.z / +scalar),
-  }
+export function vec3f_divs(v = def_vec3f, scalar = 0.0) {
+  return new vec3f(
+    +(+v.x / +scalar),
+    +(+v.y / +scalar),
+    +(+v.z / +scalar)
+  );
 }
+
+//#endregion
+
+//#region flat vec3f impure primitive operators
 
 export function vec3f_idiv(a = def_vec3f, b = def_vec3f) {
   a.x /= +(+b.x);
@@ -39,7 +48,7 @@ export function vec3f_idiv(a = def_vec3f, b = def_vec3f) {
   a.z /= +(+b.z);
   return a;
 }
-export function vec3f_idivScalar(v = def_vec3f, scalar = 0.0) {
+export function vec3f_idivs(v = def_vec3f, scalar = 0.0) {
   v.x /= +scalar;
   v.y /= +scalar;
   v.z /= +scalar;
@@ -48,29 +57,27 @@ export function vec3f_idivScalar(v = def_vec3f, scalar = 0.0) {
 
 //#endregion
 
-//#region magnitude and normalize
+//#region flat vec3f pure advanced operators
 
 export function vec3f_mag2(v = def_vec3f) {
   return +(+(+v.x * +v.x) + +(+v.y * +v.y) + +(+v.z * +v.z));
 }
-
 export function vec3f_mag(v = def_vec3f) {
-  return +Math.sqrt(+vec3f_mag2(v));
+  return +mathf_sqrt(+vec3f_mag2(v));
 }
-export function vec3f_norm(v = def_vec3f) {
-  return vec3f_divScalar(v, +vec3f_mag(v));
+export function vec3f_unit(v = def_vec3f) {
+  return vec3f_divs(v, +vec3f_mag(v));
 }
-export function vec3f_inorm(v = def_vec3f) {
-  return vec2f_idivScalar(v, +vec3f_mag(v));
+export function vec3f_iunit(v = def_vec3f) {
+  return vec2f_idivs(v, +vec3f_mag(v));
+}
+
+export function vec3f_crossABAB(a = def_vec3f, b = def_vec3f) {
+  return new vec3f(
+    +(+(+a.y * +b.z) - +(+a.z * +b.y)),
+    +(+(+a.z * +b.x) - +(+a.x * +b.z)),
+    +(+(+a.x * +b.y) - +(+a.y * +b.x)),
+  );
 }
 
 //#endregion
-
-export function vec3f_crossABAB(a = def_vec3f, b = def_vec3f
-  ) {
-  return {
-    x: +(+(+a.y * +b.z) - +(+a.z * +b.y)),
-    y: +(+(+a.z * +b.x) - +(+a.x * +b.z)),
-    z: +(+(+a.x * +b.y) - +(+a.y * +b.x)),
-  }
-}
