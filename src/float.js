@@ -1,9 +1,16 @@
 
 export const mathf_sqrt = Math.sqrt;
+export const mathf_pow = Math.pow;
 export const mathf_sin = Math.sin;
 export const mathf_cos = Math.cos;
 export const mathf_atan2 = Math.atan2;
 export const mathf_asin = Math.asin;
+
+export const mathf_ciel = Math.ceil;
+export const mathf_floor = Math.floor;
+export const mathf_round = Math.round;
+export const mathf_min = Math.min;
+export const mathf_max = Math.max;
 
 export function float_sqrt(n = 0.0) {
   return +mathf_sqrt(+n);
@@ -44,12 +51,12 @@ export function float_fib(n = 0.0) {
 }
 
 // https://gist.github.com/geraldyeo/988116export 
-export const float_sqrtFive = +Math.sqrt(5);
+export const float_sqrtFive = +mathf_sqrt(5);
 export function float_fib2(n = 0.0) {
   n = +n;
-  const fh = +(1.0 / +float_sqrtFive * +Math.pow(+(+(1.0 + float_sqrtFive ) / 2.0), +n));
-  const sh = +(1.0 / +float_sqrtFive * +Math.pow(+(+(1.0 - float_sqrtFive ) / 2.0), +n));
-  return +Math.round(fh - sh);
+  const fh = +(1.0 / +float_sqrtFive * +mathf_pow(+(+(1.0 + float_sqrtFive ) / 2.0), +n));
+  const sh = +(1.0 / +float_sqrtFive * +mathf_pow(+(+(1.0 - float_sqrtFive ) / 2.0), +n));
+  return +mathf_round(fh - sh);
 }
 
 export function float_norm(value = 0.0, min = 0.0, max = 0.0) {
@@ -74,7 +81,7 @@ export function float_map(value = 0.0, smin = 0.0, smax = 0.0, dmin = 0.0, dmax 
  * @returns {float} clamped value 
  */
 export function float_clamp(value = 0.0, min = 0.0, max = 0.0) {
-  return +Math.min(+Math.max(+value, +Math.min(+min, +max)), +Math.max(+min, +max));
+  return +mathf_min(+mathf_max(+value, +mathf_min(+min, +max)), +mathf_max(+min, +max));
 }
 /**
  * Clamps a value between an unchecked boundary
@@ -87,16 +94,16 @@ export function float_clamp(value = 0.0, min = 0.0, max = 0.0) {
  * @returns {float} clamped value 
  */
 export function float_clampu(value = 0.0, min = 0.0, max = 0.0) {
-  return +Math.min(+Math.max(+value, +min), +max);
+  return +mathf_min(+mathf_max(+value, +min), +max);
 }
 
 export function float_inRange(value = 0.0, min = 0.0, max = 0.0) {
-  return +(+value >= +Math.min(+min, +max) && +value <= +Math.max(+min, +max));
+  return +(+value >= +mathf_min(+min, +max) && +value <= +mathf_max(+min, +max));
 }
 
 export function float_intersectsRange(smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
-  return +(+Math.max(+smin, +smax) >= +Math.min(+dmin, +dmax) && 
-           +Math.min(+smin, +smax) <= +Math.max(+dmin, +dmax));
+  return +(+mathf_max(+smin, +smax) >= +mathf_min(+dmin, +dmax) && 
+           +mathf_min(+smin, +smax) <= +mathf_max(+dmin, +dmax));
 }
 
 export function float_intersectsRect(ax = 0.0, ay = 0.0, aw = 0.0, ah = 0.0, bx = 0.0, by = 0.0, bw = 0.0, bh = 0.0) {
@@ -234,7 +241,7 @@ export function float_cosMp(r = 0.0) {
 }
 
 export function float_theta(x = 0.0, y = 0.0) {
-  return +Math.atan2(+y, +x);
+  return +mathf_atan2(+y, +x);
   /*
     // alternative was faster, but not anymore.
     // error < 0.005
@@ -265,7 +272,7 @@ export function float_theta(x = 0.0, y = 0.0) {
 export const float_angle = float_theta;
 
 export function float_phi(y = 0.0, length = 0.0) {
-  return +Math.asin(+y / +length);
+  return +mathf_asin(+y / +length);
 }
 
 //#endregion

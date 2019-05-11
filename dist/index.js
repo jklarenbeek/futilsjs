@@ -128,10 +128,17 @@ function int_sinLp(r = 0) {
 }
 
 const mathf_sqrt = Math.sqrt;
+const mathf_pow = Math.pow;
 const mathf_sin = Math.sin;
 const mathf_cos = Math.cos;
-const mathf_atan2 = Math.atan2;
+const mathf_atan2$1 = Math.atan2;
 const mathf_asin = Math.asin;
+
+const mathf_ciel = Math.ceil;
+const mathf_floor$1 = Math.floor;
+const mathf_round$1 = Math.round;
+const mathf_min$1 = Math.min;
+const mathf_max$1 = Math.max;
 
 function float_sqrt(n = 0.0) {
   return +mathf_sqrt(+n);
@@ -172,12 +179,12 @@ function float_fib(n = 0.0) {
 }
 
 // https://gist.github.com/geraldyeo/988116export 
-const float_sqrtFive = +Math.sqrt(5);
+const float_sqrtFive = +mathf_sqrt(5);
 function float_fib2(n = 0.0) {
   n = +n;
-  const fh = +(1.0 / +float_sqrtFive * +Math.pow(+(+(1.0 + float_sqrtFive ) / 2.0), +n));
-  const sh = +(1.0 / +float_sqrtFive * +Math.pow(+(+(1.0 - float_sqrtFive ) / 2.0), +n));
-  return +Math.round(fh - sh);
+  const fh = +(1.0 / +float_sqrtFive * +mathf_pow(+(+(1.0 + float_sqrtFive ) / 2.0), +n));
+  const sh = +(1.0 / +float_sqrtFive * +mathf_pow(+(+(1.0 - float_sqrtFive ) / 2.0), +n));
+  return +mathf_round$1(fh - sh);
 }
 
 function float_norm(value = 0.0, min = 0.0, max = 0.0) {
@@ -202,7 +209,7 @@ function float_map(value = 0.0, smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) 
  * @returns {float} clamped value 
  */
 function float_clamp(value = 0.0, min = 0.0, max = 0.0) {
-  return +Math.min(+Math.max(+value, +Math.min(+min, +max)), +Math.max(+min, +max));
+  return +mathf_min$1(+mathf_max$1(+value, +mathf_min$1(+min, +max)), +mathf_max$1(+min, +max));
 }
 /**
  * Clamps a value between an unchecked boundary
@@ -215,16 +222,16 @@ function float_clamp(value = 0.0, min = 0.0, max = 0.0) {
  * @returns {float} clamped value 
  */
 function float_clampu(value = 0.0, min = 0.0, max = 0.0) {
-  return +Math.min(+Math.max(+value, +min), +max);
+  return +mathf_min$1(+mathf_max$1(+value, +min), +max);
 }
 
 function float_inRange(value = 0.0, min = 0.0, max = 0.0) {
-  return +(+value >= +Math.min(+min, +max) && +value <= +Math.max(+min, +max));
+  return +(+value >= +mathf_min$1(+min, +max) && +value <= +mathf_max$1(+min, +max));
 }
 
 function float_intersectsRange(smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
-  return +(+Math.max(+smin, +smax) >= +Math.min(+dmin, +dmax) && 
-           +Math.min(+smin, +smax) <= +Math.max(+dmin, +dmax));
+  return +(+mathf_max$1(+smin, +smax) >= +mathf_min$1(+dmin, +dmax) && 
+           +mathf_min$1(+smin, +smax) <= +mathf_max$1(+dmin, +dmax));
 }
 
 function float_intersectsRect(ax = 0.0, ay = 0.0, aw = 0.0, ah = 0.0, bx = 0.0, by = 0.0, bw = 0.0, bh = 0.0) {
@@ -362,7 +369,7 @@ function float_cosMp(r = 0.0) {
 }
 
 function float_theta(x = 0.0, y = 0.0) {
-  return +Math.atan2(+y, +x);
+  return +mathf_atan2$1(+y, +x);
   /*
     // alternative was faster, but not anymore.
     // error < 0.005
@@ -393,7 +400,7 @@ function float_theta(x = 0.0, y = 0.0) {
 const float_angle = float_theta;
 
 function float_phi(y = 0.0, length = 0.0) {
-  return +Math.asin(+y / +length);
+  return +mathf_asin(+y / +length);
 }
 
 //#endregion
@@ -529,7 +536,6 @@ function vec2i_idivs(v = def_vec2i, scalar = 0) {
   return v;
 }
 
-
 //#endregion
 
 //#region flat vec2i vector products
@@ -555,12 +561,12 @@ function vec2i_cross3(a = def_vec2i, b = def_vec2i, c = def_vec2i) {
 }
 
 function vec2i_thetaEx(v = def_vec2i) {
-  return (int_MULTIPLIER * Math.atan2((v.y|0), (v.x|0)))|0;
+  return (int_MULTIPLIER * mathf_atan2((v.y|0), (v.x|0)))|0;
 }
 const vec2i_angleEx = vec2i_thetaEx;
 
 function vec2i_phiEx(v= def_vec2i) {
-  return (int_MULTIPLIER * Math.asin((v.y|0) / vec2i_mag(v)));
+  return (int_MULTIPLIER * mathf_asin((v.y|0) / vec2i_mag(v)));
 }
 
 
@@ -910,7 +916,7 @@ class vec2f {
    * @param {} v Vector
    */
   theta() {
-    return +mathf_atan2(+this.y, +this.x);
+    return +mathf_atan2$1(+this.y, +this.x);
   }
   angle() {
     return +this.theta();
@@ -1010,6 +1016,13 @@ function vec2f_adds(v = def_vec2f, scalar = 0.0) {
     +(+v.y + +scalar)
   );
 }
+function vec2f_addms(a = def_vec2f, b = def_vec2f, scalar = 1.0) {
+  return new vec2f(
+    +(+a.x + +(+b.x * +scalar)),
+    +(+a.y + +(+b.y * +scalar))
+  );
+}
+
 function vec2f_sub(a = def_vec2f, b = def_vec2f) {
   return new vec2f(
     +(+a.x - +b.x),
@@ -1029,7 +1042,7 @@ function vec2f_mul(a = def_vec2f, b = def_vec2f) {
     +(+a.y * +b.y)
   );
 }
-function vec2f_muls(v = def_vec2f, scalar = 0.0) {
+function vec2f_muls(v = def_vec2f, scalar = 1.0) {
   return new vec2f(
     +(+v.x * +scalar),
     +(+v.y * +scalar)
@@ -1042,10 +1055,42 @@ function vec2f_div(a = def_vec2f, b = def_vec2f) {
     +(+a.y / +b.y)
   );
 }
-function vec2f_divs(v = def_vec2f, scalar = 0.0) {
+function vec2f_divs(v = def_vec2f, scalar = 1.0) {
   return new vec2f(
     +(+v.x / +scalar),
     +(+v.y / +scalar)
+  );
+}
+
+function vec2f_ceil(v = def_vec2f) {
+  return new vec2f(
+    +mathf_ceil(+v.x),
+    +mathf_ceil(+v.y)
+  );
+}
+function vec2f_floor(v = def_vec2f) {
+  return new vec2f(
+    +mathf_floor(+v.x),
+    +mathf_floor(+v.y)
+  );
+}
+function vec2f_round(v = def_vec2f) {
+  return new vec2f(
+    +mathf_round(+v.x),
+    +mathf_round(+v.y)
+  );
+}
+
+function vec2f_min(a = def_vec2f, b = def_vec2f) {
+  return new vec2f(
+    +mathf_min(+a.x, +b.x),
+    +mathf_min(+a.y, +b.y)
+  );
+}
+function vec2f_max(a = def_vec2f, b = def_vec2f) {
+  return new vec2f(
+    +mathf_max(+a.x, +b.x),
+    +mathf_max(+a.y, +b.y)
   );
 }
 
@@ -1083,7 +1128,7 @@ function vec2f_imul(a = def_vec2f, b = def_vec2f) {
   a.y *= +(+b.y);
   return a;
 }
-function vec2f_imuls(v = def_vec2f, scalar = 0.0) {
+function vec2f_imuls(v = def_vec2f, scalar = 1.0) {
   v.x *= +scalar;
   v.y *= +scalar;
   return v;
@@ -1094,10 +1139,37 @@ function vec2f_idiv(a = def_vec2f, b = def_vec2f) {
   a.y /= +(+b.y);
   return a;
 }
-function vec2f_idivScalar(v = def_vec2f, scalar = 0.0) {
+function vec2f_idivs$1(v = def_vec2f, scalar = 1.0) {
   v.x /= +scalar;
   v.y /= +scalar;
   return v;
+}
+
+function vec2f_iceil(v = def_vec2f) {
+  v.x = +mathf_ceil(+v.x);
+  v.y = +mathf_ceil(+v.y);
+  return v;
+}
+function vec2f_ifloor(v = def_vec2f) {
+  v.x = +mathf_floor(+v.x),
+  v.y = +mathf_floor(+v.y);
+  return v;
+}
+function vec2f_iround(v = def_vec2f) {
+  v.x = +mathf_round(+v.x),
+  v.y = +mathf_round(+v.y);
+  return v;
+}
+
+function vec2f_imin(a = def_vec2f, b = def_vec2f) {
+  a.x = +mathf_min(+a.x, +b.x);
+  a.y = +mathf_min(+a.y, +b.y);
+  return a;
+}
+function vec2f_imax(a = def_vec2f, b = def_vec2f) {
+  a.x = +mathf_max(+a.x, +b.x);
+  a.y = +mathf_max(+a.y, +b.y);
+  return a;
 }
 
 //#endregion
@@ -1177,7 +1249,7 @@ function vec2f_about(a = def_vec2f, b = def_vec2f, radians = 0.0) {
 //#region flat vec2f impure advanced vector functions
 
 function vec2f_iunit(v = def_vec2f) {
-  return vec2f_idivs(+vec2f_mag(v));
+  return vec2f_idivs$1(+vec2f_mag(v));
 }
 
 function vec2f_irotn90(v = def_vec2f) {
@@ -1395,7 +1467,7 @@ class segm2f {
 }
 
 class segm2f_M extends segm2f {
-  constructor(x = 0.0, y = 0.0, abs = true) {
+  constructor(abs = true, x = 0.0, y = 0.0) {
     super(abs);
     this.p1 = (x instanceof vec2f)
       ? x
@@ -1407,7 +1479,7 @@ class segm2f_M extends segm2f {
 }
 
 class segm2f_v extends segm2f {
-  constructor(y = 0.0, abs = false) {
+  constructor(abs = false, y = 0.0) {
     super(abs);
     this.y = (y instanceof vec2f)
       ? this.y = y.y
@@ -1417,7 +1489,7 @@ class segm2f_v extends segm2f {
   gP1() { return new vec2f(0.0, +this.y); }
 }
 class segm2f_h extends segm2f {
-  constructor(x = 0.0, abs = false) {
+  constructor(abs = false, x = 0.0) {
     super(abs);
     this.x = 0.0;
   }
@@ -1425,7 +1497,7 @@ class segm2f_h extends segm2f {
   gP1() { return new vec2f(+this.x, 0.0); }
 }
 class segm2f_l extends segm2f {
-  constructor(p1 = def_vec2f, y = 0.0, abs = false) {
+  constructor(abs = false, p1 = def_vec2f, y = 0.0) {
     super(abs);
     this.p1 = (p1 instanceof vec2f)
       ? p1
@@ -1434,7 +1506,7 @@ class segm2f_l extends segm2f {
 }
 
 class segm2f_q extends segm2f {
-  constructor(p1 = def_vec2f, p2 = def_vec2f, x2 = 0.0, y2 = 0.0, abs = false) {
+  constructor(abs = false, p1 = def_vec2f, p2 = def_vec2f, x2 = 0.0, y2 = 0.0) {
     super(abs);
     if (p1 instanceof vec2f) {
       this.p1 = p1;
@@ -1458,7 +1530,7 @@ class segm2f_q extends segm2f {
   }
 }
 class segm2f_t extends segm2f {
-  constructor(p1 = def_vec2f, y = 0.0, abs = false) {
+  constructor(abs = false, p1 = def_vec2f, y = 0.0) {
     super(abs);
     this.p1 = (p1 instanceof vec2f)
       ? p1
@@ -1500,8 +1572,36 @@ class segm2f_Z extends segm2f {
 
 //#region path2f
 class path2f extends shape2f {
+  constructor(list = []) {
+    this.list = list;
+  }
+  isClosed() {
+    const list = this.list;
+    const len = list.length;
+    return (len > 0 && (list[len - 1] instanceof segm2f_Z));
+  }
+  move(abs, x, y) {
+    const segm = new segm2f_M(abs, x, y);
+    this.list[this.list.length] = segm;
+  }
+  vertical(abs, y) {
+    const segm = new segm2f_v(abs, y);
+    this.list[this.list.length] = segm;
+  }
+  horizontal(abs, x) {
+    const segm = new segm2f_h(abs, x);
+    this.list[this.list.length] = segm;
+  }
+  line(abs, x, y) {
+    const segm = new segm2f_l(abs, x, y);
+    this.list[this.list.length] = segm;
+  }
+  close() {
+    const segm = new seqm2f_Z();
+    this.list[this.list.length] = segm;
+  }
 
 }
 //#endregion
 
-export { circle2f, circle2f_POINTS, def_vec2f, def_vec2i, def_vec3f, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_sqrtFive, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, mathf_asin, mathf_atan2, mathf_cos, mathf_sin, mathf_sqrt, path2f, point2f, point2f_POINTS, rectangle2f, rectangle2f_POINTS, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, shape2f, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, vec2f, vec2f_about, vec2f_add, vec2f_adds, vec2f_angle, vec2f_cross, vec2f_cross3, vec2f_div, vec2f_divs, vec2f_dot, vec2f_iabout, vec2f_iadd, vec2f_iadds, vec2f_idiv, vec2f_idivScalar, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_iperp, vec2f_irot90$1 as vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_mag, vec2f_mag2, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit };
+export { circle2f, circle2f_POINTS, def_vec2f, def_vec2i, def_vec3f, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_sqrtFive, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, mathf_asin, mathf_atan2$1 as mathf_atan2, mathf_ciel, mathf_cos, mathf_floor$1 as mathf_floor, mathf_max$1 as mathf_max, mathf_min$1 as mathf_min, mathf_pow, mathf_round$1 as mathf_round, mathf_sin, mathf_sqrt, path2f, point2f, point2f_POINTS, rectangle2f, rectangle2f_POINTS, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, shape2f, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, vec2f, vec2f_about, vec2f_add, vec2f_addms, vec2f_adds, vec2f_angle, vec2f_ceil, vec2f_cross, vec2f_cross3, vec2f_div, vec2f_divs, vec2f_dot, vec2f_floor, vec2f_iabout, vec2f_iadd, vec2f_iadds, vec2f_iceil, vec2f_idiv, vec2f_idivs$1 as vec2f_idivs, vec2f_ifloor, vec2f_imax, vec2f_imin, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_iperp, vec2f_irot90$1 as vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_iround, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_mag, vec2f_mag2, vec2f_max, vec2f_min, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_round, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit };

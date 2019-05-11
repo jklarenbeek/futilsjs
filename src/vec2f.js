@@ -280,6 +280,13 @@ export function vec2f_adds(v = def_vec2f, scalar = 0.0) {
     +(+v.y + +scalar)
   );
 }
+export function vec2f_addms(a = def_vec2f, b = def_vec2f, scalar = 1.0) {
+  return new vec2f(
+    +(+a.x + +(+b.x * +scalar)),
+    +(+a.y + +(+b.y * +scalar))
+  );
+}
+
 export function vec2f_sub(a = def_vec2f, b = def_vec2f) {
   return new vec2f(
     +(+a.x - +b.x),
@@ -299,7 +306,7 @@ export function vec2f_mul(a = def_vec2f, b = def_vec2f) {
     +(+a.y * +b.y)
   );
 }
-export function vec2f_muls(v = def_vec2f, scalar = 0.0) {
+export function vec2f_muls(v = def_vec2f, scalar = 1.0) {
   return new vec2f(
     +(+v.x * +scalar),
     +(+v.y * +scalar)
@@ -312,10 +319,42 @@ export function vec2f_div(a = def_vec2f, b = def_vec2f) {
     +(+a.y / +b.y)
   );
 }
-export function vec2f_divs(v = def_vec2f, scalar = 0.0) {
+export function vec2f_divs(v = def_vec2f, scalar = 1.0) {
   return new vec2f(
     +(+v.x / +scalar),
     +(+v.y / +scalar)
+  );
+}
+
+export function vec2f_ceil(v = def_vec2f) {
+  return new vec2f(
+    +mathf_ceil(+v.x),
+    +mathf_ceil(+v.y)
+  );
+}
+export function vec2f_floor(v = def_vec2f) {
+  return new vec2f(
+    +mathf_floor(+v.x),
+    +mathf_floor(+v.y)
+  );
+}
+export function vec2f_round(v = def_vec2f) {
+  return new vec2f(
+    +mathf_round(+v.x),
+    +mathf_round(+v.y)
+  );
+}
+
+export function vec2f_min(a = def_vec2f, b = def_vec2f) {
+  return new vec2f(
+    +mathf_min(+a.x, +b.x),
+    +mathf_min(+a.y, +b.y)
+  );
+}
+export function vec2f_max(a = def_vec2f, b = def_vec2f) {
+  return new vec2f(
+    +mathf_max(+a.x, +b.x),
+    +mathf_max(+a.y, +b.y)
   );
 }
 
@@ -353,7 +392,7 @@ export function vec2f_imul(a = def_vec2f, b = def_vec2f) {
   a.y *= +(+b.y);
   return a;
 }
-export function vec2f_imuls(v = def_vec2f, scalar = 0.0) {
+export function vec2f_imuls(v = def_vec2f, scalar = 1.0) {
   v.x *= +scalar;
   v.y *= +scalar;
   return v;
@@ -364,10 +403,37 @@ export function vec2f_idiv(a = def_vec2f, b = def_vec2f) {
   a.y /= +(+b.y);
   return a;
 }
-export function vec2f_idivScalar(v = def_vec2f, scalar = 0.0) {
+export function vec2f_idivs(v = def_vec2f, scalar = 1.0) {
   v.x /= +scalar;
   v.y /= +scalar;
   return v;
+}
+
+export function vec2f_iceil(v = def_vec2f) {
+  v.x = +mathf_ceil(+v.x);
+  v.y = +mathf_ceil(+v.y);
+  return v;
+}
+export function vec2f_ifloor(v = def_vec2f) {
+  v.x = +mathf_floor(+v.x),
+  v.y = +mathf_floor(+v.y)
+  return v;
+}
+export function vec2f_iround(v = def_vec2f) {
+  v.x = +mathf_round(+v.x),
+  v.y = +mathf_round(+v.y)
+  return v;
+}
+
+export function vec2f_imin(a = def_vec2f, b = def_vec2f) {
+  a.x = +mathf_min(+a.x, +b.x);
+  a.y = +mathf_min(+a.y, +b.y);
+  return a;
+}
+export function vec2f_imax(a = def_vec2f, b = def_vec2f) {
+  a.x = +mathf_max(+a.x, +b.x);
+  a.y = +mathf_max(+a.y, +b.y);
+  return a;
 }
 
 //#endregion

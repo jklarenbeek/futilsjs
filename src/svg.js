@@ -107,7 +107,7 @@ export class segm2f {
 }
 
 export class segm2f_M extends segm2f {
-  constructor(x = 0.0, y = 0.0, abs = true) {
+  constructor(abs = true, x = 0.0, y = 0.0) {
     super(abs);
     this.p1 = (x instanceof vec2f)
       ? x
@@ -119,7 +119,7 @@ export class segm2f_M extends segm2f {
 }
 
 export class segm2f_v extends segm2f {
-  constructor(y = 0.0, abs = false) {
+  constructor(abs = false, y = 0.0) {
     super(abs);
     this.y = (y instanceof vec2f)
       ? this.y = y.y
@@ -129,7 +129,7 @@ export class segm2f_v extends segm2f {
   gP1() { return new vec2f(0.0, +this.y); }
 }
 export class segm2f_h extends segm2f {
-  constructor(x = 0.0, abs = false) {
+  constructor(abs = false, x = 0.0) {
     super(abs);
     this.x = 0.0;
   }
@@ -137,7 +137,7 @@ export class segm2f_h extends segm2f {
   gP1() { return new vec2f(+this.x, 0.0); }
 }
 export class segm2f_l extends segm2f {
-  constructor(p1 = def_vec2f, y = 0.0, abs = false) {
+  constructor(abs = false, p1 = def_vec2f, y = 0.0) {
     super(abs);
     this.p1 = (p1 instanceof vec2f)
       ? p1
@@ -146,7 +146,7 @@ export class segm2f_l extends segm2f {
 }
 
 export class segm2f_q extends segm2f {
-  constructor(p1 = def_vec2f, p2 = def_vec2f, x2 = 0.0, y2 = 0.0, abs = false) {
+  constructor(abs = false, p1 = def_vec2f, p2 = def_vec2f, x2 = 0.0, y2 = 0.0) {
     super(abs);
     if (p1 instanceof vec2f) {
       this.p1 = p1;
@@ -170,7 +170,7 @@ export class segm2f_q extends segm2f {
   }
 }
 export class segm2f_t extends segm2f {
-  constructor(p1 = def_vec2f, y = 0.0, abs = false) {
+  constructor(abs = false, p1 = def_vec2f, y = 0.0) {
     super(abs);
     this.p1 = (p1 instanceof vec2f)
       ? p1
@@ -212,6 +212,34 @@ export class segm2f_Z extends segm2f {
 
 //#region path2f
 export class path2f extends shape2f {
+  constructor(list = []) {
+    this.list = list;
+  }
+  isClosed() {
+    const list = this.list;
+    const len = list.length;
+    return (len > 0 && (list[len - 1] instanceof segm2f_Z));
+  }
+  move(abs, x, y) {
+    const segm = new segm2f_M(abs, x, y);
+    this.list[this.list.length] = segm;
+  }
+  vertical(abs, y) {
+    const segm = new segm2f_v(abs, y);
+    this.list[this.list.length] = segm;
+  }
+  horizontal(abs, x) {
+    const segm = new segm2f_h(abs, x);
+    this.list[this.list.length] = segm;
+  }
+  line(abs, x, y) {
+    const segm = new segm2f_l(abs, x, y)
+    this.list[this.list.length] = segm;
+  }
+  close() {
+    const segm = new seqm2f_Z();
+    this.list[this.list.length] = segm;
+  }
 
 }
 //#endregion

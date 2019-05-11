@@ -1,5 +1,5 @@
 import { int_MULTIPLIER } from "./int";
-import { mathf_sqrt } from "./float";
+import { mathf_sqrt, mathf_asin } from "./float";
 
 export const def_vec2i = new vec2i();
 
@@ -133,7 +133,6 @@ export function vec2i_idivs(v = def_vec2i, scalar = 0) {
   return v;
 }
 
-
 //#endregion
 
 //#region flat vec2i vector products
@@ -159,12 +158,12 @@ export function vec2i_cross3(a = def_vec2i, b = def_vec2i, c = def_vec2i) {
 }
 
 export function vec2i_thetaEx(v = def_vec2i) {
-  return (int_MULTIPLIER * Math.atan2((v.y|0), (v.x|0)))|0;
+  return (int_MULTIPLIER * mathf_atan2((v.y|0), (v.x|0)))|0;
 }
 export const vec2i_angleEx = vec2i_thetaEx;
 
 export function vec2i_phiEx(v= def_vec2i) {
-  return (int_MULTIPLIER * Math.asin((v.y|0) / vec2i_mag(v)));
+  return (int_MULTIPLIER * mathf_asin((v.y|0) / vec2i_mag(v)));
 }
 
 
