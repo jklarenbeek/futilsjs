@@ -103,7 +103,7 @@ export class segm2f {
       : true;
   }
   gAbs() { return this.abs; }
-  isValidPrecursor(segment = segm2f) { return true; }
+  isValidPrecursor(segment = segm2f) { return ((segment instanceof segm2f) && !(segment instanceof segm2f_Z)); }
 }
 
 export class segm2f_M extends segm2f {

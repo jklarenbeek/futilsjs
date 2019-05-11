@@ -1288,4 +1288,220 @@ function vec3f_crossABAB(a = def_vec3f, b = def_vec3f) {
 
 //#endregion
 
-export { def_vec2f, def_vec2i, def_vec3f, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_sqrtFive, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, mathf_asin, mathf_atan2, mathf_cos, mathf_sin, mathf_sqrt, triangle2i_intersectsRect, vec2f, vec2f_about, vec2f_add, vec2f_adds, vec2f_angle, vec2f_cross, vec2f_cross3, vec2f_div, vec2f_divs, vec2f_dot, vec2f_iabout, vec2f_iadd, vec2f_iadds, vec2f_idiv, vec2f_idivScalar, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_iperp, vec2f_irot90$1 as vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_mag, vec2f_mag2, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit };
+//#region vec2d basic shapes
+
+class shape2f {
+  pointCount() { return 0; }
+}
+
+const point2f_POINTS = 1;
+class point2f extends shape2f {
+  constructor(p1 = def_vec2f) {
+    this.p1 = p1;
+  }
+  gP1() { return this.p1; }
+  pointCount() { return point2f_POINTS; }
+}
+
+const circle2f_POINTS = 1;
+class circle2f extends shape2f {
+  constructor(p1 = def_vec2f, r = 1.0) {
+    this.p1 = p1;
+    this.radius = +r;
+  }
+  gP1() { return this.p1; };
+  pointCount() { return circle2f_POINTS; }
+}
+
+const rectangle2f_POINTS = 2;
+class rectangle2f extends shape2f {
+  constructor(p1 = def_vec2f, p2 = def_vec2f) {
+    this.p1 = p1;
+    this.p2 = p2;
+  }
+  gP1() { return this.p1; };
+  gP2() { return this.p2; };
+  pointCount() { return rectangle2f_POINTS; }
+}
+
+// TODO: argument initialiser to def_triangle2f
+
+const triangle2f_POINTS = 3;
+class triangle2f extends shape2f {
+  constructor(p1 = def_vec2f, p2 = def_vec2f, p3 = def_vec2f) {
+    this.p1 = p1;
+    this.p2 = p2;
+    this.p3 = p3;
+  }
+  gP1() { return this.p1; };
+  gP2() { return this.p2; };
+  gP3() { return this.p3; };
+  pointCount() { return triangle2f_POINTS; }
+
+  //#region intersects other shape
+
+  intersectsRect(rectangle = rectangle2f, normal = 1.0) {
+    return triangle2f_intersectsRect(this.p1, this.p2, this.p3, rectangle.p1, rectangle.p2, +normal);
+  }
+  intersectsTangle(triangle = triangle2f) {
+    return triangle2f_intersectsTangle(this.p1, this.p2, this.p3, triangle.p1, triangle.p2, triangle.p3);
+  }
+  //#endregion
+}
+
+/**
+ * Tests if triangle intersects with rectangle
+ * 
+ * @param {rectangle2f} rectangle; 
+ * @param {*} normal 
+ */
+function triangle2f_intersectsRect(l1 = def_vec2f, l2 = def_vec2f, l3 = def_vec2f, r1 = def_vec2f, r2 = def_vec2f, normal = 1.0) {
+  normal = +normal;
+  const dx = +(+r2.x - +r1.x);
+  const dy = +(+r2.y - +r1.y);
+  return !(
+    (((+l1.x - +r1.x) * +dy - (+l1.y - +r1.y) * +dx) * +normal < 0) ||
+    (((+l2.x - +r1.x) * +dy - (+l2.y - +r1.y) * +dx) * +normal < 0) ||
+    (((+l3.x - +r1.x) * +dy - (+l3.y - +r1.y) * +dx) * +normal < 0));
+}
+function triangle2f_intersectsTangle(l1, l2, l3, r1, r2, r3) {
+  const lnorm = +(
+      +(+(+l2.x - +l1.x) * +(+l3.y - +l1.y))
+    - +(+(+l2.y - +l1.y) * +(+l3.x - +l1.x)));
+  const rnorm = +(
+      +(+(+r2.x - +r1.x) * +(+r3.y - +r1.y))
+    - +(+(+r2.y - +r1.y) * +(+r3.x - +r1.x)));
+
+  return !(triangle2f_intersectsRect(r1, r2, r3, l1, l2, lnorm)
+    || triangle2f_intersectsRect(r1, r2, r3, l2, l3, lnorm)
+    || triangle2f_intersectsRect(r1, r2, r3, l3, l1, lnorm)
+    || triangle2f_intersectsRect(l1, l2, l3, r1, r2, rnorm)
+    || triangle2f_intersectsRect(l1, l2, l3, r2, r3, rnorm)
+    || triangle2f_intersectsRect(l1, l2, l3, r3, r1, rnorm));
+}
+
+//#endregion
+
+//#region svg path segments
+
+class segm2f {
+  constructor(abs = true) {
+    this.abs = (typeof abs === 'boolean')
+      ? abs // is the coordinate absolute or relative?
+      : true;
+  }
+  gAbs() { return this.abs; }
+  isValidPrecursor(segment = segm2f) { return ((segment instanceof segm2f) && !(segment instanceof segm2f_Z)); }
+}
+
+class segm2f_M extends segm2f {
+  constructor(x = 0.0, y = 0.0, abs = true) {
+    super(abs);
+    this.p1 = (x instanceof vec2f)
+      ? x
+      : new vec2f(+x, +y);
+  }
+  gP1() {
+    return this.p1;
+  }
+}
+
+class segm2f_v extends segm2f {
+  constructor(y = 0.0, abs = false) {
+    super(abs);
+    this.y = (y instanceof vec2f)
+      ? this.y = y.y
+      : y;
+  }
+  gY() { return +this.y }
+  gP1() { return new vec2f(0.0, +this.y); }
+}
+class segm2f_h extends segm2f {
+  constructor(x = 0.0, abs = false) {
+    super(abs);
+    this.x = 0.0;
+  }
+  gX() { return +this.x; }
+  gP1() { return new vec2f(+this.x, 0.0); }
+}
+class segm2f_l extends segm2f {
+  constructor(p1 = def_vec2f, y = 0.0, abs = false) {
+    super(abs);
+    this.p1 = (p1 instanceof vec2f)
+      ? p1
+      : new vec2f(+p1, +y);
+  }
+}
+
+class segm2f_q extends segm2f {
+  constructor(p1 = def_vec2f, p2 = def_vec2f, x2 = 0.0, y2 = 0.0, abs = false) {
+    super(abs);
+    if (p1 instanceof vec2f) {
+      this.p1 = p1;
+      if (p2 instanceof vec2f) {
+        this.p2 = p2;
+      }
+      else {
+        this.p2 = new vec2f(+p2, +x2);
+      }
+    }
+    else {
+      this.p1 = new vec2f(+p1, +p2);
+      this.p2 = new vec2f(+x2, +y2);
+    }
+  }
+  gP1() {
+    return this.p1;
+  }
+  gP2() {
+    return this.p2;
+  }
+}
+class segm2f_t extends segm2f {
+  constructor(p1 = def_vec2f, y = 0.0, abs = false) {
+    super(abs);
+    this.p1 = (p1 instanceof vec2f)
+      ? p1
+      : new vec2f(+p1, +y);
+  }
+  isValidPrecursor(segment = seg2f) {
+    if (segment instanceof segm2f_t) return true;
+    if (segment instanceof segm2f_q) return true;
+    return false;
+  }
+}
+
+class segm2f_c extends segm2f {
+  constructor(abs = false) {
+    super(abs);
+    // TODO
+  }
+}
+
+class segm2f_s extends segm2f {
+  constructor(abs = false) {
+    super(abs);
+    // TODO
+  }
+  isValidPrecursor(segment = seg2f) {
+    if (segment instanceof segm2f_s) return true;
+    if (segment instanceof segm2f_c) return true;
+    return false;
+  }
+
+}
+
+class segm2f_Z extends segm2f {
+  constructor() {
+    super(true);
+  }  
+}
+//#endregion
+
+//#region path2f
+class path2f extends shape2f {
+
+}
+//#endregion
+
+export { circle2f, circle2f_POINTS, def_vec2f, def_vec2i, def_vec3f, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_sqrtFive, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, mathf_asin, mathf_atan2, mathf_cos, mathf_sin, mathf_sqrt, path2f, point2f, point2f_POINTS, rectangle2f, rectangle2f_POINTS, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, shape2f, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, vec2f, vec2f_about, vec2f_add, vec2f_adds, vec2f_angle, vec2f_cross, vec2f_cross3, vec2f_div, vec2f_divs, vec2f_dot, vec2f_iabout, vec2f_iadd, vec2f_iadds, vec2f_idiv, vec2f_idivScalar, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_iperp, vec2f_irot90$1 as vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_mag, vec2f_mag2, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit };
