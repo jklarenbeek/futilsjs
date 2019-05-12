@@ -1,5 +1,8 @@
 import { vec2f, def_vec2f } from './vec2f';
 
+//#region basic svg object
+//#endregion
+
 //#region vec2d basic shapes
 
 export class shape2f {
@@ -103,7 +106,10 @@ export class segm2f {
       : true;
   }
   gAbs() { return this.abs; }
-  isValidPrecursor(segment = segm2f) { return ((segment instanceof segm2f) && !(segment instanceof segm2f_Z)); }
+  isValidPrecursor(segment) {
+    return (segment === undefined || segment === null)
+      || ((segment instanceof segm2f) && !(segment instanceof segm2f_Z));
+  }
 }
 
 export class segm2f_M extends segm2f {
@@ -176,10 +182,9 @@ export class segm2f_t extends segm2f {
       ? p1
       : new vec2f(+p1, +y);
   }
-  isValidPrecursor(segment = seg2f) {
-    if (segment instanceof segm2f_t) return true;
-    if (segment instanceof segm2f_q) return true;
-    return false;
+  hasValidPrecursor(segment) {
+    return (segment instanceof segm2f_t)
+      || (segment instanceof segm2f_q);
   }
 }
 
@@ -195,10 +200,9 @@ export class segm2f_s extends segm2f {
     super(abs);
     // TODO
   }
-  isValidPrecursor(segment = seg2f) {
-    if (segment instanceof segm2f_s) return true;
-    if (segment instanceof segm2f_c) return true;
-    return false;
+  hasValidPrecursor(segment) {
+    return (segment instanceof segm2f_s)
+      || (segment instanceof segm2f_c);
   }
 
 }
@@ -206,11 +210,14 @@ export class segm2f_s extends segm2f {
 export class segm2f_Z extends segm2f {
   constructor() {
     super(true);
-  }  
+  }
+  hasValidPrecursor(segment) {
+    return !(segment instanceof segm2f_Z);
+  }
 }
 //#endregion
 
-//#region path2f
+//#region svg path object path2f
 export class path2f extends shape2f {
   constructor(list = []) {
     this.list = list;
@@ -220,25 +227,34 @@ export class path2f extends shape2f {
     const len = list.length;
     return (len > 0 && (list[len - 1] instanceof segm2f_Z));
   }
+  add(segment) {
+    const list = this.list;
+    const len = list.length;
+    if (segment.hasValidPrecursor(len > 0 ? list[len - 1] : null)) {
+      list[len] = segment;
+      return true;
+    }
+    return false;
+  }
   move(abs, x, y) {
     const segm = new segm2f_M(abs, x, y);
-    this.list[this.list.length] = segm;
+    return add(segm);
   }
   vertical(abs, y) {
     const segm = new segm2f_v(abs, y);
-    this.list[this.list.length] = segm;
+    return add(segm);
   }
   horizontal(abs, x) {
     const segm = new segm2f_h(abs, x);
-    this.list[this.list.length] = segm;
+    return add(segm);
   }
   line(abs, x, y) {
     const segm = new segm2f_l(abs, x, y)
-    this.list[this.list.length] = segm;
+    return add(segm);
   }
   close() {
     const segm = new seqm2f_Z();
-    this.list[this.list.length] = segm;
+    return add(segm);
   }
 
 }

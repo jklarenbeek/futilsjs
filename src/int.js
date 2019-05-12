@@ -1,13 +1,23 @@
+export const mathi_sqrt = Math.sqrt;
+export const mathi_round = Math.round;
+export const mathi_min = Math.min;
+export const mathi_max = Math.max;
+
 export const int_MULTIPLIER = 10000;
+
+export const int_PI = (Math.PI * int_MULTIPLIER)|0;
+export const int_PI2 = (int_PI * 2)|0;
+export const int_PI_A = ((4 / Math.PI) * int_MULTIPLIER)|0;
+export const int_PI_B = ((4 / (Math.PI * Math.PI)) * int_MULTIPLIER)|0;
 
 export function int_sqrtEx(n = 0) {
   n = n|0;
-  return (int_MULTIPLIER * Math.sqrt(n))|0;
+  return (int_MULTIPLIER * mathi_sqrt(n))|0;
 }
 
 export function int_sqrt(n = 0) {
   n = n|0;
-  return Math.sqrt(n)|0;
+  return mathi_sqrt(n)|0;
 }
 
 export function int_fib(n = 0) {
@@ -35,28 +45,39 @@ export function int_lerp(norm = 0, min = 0, max = 0) {
 
 export function int_map(value = 0, smin = 0, smax = 0, dmin = 0, dmax = 0) {
   value = value|0; smin = smin|0; smax = smax|0; dmin = dmin|0; dmax = dmax|0;
-  return int_lerp(int_norm(value, smin, smax), dmin, dmax)|0;
+  // return int_lerp(int_norm(value, smin, smax), dmin, dmax) | 0;
+  return mathi_round((value - smin) * (dmax - dmin) / (smax - smin) + dmin)|0;
 }
 
 export function int_clamp(value = 0, min = 0, max = 0) {
   value = value|0; min = min|0; max = max|0;
-  return Math.min(Math.max(value, Math.min(min, max)), Math.max(min, max))|0;
+  return mathi_min(mathi_max(value, mathi_min(min, max)), mathi_max(min, max))|0;
 }
 export function int_clampu(value = 0, min = 0, max = 0) {
   value = value|0; min = min|0; max = max|0;
-  return Math.min(Math.max(value, min), max)|0;
+  // return mathi_min(mathi_max(value, min), max)|0;
+  return mathi_max(min, mathi_min(value, max))|0;
+}
+export function int_clampu_u8a(value = 0) {
+  value = value | 0;
+  return -((255 - value & (value - 255) >> 31) - 255 & (255 - value & (value - 255) >> 31) - 255 >> 31);
+}
+export function int_clampu_u8b(value = 0) {
+  value = value | 0;
+  value &= -(value >= 0);
+  return value | ~-!(value & -256);
 }
 
 export function int_inRange(value = 0, min = 0, max = 0) {
   value = value|0; min = min|0; max = max|0;
-  return ((value >= Math.min(min, max)) &&
-          (value <= Math.max(min, max)))|0;
+  return ((value >= mathi_min(min, max)) &&
+          (value <= mathi_max(min, max)))|0;
 }
 
 export function int_intersectsRange(smin = 0, smax = 0, dmin = 0, dmax = 0) {
   smin = smin|0; smax = smax|0; dmin = dmin|0; dmax = dmax|0;
-  return ((Math.max(smin, smax) >= Math.min(dmin, dmax)) && 
-          (Math.min(smin, smax) <= Math.max(dmin, dmax)))|0;
+  return ((mathi_max(smin, smax) >= mathi_min(dmin, dmax)) && 
+          (mathi_min(smin, smax) <= mathi_max(dmin, dmax)))|0;
 }
 
 export function int_intersectsRect(ax = 0, ay = 0, aw = 0, ah = 0, bx = 0, by = 0, bw = 0, bh = 0) {
@@ -91,11 +112,6 @@ export function int_cross(ax = 0, ay = 0, bx = 0, by = 0) {
 }
 
 //#region trigonometry
-
-export const int_PI = (Math.PI * int_MULTIPLIER)|0;
-export const int_PI2 = (int_PI * 2)|0;
-export const int_PI_A = ((4 / Math.PI) * int_MULTIPLIER)|0;
-export const int_PI_B = ((4 / (Math.PI * Math.PI)) * int_MULTIPLIER)|0;
 
 export function int_toRadianEx(degrees = 0) {
   degrees = degrees|0;

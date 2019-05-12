@@ -1,13 +1,23 @@
+const mathi_sqrt = Math.sqrt;
+const mathi_round = Math.round;
+const mathi_min = Math.min;
+const mathi_max = Math.max;
+
 const int_MULTIPLIER = 10000;
+
+const int_PI = (Math.PI * int_MULTIPLIER)|0;
+const int_PI2 = (int_PI * 2)|0;
+const int_PI_A = ((4 / Math.PI) * int_MULTIPLIER)|0;
+const int_PI_B = ((4 / (Math.PI * Math.PI)) * int_MULTIPLIER)|0;
 
 function int_sqrtEx(n = 0) {
   n = n|0;
-  return (int_MULTIPLIER * Math.sqrt(n))|0;
+  return (int_MULTIPLIER * mathi_sqrt(n))|0;
 }
 
 function int_sqrt(n = 0) {
   n = n|0;
-  return Math.sqrt(n)|0;
+  return mathi_sqrt(n)|0;
 }
 
 function int_fib(n = 0) {
@@ -35,28 +45,39 @@ function int_lerp(norm = 0, min = 0, max = 0) {
 
 function int_map(value = 0, smin = 0, smax = 0, dmin = 0, dmax = 0) {
   value = value|0; smin = smin|0; smax = smax|0; dmin = dmin|0; dmax = dmax|0;
-  return int_lerp(int_norm(value, smin, smax), dmin, dmax)|0;
+  // return int_lerp(int_norm(value, smin, smax), dmin, dmax) | 0;
+  return mathi_round((value - smin) * (dmax - dmin) / (smax - smin) + dmin)|0;
 }
 
 function int_clamp(value = 0, min = 0, max = 0) {
   value = value|0; min = min|0; max = max|0;
-  return Math.min(Math.max(value, Math.min(min, max)), Math.max(min, max))|0;
+  return mathi_min(mathi_max(value, mathi_min(min, max)), mathi_max(min, max))|0;
 }
 function int_clampu(value = 0, min = 0, max = 0) {
   value = value|0; min = min|0; max = max|0;
-  return Math.min(Math.max(value, min), max)|0;
+  // return mathi_min(mathi_max(value, min), max)|0;
+  return mathi_max(min, mathi_min(value, max))|0;
+}
+function int_clampu_u8a(value = 0) {
+  value = value | 0;
+  return -((255 - value & (value - 255) >> 31) - 255 & (255 - value & (value - 255) >> 31) - 255 >> 31);
+}
+function int_clampu_u8b(value = 0) {
+  value = value | 0;
+  value &= -(value >= 0);
+  return value | ~-!(value & -256);
 }
 
 function int_inRange(value = 0, min = 0, max = 0) {
   value = value|0; min = min|0; max = max|0;
-  return ((value >= Math.min(min, max)) &&
-          (value <= Math.max(min, max)))|0;
+  return ((value >= mathi_min(min, max)) &&
+          (value <= mathi_max(min, max)))|0;
 }
 
 function int_intersectsRange(smin = 0, smax = 0, dmin = 0, dmax = 0) {
   smin = smin|0; smax = smax|0; dmin = dmin|0; dmax = dmax|0;
-  return ((Math.max(smin, smax) >= Math.min(dmin, dmax)) && 
-          (Math.min(smin, smax) <= Math.max(dmin, dmax)))|0;
+  return ((mathi_max(smin, smax) >= mathi_min(dmin, dmax)) && 
+          (mathi_min(smin, smax) <= mathi_max(dmin, dmax)))|0;
 }
 
 function int_intersectsRect(ax = 0, ay = 0, aw = 0, ah = 0, bx = 0, by = 0, bw = 0, bh = 0) {
@@ -91,11 +112,6 @@ function int_cross(ax = 0, ay = 0, bx = 0, by = 0) {
 }
 
 //#region trigonometry
-
-const int_PI = (Math.PI * int_MULTIPLIER)|0;
-const int_PI2 = (int_PI * 2)|0;
-const int_PI_A = ((4 / Math.PI) * int_MULTIPLIER)|0;
-const int_PI_B = ((4 / (Math.PI * Math.PI)) * int_MULTIPLIER)|0;
 
 function int_toRadianEx(degrees = 0) {
   degrees = degrees|0;
@@ -146,6 +162,12 @@ const mathf_random = Math.max;
 
 const mathf_EPSILON = 0.000001;
 const mathf_PI = Math.PI;
+
+function float_gcd(a=0.0, b=0.0) {
+  a = +a; b = +b;
+  // For example, a 1024x768 monitor has a GCD of 256. When you divide both values by that you get 4x3 or 4:3.
+  return +((b === 0.0) ? +a : +float_gcd(b, a % b));
+}
 
 function float_sqrt(n = 0.0) {
   return +mathf_sqrt(+n);
@@ -750,258 +772,247 @@ export function fastSin3(a) {
 
  */
 
-const def_vec2f = Object.freeze(new vec2f());
+const def_vec2f = Object.freeze(vec2f_new());
 
 class vec2f {
   constructor(x = 0.0, y = 0.0) {
     this.x = +x;
     this.y = +y;
   }
-
-  gX() {
-    return +this.x;
-  }
-  gY() {
-    return +this.y;
-  }
-
-  //#region pure primitive vector operators
-
-  neg() {
-    return new vec2f(+(-(+this.x)), +(-(+this.y)));
-  }
-
-  add(vector = def_vec2f) {
-    return new vec2f(+(+this.x + +vector.x), +(+this.y + +vector.y));
-  }
-  adds(scalar = 0.0) {
-    return new vec2f(+(+this.x + +scalar), +(+this.y + +scalar));
-  }
-
-  sub(vector = def_vec2f) {
-    return new vec2f(+(+this.x - +vector.x), +(+this.y - +vector.y));
-  }
-  subs(scalar = 0.0) {
-    return new vec2f(+(+this.x - +scalar), +(+this.y - +scalar));
-  }
-
-  mul(vector = def_vec2f) {
-    return new vec2f(+(+this.x * +vector.x), +(+this.y * +vector.y));
-  }
-  muls(scalar = 0.0) {
-    return new vec2f(+(+this.x * +scalar), +(+this.y * +scalar));
-  }
-
-  div(vector = def_vec2f) {
-    return new vec2f(+(+this.x / +vector.x), +(+this.y / +vector.y));
-  }
-  divs(scalar = 0.0) {
-    return new vec2f(+(+this.x / +scalar), +(+this.y / +scalar));
-  }
-
-  //#endregion
-  
-  //#region impure primitive vector operators
-  ineg() {
-    this.x = +(-(+this.x));
-    this.y = +(-(+this.y));
-    return this;
-  }
-
-  iadd(vector = def_vec2f) {
-    this.x += +vector.x;
-    this.y += +vector.y;
-    return this;
-  }
-  iadds(value = 0.0) {
-    this.x += +value;
-    this.y += +value;
-    return this;
-  }
-
-  isub(vector = def_vec2f) {
-    this.x -= +vector.x;
-    this.y -= +vector.y;
-    return this;
-  }
-  isubs(value = 0.0) {
-    this.x -= +value;
-    this.y -= +value;
-    return this;
-  }
-
-  imul(vector = def_vec2f) {
-    this.x *= +vector.x;
-    this.y *= +vector.y;
-    return this;
-  }
-  imuls(value = 0.0) {
-    this.x *= +value;
-    this.y *= +value;
-    return this;
-  }
-
-  idiv(vector = def_vec2f) {
-    this.x /= +vector.x;
-    this.y /= +vector.y;
-    return this;
-  }
-  idivs(value = 0.0) {
-    this.x /= +value;
-    this.y /= +value;
-    return this;
-  }
-
-  //#endregion
-
-  //#region vector products
-  mag2() {
-    return +(+(+this.x * +this.x) + +(+this.y * +this.y));
-  }
-  mag() {
-    return +mathf_sqrt(+this.mag2());
-  }
-
-  dot(vector = def_vec2f) {
-    return +(+(+this.x * +vector.x) + +(+this.y * +vector.y));
-  }
-
-  /**
-   * Returns the cross-product of two vectors
-   *
-   * @param {vec2f} vector B
-   * @returns {double} The cross product of two vectors
-   */
-  cross(vector = def_vec2f) {
-    return +(+(+this.x * +vector.y) - +(+this.y * +vector.x));
-  }
-
-  /**
-   * Returns the cross-product of three vectors
-   * 
-   * You can determine which side of a line a point is on
-   * by converting the line to hyperplane form (implicitly
-   * or explicitly) and then computing the perpendicular
-   * (pseudo)distance from the point to the hyperplane.
-   * 
-   * With the crossproduct of two vectors A and B being the vector
-   * 
-   * AxB = (AyBz − AzBy, AzBx − AxBz, AxBy − AyBx)
-   * with Az and Bz being zero you are left with the third component of that vector
-   * 
-   *    AxBy - AyBx
-   * 
-   * With A being the vector from point a to b, and B being the vector from point a to c means
-   * 
-   *    Ax = (b[x]-a[x])
-   *    Ay = (b[y]-a[y])
-   *    Bx = (c[x]-a[x])
-   *    By = (c[y]-a[y])
-   * 
-   * giving
-   * 
-   *    AxBy - AyBx = (b[x]-a[x])*(c[y]-a[y])-(b[y]-a[y])*(c[x]-a[x])
-   * 
-   * which is a scalar, the sign of that scalar will tell you wether point c lies to the left or right of vector ab
-   * 
-   * @param {vec2f} vector B
-   * @param {vec2f} vector C
-   * @returns {double} The cross product of three vectors
-   * 
-   */
-  cross3(vector2 = def_vec2f, vector3 = def_vec2f) {
-    return +(
-      +(+(+vector2.x - +this.x) * +(+vector3.y - +this.y)) -
-      +(+(+vector2.y - +this.y) * +(+vector3.x - +this.x)) );
-  }
-
-  /**
-   * Returns the angle in radians of its vector
-   *
-   * Math.atan2(dy, dx) === Math.asin(dy/Math.sqrt(dx*dx + dy*dy))
-   * 
-   * @param {} v Vector
-   */
-  theta() {
-    return +mathf_atan2$1(+this.y, +this.x);
-  }
-  angle() {
-    return +this.theta();
-  }
-  phi() {
-    return +mathf_asin(+this.y / +this.mag());
-  }
-  
-  //#endregion
-
-  //#region pure advanced vector functions
-  unit() {
-    return this.divs(+this.mag());
-  }
-
-  rotn90() {
-    return new vec2f(+this.y, +(-(+this.x)));
-  }
-  rot90() {
-    return new vec2f(+(-(+this.y)), +this.x);
-  }
-  perp() {
-    return this.rot90();
-  }
-
-  /**
-   * Rotates a vector by the specified angle in radians
-   * 
-   * @param {float} r  angle in radians
-   * @returns {vec2f} transformed output vector
-   */
-  rotate(radians = 0.0) {
-    return new vec2f(
-      +(+(+this.x * +mathf_cos(+radians)) - +(+this.y * +mathf_sin(+radians))),
-      +(+(+this.x * +mathf_sin(+radians)) + +(+this.y * +mathf_cos(+radians)))
-    );
-  }
-  about(vector = def_vec2f, radians = 0.0) {
-    return new vec2f(
-      +(+vector.x + +(+(+(+this.x - +vector.x) * +mathf_cos(+radians)) - +(+(+this.y - +vector.y) * +mathf_sin(+radians)))),
-      +(+vector.y + +(+(+(+this.x - +vector.x) * +mathf_sin(+radians)) + +(+(+this.y - +vector.y) * +mathf_cos(+radians))))
-    );
-  }
-
-  //#endregion
-
-  //#region impure advanced vector functions
-  iunit() {
-    return this.idivs(+this.mag());
-  }
-
-  irotn90() {
-    this.x = +this.y;
-    this.y = +(-(+this.x));
-    return this;
-  }
-  irot90() {
-    this.x = +(-(+this.y));
-    this.y = +this.x;
-    return this;
-  }
-  iperp() {
-    return this.irot90();
-  }
-  irotate(radians = 0.0) {
-    this.x = +(+(+this.x * +mathf_cos(+radians)) - +(+this.y * +mathf_sin(+radians)));
-    this.y = +(+(+this.x * +mathf_sin(+radians)) + +(+this.y * +mathf_cos(+radians)));
-    return this;
-  }
-  iabout(vector = def_vec2f, radians = 0.0) {
-    this.x = +(+vector.x + +(+(+(+this.x - +vector.x) * +mathf_cos(+radians)) - +(+(+this.y - +vector.y) * +mathf_sin(+radians)))),
-    this.y = +(+vector.y + +(+(+(+this.x - +vector.x) * +mathf_sin(+radians)) + +(+(+this.y - +vector.y) * +mathf_cos(+radians))));
-    return this;
-  }
-
-
-  //#endregion
+  gX() { return +this.x; };
+  gY() { return +this.y; };
 }
+
+//#region class pure primitive vector operators
+
+vec2f.prototype.neg = function _vec2f__neg() {
+  return new vec2f(+(-(+this.x)), +(-(+this.y)));
+};
+
+vec2f.prototype.add = function _vec2f__add(vector = def_vec2f) {
+  return new vec2f(+(+this.x + +vector.x), +(+this.y + +vector.y));
+};
+vec2f.prototype.adds = function _vec2f__adds(scalar = 0.0) {
+  return new vec2f(+(+this.x + +scalar), +(+this.y + +scalar));
+};
+
+vec2f.prototype.sub = function _vec2f__sub(vector = def_vec2f) {
+  return new vec2f(+(+this.x - +vector.x), +(+this.y - +vector.y));
+};
+vec2f.prototype.subs = function _vec2f__subs(scalar = 0.0) {
+  return new vec2f(+(+this.x - +scalar), +(+this.y - +scalar));
+};
+
+vec2f.prototype.mul = function _vec2f__mul(vector = def_vec2f) {
+  return new vec2f(+(+this.x * +vector.x), +(+this.y * +vector.y));
+};
+vec2f.prototype.muls = function _vec2f__muls(scalar = 0.0) {
+  return new vec2f(+(+this.x * +scalar), +(+this.y * +scalar));
+};
+
+vec2f.prototype.div = function _vec2f__div(vector = def_vec2f) {
+  return new vec2f(+(+this.x / +vector.x), +(+this.y / +vector.y));
+};
+vec2f.prototype.divs = function _vec2f__divs(scalar = 0.0) {
+  return new vec2f(+(+this.x / +scalar), +(+this.y / +scalar));
+};
+
+//#endregion
+  
+//#region class impure primitive vector operators
+vec2f.prototype.ineg = function _vec2f__ineg() {
+  this.x = +(-(+this.x));
+  this.y = +(-(+this.y));
+  return this;
+};
+
+vec2f.prototype.iadd = function _vec2f__iadd(vector = def_vec2f) {
+  this.x += +vector.x;
+  this.y += +vector.y;
+  return this;
+};
+vec2f.prototype.iadds = function _vec2f__iadds(value = 0.0) {
+  this.x += +value;
+  this.y += +value;
+  return this;
+};
+
+vec2f.prototype.isub = function _vec2f__isub(vector = def_vec2f) {
+  this.x -= +vector.x;
+  this.y -= +vector.y;
+  return this;
+};
+vec2f.prototype.isubs = function _vec2f__isubs(value = 0.0) {
+  this.x -= +value;
+  this.y -= +value;
+  return this;
+};
+
+vec2f.prototype.imul = function _vec2f__imul(vector = def_vec2f) {
+  this.x *= +vector.x;
+  this.y *= +vector.y;
+  return this;
+};
+vec2f.prototype.imuls = function _vec2f__imuls(value = 0.0) {
+  this.x *= +value;
+  this.y *= +value;
+  return this;
+};
+
+vec2f.prototype.idiv = function _vec2f__idiv(vector = def_vec2f) {
+  this.x /= +vector.x;
+  this.y /= +vector.y;
+  return this;
+};
+vec2f.prototype.idivs = function _vec2f__idivs(value = 0.0) {
+  this.x /= +value;
+  this.y /= +value;
+  return this;
+};
+
+//#endregion
+
+//#region class vector products
+vec2f.prototype.mag2 = function _vec2f__mag2() {
+  return +(+(+this.x * +this.x) + +(+this.y * +this.y));
+};
+vec2f.prototype.mag = function _vec2f__mag() {
+  return +mathf_sqrt(+this.mag2());
+};
+
+vec2f.prototype.dot = function _vec2f__dot(vector = def_vec2f) {
+  return +(+(+this.x * +vector.x) + +(+this.y * +vector.y));
+};
+
+/**
+ * Returns the cross-product of two vectors
+ *
+ * @param {vec2f} vector B
+ * @returns {double} The cross product of two vectors
+ */
+vec2f.prototype.cross = function _vec2f__cross(vector = def_vec2f) {
+  return +(+(+this.x * +vector.y) - +(+this.y * +vector.x));
+};
+
+/**
+ * Returns the cross-product of three vectors
+ * 
+ * You can determine which side of a line a point is on
+ * by converting the line to hyperplane form (implicitly
+ * or explicitly) and then computing the perpendicular
+ * (pseudo)distance from the point to the hyperplane.
+ * 
+ * With the crossproduct of two vectors A and B being the vector
+ * 
+ * AxB = (AyBz − AzBy, AzBx − AxBz, AxBy − AyBx)
+ * with Az and Bz being zero you are left with the third component of that vector
+ * 
+ *    AxBy - AyBx
+ * 
+ * With A being the vector from point a to b, and B being the vector from point a to c means
+ * 
+ *    Ax = (b[x]-a[x])
+ *    Ay = (b[y]-a[y])
+ *    Bx = (c[x]-a[x])
+ *    By = (c[y]-a[y])
+ * 
+ * giving
+ * 
+ *    AxBy - AyBx = (b[x]-a[x])*(c[y]-a[y])-(b[y]-a[y])*(c[x]-a[x])
+ * 
+ * which is a scalar, the sign of that scalar will tell you wether point c lies to the left or right of vector ab
+ * 
+ * @param {vec2f} vector B
+ * @param {vec2f} vector C
+ * @returns {double} The cross product of three vectors
+ * 
+ */
+vec2f.prototype.cross3 = function _vec2f__cross3(vector2 = def_vec2f, vector3 = def_vec2f) {
+  return +(
+    +(+(+vector2.x - +this.x) * +(+vector3.y - +this.y)) -
+    +(+(+vector2.y - +this.y) * +(+vector3.x - +this.x)) );
+};
+
+/**
+ * Returns the angle in radians of its vector
+ *
+ * Math.atan2(dy, dx) === Math.asin(dy/Math.sqrt(dx*dx + dy*dy))
+ * 
+ * @param {} v Vector
+ */
+vec2f.prototype.theta = function _vec2__theta() {
+  return +mathf_atan2$1(+this.y, +this.x);
+};
+vec2f.prototype.angle = _vec2__theta;
+vec2f.prototype.phi = function _vec2__phi() {
+  return +mathf_asin(+this.y / +this.mag());
+};
+
+//#endregion
+
+//#region class pure advanced vector functions
+vec2f.prototype.unit = function _vec2f__unit() {
+  return this.divs(+this.mag());
+};
+
+vec2f.prototype.rotn90 = function _vec2f__rotn90() {
+  return new vec2f(+this.y, +(-(+this.x)));
+};
+vec2f.prototype.rot90 = function _vec2f__rot90() {
+  return new vec2f(+(-(+this.y)), +this.x);
+};
+vec2f.prototype.perp = _vec2f__rot90;
+
+/**
+ * Rotates a vector by the specified angle in radians
+ * 
+ * @param {float} r  angle in radians
+ * @returns {vec2f} transformed output vector
+ */
+vec2f.prototype.rotate = function _vec2f__rotate(radians = 0.0) {
+  return new vec2f(
+    +(+(+this.x * +mathf_cos(+radians)) - +(+this.y * +mathf_sin(+radians))),
+    +(+(+this.x * +mathf_sin(+radians)) + +(+this.y * +mathf_cos(+radians)))
+  );
+};
+vec2f.prototype.about = function _vec2f__about(vector = def_vec2f, radians = 0.0) {
+  return new vec2f(
+    +(+vector.x + +(+(+(+this.x - +vector.x) * +mathf_cos(+radians)) - +(+(+this.y - +vector.y) * +mathf_sin(+radians)))),
+    +(+vector.y + +(+(+(+this.x - +vector.x) * +mathf_sin(+radians)) + +(+(+this.y - +vector.y) * +mathf_cos(+radians))))
+  );
+};
+
+//#endregion
+
+//#region class impure advanced vector functions
+vec2f.prototype.iunit = function _vec2f__iunit() {
+  return this.idivs(+this.mag());
+};
+
+vec2f.prototype.irotn90 = function _vec2f__irotn90() {
+  this.x = +this.y;
+  this.y = +(-(+this.x));
+  return this;
+};
+vec2f.prototype.irot90 = function _vec2f__irot90() {
+  this.x = +(-(+this.y));
+  this.y = +this.x;
+  return this;
+};
+vec2f.prototype.iperp = _vec2f__irot90;
+
+vec2f.prototype.irotate = function _vec2f__irotate(radians = 0.0) {
+  this.x = +(+(+this.x * +mathf_cos(+radians)) - +(+this.y * +mathf_sin(+radians)));
+  this.y = +(+(+this.x * +mathf_sin(+radians)) + +(+this.y * +mathf_cos(+radians)));
+  return this;
+};
+vec2f.prototype.iabout = function _vec2f__iabout(vector = def_vec2f, radians = 0.0) {
+  this.x = +(+vector.x + +(+(+(+this.x - +vector.x) * +mathf_cos(+radians)) - +(+(+this.y - +vector.y) * +mathf_sin(+radians)))),
+  this.y = +(+vector.y + +(+(+(+this.x - +vector.x) * +mathf_sin(+radians)) + +(+(+this.y - +vector.y) * +mathf_cos(+radians))));
+  return this;
+};
+
+//#endregion
 
 //#region flat vec2f pure primitive operators
 
@@ -1415,6 +1426,132 @@ function vec3f_crossABAB(a = def_vec3f, b = def_vec3f) {
 
 //#endregion
 
+function copyAttributes(src, dst) {
+  if (src.hasAttributes()) {
+    const attr = src.attributes;
+    const l = attr.length;
+    for (let i = 0; i < l; ++i) {
+      dst.setAttribute(attr[i].name, attr[i].value);
+    }
+  }
+}
+
+// a dummy function to mimic the CSS-Paint-Api-1 specification
+const myRegisteredPaint__store__ = {};
+const myRegisterPaint = typeof registerPaint !== 'undefined'
+  ? registerPaint
+  : (function () {
+    return function __registerPaint__(name, paintClass) {
+      if (!myRegisteredPaint__store__.hasOwnProperty(name)) {
+        myRegisteredPaint__store__[name] = paintClass;
+      }
+    }        
+  })();
+
+function fetchImage(htmlElement, clientWidth, clientHeight) {
+  return new Promise(function(resolve, reject) {
+    if (typeof htmlElement === 'string') {
+      htmlElement = htmlElement.replace(/[\s\"\']+/g, '');
+      htmlElement = htmlElement.replace(/^url\(/, '');
+      htmlElement = htmlElement.replace(/\)$/, '');
+      const img = new Image();
+      img.onload = function() { resolve(img); };
+      img.onerror = function(err) { reject(err);};
+      img.src = htmlElement;
+    }
+    else if (typeof htmlElement !== 'object') ;
+    else if (htmlElement instanceof HTMLImageElement) {
+      if (htmlElement.complete) {
+        resolve(htmlElement);
+      }
+      else {
+        htmlElement.onload = function() { resolve(htmlElement); };
+        htmlElement.onerror = function(err) { reject(err); };
+      }
+    }
+    else if (htmlElement instanceof Promise) {
+      htmlElement
+        .then(function(imageElement) { 
+          if (imageElement instanceof HTMLImageElement)
+            resolve(imageElement); 
+          else
+            reject('ERR: fetchImage: Promise of first argument must resolve in HTMLImageElement!');
+        })
+        .catch(function(err) { reject(err); });
+    }
+    else if (htmlElement instanceof SVGSVGElement) {
+      if ("foreignObject" == htmlElement.firstElementChild.nodeName) {
+        let width = htmlElement.clientWidth;
+        let height = htmlElement.clientHeight;
+        
+        width = htmlElement.firstElementChild.firstElementChild.clientWidth;
+        height = htmlElement.firstElementChild.firstElementChild.clientHeight;
+        // set the svg element size to match our canvas size.
+        htmlElement.setAttribute('width',  width);
+        htmlElement.setAttribute('height', height);
+        // now copy a string of the complete element and its children
+        const svg = htmlElement.outerHTML;
+
+        const blob = new Blob([svg], {type: 'image/svg+xml'});
+        const url = window.URL.createObjectURL(blob);
+        
+        const img = new Image();
+        img.onload = function() {
+          window.URL.revokeObjectURL(url);
+          resolve(img);
+        };
+        img.onerror = function(err) {
+          window.URL.revokeObjectURL(url);
+          reject(err);
+        };
+        // trigger render of object url.
+        img.src = url;
+  
+      }          
+    }
+    else if (htmlElement instanceof HTMLElement) {
+      let width = htmlElement.clientWidth;
+      let height = htmlElement.clientHeight;
+
+      width = clientWidth ? clientWidth : width;
+      height = clientHeight ? clientHeight : height;
+
+      width = width === 0 ? 300 : width;
+      height = height === 0 ? 200 : height;
+
+      const svg = ('<svg xmlns="http://www.w3.org/2000/svg"' +
+          ' width="' + width + '"' +
+          ' height="' + height + '">' +
+        '<foreignObject width="100%" height="100%">' + 
+          htmlElement.outerHTML + 
+        '</foreignObject>' +
+        '</svg>');
+      
+      const blob = new Blob([svg], {type: 'image/svg+xml'});
+      const url = window.URL.createObjectURL(blob);
+      
+      const img = new Image();
+      img.onload = function() {
+        window.URL.revokeObjectURL(url);
+        resolve(img);
+      };
+      img.onerror = function(err) {
+        window.URL.revokeObjectURL(url);
+        reject(err);
+      };
+      // trigger render of object url.
+      img.src = url;
+    }  
+    else {
+      reject('ERR: fetchImage: first argument MUST be of type url, HTMLElement or Promise!');
+      return;
+    }
+  })
+}
+
+//#region basic svg object
+//#endregion
+
 //#region vec2d basic shapes
 
 class shape2f {
@@ -1518,7 +1655,10 @@ class segm2f {
       : true;
   }
   gAbs() { return this.abs; }
-  isValidPrecursor(segment = segm2f) { return ((segment instanceof segm2f) && !(segment instanceof segm2f_Z)); }
+  isValidPrecursor(segment) {
+    return (segment === undefined || segment === null)
+      || ((segment instanceof segm2f) && !(segment instanceof segm2f_Z));
+  }
 }
 
 class segm2f_M extends segm2f {
@@ -1591,10 +1731,9 @@ class segm2f_t extends segm2f {
       ? p1
       : new vec2f(+p1, +y);
   }
-  isValidPrecursor(segment = seg2f) {
-    if (segment instanceof segm2f_t) return true;
-    if (segment instanceof segm2f_q) return true;
-    return false;
+  hasValidPrecursor(segment) {
+    return (segment instanceof segm2f_t)
+      || (segment instanceof segm2f_q);
   }
 }
 
@@ -1610,10 +1749,9 @@ class segm2f_s extends segm2f {
     super(abs);
     // TODO
   }
-  isValidPrecursor(segment = seg2f) {
-    if (segment instanceof segm2f_s) return true;
-    if (segment instanceof segm2f_c) return true;
-    return false;
+  hasValidPrecursor(segment) {
+    return (segment instanceof segm2f_s)
+      || (segment instanceof segm2f_c);
   }
 
 }
@@ -1621,11 +1759,14 @@ class segm2f_s extends segm2f {
 class segm2f_Z extends segm2f {
   constructor() {
     super(true);
-  }  
+  }
+  hasValidPrecursor(segment) {
+    return !(segment instanceof segm2f_Z);
+  }
 }
 //#endregion
 
-//#region path2f
+//#region svg path object path2f
 class path2f extends shape2f {
   constructor(list = []) {
     this.list = list;
@@ -1635,28 +1776,39 @@ class path2f extends shape2f {
     const len = list.length;
     return (len > 0 && (list[len - 1] instanceof segm2f_Z));
   }
+  add(segment) {
+    const list = this.list;
+    const len = list.length;
+    if (segment.hasValidPrecursor(len > 0 ? list[len - 1] : null)) {
+      list[len] = segment;
+      return true;
+    }
+    return false;
+  }
   move(abs, x, y) {
     const segm = new segm2f_M(abs, x, y);
-    this.list[this.list.length] = segm;
+    return add(segm);
   }
   vertical(abs, y) {
     const segm = new segm2f_v(abs, y);
-    this.list[this.list.length] = segm;
+    return add(segm);
   }
   horizontal(abs, x) {
     const segm = new segm2f_h(abs, x);
-    this.list[this.list.length] = segm;
+    return add(segm);
   }
   line(abs, x, y) {
     const segm = new segm2f_l(abs, x, y);
-    this.list[this.list.length] = segm;
+    return add(segm);
   }
   close() {
     const segm = new seqm2f_Z();
-    this.list[this.list.length] = segm;
+    return add(segm);
   }
 
 }
 //#endregion
 
-export { circle2f, circle2f_POINTS, def_vec2f, def_vec2i, def_vec3f, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_sqrtFive, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, mathf_EPSILON, mathf_PI, mathf_abs, mathf_asin, mathf_atan2$1 as mathf_atan2, mathf_ciel, mathf_cos, mathf_floor$1 as mathf_floor, mathf_max$1 as mathf_max, mathf_min$1 as mathf_min, mathf_pow, mathf_random, mathf_round$1 as mathf_round, mathf_sin, mathf_sqrt, path2f, point2f, point2f_POINTS, rectangle2f, rectangle2f_POINTS, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, shape2f, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, vec2f, vec2f_about, vec2f_add, vec2f_addms, vec2f_adds, vec2f_angle, vec2f_ceil, vec2f_cross, vec2f_cross3, vec2f_dist, vec2f_dist2, vec2f_div, vec2f_divs, vec2f_dot, vec2f_eq, vec2f_eqs, vec2f_eqstrict, vec2f_floor, vec2f_iabout, vec2f_iadd, vec2f_iaddms, vec2f_iadds, vec2f_iceil, vec2f_idiv, vec2f_idivs$1 as vec2f_idivs, vec2f_ifloor, vec2f_iinv, vec2f_imax, vec2f_imin, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_inv, vec2f_iperp, vec2f_irot90$1 as vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_iround, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_lerp, vec2f_mag, vec2f_mag2, vec2f_max, vec2f_min, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_round, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit };
+const workletState = Object.freeze({ init:0, loading:1, preparing:2, running:3, exiting:4, ended:5 });
+
+export { circle2f, circle2f_POINTS, copyAttributes, def_vec2f, def_vec2i, def_vec3f, fetchImage, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_gcd, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_sqrtFive, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_clampu_u8a, int_clampu_u8b, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, mathf_EPSILON, mathf_PI, mathf_abs, mathf_asin, mathf_atan2$1 as mathf_atan2, mathf_ciel, mathf_cos, mathf_floor$1 as mathf_floor, mathf_max$1 as mathf_max, mathf_min$1 as mathf_min, mathf_pow, mathf_random, mathf_round$1 as mathf_round, mathf_sin, mathf_sqrt, mathi_max, mathi_min, mathi_round, mathi_sqrt, myRegisterPaint, path2f, point2f, point2f_POINTS, rectangle2f, rectangle2f_POINTS, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, shape2f, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, vec2f, vec2f_about, vec2f_add, vec2f_addms, vec2f_adds, vec2f_angle, vec2f_ceil, vec2f_cross, vec2f_cross3, vec2f_dist, vec2f_dist2, vec2f_div, vec2f_divs, vec2f_dot, vec2f_eq, vec2f_eqs, vec2f_eqstrict, vec2f_floor, vec2f_iabout, vec2f_iadd, vec2f_iaddms, vec2f_iadds, vec2f_iceil, vec2f_idiv, vec2f_idivs$1 as vec2f_idivs, vec2f_ifloor, vec2f_iinv, vec2f_imax, vec2f_imin, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_inv, vec2f_iperp, vec2f_irot90$1 as vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_iround, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_lerp, vec2f_mag, vec2f_mag2, vec2f_max, vec2f_min, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_round, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit, workletState };
