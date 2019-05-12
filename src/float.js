@@ -63,24 +63,27 @@ export function float_fib(n = 0.0) {
 }
 
 // https://gist.github.com/geraldyeo/988116export 
-export const float_sqrtFive = +mathf_sqrt(5);
-export function float_fib2(n = 0.0) {
-  n = +n;
-  const fh = +(1.0 / +float_sqrtFive * +mathf_pow(+(+(1.0 + float_sqrtFive ) / 2.0), +n));
-  const sh = +(1.0 / +float_sqrtFive * +mathf_pow(+(+(1.0 - float_sqrtFive ) / 2.0), +n));
-  return +mathf_round(fh - sh);
+export const mathf_SQRTFIVE = +mathf_sqrt(5);
+export function float_fib2(value = 0.0) {
+  value = +value;
+  const fh = +(1.0 / +mathf_SQRTFIVE * +mathf_pow(+(+(1.0 + mathf_SQRTFIVE ) / 2.0), +value));
+  const sh = +(1.0 / +mathf_SQRTFIVE * +mathf_pow(+(+(1.0 - mathf_SQRTFIVE ) / 2.0), +value));
+  return +mathf_round(+(fh - sh));
 }
 
 export function float_norm(value = 0.0, min = 0.0, max = 0.0) {
-  return +(+(+value - +min) / +(+max - +min));
+  value = +value; min = +min; max = +max;
+  return +((value - min) / (max - min));
 }
 
 export function float_lerp(norm = 0.0, min = 0.0, max = 0.0) {
-  return +(+(+max - +min) * +(+norm + +min));
+  norm = +norm; min = +min; max = +max;
+  return +((max - min) * (norm + min));
 }
 
 export function float_map(value = 0.0, smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
-  return +float_lerp(+float_norm(+value, +smin, +smax), +dmin, +dmax);
+  value = +value; smin = +smin; smax = +smax; dmin = +dmin; dmax = +dmax;
+  return +float_lerp(+float_norm(value, smin, smax), dmin, dmax);
 }
 
 /**
