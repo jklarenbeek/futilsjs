@@ -1,5 +1,300 @@
+const PRIMITIVES = ['boolean', 'integer', 'number', 'string'];
+
+function isPureObject(obj) {
+  return (obj !== undefined
+    && obj !== null
+    && obj.constructor !== Array
+    && typeof obj === 'object');
+}
+
+function sanitizePrimitiveValue(value, nullable) {
+  if (nullable) {
+    if (!value) return null;
+    if (!PRIMITIVES.includes(typeof value)) return null;
+    return value;
+  }
+  else {
+    if (!value) return undefined;
+    if (!PRIMITIVES.includes(typeof value)) return undefined;
+    return value;
+  }
+}
+
+function checkIfValueDisabled(value, nullable, disabled) {
+  if (disabled) return true;
+  if (typeof value === 'undefined') return true;
+
+  if (nullable && value === null) return false;
+  return !PRIMITIVES.includes(typeof value);
+}
+
+function getFirstObjectItem(items) {
+  for (const item in items) {
+    if (!items.hasOwnProperty(item)) continue;
+    return item;
+  }
+  return undefined;
+}
+
+function recursiveDeepCopy(o) {
+  if (typeof o !== 'object') {
+    return o;
+  }
+  if (!o) {
+    return o;
+  }
+
+  if (o instanceof Array) {
+    const newO = [];
+    for (let i = 0; i < o.length; i += 1) {
+      newO[i] = recursiveDeepCopy(o[i]);
+    }
+    return newO;
+  }
+  else {
+    const newO = {};
+    const keys = Reflect.ownKeys(o);
+    for (const i in keys) {
+      newO[i] = recursiveDeepCopy(o[i]);
+    }
+    return newO;
+  }
+}
+
+function mergeObjects(target) {
+  const ln = arguments.length;
+  const mergeFn = mergeObjects;
+
+  let i = 1;
+  for (; i < ln; i++) {
+    const object = arguments[i];
+    for (const key in object) {
+      if (object.hasOwnProperty(key)) {
+        const value = object[key];
+        if (value && value.constructor === Object) {
+          const sourceKey = target[key];
+          mergeFn(sourceKey, value);
+        }
+        else {
+          target[key] = value;
+        }
+      }
+    }
+  }
+  return target;
+}
+
+// e3Merge from https://jsperf.com/merge-two-arrays-keeping-only-unique-values/22
+function mergeArrays(a, b) {
+  const hash = {};
+  let i = (a = a.slice(0)).length;
+
+  while (i--) {
+    hash[a[i]] = 1;
+  }
+
+  for (i = 0; i < b.length; i++) {
+    const e = b[i];
+    // eslint-disable-next-line no-unused-expressions
+    hash[e] || a.push(e);
+  }
+
+  return a;
+}
+
+//#region
+/* -----------------------------------------------------------------------------------------
+    deepEquals( a, b [, enforce_properties_order, cyclic] )
+    https://stackoverflow.com/a/6713782/4598221
+
+    Returns true if a and b are deeply equal, false otherwise.
+
+    Parameters:
+      - a (Any type): value to compare to b
+      - b (Any type): value compared to a
+
+    Optional Parameters:
+      - enforce_properties_order (Boolean): true to check if Object properties are provided
+        in the same order between a and b
+
+      - cyclic (Boolean): true to check for cycles in cyclic objects
+
+    Implementation:
+      'a' is considered equal to 'b' if all scalar values in a and b are strictly equal as
+      compared with operator '===' except for these two special cases:
+        - 0 === -0 but are not equal.
+        - NaN is not === to itself but is equal.
+
+      RegExp objects are considered equal if they have the same lastIndex, i.e. both regular
+      expressions have matched the same number of times.
+
+      Functions must be identical, so that they have the same closure context.
+
+      "undefined" is a valid value, including in Objects
+
+      106 automated tests.
+
+      Provide options for slower, less-common use cases:
+
+        - Unless enforce_properties_order is true, if 'a' and 'b' are non-Array Objects, the
+          order of occurence of their attributes is considered irrelevant:
+            { a: 1, b: 2 } is considered equal to { b: 2, a: 1 }
+
+        - Unless cyclic is true, Cyclic objects will throw:
+            RangeError: Maximum call stack size exceeded
+*/
+function deepEquals(a, b, enforce_properties_order, cyclic) {
+  /* -----------------------------------------------------------------------------------------
+    reference_equals( a, b )
+
+    Helper function to compare object references on cyclic objects or arrays.
+
+    Returns:
+      - null if a or b is not part of a cycle, adding them to object_references array
+      - true: same cycle found for a and b
+      - false: different cycle found for a and b
+
+    On the first call of a specific invocation of equal(), replaces self with inner function
+    holding object_references array object in closure context.
+
+    This allows to create a context only if and when an invocation of equal() compares
+    objects or arrays.
+  */
+  function reference_equals(a, b) {
+    const object_references = [];
+
+    function _reference_equals(a, b) {
+      let l = object_references.length;
+
+      while (l--) {
+        if (object_references[l--] === b) {
+          return object_references[l] === a;
+        }
+      }
+      object_references.push(a, b);
+      return null;
+    }
+
+    return _reference_equals(a, b);
+  }
+
+
+  function _equals(a, b) {
+    // They should have the same toString() signature
+    const s = toString.call(a);
+    if (s !== toString.call(b)) return false;
+
+    switch (s) {
+      default: // Boolean, Date, String
+        return a.valueOf() === b.valueOf();
+
+      case '[object Number]':
+        // Converts Number instances into primitive values
+        // This is required also for NaN test bellow
+        a = +a;
+        b = +b;
+
+        // return a ?         // a is Non-zero and Non-NaN
+        //     a === b
+        //   :                // a is 0, -0 or NaN
+        //     a === a ?      // a is 0 or -0
+        //     1/a === 1/b    // 1/0 !== 1/-0 because Infinity !== -Infinity
+        //   : b !== b;        // NaN, the only Number not equal to itself!
+        // ;
+
+        return a
+          ? a === b
+          // eslint-disable-next-line no-self-compare
+          : a === a
+            ? 1 / a === 1 / b
+            // eslint-disable-next-line no-self-compare
+            : b !== b;
+
+      case '[object RegExp]':
+        return a.source === b.source
+          && a.global === b.global
+          && a.ignoreCase === b.ignoreCase
+          && a.multiline === b.multiline
+          && a.lastIndex === b.lastIndex;
+
+      case '[object Function]':
+        return false; // functions should be strictly equal because of closure context
+
+      case '[object Array]': {
+        const r = reference_equals(a, b);
+        if ((cyclic && r) !== null) return r; // intentionally duplicated bellow for [object Object]
+
+        let l = a.length;
+        if (l !== b.length) return false;
+        // Both have as many elements
+
+        while (l--) {
+          const x = a[l];
+          const y = b[l];
+          if (x === y && x !== 0 || _equals(x, y)) continue;
+
+          return false;
+        }
+
+        return true;
+      }
+
+      case '[object Object]': {
+        const r = reference_equals(a, b);
+        if ((cyclic && r) !== null) return r; // intentionally duplicated from above for [object Array]
+
+        if (enforce_properties_order) {
+          const properties = [];
+
+          for (const p in a) {
+            if (a.hasOwnProperty(p)) {
+              properties.push(p);
+              const x = a[p];
+              const y = b[p];
+              if (x === y && x !== 0 || _equals(x, y)) continue;
+              return false;
+            }
+          }
+
+          // Check if 'b' has as the same properties as 'a' in the same order
+          let l = 0; // counter of own properties
+          for (const p in b) {
+            if (b.hasOwnProperty(p) && properties[l] !== p) return false;
+            l++;
+          }
+        }
+        else {
+          let l = 0;
+          for (const p in a) {
+            if (a.hasOwnProperty(p)) {
+              ++l;
+              const x = a[p];
+              const y = b[p];
+              if (x === y && x !== 0 || _equals(x, y)) continue;
+
+              return false;
+            }
+          }
+          // Check if 'b' has as not more own properties than 'a'
+          for (const p in b) {
+            if (b.hasOwnProperty(p) && --l < 0) return false;
+          }
+        }
+        return true;
+      }
+    }
+  }
+
+  return a === b // strick equality should be enough unless zero
+    && a !== 0 // because 0 === -0, requires test by _equals()
+    || _equals(a, b); // handles not strictly equal or zero values
+}
+
+//#endregion
+
 const mathi_sqrt = Math.sqrt;
 const mathi_round = Math.round;
+const mathi_floor = Math.floor;
 const mathi_min = Math.min;
 const mathi_max = Math.max;
 
@@ -9,6 +304,12 @@ const int_PI = (Math.PI * int_MULTIPLIER)|0;
 const int_PI2 = (int_PI * 2)|0;
 const int_PI_A = ((4 / Math.PI) * int_MULTIPLIER)|0;
 const int_PI_B = ((4 / (Math.PI * Math.PI)) * int_MULTIPLIER)|0;
+
+let random_seed = performance.now();
+function int_random() {
+  const x = Math.sin(random_seed++) * int_MULTIPLIER;
+  return x - Math.floor(x);
+}
 
 function int_sqrtEx(n = 0) {
   n = n|0;
@@ -76,7 +377,7 @@ function int_inRange(value = 0, min = 0, max = 0) {
 
 function int_intersectsRange(smin = 0, smax = 0, dmin = 0, dmax = 0) {
   smin = smin|0; smax = smax|0; dmin = dmin|0; dmax = dmax|0;
-  return ((mathi_max(smin, smax) >= mathi_min(dmin, dmax)) && 
+  return ((mathi_max(smin, smax) >= mathi_min(dmin, dmax)) &&
           (mathi_min(smin, smax) <= mathi_max(dmin, dmax)))|0;
 }
 
@@ -1552,6 +1853,125 @@ function fetchImage(htmlElement, clientWidth, clientHeight) {
   })
 }
 
+function collapseToString(source, matchRegEx) {
+  let r = '';
+  if (!source) {
+    return r;
+  }
+  else if (typeof source !== 'object') {
+    r = String(source).trim();
+
+    if (!matchRegEx) return r;
+    if (r === '') return r;
+
+    const m = r.match(matchRegEx);
+    if (!m) return '';
+    if (m.length !== 1) return '';
+    return r === m[0] && r;
+  }
+  else if (source.pop) {
+    const al = source.length;
+    let i = 0;
+    for (; i < al; ++i) {
+      const v = source[i];
+      if (v) {
+        r += collapseToString(v);
+        r += ' ';
+      }
+    }
+    return r.trim();
+  }
+  else {
+    for (const j in source) {
+      if (source.hasOwnProperty(j)) {
+        r += collapseToString(source[j]);
+        r += ' ';
+      }
+    }
+    return r.trim();
+  }
+}
+
+const matchClassName = /[a-zA-Z_][a-zA-Z0-9_-]*/g;
+function collapseCssClass(...source) {
+  if (!source) return '';
+  const cl = source.length;
+  if (cl === 0) return '';
+  let i = 0;
+  let r = '';
+  for (; i < cl; ++i) {
+    const a = source[i];
+    if (a) {
+      r += collapseToString(a, matchClassName);
+      r += ' ';
+    }
+  }
+  return r.trim();
+}
+
+const matchEmpty = [null, 0, -1, 0];
+function matchCssClass(node, name) {
+  if (!node || !name) return matchEmpty;
+
+  name = String(name);
+  const nl = name.length;
+  if (nl === 0) return matchEmpty;
+
+  const nodeClass = node.className;
+  const cl = nodeClass.length;
+  if (cl === 0) return matchEmpty;
+
+  let i = -1;
+  let n = 0;
+  let c = '';
+  for (i = nodeClass.indexOf(name); i < cl; i = nodeClass.indexOf(name, n)) {
+    if (i === -1) return matchEmpty;
+    n = i + nl;
+    if (n === cl) break;
+    c = nodeClass[n];
+    if (c === ' ' || c === '\t') break;
+    i = -1;
+  }
+
+  return (i === -1) ? matchEmpty : [nodeClass, cl, i, n];
+}
+
+function hasCssClass(node, name) {
+  return matchCssClass(node, name) === matchEmpty;
+}
+
+function addCssClass(node, name) {
+  const [nodeClass,, i] = matchCssClass(node, name);
+  if (i === -1) {
+    node.className = nodeClass.trim() + ' ' + name;
+    return true;
+  }
+  return false;
+}
+
+function removeCssClass(node, name) {
+  const [nodeClass, cl, i, n] = matchCssClass(node, name);
+  if (i === -1) return false;
+
+  const left = i > 0 ? nodeClass.slice(0, i).trim() : '';
+  const right = n < cl ? nodeClass.slice(n).trim() : '';
+  if (left === '') {
+    node.className = right;
+  }
+  else if (right === '') {
+    node.className = left;
+  }
+  else {
+    node.className = left + ' ' + right;
+  }
+  return true;
+}
+
+function toggleCssClass(node, name) {
+  if (!addCssClass(node, name)) return removeCssClass(node, name);
+  return true;
+}
+
 //#region basic svg object
 //#endregion
 
@@ -1814,4 +2234,636 @@ class path2f extends shape2f {
 
 const workletState = Object.freeze({ init:0, loading:1, preparing:2, running:3, exiting:4, ended:5 });
 
-export { circle2f, circle2f_POINTS, copyAttributes, def_vec2f, def_vec2i, def_vec3f, fetchImage, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_gcd, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_clampu_u8a, int_clampu_u8b, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, mathf_EPSILON, mathf_PI, mathf_SQRTFIVE, mathf_abs, mathf_asin, mathf_atan2$1 as mathf_atan2, mathf_ciel, mathf_cos, mathf_floor$1 as mathf_floor, mathf_max$1 as mathf_max, mathf_min$1 as mathf_min, mathf_pow, mathf_random, mathf_round$1 as mathf_round, mathf_sin, mathf_sqrt, mathi_max, mathi_min, mathi_round, mathi_sqrt, myRegisterPaint, path2f, point2f, point2f_POINTS, rectangle2f, rectangle2f_POINTS, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, shape2f, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, vec2f, vec2f_about, vec2f_add, vec2f_addms, vec2f_adds, vec2f_angle, vec2f_ceil, vec2f_cross, vec2f_cross3, vec2f_dist, vec2f_dist2, vec2f_div, vec2f_divs, vec2f_dot, vec2f_eq, vec2f_eqs, vec2f_eqstrict, vec2f_floor, vec2f_iabout, vec2f_iadd, vec2f_iaddms, vec2f_iadds, vec2f_iceil, vec2f_idiv, vec2f_idivs$1 as vec2f_idivs, vec2f_ifloor, vec2f_iinv, vec2f_imax, vec2f_imin, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_inv, vec2f_iperp, vec2f_irot90$1 as vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_iround, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_lerp, vec2f_mag, vec2f_mag2, vec2f_max, vec2f_min, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_round, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit, workletState };
+class vnode {
+  constructor(name, attributes, children) {
+    this.key = attributes.key;
+    this.attributes = attributes;
+    this.nodeName = name;
+    this.children = children;
+  }
+}
+
+/* eslint-disable func-names */
+/* eslint-disable curly */
+/* eslint-disable nonblock-statement-body-position */
+/* eslint-disable padded-blocks */
+/* eslint-disable prefer-arrow-callback */
+/* eslint-disable no-use-before-define */
+function h(name, attributes = {}, ...rest) {
+  // the jsx transpiler sets null on the attributes parameter
+  // when no parameter is defined, instead of 'undefined'.
+  // therefor the default operator doesn't kick in,
+  attributes = attributes || {}; //  and do we need this kind of stuff.
+
+  const children = [];
+  let ic = 0;
+
+  const lenx = rest.length;
+  let itemx = null;
+  let ix = 0;
+
+
+  let leny = 0;
+  let itemy = null;
+  let iy = 0;
+
+  // fill the children array with the rest parameters
+  while (ix < lenx) {
+    itemx = rest[ix];
+    ix++;
+    if (itemx === undefined || itemx === null || itemx === false || itemx === true) continue;
+    else if (itemx.pop) {
+      // this is an array so fill the children array with the items of this one
+      // we do not go any deeper!
+      leny = itemx.length;
+      iy = 0;
+      while (iy < leny) {
+        itemy = itemx[iy];
+        iy++;
+        if (itemy === undefined || itemy === null || itemy === false || itemy === true) continue;
+        children[ic++] = itemy;
+      }
+    }
+    else {
+      children[ic++] = itemx;
+    }
+  }
+
+  return typeof name === 'function'
+    ? name(attributes, children)
+    : new vnode(name, attributes, children);
+}
+
+function _h(name, attributes, ...rest) {
+  const children = [];
+  let length = arguments.length;
+
+  while (rest.length) {
+    const node = rest.pop();
+    if (node && node.pop) {
+      for (length = node.length; length--;) {
+        rest.push(node[length]);
+      }
+    }
+    else if (node != null && node !== true && node !== false) {
+      children.push(node);
+    }
+  }
+
+  attributes = attributes || {};
+  return typeof name === 'function'
+    ? name(attributes, children)
+    : new vnode(name, attributes, children);
+}
+
+function clone(target, source) {
+  const out = {};
+
+  for (const t in target) {
+    if (target.hasOwnProperty(t)) out[t] = target[t];
+  }
+  for (const s in source) {
+    if (source.hasOwnProperty(s)) out[s] = source[s];
+  }
+  return out;
+}
+
+function app(state, actions, view, container) {
+  const map = [].map;
+  let rootElement = (container && container.children[0]) || null;
+  let _oldNode = rootElement && recycleElement(rootElement);
+  const lifecycle = [];
+  let skipRender = false;
+  let isRecycling = true;
+  let globalState = clone(state);
+  const wiredActions = wireStateToActions([], globalState, clone(actions));
+
+  scheduleRender();
+
+  return wiredActions;
+
+  function recycleElement(element) {
+    return {
+      nodeName: element.nodeName.toLowerCase(),
+      attributes: {},
+      children: map.call(element.childNodes, function (element) {
+        return element.nodeType === 3 // Node.TEXT_NODE
+          ? element.nodeValue
+          : recycleElement(element);
+      }),
+    };
+  }
+
+  function resolveNode(node) {
+    if (typeof node === 'function')
+      return resolveNode(node(globalState, wiredActions));
+    else
+      return node || '';
+    // : node != null ? node : '';
+  }
+
+  function render() {
+    skipRender = !skipRender;
+
+    const node = resolveNode(view);
+
+    if (container && !skipRender) {
+      rootElement = patch(container, rootElement, _oldNode, node);
+      _oldNode = node;
+    }
+
+    isRecycling = false;
+
+    while (lifecycle.length) lifecycle.pop()();
+  }
+
+  function scheduleRender() {
+    if (!skipRender) {
+      skipRender = true;
+      setTimeout(render);
+    }
+  }
+
+  function set(path, value, source) {
+    const target = {};
+    if (path.length) {
+      target[path[0]] = path.length > 1
+        ? set(path.slice(1), value, source[path[0]])
+        : value;
+      return clone(source, target);
+    }
+    return value;
+  }
+
+  function get(path, source) {
+    let i = 0;
+    const l = path.length;
+    while (i < l) {
+      source = source[path[i++]];
+    }
+    return source;
+  }
+
+  function wireStateToActions(path, state, actions) {
+
+    function createActionProxy(key, action) {
+      actions[key] = function actionProxy(data) {
+        const slice = get(path, globalState);
+
+        let result = action(data);
+        if (typeof result === 'function') {
+          result = result(slice, actions);
+        }
+
+        if (result && result !== slice && !result.then) {
+          globalState = set(path, clone(slice, result), globalState);
+          scheduleRender(globalState);
+        }
+
+        return result;
+      };
+    }
+
+    for (const key in actions) {
+      if (typeof actions[key] === 'function') {
+        createActionProxy(key, actions[key]);
+      }
+      else {
+        // wire slice/namespace of state to actions
+        wireStateToActions(
+          path.concat(key),
+          (state[key] = clone(state[key])),
+          (actions[key] = clone(actions[key])));
+      }
+    }
+
+    return actions;
+  }
+
+  function getKey(node) {
+    return node ? node.key : null;
+  }
+
+  function eventListener(event) {
+    return event.currentTarget.events[event.type](event);
+  }
+
+  function updateAttribute(element, name, value, oldValue, isSvg) {
+    if (name === 'style') {
+      if (typeof value === 'string') {
+        element.style.cssText = value;
+      }
+      else {
+        if (typeof oldValue === 'string') {
+          oldValue = element.style.cssText = '';
+        }
+
+        for (const i in clone(oldValue, value)) {
+          const style = value == null || value[i] == null ? '' : value[i];
+          if (i[0] === '-') {
+            element.style.setProperty(i, style);
+          }
+          else {
+            element.style[i] = style;
+          }
+        }
+      }
+    }
+    else if (name !== 'key') {
+      if (name.indexOf('on') === 0) {
+        name = name.slice(2);
+
+        if (element.events) {
+          if (!oldValue) oldValue = element.events[name];
+        }
+        else {
+          element.events = {};
+        }
+
+        element.events[name] = value;
+
+        if (value) {
+          if (!oldValue) {
+            element.addEventListener(name, eventListener);
+          }
+        }
+        else {
+          element.removeEventListener(name, eventListener);
+        }
+      }
+      else if (value != null && value !== false) {
+        if (name === 'class') {
+          const cls = collapseCssClass(value);
+          if (cls !== '')
+            element.className = collapseCssClass(value);
+          else
+            element.removeAttribute('class');
+        }
+        else if (name in element
+          && name !== 'list'
+          && name !== 'type'
+          && name !== 'draggable'
+          && name !== 'spellcheck'
+          && name !== 'translate'
+          && !isSvg) {
+          element[name] = value == null ? '' : value;
+        }
+        else {
+          element.setAttribute(name, value === true ? '' : value);
+        }
+      }
+      else {
+        element.removeAttribute(name);
+      }
+    }
+  }
+
+  function createElement(node, isSvg) {
+    const element = typeof node === 'string' || typeof node === 'number'
+      ? document.createTextNode(node)
+      : (isSvg || node.nodeName === 'svg')
+        ? document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          node.nodeName)
+        : document.createElement(node.nodeName);
+
+    const attributes = node.attributes;
+    if (attributes) {
+      if (attributes.oncreate) {
+        lifecycle.push(function () {
+          attributes.oncreate(element);
+        });
+      }
+
+      for (let i = 0; i < node.children.length; i++) {
+        const child = node.children[i] = resolveNode(node.children[i]);
+        element.appendChild(createElement(child, isSvg));
+      }
+
+      for (const name in attributes) {
+        const value = attributes[name];
+        updateAttribute(element, name, value, null, isSvg);
+      }
+    }
+
+    return element;
+  }
+
+  function updateElement(element, oldAttributes, attributes, isSvg) {
+    for (const name in clone(oldAttributes, attributes)) {
+      // eslint-disable-next-line operator-linebreak
+      if (attributes[name] !==
+        (name === 'value' || name === 'checked'
+          ? element[name]
+          : oldAttributes[name])) {
+        updateAttribute(
+          element,
+          name,
+          attributes[name],
+          oldAttributes[name],
+          isSvg);
+      }
+    }
+
+    const cb = isRecycling ? attributes.oncreate : attributes.onupdate;
+    if (cb) {
+      lifecycle.push(function () {
+        cb(element, oldAttributes);
+      });
+    }
+  }
+
+  function removeChildren(element, node) {
+    const attributes = node.attributes;
+    if (attributes) {
+      for (let i = 0; i < node.children.length; i++) {
+        removeChildren(element.childNodes[i], node.children[i]);
+      }
+
+      if (attributes.ondestroy) {
+        attributes.ondestroy(element);
+      }
+    }
+    return element;
+  }
+
+  function removeElement(parent, element, node) {
+    function done() {
+      parent.removeChild(removeChildren(element, node));
+    }
+
+    const cb = node.attributes && node.attributes.onremove;
+    if (cb) {
+      cb(element, done);
+    }
+    else {
+      done();
+    }
+  }
+
+  function patch(parent, element, oldNode, node, isSvg) {
+    if (node !== oldNode) {
+      if (oldNode == null || oldNode.nodeName !== node.nodeName) {
+        const newElement = createElement(node, isSvg);
+        parent.insertBefore(newElement, element);
+
+        if (oldNode != null) {
+          removeElement(parent, element, oldNode);
+        }
+
+        element = newElement;
+      }
+      else if (oldNode.nodeName == null) {
+        element.nodeValue = node;
+      }
+      else {
+        updateElement(
+          element,
+          oldNode.attributes,
+          node.attributes,
+          (isSvg = isSvg || node.nodeName === 'svg'));
+
+        const oldKeyed = {};
+        const newKeyed = {};
+        const oldElements = [];
+        const oldChildren = oldNode.children;
+        const children = node.children;
+
+        for (let i = 0; i < oldChildren.length; i++) {
+          oldElements[i] = element.childNodes[i];
+
+          const oldKey = getKey(oldChildren[i]);
+          if (oldKey != null) {
+            oldKeyed[oldKey] = [oldElements[i], oldChildren[i]];
+          }
+        }
+
+        let i = 0;
+        let k = 0;
+        const l = children.length;
+        while (k < l) {
+          const oldKey = getKey(oldChildren[i]);
+          const newKey = getKey((children[k] = resolveNode(children[k])));
+
+          if (newKeyed[oldKey]) {
+            i++;
+            continue;
+          }
+
+          if (newKey == null || isRecycling) {
+            if (oldKey == null) {
+              patch(element, oldElements[i], oldChildren[i], children[k], isSvg);
+              k++;
+            }
+            i++;
+          }
+          else {
+            const keyedNode = oldKeyed[newKey] || [];
+
+            if (oldKey === newKey) {
+              patch(element, keyedNode[0], keyedNode[1], children[k], isSvg);
+              i++;
+            }
+            else if (keyedNode[0]) {
+              patch(
+                element,
+                element.insertBefore(keyedNode[0], oldElements[i]),
+                keyedNode[1],
+                children[k],
+                isSvg);
+            }
+            else {
+              patch(element, oldElements[i], null, children[k], isSvg);
+            }
+
+            newKeyed[newKey] = children[k];
+            k++;
+          }
+        }
+
+        while (i < oldChildren.length) {
+          if (getKey(oldChildren[i]) == null) {
+            removeElement(element, oldElements[i], oldChildren[i]);
+          }
+          i++;
+        }
+
+        for (const i in oldKeyed) {
+          if (!newKeyed[i]) {
+            removeElement(element, oldKeyed[i][0], oldKeyed[i][1]);
+          }
+        }
+      }
+    }
+    return element;
+  }
+}
+
+// #region html text elements
+const h1 = (attr, children) => h('h1', attr, children);
+const h2 = (attr, children) => h('h2', attr, children);
+const h3 = (attr, children) => h('h3', attr, children);
+const h4 = (attr, children) => h('h4', attr, children);
+const h5 = (attr, children) => h('h5', attr, children);
+const h6 = (attr, children) => h('h6', attr, children);
+const p = (attr, children) => h('p', attr, children);
+
+const i = (attr, children) => h('i', attr, children);
+const b = (attr, children) => h('b', attr, children);
+const u = (attr, children) => h('u', attr, children);
+const s = (attr, children) => h('s', attr, children);
+const q = (attr, children) => h('q', attr, children);
+const pre = (attr, children) => h('pre', attr, children);
+const sub = (attr, children) => h('sub', attr, children);
+const sup = (attr, children) => h('sup', attr, children);
+const wbr = (attr, children) => h('wbr', attr, children);
+const blockquote = (attr, children) => h('blockquote', attr, children);
+
+const bdi = (attr, children) => h('bdi', attr, children);
+const bdo = (attr, children) => h('bdo', attr, children);
+// #endregion
+
+// #region html semantic text elements
+const cite = (attr, children) => h('cite', attr, children);
+const abbr = (attr, children) => h('abbr', attr, children);
+const dfn = (attr, children) => h('dfn', attr, children);
+
+const del = (attr, children) => h('del', attr, children);
+const ins = (attr, children) => h('ins', attr, children);
+const mark = (attr, children) => h('mark', attr, children);
+
+const time = (attr, children) => h('time', attr, children);
+const data = (attr, children) => h('data', attr, children);
+// #endregion
+
+// #region html phrase elements
+const em = (attr, children) => h('em', attr, children);
+const code = (attr, children) => h('code', attr, children);
+const strong = (attr, children) => h('strong', attr, children);
+const kbd = (attr, children) => h('kbd', attr, children);
+const variable = (attr, children) => h('var', attr, children);
+// #endregion
+
+// #region html common elements (non-semantic)
+const div = (attr, children) => h('div', attr, children);
+const span = (attr, children) => h('span', attr, children);
+const hr = (attr, children) => h('hr', attr, children);
+// #endregion
+
+// #region html widget elements
+const progress = (attr, children) => h('progress', attr, children);
+const meter = (attr, children) => h('meter', attr, children);
+// #endregion
+
+// #region html semantic layout elements
+const main = (attr, children) => h('main', attr, children);
+const header = (attr, children) => h('header', attr, children);
+const nav = (attr, children) => h('nav', attr, children);
+const article = (attr, children) => h('article', attr, children);
+const section = (attr, children) => h('section', attr, children);
+const aside = (attr, children) => h('aside', attr, children);
+const footer = (attr, children) => h('footer', attr, children);
+
+const details = (attr, children) => h('details', attr, children);
+const summary = (attr, children) => h('summary', attr, children);
+
+const figure = (attr, children) => h('figure', attr, children);
+const figcaption = (attr, children) => h('figcaption', attr, children);
+// #endregion
+
+// #region table elements
+// note: sort of in order of sequence
+const table = (attr, children) => h('table', attr, children);
+const caption = (attr, children) => h('caption', attr, children);
+const colgroup = (attr, children) => h('colgroup', attr, children);
+const col = (attr, children) => h('col', attr, children);
+
+const thead = (attr, children) => h('thead', attr, children);
+const tbody = (attr, children) => h('tbody', attr, children);
+const tfooter = (attr, children) => h('tfooter', attr, children);
+
+const tr = (attr, children) => h('tr', attr, children);
+const th = (attr, children) => h('th', attr, children);
+const td = (attr, children) => h('td', attr, children);
+// #endregion
+
+// #region html list elements
+const ul = (attr, children) => h('ul', attr, children);
+const ol = (attr, children) => h('ol', attr, children);
+const li = (attr, children) => h('li', attr, children);
+
+const dl = (attr, children) => h('dl', attr, children);
+const dt = (attr, children) => h('dt', attr, children);
+const dd = (attr, children) => h('dd', attr, children);
+// #endregion
+
+// #region html multimedia elements
+const img = (attr, children) => h('img', attr, children);
+const map = (attr, children) => h('map', attr, children);
+const area = (attr, children) => h('area', attr, children);
+
+const audio = (attr, children) => h('audio', attr, children);
+const picture = (attr, children) => h('picture', attr, children);
+const video = (attr, children) => h('video', attr, children);
+
+const source = (attr, children) => h('source', attr, children);
+const track = (attr, children) => h('track', attr, children);
+
+const object = (attr, children) => h('object', attr, children);
+const param = (attr, children) => h('param', attr, children);
+
+const embed = (attr, children) => h('embed', attr, children);
+// #endregion
+
+// #region simple html form elements
+const fieldset = (attr, children) => h('fieldset', attr, children);
+const legend = (attr, children) => h('legend', attr, children);
+
+const label = (attr, children) => h('label', attr, children);
+const output = (attr, children) => h('output', attr, children);
+
+const input = (attr, children) => h('input', attr, children);
+const button = (attr, children) => h('button', attr, children);
+
+const datalist = (attr, children) => h('datalist', attr, children);
+
+const select = (attr, children) => h('select', attr, children);
+const option = (attr, children) => h('option', attr, children);
+const optgroup = (attr, children) => h('optgroup', attr, children);
+// #endregion
+
+// #region html input type elements
+const defaultInputType = 'text';
+const inputTypes = {
+  hidden: (attr, children) => h('input', { ...attr, type: 'hidden' }, children),
+  submit: (attr, children) => h('input', { ...attr, type: 'submit' }, children),
+  image: (attr, children) => h('input', { ...attr, type: 'image' }, children),
+
+  text: (attr, children) => h('input', { ...attr, type: 'text' }, children),
+  number: (attr, children) => h('input', { ...attr, type: 'number' }, children),
+  password: (attr, children) => h('input', { ...attr, type: 'password' }, children),
+
+  checkbox: (attr, children) => h('input', { ...attr, type: 'checkbox' }, children),
+  radio: (attr, children) => h('input', { ...attr, type: 'radio' }, children),
+
+
+  file: (attr, children) => h('input', { ...attr, type: 'file' }, children),
+
+  email: (attr, children) => h('input', { ...attr, type: 'email' }, children),
+  tel: (attr, children) => h('input', { ...attr, type: 'tel' }, children),
+  url: (attr, children) => h('input', { ...attr, type: 'url' }, children),
+
+  range: (attr, children) => h('input', { ...attr, type: 'range' }, children),
+
+  color: (attr, children) => h('input', { ...attr, type: 'color' }, children),
+
+  date: (attr, children) => h('input', { ...attr, type: 'date' }, children),
+  'datetime-local': (attr, children) => h('input', { ...attr, type: 'datetime-local' }, children),
+  month: (attr, children) => h('input', { ...attr, type: 'month' }, children),
+  week: (attr, children) => h('input', { ...attr, type: 'week' }, children),
+  time: (attr, children) => h('input', { ...attr, type: 'time' }, children),
+};
+
+// #endregion
+
+export { PRIMITIVES, _h, abbr, addCssClass, app, area, article, aside, audio, b, bdi, bdo, blockquote, button, caption, checkIfValueDisabled, circle2f, circle2f_POINTS, cite, clone, code, col, colgroup, collapseCssClass, collapseToString, copyAttributes, data, datalist, dd, deepEquals, def_vec2f, def_vec2i, def_vec3f, defaultInputType, del, details, dfn, div, dl, dt, em, embed, fetchImage, fieldset, figcaption, figure, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_gcd, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, footer, getFirstObjectItem, h, h1, h2, h3, h4, h5, h6, hasCssClass, header, hr, i, img, input, inputTypes, ins, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_clampu_u8a, int_clampu_u8b, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_random, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, isPureObject, kbd, label, legend, li, main, map, mark, mathf_EPSILON, mathf_PI, mathf_SQRTFIVE, mathf_abs, mathf_asin, mathf_atan2$1 as mathf_atan2, mathf_ciel, mathf_cos, mathf_floor$1 as mathf_floor, mathf_max$1 as mathf_max, mathf_min$1 as mathf_min, mathf_pow, mathf_random, mathf_round$1 as mathf_round, mathf_sin, mathf_sqrt, mathi_floor, mathi_max, mathi_min, mathi_round, mathi_sqrt, mergeArrays, mergeObjects, meter, myRegisterPaint, nav, object, ol, optgroup, option, output, p, param, path2f, picture, point2f, point2f_POINTS, pre, progress, q, rectangle2f, rectangle2f_POINTS, recursiveDeepCopy, removeCssClass, s, sanitizePrimitiveValue, section, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, select, shape2f, source, span, strong, sub, summary, sup, table, tbody, td, tfooter, th, thead, time, toggleCssClass, tr, track, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, u, ul, variable, vec2f, vec2f_about, vec2f_add, vec2f_addms, vec2f_adds, vec2f_angle, vec2f_ceil, vec2f_cross, vec2f_cross3, vec2f_dist, vec2f_dist2, vec2f_div, vec2f_divs, vec2f_dot, vec2f_eq, vec2f_eqs, vec2f_eqstrict, vec2f_floor, vec2f_iabout, vec2f_iadd, vec2f_iaddms, vec2f_iadds, vec2f_iceil, vec2f_idiv, vec2f_idivs$1 as vec2f_idivs, vec2f_ifloor, vec2f_iinv, vec2f_imax, vec2f_imin, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_inv, vec2f_iperp, vec2f_irot90$1 as vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_iround, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_lerp, vec2f_mag, vec2f_mag2, vec2f_max, vec2f_min, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_round, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit, video, vnode, wbr, workletState };
