@@ -1,5 +1,6 @@
 export const mathi_sqrt = Math.sqrt;
 export const mathi_round = Math.round;
+export const mathi_floor = Math.floor;
 export const mathi_min = Math.min;
 export const mathi_max = Math.max;
 
@@ -9,6 +10,12 @@ export const int_PI = (Math.PI * int_MULTIPLIER)|0;
 export const int_PI2 = (int_PI * 2)|0;
 export const int_PI_A = ((4 / Math.PI) * int_MULTIPLIER)|0;
 export const int_PI_B = ((4 / (Math.PI * Math.PI)) * int_MULTIPLIER)|0;
+
+let random_seed = performance.now();
+export function int_random() {
+  const x = Math.sin(random_seed++) * int_MULTIPLIER;
+  return x - Math.floor(x);
+}
 
 export function int_sqrtEx(n = 0) {
   n = n|0;
@@ -76,7 +83,7 @@ export function int_inRange(value = 0, min = 0, max = 0) {
 
 export function int_intersectsRange(smin = 0, smax = 0, dmin = 0, dmax = 0) {
   smin = smin|0; smax = smax|0; dmin = dmin|0; dmax = dmax|0;
-  return ((mathi_max(smin, smax) >= mathi_min(dmin, dmax)) && 
+  return ((mathi_max(smin, smax) >= mathi_min(dmin, dmax)) &&
           (mathi_min(smin, smax) <= mathi_max(dmin, dmax)))|0;
 }
 
