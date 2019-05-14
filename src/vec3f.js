@@ -2,8 +2,6 @@ import { vec2f } from './vec2f';
 import { mathf_sqrt } from './float';
 
 
-export const def_vec3f = Object.freeze(new vec3f());
-
 export class vec3f {
   constructor(x = 0.0, y = 0.0, z = 0.0) {
     if (x instanceof vec2f) {
@@ -26,6 +24,8 @@ export class vec3f {
     return Object.create(this);
   }
 }
+
+export const def_vec3f = Object.freeze(Object.seal(new vec3f()));
 
 //#region flat vec3f pure primitive operators
 

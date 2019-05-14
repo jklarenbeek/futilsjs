@@ -1,14 +1,14 @@
 import { int_MULTIPLIER } from './int';
 import { mathf_sqrt, mathf_asin, mathf_atan2 } from './float';
 
-export const def_vec2i = new vec2i();
-
 export class vec2i {
   constructor(x = 0, y = 0) {
     this.x = x|0;
     this.y = y|0;
   }
 }
+
+export const def_vec2i = Object.freeze(Object.seal(new vec2i()));
 
 //#region flat vec2i pure primitive operators
 

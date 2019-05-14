@@ -16,8 +16,6 @@ import {
   mathf_EPSILON,
 } from './float';
 
-export const def_vec2f = Object.freeze(vec2f_new());
-
 export class vec2f {
   constructor(x = 0.0, y = 0.0) {
     this.x = +x;
@@ -32,6 +30,8 @@ export class vec2f {
     return +this.y;
   }
 }
+
+export const def_vec2f = Object.freeze(Object.seal(vec2f_new()));
 
 //#region class pure primitive vector operators
 

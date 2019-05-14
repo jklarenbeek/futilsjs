@@ -754,14 +754,14 @@ function float_phi(y = 0.0, length = 0.0) {
 
 //#endregion
 
-const def_vec2i = new vec2i();
-
 class vec2i {
   constructor(x = 0, y = 0) {
     this.x = x|0;
     this.y = y|0;
   }
 }
+
+const def_vec2i = Object.freeze(Object.seal(new vec2i()));
 
 //#region flat vec2i pure primitive operators
 
@@ -1136,8 +1136,6 @@ export function fastSin3(a) {
 
 /* eslint-disable one-var-declaration-per-line */
 
-const def_vec2f = Object.freeze(vec2f_new());
-
 class vec2f {
   constructor(x = 0.0, y = 0.0) {
     this.x = +x;
@@ -1152,6 +1150,8 @@ class vec2f {
     return +this.y;
   }
 }
+
+const def_vec2f = Object.freeze(Object.seal(vec2f_new()));
 
 //#region class pure primitive vector operators
 
@@ -1732,8 +1732,6 @@ function vec2f_iabout(a = def_vec2f, b = def_vec2f, radians = 0.0) {
 
 function vec2f_new(x = 0.0, y = 0.0) { return new vec2f(+x, +y); }
 
-const def_vec3f = Object.freeze(new vec3f());
-
 class vec3f {
   constructor(x = 0.0, y = 0.0, z = 0.0) {
     if (x instanceof vec2f) {
@@ -1756,6 +1754,8 @@ class vec3f {
     return Object.create(this);
   }
 }
+
+const def_vec3f = Object.freeze(Object.seal(new vec3f()));
 
 //#region flat vec3f pure primitive operators
 
