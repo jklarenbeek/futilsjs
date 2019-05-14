@@ -1,3 +1,4 @@
+export const mathi_abs = Math.abs;
 export const mathi_sqrt = Math.sqrt;
 export const mathi_round = Math.round;
 export const mathi_floor = Math.floor;
