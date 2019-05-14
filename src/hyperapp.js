@@ -1,5 +1,3 @@
-
-
 // Fork of hyperapp version 1 under MIT License
 // at https://github.com/JorgeBucaran/hyperapp
 // Copyright © Jorge Bucaran < https://jorgebucaran.com>
@@ -25,7 +23,6 @@
 // DEALINGS IN THE SOFTWARE.
 //
 
-/* eslint-disable no-unused-vars */
 import { collapseCssClass } from './css';
 
 export class vnode {
@@ -37,12 +34,6 @@ export class vnode {
   }
 }
 
-/* eslint-disable func-names */
-/* eslint-disable curly */
-/* eslint-disable nonblock-statement-body-position */
-/* eslint-disable padded-blocks */
-/* eslint-disable prefer-arrow-callback */
-/* eslint-disable no-use-before-define */
 export function h(name, attributes = {}, ...rest) {
   // the jsx transpiler sets null on the attributes parameter
   // when no parameter is defined, instead of 'undefined'.
@@ -66,7 +57,7 @@ export function h(name, attributes = {}, ...rest) {
     itemx = rest[ix];
     ix++;
     if (itemx === undefined || itemx === null || itemx === false || itemx === true) continue;
-    else if (itemx.pop) {
+    if (itemx.pop) {
       // this is an array so fill the children array with the items of this one
       // we do not go any deeper!
       leny = itemx.length;
@@ -140,10 +131,10 @@ export function app(state, actions, view, container) {
     return {
       nodeName: element.nodeName.toLowerCase(),
       attributes: {},
-      children: map.call(element.childNodes, function (element) {
-        return element.nodeType === 3 // Node.TEXT_NODE
-          ? element.nodeValue
-          : recycleElement(element);
+      children: map.call(element.childNodes, function hyperapp_recycleElement(el) {
+        return el.nodeType === 3 // Node.TEXT_NODE
+          ? el.nodeValue
+          : recycleElement(el);
       }),
     };
   }
@@ -198,15 +189,14 @@ export function app(state, actions, view, container) {
     return source;
   }
 
-  function wireStateToActions(path, state, actions) {
-
+  function wireStateToActions(path, myState, myActions) {
     function createActionProxy(key, action) {
-      actions[key] = function actionProxy(data) {
+      myActions[key] = function actionProxy(data) {
         const slice = get(path, globalState);
 
         let result = action(data);
         if (typeof result === 'function') {
-          result = result(slice, actions);
+          result = result(slice, myActions);
         }
 
         if (result && result !== slice && !result.then) {
@@ -218,20 +208,21 @@ export function app(state, actions, view, container) {
       };
     }
 
-    for (const key in actions) {
-      if (typeof actions[key] === 'function') {
-        createActionProxy(key, actions[key]);
+    for (const key in myActions) {
+      if (typeof myActions[key] === 'function') {
+        createActionProxy(key, myActions[key]);
       }
       else {
         // wire slice/namespace of state to actions
         wireStateToActions(
           path.concat(key),
-          (state[key] = clone(state[key])),
-          (actions[key] = clone(actions[key])));
+          (myState[key] = clone(myState[key])),
+          (myActions[key] = clone(myActions[key])),
+        );
       }
     }
 
-    return actions;
+    return myActions;
   }
 
   function getKey(node) {
@@ -251,14 +242,16 @@ export function app(state, actions, view, container) {
         if (typeof oldValue === 'string') {
           oldValue = element.style.cssText = '';
         }
-
-        for (const i in clone(oldValue, value)) {
-          const style = value == null || value[i] == null ? '' : value[i];
-          if (i[0] === '-') {
-            element.style.setProperty(i, style);
-          }
-          else {
-            element.style[i] = style;
+        const lval = clone(oldValue, value);
+        for (const i in lval) {
+          if (lval.hasOwnProperty(i)) {
+            const style = (value == null || value[i] == null) ? '' : value[i];
+            if (i[0] === '-') {
+              element.style.setProperty(i, style);
+            }
+            else {
+              element.style[i] = style;
+            }
           }
         }
       }
@@ -312,16 +305,20 @@ export function app(state, actions, view, container) {
     }
   }
 
+  // eslint-disable-next-line no-unused-vars
   function updateAttribute1(element, name, value, oldValue, isSvg) {
     if (name !== 'key') {
       if (name === 'style') {
-        for (const i in clone(oldValue, value)) {
-          const style = value == null || value[i] == null ? '' : value[i];
-          if (i[0] === '-') {
-            element[name].setProperty(i, style);
-          }
-          else {
-            element[name][i] = style;
+        const lval = clone(oldValue, value);
+        for (const i in lval) {
+          if (lval.hasOwnProperty(i)) {
+            const style = (value == null || value[i] == null) ? '' : value[i];
+            if (i[0] === '-') {
+              element[name].setProperty(i, style);
+            }
+            else {
+              element[name][i] = style;
+            }
           }
         }
       }
@@ -375,18 +372,16 @@ export function app(state, actions, view, container) {
   }
 
   function createElement(node, isSvg) {
-    const element = typeof node === 'string' || typeof node === 'number'
+    const element = (typeof node === 'string' || typeof node === 'number')
       ? document.createTextNode(node)
       : (isSvg || node.nodeName === 'svg')
-        ? document.createElementNS(
-          'http://www.w3.org/2000/svg',
-          node.nodeName)
+        ? document.createElementNS('http://www.w3.org/2000/svg', node.nodeName)
         : document.createElement(node.nodeName);
 
     const attributes = node.attributes;
     if (attributes) {
       if (attributes.oncreate) {
-        lifecycle.push(function () {
+        lifecycle.push(function hyperapp_createElement_lifecycle() {
           attributes.oncreate(element);
         });
       }
@@ -397,8 +392,10 @@ export function app(state, actions, view, container) {
       }
 
       for (const name in attributes) {
-        const value = attributes[name];
-        updateAttribute(element, name, value, null, isSvg);
+        if (attributes.hasOwnProperty(name)) {
+          const value = attributes[name];
+          updateAttribute(element, name, value, null, isSvg);
+        }
       }
     }
 
@@ -417,13 +414,14 @@ export function app(state, actions, view, container) {
           name,
           attributes[name],
           oldAttributes[name],
-          isSvg);
+          isSvg,
+        );
       }
     }
 
     const cb = isRecycling ? attributes.oncreate : attributes.onupdate;
     if (cb) {
-      lifecycle.push(function () {
+      lifecycle.push(function hyperapp_updateElement_lifecycle() {
         cb(element, oldAttributes);
       });
     }
@@ -477,7 +475,8 @@ export function app(state, actions, view, container) {
           element,
           oldNode.attributes,
           node.attributes,
-          (isSvg = isSvg || node.nodeName === 'svg'));
+          (isSvg = isSvg || node.nodeName === 'svg'),
+        );
 
         const oldKeyed = {};
         const newKeyed = {};
@@ -526,7 +525,8 @@ export function app(state, actions, view, container) {
                 element.insertBefore(keyedNode[0], oldElements[i]),
                 keyedNode[1],
                 children[k],
-                isSvg);
+                isSvg,
+              );
             }
             else {
               patch(element, oldElements[i], null, children[k], isSvg);
@@ -544,9 +544,11 @@ export function app(state, actions, view, container) {
           i++;
         }
 
-        for (const i in oldKeyed) {
-          if (!newKeyed[i]) {
-            removeElement(element, oldKeyed[i][0], oldKeyed[i][1]);
+        for (const ik in oldKeyed) {
+          if (oldKeyed.hasOwnProperty(ik)) {
+            if (!newKeyed[ik]) {
+              removeElement(element, oldKeyed[ik][0], oldKeyed[ik][1]);
+            }
           }
         }
       }

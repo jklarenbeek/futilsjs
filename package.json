@@ -7,7 +7,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "rollup ./src/index.js -f esm -d dist"
+    "build": "rollup -c"
   },
   "keywords": [
     "javascript",
@@ -18,7 +18,7 @@
   ],
   "author": "jklarenbeek@gmail.com",
   "license": "MIT",
-  "$comment": "last 1 ios version",
+  "$comment_browserlist": "last 1 ios version",
   "browserslist": [
     "last 1 chrome version",
     "last 1 chromeandroid version",
@@ -29,6 +29,75 @@
     "url": "https://github.com/jklarenbeek/futilsjs.git"
   },
   "devDependencies": {
-    "rollup": "^1.11.3"
+    "eslint": "^5.9.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-compat": "^2.6.3",
+    "eslint-plugin-html": "^4.0.6",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-react": "^7.11.1",
+    "rollup": "^1.11.3",
+    "rollup-plugin-eslint": "^5.1.0"
+  },
+  "sideEffects": false,
+  "eslintIgnore": [
+    "dist/*",
+    "_old/*",
+    "_lib/*",
+    "_doc/*"
+  ],
+  "$comment_eslintConfig": "dude, ... dont ask me, I dont understand this stuff.",
+  "$comment_eslintConfig_parser": "babel-eslint",
+  "eslintConfig": {
+    "root": true,
+    "parserOptions": {
+      "ecmaVersion": 2019,
+      "sourceType": "module",
+      "ecmaFeatures": {
+        "jsx": true,
+        "modules": true
+      }
+    },
+    "extends": [
+      "airbnb-base"
+    ],
+    "env": {
+      "node": true,
+      "browser": true
+    },
+    "plugins": [
+      "compat",
+      "html",
+      "import",
+      "react"
+    ],
+    "rules": {
+      "operator-assignment": 0,
+      "no-use-before-define": 0,
+      "spaced-comment": 0,
+      "space-infix-ops": 0,
+      "no-bitwise": 0,
+      "new-cap": 0,
+      "no-param-reassign": 0,
+      "camelcase": 0,
+      "prefer-template": 0,
+      "no-plusplus": 0,
+      "no-prototype-builtins": 0,
+      "no-restricted-syntax": 0,
+      "no-else-return": 0,
+      "brace-style": 0,
+      "no-useless-escape": 0,
+      "prefer-arrow-callback": 0,
+      "wrap-iife": 0,
+      "no-restricted-properties": 0,
+      "no-mixed-operators": 0,
+      "no-multi-assign": 0,
+      "no-underscore-dangle": 0,
+      "prefer-destructuring": 0,
+      "no-continue": 0,
+      "nonblock-statement-body-position": 0,
+      "curly": 0,
+      "no-nested-ternary": 0,
+      "no-unneeded-ternary": 0
+    }
   }
 }

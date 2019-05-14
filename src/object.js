@@ -1,3 +1,4 @@
+/* eslint-disable prefer-rest-params */
 export function getFirstObjectItem(items) {
   for (const item in items) {
     if (!items.hasOwnProperty(item)) continue;
@@ -25,7 +26,9 @@ export function recursiveDeepCopy(o) {
     const newO = {};
     const keys = Reflect.ownKeys(o);
     for (const i in keys) {
-      newO[i] = recursiveDeepCopy(o[i]);
+      if (keys.hasOwnProperty(i)) {
+        newO[i] = recursiveDeepCopy(o[i]);
+      }
     }
     return newO;
   }
@@ -130,39 +133,39 @@ export function deepEquals(a, b, enforce_properties_order, cyclic) {
     This allows to create a context only if and when an invocation of equal() compares
     objects or arrays.
   */
-  function reference_equals(a, b) {
+  function reference_equals(a1, b1) {
     const object_references = [];
 
-    function _reference_equals(a, b) {
+    function _reference_equals(a2, b2) {
       let l = object_references.length;
 
       while (l--) {
-        if (object_references[l--] === b) {
-          return object_references[l] === a;
+        if (object_references[l--] === b2) {
+          return object_references[l] === a2;
         }
       }
-      object_references.push(a, b);
+      object_references.push(a2, b2);
       return null;
     }
 
-    return _reference_equals(a, b);
+    return _reference_equals(a1, b1);
   }
 
 
-  function _equals(a, b) {
+  function _equals(a1, b1) {
     // They should have the same toString() signature
-    const s = toString.call(a);
-    if (s !== toString.call(b)) return false;
+    const s = toString.call(a1);
+    if (s !== toString.call(b1)) return false;
 
     switch (s) {
       default: // Boolean, Date, String
-        return a.valueOf() === b.valueOf();
+        return a1.valueOf() === b1.valueOf();
 
       case '[object Number]':
         // Converts Number instances into primitive values
         // This is required also for NaN test bellow
-        a = +a;
-        b = +b;
+        a1 = +a1;
+        b1 = +b1;
 
         // return a ?         // a is Non-zero and Non-NaN
         //     a === b
@@ -172,35 +175,36 @@ export function deepEquals(a, b, enforce_properties_order, cyclic) {
         //   : b !== b;        // NaN, the only Number not equal to itself!
         // ;
 
-        return a
-          ? a === b
+        // eslint-disable-next-line no-nested-ternary
+        return a1
+          ? a1 === b1
           // eslint-disable-next-line no-self-compare
-          : a === a
-            ? 1 / a === 1 / b
+          : a1 === a1
+            ? 1 / a1 === 1 / b1
             // eslint-disable-next-line no-self-compare
-            : b !== b;
+            : b1 !== b1;
 
       case '[object RegExp]':
-        return a.source === b.source
-          && a.global === b.global
-          && a.ignoreCase === b.ignoreCase
-          && a.multiline === b.multiline
-          && a.lastIndex === b.lastIndex;
+        return a1.source === b1.source
+          && a1.global === b1.global
+          && a1.ignoreCase === b1.ignoreCase
+          && a1.multiline === b1.multiline
+          && a1.lastIndex === b1.lastIndex;
 
       case '[object Function]':
         return false; // functions should be strictly equal because of closure context
 
       case '[object Array]': {
-        const r = reference_equals(a, b);
+        const r = reference_equals(a1, b1);
         if ((cyclic && r) !== null) return r; // intentionally duplicated bellow for [object Object]
 
-        let l = a.length;
-        if (l !== b.length) return false;
+        let l = a1.length;
+        if (l !== b1.length) return false;
         // Both have as many elements
 
         while (l--) {
-          const x = a[l];
-          const y = b[l];
+          const x = a1[l];
+          const y = b1[l];
           if (x === y && x !== 0 || _equals(x, y)) continue;
 
           return false;
@@ -210,44 +214,47 @@ export function deepEquals(a, b, enforce_properties_order, cyclic) {
       }
 
       case '[object Object]': {
-        const r = reference_equals(a, b);
-        if ((cyclic && r) !== null) return r; // intentionally duplicated from above for [object Array]
+        const r = reference_equals(a1, b1);
+        // intentionally duplicated from above for [object Array]
+        if ((cyclic && r) !== null) return r;
 
         if (enforce_properties_order) {
           const properties = [];
 
-          for (const p in a) {
-            if (a.hasOwnProperty(p)) {
+          for (const p in a1) {
+            if (a1.hasOwnProperty(p)) {
               properties.push(p);
-              const x = a[p];
-              const y = b[p];
+              const x = a1[p];
+              const y = b1[p];
               if (x === y && x !== 0 || _equals(x, y)) continue;
               return false;
             }
           }
 
           // Check if 'b' has as the same properties as 'a' in the same order
-          let l = 0; // counter of own properties
-          for (const p in b) {
-            if (b.hasOwnProperty(p) && properties[l] !== p) return false;
-            l++;
+          let l = 0;
+          for (const p in b1) {
+            if (b1.hasOwnProperty(p)) {
+              if (properties[l] !== p) return false;
+              l++;
+            }
           }
         }
         else {
           let l = 0;
-          for (const p in a) {
-            if (a.hasOwnProperty(p)) {
+          for (const p in a1) {
+            if (a1.hasOwnProperty(p)) {
               ++l;
-              const x = a[p];
-              const y = b[p];
+              const x = a1[p];
+              const y = b1[p];
               if (x === y && x !== 0 || _equals(x, y)) continue;
 
               return false;
             }
           }
           // Check if 'b' has as not more own properties than 'a'
-          for (const p in b) {
-            if (b.hasOwnProperty(p) && --l < 0) return false;
+          for (const p in b1) {
+            if (b1.hasOwnProperty(p) && --l < 0) return false;
           }
         }
         return true;

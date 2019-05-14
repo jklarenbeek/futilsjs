@@ -68,7 +68,9 @@ export function int_clampu(value = 0, min = 0, max = 0) {
 }
 export function int_clampu_u8a(value = 0) {
   value = value | 0;
-  return -((255 - value & (value - 255) >> 31) - 255 & (255 - value & (value - 255) >> 31) - 255 >> 31);
+  return -((255 - value & (value - 255) >> 31)
+    - 255 & (255 - value & (value - 255) >> 31)
+    - 255 >> 31);
 }
 export function int_clampu_u8b(value = 0) {
   value = value | 0;
@@ -78,20 +80,20 @@ export function int_clampu_u8b(value = 0) {
 
 export function int_inRange(value = 0, min = 0, max = 0) {
   value = value|0; min = min|0; max = max|0;
-  return ((value >= mathi_min(min, max)) &&
-          (value <= mathi_max(min, max)))|0;
+  return ((value >= mathi_min(min, max))
+    && (value <= mathi_max(min, max)))|0;
 }
 
 export function int_intersectsRange(smin = 0, smax = 0, dmin = 0, dmax = 0) {
   smin = smin|0; smax = smax|0; dmin = dmin|0; dmax = dmax|0;
-  return ((mathi_max(smin, smax) >= mathi_min(dmin, dmax)) &&
-          (mathi_min(smin, smax) <= mathi_max(dmin, dmax)))|0;
+  return ((mathi_max(smin, smax) >= mathi_min(dmin, dmax))
+    && (mathi_min(smin, smax) <= mathi_max(dmin, dmax)))|0;
 }
 
 export function int_intersectsRect(ax = 0, ay = 0, aw = 0, ah = 0, bx = 0, by = 0, bw = 0, bh = 0) {
   ax = ax|0; ay = ay|0; aw = aw|0; ah = ah|0; bx = bx|0; by = by|0; bw = bw|0; bh = bh|0;
-  return ((int_intersectsRange(ax|0, (ax + aw)|0, bx|0, (bx + bw)|0) > 0) &&
-          (int_intersectsRange(ay|0, (ay + ah)|0, by|0, (by + bh)|0) > 0))|0;
+  return ((int_intersectsRange(ax | 0, (ax + aw) | 0, bx | 0, (bx + bw) | 0) > 0)
+    && (int_intersectsRange(ay|0, (ay + ah)|0, by|0, (by + bh)|0) > 0))|0;
 }
 
 export function int_mag2(dx = 0, dy = 0) {

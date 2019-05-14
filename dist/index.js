@@ -28,6 +28,7 @@ function checkIfValueDisabled(value, nullable, disabled) {
   return !PRIMITIVES.includes(typeof value);
 }
 
+/* eslint-disable prefer-rest-params */
 function getFirstObjectItem(items) {
   for (const item in items) {
     if (!items.hasOwnProperty(item)) continue;
@@ -55,7 +56,9 @@ function recursiveDeepCopy(o) {
     const newO = {};
     const keys = Reflect.ownKeys(o);
     for (const i in keys) {
-      newO[i] = recursiveDeepCopy(o[i]);
+      if (keys.hasOwnProperty(i)) {
+        newO[i] = recursiveDeepCopy(o[i]);
+      }
     }
     return newO;
   }
@@ -160,39 +163,39 @@ function deepEquals(a, b, enforce_properties_order, cyclic) {
     This allows to create a context only if and when an invocation of equal() compares
     objects or arrays.
   */
-  function reference_equals(a, b) {
+  function reference_equals(a1, b1) {
     const object_references = [];
 
-    function _reference_equals(a, b) {
+    function _reference_equals(a2, b2) {
       let l = object_references.length;
 
       while (l--) {
-        if (object_references[l--] === b) {
-          return object_references[l] === a;
+        if (object_references[l--] === b2) {
+          return object_references[l] === a2;
         }
       }
-      object_references.push(a, b);
+      object_references.push(a2, b2);
       return null;
     }
 
-    return _reference_equals(a, b);
+    return _reference_equals(a1, b1);
   }
 
 
-  function _equals(a, b) {
+  function _equals(a1, b1) {
     // They should have the same toString() signature
-    const s = toString.call(a);
-    if (s !== toString.call(b)) return false;
+    const s = toString.call(a1);
+    if (s !== toString.call(b1)) return false;
 
     switch (s) {
       default: // Boolean, Date, String
-        return a.valueOf() === b.valueOf();
+        return a1.valueOf() === b1.valueOf();
 
       case '[object Number]':
         // Converts Number instances into primitive values
         // This is required also for NaN test bellow
-        a = +a;
-        b = +b;
+        a1 = +a1;
+        b1 = +b1;
 
         // return a ?         // a is Non-zero and Non-NaN
         //     a === b
@@ -202,35 +205,36 @@ function deepEquals(a, b, enforce_properties_order, cyclic) {
         //   : b !== b;        // NaN, the only Number not equal to itself!
         // ;
 
-        return a
-          ? a === b
+        // eslint-disable-next-line no-nested-ternary
+        return a1
+          ? a1 === b1
           // eslint-disable-next-line no-self-compare
-          : a === a
-            ? 1 / a === 1 / b
+          : a1 === a1
+            ? 1 / a1 === 1 / b1
             // eslint-disable-next-line no-self-compare
-            : b !== b;
+            : b1 !== b1;
 
       case '[object RegExp]':
-        return a.source === b.source
-          && a.global === b.global
-          && a.ignoreCase === b.ignoreCase
-          && a.multiline === b.multiline
-          && a.lastIndex === b.lastIndex;
+        return a1.source === b1.source
+          && a1.global === b1.global
+          && a1.ignoreCase === b1.ignoreCase
+          && a1.multiline === b1.multiline
+          && a1.lastIndex === b1.lastIndex;
 
       case '[object Function]':
         return false; // functions should be strictly equal because of closure context
 
       case '[object Array]': {
-        const r = reference_equals(a, b);
+        const r = reference_equals(a1, b1);
         if ((cyclic && r) !== null) return r; // intentionally duplicated bellow for [object Object]
 
-        let l = a.length;
-        if (l !== b.length) return false;
+        let l = a1.length;
+        if (l !== b1.length) return false;
         // Both have as many elements
 
         while (l--) {
-          const x = a[l];
-          const y = b[l];
+          const x = a1[l];
+          const y = b1[l];
           if (x === y && x !== 0 || _equals(x, y)) continue;
 
           return false;
@@ -240,44 +244,47 @@ function deepEquals(a, b, enforce_properties_order, cyclic) {
       }
 
       case '[object Object]': {
-        const r = reference_equals(a, b);
-        if ((cyclic && r) !== null) return r; // intentionally duplicated from above for [object Array]
+        const r = reference_equals(a1, b1);
+        // intentionally duplicated from above for [object Array]
+        if ((cyclic && r) !== null) return r;
 
         if (enforce_properties_order) {
           const properties = [];
 
-          for (const p in a) {
-            if (a.hasOwnProperty(p)) {
+          for (const p in a1) {
+            if (a1.hasOwnProperty(p)) {
               properties.push(p);
-              const x = a[p];
-              const y = b[p];
+              const x = a1[p];
+              const y = b1[p];
               if (x === y && x !== 0 || _equals(x, y)) continue;
               return false;
             }
           }
 
           // Check if 'b' has as the same properties as 'a' in the same order
-          let l = 0; // counter of own properties
-          for (const p in b) {
-            if (b.hasOwnProperty(p) && properties[l] !== p) return false;
-            l++;
+          let l = 0;
+          for (const p in b1) {
+            if (b1.hasOwnProperty(p)) {
+              if (properties[l] !== p) return false;
+              l++;
+            }
           }
         }
         else {
           let l = 0;
-          for (const p in a) {
-            if (a.hasOwnProperty(p)) {
+          for (const p in a1) {
+            if (a1.hasOwnProperty(p)) {
               ++l;
-              const x = a[p];
-              const y = b[p];
+              const x = a1[p];
+              const y = b1[p];
               if (x === y && x !== 0 || _equals(x, y)) continue;
 
               return false;
             }
           }
           // Check if 'b' has as not more own properties than 'a'
-          for (const p in b) {
-            if (b.hasOwnProperty(p) && --l < 0) return false;
+          for (const p in b1) {
+            if (b1.hasOwnProperty(p) && --l < 0) return false;
           }
         }
         return true;
@@ -292,6 +299,7 @@ function deepEquals(a, b, enforce_properties_order, cyclic) {
 
 //#endregion
 
+const mathi_abs = Math.abs;
 const mathi_sqrt = Math.sqrt;
 const mathi_round = Math.round;
 const mathi_floor = Math.floor;
@@ -361,7 +369,9 @@ function int_clampu(value = 0, min = 0, max = 0) {
 }
 function int_clampu_u8a(value = 0) {
   value = value | 0;
-  return -((255 - value & (value - 255) >> 31) - 255 & (255 - value & (value - 255) >> 31) - 255 >> 31);
+  return -((255 - value & (value - 255) >> 31)
+    - 255 & (255 - value & (value - 255) >> 31)
+    - 255 >> 31);
 }
 function int_clampu_u8b(value = 0) {
   value = value | 0;
@@ -371,20 +381,20 @@ function int_clampu_u8b(value = 0) {
 
 function int_inRange(value = 0, min = 0, max = 0) {
   value = value|0; min = min|0; max = max|0;
-  return ((value >= mathi_min(min, max)) &&
-          (value <= mathi_max(min, max)))|0;
+  return ((value >= mathi_min(min, max))
+    && (value <= mathi_max(min, max)))|0;
 }
 
 function int_intersectsRange(smin = 0, smax = 0, dmin = 0, dmax = 0) {
   smin = smin|0; smax = smax|0; dmin = dmin|0; dmax = dmax|0;
-  return ((mathi_max(smin, smax) >= mathi_min(dmin, dmax)) &&
-          (mathi_min(smin, smax) <= mathi_max(dmin, dmax)))|0;
+  return ((mathi_max(smin, smax) >= mathi_min(dmin, dmax))
+    && (mathi_min(smin, smax) <= mathi_max(dmin, dmax)))|0;
 }
 
 function int_intersectsRect(ax = 0, ay = 0, aw = 0, ah = 0, bx = 0, by = 0, bw = 0, bh = 0) {
   ax = ax|0; ay = ay|0; aw = aw|0; ah = ah|0; bx = bx|0; by = by|0; bw = bw|0; bh = bh|0;
-  return ((int_intersectsRange(ax|0, (ax + aw)|0, bx|0, (bx + bw)|0) > 0) &&
-          (int_intersectsRange(ay|0, (ay + ah)|0, by|0, (by + bh)|0) > 0))|0;
+  return ((int_intersectsRange(ax | 0, (ax + aw) | 0, bx | 0, (bx + bw) | 0) > 0)
+    && (int_intersectsRange(ay|0, (ay + ah)|0, by|0, (by + bh)|0) > 0))|0;
 }
 
 function int_mag2(dx = 0, dy = 0) {
@@ -450,14 +460,14 @@ const mathf_sqrt = Math.sqrt;
 const mathf_pow = Math.pow;
 const mathf_sin = Math.sin;
 const mathf_cos = Math.cos;
-const mathf_atan2$1 = Math.atan2;
+const mathf_atan2 = Math.atan2;
 const mathf_asin = Math.asin;
 
-const mathf_ciel = Math.ceil;
-const mathf_floor$1 = Math.floor;
-const mathf_round$1 = Math.round;
-const mathf_min$1 = Math.min;
-const mathf_max$1 = Math.max;
+const mathf_ceil = Math.ceil;
+const mathf_floor = Math.floor;
+const mathf_round = Math.round;
+const mathf_min = Math.min;
+const mathf_max = Math.max;
 
 const mathf_random = Math.max;
 
@@ -466,7 +476,8 @@ const mathf_PI = Math.PI;
 
 function float_gcd(a=0.0, b=0.0) {
   a = +a; b = +b;
-  // For example, a 1024x768 monitor has a GCD of 256. When you divide both values by that you get 4x3 or 4:3.
+  // For example, a 1024x768 monitor has a GCD of 256.
+  // When you divide both values by that you get 4x3 or 4: 3.
   return +((b === 0.0) ? +a : +float_gcd(b, a % b));
 }
 
@@ -482,14 +493,14 @@ function float_hypot(dx = 0.0, dy = 0.0) {
   return +Math.sqrt(+(+(+dx * +dx) + +(+dy * +dy)));
 }
 
-const float_isqrt = (function() {
+const float_isqrt = (function float_isqrt_oncompile() {
   const f = new Float32Array(1);
   const i = new Int32Array(f.buffer);
   return function float_isqrt_impl(n = 0.0) {
     n = +n;
     const n2 = +(n * 0.5);
     f[0] = +n;
-    i[0] = (0x5f375a86 - (i[0]|0 >> 1))|0;
+    i[0] = (0x5f375a86 - ((i[0]|0) >> 1))|0;
     n = +f[0];
     return +(+n * +(1.5 - (+n2 * +n * +n)));
   };
@@ -500,7 +511,7 @@ function float_fib(n = 0.0) {
   let c = 0.0;
   let x = 1.0;
   let i = 1.0;
-  for (; i !== x; i += 1.0) {
+  for (; i !== n; i += 1.0) {
     const t = +(+c + +x);
     c = +x;
     x = +t;
@@ -508,13 +519,13 @@ function float_fib(n = 0.0) {
   return +c;
 }
 
-// https://gist.github.com/geraldyeo/988116export 
+// https://gist.github.com/geraldyeo/988116export
 const mathf_SQRTFIVE = +mathf_sqrt(5);
 function float_fib2(value = 0.0) {
   value = +value;
-  const fh = +(1.0 / +mathf_SQRTFIVE * +mathf_pow(+(+(1.0 + mathf_SQRTFIVE ) / 2.0), +value));
-  const sh = +(1.0 / +mathf_SQRTFIVE * +mathf_pow(+(+(1.0 - mathf_SQRTFIVE ) / 2.0), +value));
-  return +mathf_round$1(+(fh - sh));
+  const fh = +(1.0 / +mathf_SQRTFIVE * +mathf_pow(+(+(1.0 + mathf_SQRTFIVE) / 2.0), +value));
+  const sh = +(1.0 / +mathf_SQRTFIVE * +mathf_pow(+(+(1.0 - mathf_SQRTFIVE) / 2.0), +value));
+  return +mathf_round(+(fh - sh));
 }
 
 function float_norm(value = 0.0, min = 0.0, max = 0.0) {
@@ -535,56 +546,59 @@ function float_map(value = 0.0, smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) 
 /**
  * Clamps a value between a checked boudary.
  * and can therefor handle swapped min/max arguments
- * 
+ *
  * @param {float} value input value
  * @param {float} min minimum bounds
  * @param {float} max maximum bounds
- * @returns {float} clamped value 
+ * @returns {float} clamped value
  */
 function float_clamp(value = 0.0, min = 0.0, max = 0.0) {
-  return +mathf_min$1(+mathf_max$1(+value, +mathf_min$1(+min, +max)), +mathf_max$1(+min, +max));
+  return +mathf_min(+mathf_max(+value, +mathf_min(+min, +max)), +mathf_max(+min, +max));
 }
 /**
  * Clamps a value between an unchecked boundary
  * this function needs min < max!!
  * (see float_clamp for a checked boundary)
- * 
+ *
  * @param {float} value input value
  * @param {float} min minimum bounds
  * @param {float} max maximum bounds
- * @returns {float} clamped value 
+ * @returns {float} clamped value
  */
 function float_clampu(value = 0.0, min = 0.0, max = 0.0) {
-  return +mathf_min$1(+mathf_max$1(+value, +min), +max);
+  return +mathf_min(+mathf_max(+value, +min), +max);
 }
 
 function float_inRange(value = 0.0, min = 0.0, max = 0.0) {
-  return +(+value >= +mathf_min$1(+min, +max) && +value <= +mathf_max$1(+min, +max));
+  return +(+value >= +mathf_min(+min, +max) && +value <= +mathf_max(+min, +max));
 }
 
 function float_intersectsRange(smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
-  return +(+mathf_max$1(+smin, +smax) >= +mathf_min$1(+dmin, +dmax) && 
-           +mathf_min$1(+smin, +smax) <= +mathf_max$1(+dmin, +dmax));
+  return +(+mathf_max(+smin, +smax) >= +mathf_min(+dmin, +dmax)
+    && +mathf_min(+smin, +smax) <= +mathf_max(+dmin, +dmax));
 }
 
-function float_intersectsRect(ax = 0.0, ay = 0.0, aw = 0.0, ah = 0.0, bx = 0.0, by = 0.0, bw = 0.0, bh = 0.0) {
-  return +(+(+float_intersectsRange(+ax, +(+ax + +aw), +bx, +(+bx + +bw)) > 0.0 &&
-             +float_intersectsRange(+ay, +(+ay + +ah), +by, +(+by + +bh)) > 0.0));
+function float_intersectsRect(
+  ax = 0.0, ay = 0.0, aw = 0.0, ah = 0.0,
+  bx = 0.0, by = 0.0, bw = 0.0, bh = 0.0,
+) {
+  return +(+(+float_intersectsRange(+ax, +(+ax + +aw), +bx, +(+bx + +bw)) > 0.0
+    && +float_intersectsRange(+ay, +(+ay + +ah), +by, +(+by + +bh)) > 0.0));
 }
 
 /**
- * 
+ *
  * We can calculate the Dot Product of two vectors this way:
- * 
+ *
  *    a · b = |a| × |b| × cos(θ)
- * 
+ *
  * or in this implementation as:
- * 
+ *
  *    a · b = ax × bx + ay × by
- * 
+ *
  * When two vectors are at right angles to each other the dot product is zero.
- * 
- * @param {float} ax vector A x velocity 
+ *
+ * @param {float} ax vector A x velocity
  * @param {float} ay vector A y velocity
  * @param {float} bx vector B x velocity
  * @param {float} by vector B y velocity
@@ -595,34 +609,36 @@ function float_dot(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
 }
 
 /**
- * 
+ *
  * The Cross Product Magnitude
  * a × b of two vectors is another vector that is at right angles to both:
- * The magnitude (length) of the cross product equals the area of a parallelogram with vectors a and b for sides:
- * 
+ * The magnitude (length) of the cross product equals the area
+ * of a parallelogram with vectors a and b for sides:
+ *
  * We can calculate the Cross Product this way:
- * 
+ *
  *    a × b = |a| |b| sin(θ) n
- * 
+ *
  * or as
- * 
- *    a × b = ax × by - bx × ay 
- * 
+ *
+ *    a × b = ax × by - bx × ay
+ *
  * Another useful property of the cross product is,
  * that its magnitude is related to the sine of
  * the angle between the two vectors:
- *  
+ *
  *    | a x b | = |a| . |b| . sine(theta)
  *
  * or
  *
  *    sine(theta) = | a x b | / (|a| . |b|)
  *
- * So, in implementation 1 above, if a and b are known in advance to be unit vectors then the result of that function is exactly that sine() value.
- * @param {float} ax 
- * @param {float} ay 
- * @param {float} bx 
- * @param {float} by 
+ * So, in implementation 1 above, if a and b are known in advance
+ * to be unit vectors then the result of that function is exactly that sine() value.
+ * @param {float} ax
+ * @param {float} ay
+ * @param {float} bx
+ * @param {float} by
  */
 function float_cross(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
   return +(+(+ax * +by) - +(+bx * +ay));
@@ -680,7 +696,7 @@ function float_cosHp(r = 0.0) {
 //     #endif
 //     return x;
 // }
-  throw new Error("float_cosHp is not implemented!");
+  throw new Error('float_cosHp is not implemented! r=' + String(r));
 }
 
 function float_sinMpEx(r = 0.0) {
@@ -690,19 +706,19 @@ function float_sinMpEx(r = 0.0) {
     : +(float_PI_A * r - float_PI_B * r * r));
   return +((sin < 0.0)
     ? +(0.225 * (sin * -sin - sin) + sin)
-    : +(0.225 * (sin *  sin - sin) + sin));
+    : +(0.225 * (sin * sin - sin) + sin));
 }
 
 function float_sinMp(r = 0.0) {
-  return +float_sinHpEx(+float_wrapRadians(+r));
+  return +float_sinMpEx(+float_wrapRadians(+r));
 }
 function float_cosMp(r = 0.0) {
   //compute cosine: sin(x + PI/2) = cos(x)
-  return +float_sinHp(+(+r + +float_PIh));
+  return +float_sinMp(+(+r + +float_PIh));
 }
 
 function float_theta(x = 0.0, y = 0.0) {
-  return +mathf_atan2$1(+y, +x);
+  return +mathf_atan2(+y, +x);
   /*
     // alternative was faster, but not anymore.
     // error < 0.005
@@ -746,67 +762,68 @@ class vec2i {
     this.y = y|0;
   }
 }
+
 //#region flat vec2i pure primitive operators
 
 function vec2i_neg(v = def_vec2i) {
   return new vec2i(
-    (-(v.x | 0)) | 0,
-    (-(v.y | 0)) | 0,
+    (-(v.x|0))|0,
+    (-(v.y|0))|0,
   );
 }
 function vec2i_add(a = def_vec2i, b = def_vec2i) {
   return new vec2i(
-    ((a.x | 0) + (b.x | 0)) | 0,
-    ((a.y | 0) + (b.y | 0)) | 0,
+    ((a.x|0) + (b.x|0))|0,
+    ((a.y|0) + (b.y|0))|0,
   );
 }
 function vec2i_adds(v = def_vec2i, scalar = 0) {
   scalar = scalar|0;
   return new vec2i(
-    ((v.x | 0) + scalar) | 0,
-    ((v.y | 0) + scalar) | 0,
+    ((v.x|0) + scalar)|0,
+    ((v.y|0) + scalar)|0,
   );
 }
 
 function vec2i_sub(a = def_vec2i, b = def_vec2i) {
   return new vec2i(
-    ((a.x | 0) - (b.x | 0)) | 0,
-    ((a.y | 0) - (b.y | 0)) | 0,
+    ((a.x|0) - (b.x|0))|0,
+    ((a.y|0) - (b.y|0))|0,
   );
 }
 function vec2i_subs(a = def_vec2i, scalar = 0) {
   scalar = scalar|0;
   return new vec2i(
-    ((a.x | 0) - scalar) | 0,
-    ((a.y | 0) - scalar) | 0,
+    ((a.x|0) - scalar)|0,
+    ((a.y|0) - scalar)|0,
   );
 }
 
 function vec2i_mul(a = def_vec2i, b = def_vec2i) {
   return new vec2i(
-    ((a.x | 0) * (b.x | 0)) | 0,
-    ((a.y | 0) * (b.y | 0)) | 0,
+    ((a.x|0) * (b.x|0))|0,
+    ((a.y|0) * (b.y|0))|0,
   );
 }
 function vec2i_muls(v = def_vec2i, scalar = 0) {
   scalar = scalar|0;
   return new vec2i(
-    ((v.x | 0) * scalar) | 0,
-    ((v.y | 0) * scalar) | 0,
+    ((v.x|0) * scalar)|0,
+    ((v.y|0) * scalar)|0,
   );
 }
 
 function vec2i_div(a = def_vec2i, b = def_vec2i) {
   return new vec2i(
-    ((a.x | 0) / (b.x | 0)) | 0,
-    ((a.y | 0) / (b.y | 0)) | 0,
+    ((a.x|0) / (b.x|0))|0,
+    ((a.y|0) / (b.y|0))|0,
   );
 }
 function vec2i_divs(v = def_vec2i, scalar = 0) {
   scalar = scalar|0;
   return new vec2i(
-    ((v.x | 0) / scalar) | 0,
-    ((v.y | 0) / scalar) | 0,
+    ((v.x|0) / scalar)|0,
+    ((v.y|0) / scalar)|0,
   );
 }
 
@@ -888,9 +905,8 @@ function vec2i_cross(a = def_vec2i, b = def_vec2i) {
 }
 
 function vec2i_cross3(a = def_vec2i, b = def_vec2i, c = def_vec2i) {
-  return (
-    (((b.x|0) - (a.x|0)) * ((c.y|0) - (a.y|0))) -
-    (((b.y|0) - (a.y|0)) * ((c.x|0) - (a.x|0))) );
+  return ((((b.x | 0) - (a.x | 0)) * ((c.y | 0) - (a.y | 0)))
+    - (((b.y|0) - (a.y|0)) * ((c.x|0) - (a.x|0))));
 }
 
 function vec2i_thetaEx(v = def_vec2i) {
@@ -913,8 +929,8 @@ function vec2i_norm(v = def_vec2i) {
 
 function vec2i_rotn90(v = def_vec2i) {
   return new vec2i(
-    v.y | 0,
-    (-(v.x | 0)) | 0,
+    v.y|0,
+    (-(v.x|0))|0,
   );
 }
 function vec2i_rot90(v = def_vec2i) {
@@ -946,7 +962,7 @@ function vec2i_irot90(v = def_vec2i) {
   v.y = (v.x|0);
   return v;
 }
-const vec2i_iperp = vec2f_irot90;
+const vec2i_iperp = vec2i_irot90;
 
 //#endregion
 
@@ -954,12 +970,12 @@ const vec2i_iperp = vec2f_irot90;
 
 /**
  * Tests if triangle intersects with a rectangle
- * 
- * @param {*} v1 
- * @param {*} v2 
- * @param {*} v3 
- * @param {*} r1 
- * @param {*} r2 
+ *
+ * @param {*} v1
+ * @param {*} v2
+ * @param {*} v3
+ * @param {*} r1
+ * @param {*} r2
  * @returns {boolean} true if they intersect.
  */
 function triangle2i_intersectsRect(v1, v2, v3, r1, r2) {
@@ -984,50 +1000,92 @@ function triangle2i_intersectsRect(v1, v2, v3, r1, r2) {
   const t = r1.y|0;
   const b = r2.y|0;
 
-  const b0 = (((x0 > l) ? 1 : 0) | (((y0 > t) ? 1 : 0) << 1) |
-      (((x0 > r) ? 1 : 0) << 2) | (((y0 > b) ? 1 : 0) << 3))|0;
-  if (b0 == 3) return true;
+  const b0 = (((x0 > l) ? 1 : 0)
+    | (((y0 > t) ? 1 : 0) << 1)
+    | (((x0 > r) ? 1 : 0) << 2)
+    | (((y0 > b) ? 1 : 0) << 3))|0;
+  if (b0 === 3) return true;
 
-  const b1 = ((x1 > l) ? 1 : 0) | (((y1 > t) ? 1 : 0) << 1) |
-      (((x1 > r) ? 1 : 0) << 2) | (((y1 > b) ? 1 : 0) << 3);
-  if (b1 == 3) return true;
+  const b1 = ((x1 > l) ? 1 : 0)
+    | (((y1 > t) ? 1 : 0) << 1)
+    | (((x1 > r) ? 1 : 0) << 2)
+    | (((y1 > b) ? 1 : 0) << 3)|0;
+  if (b1 === 3) return true;
 
-  const b2 = ((x2 > l) ? 1 : 0) | (((y2 > t) ? 1 : 0) << 1) |
-      (((x2 > r) ? 1 : 0) << 2) | (((y2 > b) ? 1 : 0) << 3);
-  if (b2 == 3) return true;
+  const b2 = ((x2 > l) ? 1 : 0)
+    | (((y2 > t) ? 1 : 0) << 1)
+    | (((x2 > r) ? 1 : 0) << 2)
+    | (((y2 > b) ? 1 : 0) << 3)|0;
+  if (b2 === 3) return true;
 
   let c = 0;
   let m = 0;
   let s = 0;
 
   const i0 = (b0 ^ b1)|0;
-  if (i0 != 0) {
+  if (i0 !== 0) {
     m = ((y1-y0) / (x1-x0))|0;
     c = (y0 -(m * x0))|0;
-    if (i0 & 1) { s = m * l + c; if ( s > t && s < b) return true; }
-    if (i0 & 2) { s = (t - c) / m; if ( s > l && s < r) return true; }
-    if (i0 & 4) { s = m * r + c; if ( s > t && s < b) return true; }
-    if (i0 & 8) { s = (b - c) / m; if ( s > l && s < r) return true; }
+    if (i0 & 1) {
+      s = m * l + c;
+      if (s > t && s < b) return true;
+    }
+    if (i0 & 2) {
+      s = (t - c) / m;
+      if (s > l && s < r) return true;
+    }
+    if (i0 & 4) {
+      s = m * r + c;
+      if (s > t && s < b) return true;
+    }
+    if (i0 & 8) {
+      s = (b - c) / m;
+      if (s > l && s < r) return true;
+    }
   }
 
   const i1 = (b1 ^ b2)|0;
-  if (i1 != 0) {
+  if (i1 !== 0) {
     m = ((y2 - y1) / (x2 - x1))|0;
     c = (y1 -(m * x1))|0;
-    if (i1 & 1) { s = m * l + c; if ( s > t && s < b) return true; }
-    if (i1 & 2) { s = (t - c) / m; if ( s > l && s < r) return true; }
-    if (i1 & 4) { s = m * r + c; if ( s > t && s < b) return true; }
-    if (i1 & 8) { s = (b - c) / m; if ( s > l && s < r) return true; }
+    if (i1 & 1) {
+      s = m * l + c;
+      if (s > t && s < b) return true;
+    }
+    if (i1 & 2) {
+      s = (t - c) / m;
+      if (s > l && s < r) return true;
+    }
+    if (i1 & 4) {
+      s = m * r + c;
+      if (s > t && s < b) return true;
+    }
+    if (i1 & 8) {
+      s = (b - c) / m;
+      if (s > l && s < r) return true;
+    }
   }
 
   const i2 = (b0 ^ b2)|0;
-  if (i2 != 0) {
+  if (i2 !== 0) {
     m = ((y2 - y0) / (x2 - x0))|0;
     c = (y0 -(m * x0))|0;
-    if (i2 & 1) { s = m * l + c; if ( s > t && s < b) return true; }
-    if (i2 & 2) { s = (t - c) / m; if ( s > l && s < r) return true; }
-    if (i2 & 4) { s = m * r + c; if ( s > t && s < b) return true; }
-    if (i2 & 8) { s = (b - c) / m; if ( s > l && s < r) return true; }
+    if (i2 & 1) {
+      s = m * l + c;
+      if (s > t && s < b) return true;
+    }
+    if (i2 & 2) {
+      s = (t - c) / m;
+      if (s > l && s < r) return true;
+    }
+    if (i2 & 4) {
+      s = m * r + c;
+      if (s > t && s < b) return true;
+    }
+    if (i2 & 8) {
+      s = (b - c) / m;
+      if (s > l && s < r) return true;
+    }
   }
 
   return false;
@@ -1035,15 +1093,15 @@ function triangle2i_intersectsRect(v1, v2, v3, r1, r2) {
 
 /**
  * just some notes
- * 
- * 
+ *
+ *
 const fastSin_B = 1.2732395; // 4/pi
 const fastSin_C = -0.40528473; // -4 / (pi²)
 export function fastSin(value) {
   // See  for graph and equations
   // https://www.desmos.com/calculator/8nkxlrmp7a
-  // logic explained here : http://devmaster.net/posts/9648/fast-and-accurate-sine-cosine			
-      
+  // logic explained here : http://devmaster.net/posts/9648/fast-and-accurate-sine-cosine
+
   return (value > 0)
     ? fastSin_B * value - fastSin_C * value * value
     : fastSin_B * value + fastSin_C * value * value;
@@ -1062,7 +1120,7 @@ export function fastSin2(a) {
     , 0 > c && (b = -b)
     , 2.44E-4 * b;
 };
-  
+
 export function fastSin3(a) {
   a *= 5214;
   let b = a << 17;
@@ -1076,6 +1134,8 @@ export function fastSin3(a) {
 
  */
 
+/* eslint-disable one-var-declaration-per-line */
+
 const def_vec2f = Object.freeze(vec2f_new());
 
 class vec2f {
@@ -1083,8 +1143,14 @@ class vec2f {
     this.x = +x;
     this.y = +y;
   }
-  gX() { return +this.x; };
-  gY() { return +this.y; };
+
+  gX() {
+    return +this.x;
+  }
+
+  gY() {
+    return +this.y;
+  }
 }
 
 //#region class pure primitive vector operators
@@ -1122,7 +1188,7 @@ vec2f.prototype.divs = function _vec2f__divs(scalar = 0.0) {
 };
 
 //#endregion
-  
+
 //#region class impure primitive vector operators
 vec2f.prototype.ineg = function _vec2f__ineg() {
   this.x = +(-(+this.x));
@@ -1200,54 +1266,56 @@ vec2f.prototype.cross = function _vec2f__cross(vector = def_vec2f) {
 
 /**
  * Returns the cross-product of three vectors
- * 
+ *
  * You can determine which side of a line a point is on
  * by converting the line to hyperplane form (implicitly
  * or explicitly) and then computing the perpendicular
  * (pseudo)distance from the point to the hyperplane.
- * 
+ *
  * With the crossproduct of two vectors A and B being the vector
- * 
+ *
  * AxB = (AyBz − AzBy, AzBx − AxBz, AxBy − AyBx)
  * with Az and Bz being zero you are left with the third component of that vector
- * 
+ *
  *    AxBy - AyBx
- * 
+ *
  * With A being the vector from point a to b, and B being the vector from point a to c means
- * 
+ *
  *    Ax = (b[x]-a[x])
  *    Ay = (b[y]-a[y])
  *    Bx = (c[x]-a[x])
  *    By = (c[y]-a[y])
- * 
+ *
  * giving
- * 
+ *
  *    AxBy - AyBx = (b[x]-a[x])*(c[y]-a[y])-(b[y]-a[y])*(c[x]-a[x])
- * 
- * which is a scalar, the sign of that scalar will tell you wether point c lies to the left or right of vector ab
- * 
+ *
+ * which is a scalar, the sign of that scalar will tell you wether point c
+ * lies to the left or right of vector ab
+ *
  * @param {vec2f} vector B
  * @param {vec2f} vector C
  * @returns {double} The cross product of three vectors
- * 
+ *
  */
 vec2f.prototype.cross3 = function _vec2f__cross3(vector2 = def_vec2f, vector3 = def_vec2f) {
   return +(
-    +(+(+vector2.x - +this.x) * +(+vector3.y - +this.y)) -
-    +(+(+vector2.y - +this.y) * +(+vector3.x - +this.x)) );
+    +(+(+vector2.x - +this.x) * +(+vector3.y - +this.y))
+    - +(+(+vector2.y - +this.y) * +(+vector3.x - +this.x)));
 };
 
 /**
  * Returns the angle in radians of its vector
  *
  * Math.atan2(dy, dx) === Math.asin(dy/Math.sqrt(dx*dx + dy*dy))
- * 
+ *
  * @param {} v Vector
  */
-vec2f.prototype.theta = function _vec2__theta() {
-  return +mathf_atan2$1(+this.y, +this.x);
-};
-vec2f.prototype.angle = _vec2__theta;
+function _vec2f__theta() {
+  return +mathf_atan2(+this.y, +this.x);
+}
+vec2f.prototype.theta = _vec2f__theta;
+vec2f.prototype.angle = _vec2f__theta;
 vec2f.prototype.phi = function _vec2__phi() {
   return +mathf_asin(+this.y / +this.mag());
 };
@@ -1262,27 +1330,30 @@ vec2f.prototype.unit = function _vec2f__unit() {
 vec2f.prototype.rotn90 = function _vec2f__rotn90() {
   return new vec2f(+this.y, +(-(+this.x)));
 };
-vec2f.prototype.rot90 = function _vec2f__rot90() {
+function _vec2f__rot90() {
   return new vec2f(+(-(+this.y)), +this.x);
-};
+}
+vec2f.prototype.rot90 = _vec2f__rot90;
 vec2f.prototype.perp = _vec2f__rot90;
 
 /**
  * Rotates a vector by the specified angle in radians
- * 
+ *
  * @param {float} r  angle in radians
  * @returns {vec2f} transformed output vector
  */
 vec2f.prototype.rotate = function _vec2f__rotate(radians = 0.0) {
   return new vec2f(
     +(+(+this.x * +mathf_cos(+radians)) - +(+this.y * +mathf_sin(+radians))),
-    +(+(+this.x * +mathf_sin(+radians)) + +(+this.y * +mathf_cos(+radians)))
+    +(+(+this.x * +mathf_sin(+radians)) + +(+this.y * +mathf_cos(+radians))),
   );
 };
 vec2f.prototype.about = function _vec2f__about(vector = def_vec2f, radians = 0.0) {
   return new vec2f(
-    +(+vector.x + +(+(+(+this.x - +vector.x) * +mathf_cos(+radians)) - +(+(+this.y - +vector.y) * +mathf_sin(+radians)))),
-    +(+vector.y + +(+(+(+this.x - +vector.x) * +mathf_sin(+radians)) + +(+(+this.y - +vector.y) * +mathf_cos(+radians))))
+    +(+vector.x + +(+(+(+this.x - +vector.x) * +mathf_cos(+radians))
+      - +(+(+this.y - +vector.y) * +mathf_sin(+radians)))),
+    +(+vector.y + +(+(+(+this.x - +vector.x) * +mathf_sin(+radians))
+      + +(+(+this.y - +vector.y) * +mathf_cos(+radians)))),
   );
 };
 
@@ -1298,11 +1369,12 @@ vec2f.prototype.irotn90 = function _vec2f__irotn90() {
   this.y = +(-(+this.x));
   return this;
 };
-vec2f.prototype.irot90 = function _vec2f__irot90() {
+function _vec2f__irot90() {
   this.x = +(-(+this.y));
   this.y = +this.x;
   return this;
-};
+}
+vec2f.prototype.irot90 = _vec2f__irot90;
 vec2f.prototype.iperp = _vec2f__irot90;
 
 vec2f.prototype.irotate = function _vec2f__irotate(radians = 0.0) {
@@ -1311,8 +1383,10 @@ vec2f.prototype.irotate = function _vec2f__irotate(radians = 0.0) {
   return this;
 };
 vec2f.prototype.iabout = function _vec2f__iabout(vector = def_vec2f, radians = 0.0) {
-  this.x = +(+vector.x + +(+(+(+this.x - +vector.x) * +mathf_cos(+radians)) - +(+(+this.y - +vector.y) * +mathf_sin(+radians)))),
-  this.y = +(+vector.y + +(+(+(+this.x - +vector.x) * +mathf_sin(+radians)) + +(+(+this.y - +vector.y) * +mathf_cos(+radians))));
+  this.x = +(+vector.x + +(+(+(+this.x - +vector.x) * +mathf_cos(+radians))
+    - +(+(+this.y - +vector.y) * +mathf_sin(+radians))));
+  this.y = +(+vector.y + +(+(+(+this.x - +vector.x) * +mathf_sin(+radians))
+    + +(+(+this.y - +vector.y) * +mathf_cos(+radians))));
   return this;
 };
 
@@ -1323,102 +1397,102 @@ vec2f.prototype.iabout = function _vec2f__iabout(vector = def_vec2f, radians = 0
 function vec2f_neg(v = def_vec2f) {
   return new vec2f(
     +(-(+v.x)),
-    +(-(+v.y))
+    +(-(+v.y)),
   );
 }
 function vec2f_add(a = def_vec2f, b = def_vec2f) {
   return new vec2f(
     +(+a.x + +b.x),
-    +(+a.y + +b.y)
+    +(+a.y + +b.y),
   );
 }
 function vec2f_adds(v = def_vec2f, scalar = 0.0) {
   return new vec2f(
     +(+v.x + +scalar),
-    +(+v.y + +scalar)
+    +(+v.y + +scalar),
   );
 }
 function vec2f_addms(a = def_vec2f, b = def_vec2f, scalar = 1.0) {
   return new vec2f(
     +(+a.x + +(+b.x * +scalar)),
-    +(+a.y + +(+b.y * +scalar))
+    +(+a.y + +(+b.y * +scalar)),
   );
 }
 
 function vec2f_sub(a = def_vec2f, b = def_vec2f) {
   return new vec2f(
     +(+a.x - +b.x),
-    +(+a.y - +b.y)
+    +(+a.y - +b.y),
   );
 }
 function vec2f_subs(a = def_vec2f, scalar = 0.0) {
   return new vec2f(
     +(+a.x - +scalar),
-    +(+a.y - +scalar)
+    +(+a.y - +scalar),
   );
 }
 
 function vec2f_mul(a = def_vec2f, b = def_vec2f) {
   return new vec2f(
     +(+a.x * +b.x),
-    +(+a.y * +b.y)
+    +(+a.y * +b.y),
   );
 }
 function vec2f_muls(v = def_vec2f, scalar = 1.0) {
   return new vec2f(
     +(+v.x * +scalar),
-    +(+v.y * +scalar)
+    +(+v.y * +scalar),
   );
 }
 
 function vec2f_div(a = def_vec2f, b = def_vec2f) {
   return new vec2f(
     +(+a.x / +b.x),
-    +(+a.y / +b.y)
+    +(+a.y / +b.y),
   );
 }
 function vec2f_divs(v = def_vec2f, scalar = 1.0) {
   return new vec2f(
     +(+v.x / +scalar),
-    +(+v.y / +scalar)
+    +(+v.y / +scalar),
   );
 }
 function vec2f_inv(v = def_vec2f) {
   return new vec2f(
     1.0 / +v.x,
-    1.0 / +v.y
+    1.0 / +v.y,
   );
 }
 
 function vec2f_ceil(v = def_vec2f) {
   return new vec2f(
     +mathf_ceil(+v.x),
-    +mathf_ceil(+v.y)
+    +mathf_ceil(+v.y),
   );
 }
 function vec2f_floor(v = def_vec2f) {
   return new vec2f(
     +mathf_floor(+v.x),
-    +mathf_floor(+v.y)
+    +mathf_floor(+v.y),
   );
 }
 function vec2f_round(v = def_vec2f) {
   return new vec2f(
     +mathf_round(+v.x),
-    +mathf_round(+v.y)
+    +mathf_round(+v.y),
   );
 }
 
 function vec2f_min(a = def_vec2f, b = def_vec2f) {
   return new vec2f(
     +mathf_min(+a.x, +b.x),
-    +mathf_min(+a.y, +b.y)
+    +mathf_min(+a.y, +b.y),
   );
 }
 function vec2f_max(a = def_vec2f, b = def_vec2f) {
   return new vec2f(
     +mathf_max(+a.x, +b.x),
-    +mathf_max(+a.y, +b.y)
+    +mathf_max(+a.y, +b.y),
   );
 }
 
@@ -1472,7 +1546,7 @@ function vec2f_idiv(a = def_vec2f, b = def_vec2f) {
   a.y /= +(+b.y);
   return a;
 }
-function vec2f_idivs$1(v = def_vec2f, scalar = 1.0) {
+function vec2f_idivs(v = def_vec2f, scalar = 1.0) {
   v.x /= +scalar;
   v.y /= +scalar;
   return v;
@@ -1480,7 +1554,7 @@ function vec2f_idivs$1(v = def_vec2f, scalar = 1.0) {
 function vec2f_iinv(v = def_vec2f) {
   v.x = 1.0 / +v.x;
   v.y = 1.0 / +v.y;
-  return v
+  return v;
 }
 
 function vec2f_iceil(v = def_vec2f) {
@@ -1489,12 +1563,12 @@ function vec2f_iceil(v = def_vec2f) {
   return v;
 }
 function vec2f_ifloor(v = def_vec2f) {
-  v.x = +mathf_floor(+v.x),
+  v.x = +mathf_floor(+v.x);
   v.y = +mathf_floor(+v.y);
   return v;
 }
 function vec2f_iround(v = def_vec2f) {
-  v.x = +mathf_round(+v.x),
+  v.x = +mathf_round(+v.x);
   v.y = +mathf_round(+v.y);
   return v;
 }
@@ -1520,8 +1594,8 @@ const vec2f_eqs = vec2f_eqstrict;
 function vec2f_eq(a = def_vec2f, b = def_vec2f) {
   const ax = +a.x, ay = +a.y, bx = +b.x, by = +b.y;
   return (mathf_abs(ax - bx) <= mathf_EPSILON * mathf_max(1.0, mathf_abs(ax), mathf_abs(bx))
-      && mathf_abs(ay - by) <= mathf_EPSILON * mathf_max(1.0, mathf_abs(ay), mathf_abs(by))
-    );
+    && mathf_abs(ay - by) <= mathf_EPSILON * mathf_max(1.0, mathf_abs(ay), mathf_abs(by))
+  );
 }
 
 //#endregion
@@ -1550,25 +1624,27 @@ function vec2f_cross(a = def_vec2f, b = def_vec2f) {
 }
 function vec2f_cross3(a = def_vec2f, b = def_vec2f, c = def_vec2f) {
   return +(
-    +(+(+b.x - +a.x) * +(+c.y - +a.y)) -
-    +(+(+b.y - +a.y) * +(+c.x - +a.x)) );
+    +(+(+b.x - +a.x) * +(+c.y - +a.y))
+    - +(+(+b.y - +a.y) * +(+c.x - +a.x))
+  );
 }
 
 function vec2f_theta(v = def_vec2f) {
-  return +math_atan2(+v.y, +v.x);
+  return +mathf_atan2(+v.y, +v.x);
 }
 const vec2f_angle = vec2f_theta;
 function vec2f_phi(v = def_vec2f) {
-  return +math_asin(+v.y / +vec2f_mag(v));
+  return +mathf_asin(+v.y / +vec2f_mag(v));
 }
 
 //#endregion
 
 //#region flat vec2f pure advanced vector functions
 function vec2f_unit(v = def_vec2f) {
-  const mag = +vec2f_mag2();
-  return vec2f_divs(v,
-    +(mag > 0 ? 1.0 / +mathf_sqrt(mag2) : 1)
+  const mag2 = +vec2f_mag2();
+  return vec2f_divs(
+    v,
+    +(mag2 > 0 ? 1.0 / +mathf_sqrt(mag2) : 1),
   );
 }
 
@@ -1576,40 +1652,44 @@ function vec2f_lerp(v = 0.0, a = def_vec2f, b = def_vec2f) {
   const ax = +a.x, ay = +ay.y;
   return new vec2f(
     +(ax + +v * (+b.x - ax)),
-    +(ay + +v * (+b.y - ay))
+    +(ay + +v * (+b.y - ay)),
   );
 }
 
 function vec2f_rotn90(v = def_vec2f) {
   return new vec2f(
     +v.y,
-    +(-(+v.x))
+    +(-(+v.x)),
   );
 }
 function vec2f_rot90(v = def_vec2f) {
   return new vec2f(
     +(-(+v.y)),
-    +v.x
+    +v.x,
   );
 }
 const vec2f_perp = vec2f_rot90;
 
 /**
  * Rotates a vector by the specified angle in radians
- * 
+ *
  * @param {float} r  angle in radians
  * @returns {vec2f} transformed output vector
  */
 function vec2f_rotate(v = def_vec2f, radians = 0.0) {
   return new vec2f(
     +(+(+v.x * +mathf_cos(+radians)) - +(+v.y * +mathf_sin(+radians))),
-    +(+(+v.x * +mathf_sin(+radians)) + +(+v.y * +mathf_cos(+radians)))
+    +(+(+v.x * +mathf_sin(+radians)) + +(+v.y * +mathf_cos(+radians))),
   );
 }
 function vec2f_about(a = def_vec2f, b = def_vec2f, radians = 0.0) {
   return new vec2f(
-    +(+vector.x + +(+(+(+a.x - +b.x) * +mathf_cos(+radians)) - +(+(+a.y - +b.y) * +mathf_sin(+radians)))),
-    +(+vector.y + +(+(+(+a.x - +b.x) * +mathf_sin(+radians)) + +(+(+a.y - +b.y) * +mathf_cos(+radians))))
+    +(+b.x
+      + +(+(+(+a.x - +b.x) * +mathf_cos(+radians))
+      - +(+(+a.y - +b.y) * +mathf_sin(+radians)))),
+    +(+b.y
+      + +(+(+(+a.x - +b.x) * +mathf_sin(+radians))
+      + +(+(+a.y - +b.y) * +mathf_cos(+radians)))),
   );
 }
 
@@ -1619,7 +1699,7 @@ function vec2f_about(a = def_vec2f, b = def_vec2f, radians = 0.0) {
 //#region flat vec2f impure advanced vector functions
 
 function vec2f_iunit(v = def_vec2f) {
-  return vec2f_idivs$1(+vec2f_mag(v));
+  return vec2f_idivs(+vec2f_mag(v));
 }
 
 function vec2f_irotn90(v = def_vec2f) {
@@ -1627,12 +1707,12 @@ function vec2f_irotn90(v = def_vec2f) {
   v.y = +(-(+v.x));
   return v;
 }
-function vec2f_irot90$1(v = def_vec2f) {
+function vec2f_irot90(v = def_vec2f) {
   v.x = +(-(+v.y));
   v.y = +v.x;
   return v;
 }
-const vec2f_iperp = vec2f_irot90$1;
+const vec2f_iperp = vec2f_irot90;
 
 function vec2f_irotate(v = def_vec2f, radians = 0.0) {
   v.x = +(+(+v.x * +mathf_cos(+radians)) - +(+v.y * +mathf_sin(+radians)));
@@ -1640,8 +1720,10 @@ function vec2f_irotate(v = def_vec2f, radians = 0.0) {
   return v;
 }
 function vec2f_iabout(a = def_vec2f, b = def_vec2f, radians = 0.0) {
-  a.x = +(+b.x + +(+(+(+a.x - +b.x) * +mathf_cos(+radians)) - +(+(+a.y - +b.y) * +mathf_sin(+radians)))),
-  a.y = +(+b.y + +(+(+(+a.x - +b.x) * +mathf_sin(+radians)) + +(+(+a.y - +b.y) * +mathf_cos(+radians))));
+  a.x = +(+b.x + +(+(+(+a.x - +b.x) * +mathf_cos(+radians))
+    - +(+(+a.y - +b.y) * +mathf_sin(+radians))));
+  a.y = +(+b.y + +(+(+(+a.x - +b.x) * +mathf_sin(+radians))
+    + +(+(+a.y - +b.y) * +mathf_cos(+radians))));
   return a;
 }
 
@@ -1665,8 +1747,14 @@ class vec3f {
       this.z = +z;
     }
   }
-  gP1() { return new vec2f(+this.x, +this.y); }
-  clone() { return Object.create(this); }
+
+  gP1() {
+    return new vec2f(+this.x, +this.y);
+  }
+
+  clone() {
+    return Object.create(this);
+  }
 }
 
 //#region flat vec3f pure primitive operators
@@ -1675,14 +1763,14 @@ function vec3f_div(a = def_vec3f, b = def_vec3f) {
   return new vec3f(
     +(+a.x / +b.x),
     +(+a.y / +b.y),
-    +(+a.z / +b.z)
+    +(+a.z / +b.z),
   );
 }
 function vec3f_divs(v = def_vec3f, scalar = 0.0) {
   return new vec3f(
     +(+v.x / +scalar),
     +(+v.y / +scalar),
-    +(+v.z / +scalar)
+    +(+v.z / +scalar),
   );
 }
 
@@ -1717,7 +1805,7 @@ function vec3f_unit(v = def_vec3f) {
   return vec3f_divs(v, +vec3f_mag(v));
 }
 function vec3f_iunit(v = def_vec3f) {
-  return vec2f_idivs(v, +vec3f_mag(v));
+  return vec3f_idivs(v, +vec3f_mag(v));
 }
 
 function vec3f_crossABAB(a = def_vec3f, b = def_vec3f) {
@@ -1741,65 +1829,69 @@ function copyAttributes(src, dst) {
 }
 
 function fetchImage(htmlElement, clientWidth, clientHeight) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function fetchImage_Promise(resolve, reject) {
     if (typeof htmlElement === 'string') {
       htmlElement = htmlElement.replace(/[\s\"\']+/g, '');
       htmlElement = htmlElement.replace(/^url\(/, '');
       htmlElement = htmlElement.replace(/\)$/, '');
       const img = new Image();
-      img.onload = function() { resolve(img); };
-      img.onerror = function(err) { reject(err);};
+      img.onload = function fetchImage_image_onload() { resolve(img); };
+      img.onerror = function fetchImage_image_onerror(err) { reject(err); };
       img.src = htmlElement;
     }
-    else if (typeof htmlElement !== 'object') ;
+    else if (typeof htmlElement !== 'object') {
+      throw new Error('Where Am I??');
+    }
     else if (htmlElement instanceof HTMLImageElement) {
       if (htmlElement.complete) {
         resolve(htmlElement);
       }
       else {
-        htmlElement.onload = function() { resolve(htmlElement); };
-        htmlElement.onerror = function(err) { reject(err); };
+        htmlElement.onload = function fetchImage_htmlElement_onload() { resolve(htmlElement); };
+        htmlElement.onerror = function fetchImage_htmlElement_onerror(err) { reject(err); };
       }
     }
     else if (htmlElement instanceof Promise) {
       htmlElement
-        .then(function(imageElement) { 
-          if (imageElement instanceof HTMLImageElement)
-            resolve(imageElement); 
-          else
+        .then(function fetchImage_Promise_then(imageElement) {
+          if (imageElement instanceof HTMLImageElement) {
+            resolve(imageElement);
+          }
+          else {
+            // eslint-disable-next-line prefer-promise-reject-errors
             reject('ERR: fetchImage: Promise of first argument must resolve in HTMLImageElement!');
+          }
         })
-        .catch(function(err) { reject(err); });
+        .catch(function fetchImage_Promise_catch(err) { reject(err); });
     }
     else if (htmlElement instanceof SVGSVGElement) {
-      if ("foreignObject" == htmlElement.firstElementChild.nodeName) {
+      if (htmlElement.firstElementChild.nodeName === 'foreignObject') {
         let width = htmlElement.clientWidth;
         let height = htmlElement.clientHeight;
-        
+
         width = htmlElement.firstElementChild.firstElementChild.clientWidth;
         height = htmlElement.firstElementChild.firstElementChild.clientHeight;
         // set the svg element size to match our canvas size.
-        htmlElement.setAttribute('width',  width);
+        htmlElement.setAttribute('width', width);
         htmlElement.setAttribute('height', height);
         // now copy a string of the complete element and its children
         const svg = htmlElement.outerHTML;
 
-        const blob = new Blob([svg], {type: 'image/svg+xml'});
+        const blob = new Blob([svg], { type: 'image/svg+xml' });
         const url = window.URL.createObjectURL(blob);
-        
+
         const img = new Image();
-        img.onload = function() {
+        img.onload = function fetchImage_SVGSVGElement_onload() {
           window.URL.revokeObjectURL(url);
           resolve(img);
         };
-        img.onerror = function(err) {
+        img.onerror = function fetchImage_SVGSVGElement_onerror(err) {
           window.URL.revokeObjectURL(url);
           reject(err);
         };
         // trigger render of object url.
         img.src = url;
-  
-      }          
+      }
     }
     else if (htmlElement instanceof HTMLElement) {
       let width = htmlElement.clientWidth;
@@ -1811,34 +1903,34 @@ function fetchImage(htmlElement, clientWidth, clientHeight) {
       width = width === 0 ? 300 : width;
       height = height === 0 ? 200 : height;
 
-      const svg = ('<svg xmlns="http://www.w3.org/2000/svg"' +
-          ' width="' + width + '"' +
-          ' height="' + height + '">' +
-        '<foreignObject width="100%" height="100%">' + 
-          htmlElement.outerHTML + 
-        '</foreignObject>' +
-        '</svg>');
-      
-      const blob = new Blob([svg], {type: 'image/svg+xml'});
+      const svg = ('<svg xmlns="http://www.w3.org/2000/svg"'
+        + ' width="' + width + '"'
+        + ' height="' + height + '">'
+        + '<foreignObject width="100%" height="100%">'
+        + htmlElement.outerHTML
+        + '</foreignObject>'
+        + '</svg>');
+
+      const blob = new Blob([svg], { type: 'image/svg+xml' });
       const url = window.URL.createObjectURL(blob);
-      
+
       const img = new Image();
-      img.onload = function() {
+      img.onload = function fetchImage_HTMLElement_onload() {
         window.URL.revokeObjectURL(url);
         resolve(img);
       };
-      img.onerror = function(err) {
+      img.onerror = function fetchImage_HTMLElement_onerror(err) {
         window.URL.revokeObjectURL(url);
         reject(err);
       };
       // trigger render of object url.
       img.src = url;
-    }  
-    else {
-      reject('ERR: fetchImage: first argument MUST be of type url, HTMLElement or Promise!');
-      return;
     }
-  })
+    else {
+      // eslint-disable-next-line prefer-promise-reject-errors
+      reject('ERR: fetchImage: first argument MUST be of type url, HTMLElement or Promise!');
+    }
+  });
 }
 
 function collapseToString(source, matchRegEx) {
@@ -1960,6 +2052,8 @@ function toggleCssClass(node, name) {
   return true;
 }
 
+/* eslint-disable class-methods-use-this */
+
 //#region basic svg object
 //#endregion
 
@@ -1972,31 +2066,55 @@ class shape2f {
 const point2f_POINTS = 1;
 class point2f extends shape2f {
   constructor(p1 = def_vec2f) {
+    super();
     this.p1 = p1;
   }
-  gP1() { return this.p1; }
-  pointCount() { return point2f_POINTS; }
+
+  gP1() {
+    return this.p1;
+  }
+
+  pointCount() {
+    return point2f_POINTS;
+  }
 }
 
 const circle2f_POINTS = 1;
 class circle2f extends shape2f {
   constructor(p1 = def_vec2f, r = 1.0) {
+    super();
     this.p1 = p1;
     this.radius = +r;
   }
-  gP1() { return this.p1; };
-  pointCount() { return circle2f_POINTS; }
+
+  gP1() {
+    return this.p1;
+  }
+
+  pointCount() {
+    return circle2f_POINTS;
+  }
 }
 
 const rectangle2f_POINTS = 2;
 class rectangle2f extends shape2f {
   constructor(p1 = def_vec2f, p2 = def_vec2f) {
+    super();
     this.p1 = p1;
     this.p2 = p2;
   }
-  gP1() { return this.p1; };
-  gP2() { return this.p2; };
-  pointCount() { return rectangle2f_POINTS; }
+
+  gP1() {
+    return this.p1;
+  }
+
+  gP2() {
+    return this.p2;
+  }
+
+  pointCount() {
+    return rectangle2f_POINTS;
+  }
 }
 
 // TODO: argument initialiser to def_triangle2f
@@ -2004,47 +2122,81 @@ class rectangle2f extends shape2f {
 const triangle2f_POINTS = 3;
 class triangle2f extends shape2f {
   constructor(p1 = def_vec2f, p2 = def_vec2f, p3 = def_vec2f) {
+    super();
     this.p1 = p1;
     this.p2 = p2;
     this.p3 = p3;
   }
-  gP1() { return this.p1; };
-  gP2() { return this.p2; };
-  gP3() { return this.p3; };
-  pointCount() { return triangle2f_POINTS; }
+
+  gP1() {
+    return this.p1;
+  }
+
+  gP2() {
+    return this.p2;
+  }
+
+  gP3() {
+    return this.p3;
+  }
+
+  pointCount() {
+    return triangle2f_POINTS;
+  }
 
   //#region intersects other shape
 
   intersectsRect(rectangle = rectangle2f, normal = 1.0) {
-    return triangle2f_intersectsRect(this.p1, this.p2, this.p3, rectangle.p1, rectangle.p2, +normal);
+    return triangle2f_intersectsRect(
+      this.p1,
+      this.p2,
+      this.p3,
+      rectangle.p1,
+      rectangle.p2,
+      +normal,
+    );
   }
+
   intersectsTangle(triangle = triangle2f) {
-    return triangle2f_intersectsTangle(this.p1, this.p2, this.p3, triangle.p1, triangle.p2, triangle.p3);
+    return triangle2f_intersectsTangle(
+      this.p1,
+      this.p2,
+      this.p3,
+      triangle.p1,
+      triangle.p2,
+      triangle.p3,
+    );
   }
   //#endregion
 }
 
 /**
  * Tests if triangle intersects with rectangle
- * 
- * @param {rectangle2f} rectangle; 
- * @param {*} normal 
+ *
+ * @param {rectangle2f} rectangle
+ * @param {*} normal
  */
-function triangle2f_intersectsRect(l1 = def_vec2f, l2 = def_vec2f, l3 = def_vec2f, r1 = def_vec2f, r2 = def_vec2f, normal = 1.0) {
+function triangle2f_intersectsRect(
+  l1 = def_vec2f, l2 = def_vec2f, l3 = def_vec2f,
+  r1 = def_vec2f, r2 = def_vec2f, normal = 1.0,
+) {
   normal = +normal;
   const dx = +(+r2.x - +r1.x);
   const dy = +(+r2.y - +r1.y);
   return !(
-    (((+l1.x - +r1.x) * +dy - (+l1.y - +r1.y) * +dx) * +normal < 0) ||
-    (((+l2.x - +r1.x) * +dy - (+l2.y - +r1.y) * +dx) * +normal < 0) ||
-    (((+l3.x - +r1.x) * +dy - (+l3.y - +r1.y) * +dx) * +normal < 0));
+    (((+l1.x - +r1.x) * +dy - (+l1.y - +r1.y) * +dx) * +normal < 0)
+    || (((+l2.x - +r1.x) * +dy - (+l2.y - +r1.y) * +dx) * +normal < 0)
+    || (((+l3.x - +r1.x) * +dy - (+l3.y - +r1.y) * +dx) * +normal < 0));
 }
-function triangle2f_intersectsTangle(l1, l2, l3, r1, r2, r3) {
+function triangle2f_intersectsTangle(
+  l1 = def_vec2f, l2 = def_vec2f, l3 = def_vec2f,
+  r1 = def_vec2f, r2 = def_vec2f, r3 = def_vec2f,
+) {
   const lnorm = +(
-      +(+(+l2.x - +l1.x) * +(+l3.y - +l1.y))
+    +(+(+l2.x - +l1.x) * +(+l3.y - +l1.y))
     - +(+(+l2.y - +l1.y) * +(+l3.x - +l1.x)));
   const rnorm = +(
-      +(+(+r2.x - +r1.x) * +(+r3.y - +r1.y))
+    +(+(+r2.x - +r1.x) * +(+r3.y - +r1.y))
     - +(+(+r2.y - +r1.y) * +(+r3.x - +r1.x)));
 
   return !(triangle2f_intersectsRect(r1, r2, r3, l1, l2, lnorm)
@@ -2065,7 +2217,11 @@ class segm2f {
       ? abs // is the coordinate absolute or relative?
       : true;
   }
-  gAbs() { return this.abs; }
+
+  gAbs() {
+    return this.abs;
+  }
+
   isValidPrecursor(segment) {
     return (segment === undefined || segment === null)
       || ((segment instanceof segm2f) && !(segment instanceof segm2f_Z));
@@ -2079,6 +2235,7 @@ class segm2f_M extends segm2f {
       ? x
       : new vec2f(+x, +y);
   }
+
   gP1() {
     return this.p1;
   }
@@ -2091,16 +2248,28 @@ class segm2f_v extends segm2f {
       ? this.y = y.y
       : y;
   }
-  gY() { return +this.y }
-  gP1() { return new vec2f(0.0, +this.y); }
+
+  gY() {
+    return +this.y;
+  }
+
+  gP1() {
+    return new vec2f(0.0, +this.y);
+  }
 }
 class segm2f_h extends segm2f {
   constructor(abs = false, x = 0.0) {
     super(abs);
-    this.x = 0.0;
+    this.x = +x;
   }
-  gX() { return +this.x; }
-  gP1() { return new vec2f(+this.x, 0.0); }
+
+  gX() {
+    return +this.x;
+  }
+
+  gP1() {
+    return new vec2f(+this.x, 0.0);
+  }
 }
 class segm2f_l extends segm2f {
   constructor(abs = false, p1 = def_vec2f, y = 0.0) {
@@ -2128,9 +2297,11 @@ class segm2f_q extends segm2f {
       this.p2 = new vec2f(+x2, +y2);
     }
   }
+
   gP1() {
     return this.p1;
   }
+
   gP2() {
     return this.p2;
   }
@@ -2142,6 +2313,7 @@ class segm2f_t extends segm2f {
       ? p1
       : new vec2f(+p1, +y);
   }
+
   hasValidPrecursor(segment) {
     return (segment instanceof segm2f_t)
       || (segment instanceof segm2f_q);
@@ -2160,17 +2332,18 @@ class segm2f_s extends segm2f {
     super(abs);
     // TODO
   }
+
   hasValidPrecursor(segment) {
     return (segment instanceof segm2f_s)
       || (segment instanceof segm2f_c);
   }
-
 }
 
 class segm2f_Z extends segm2f {
   constructor() {
     super(true);
   }
+
   hasValidPrecursor(segment) {
     return !(segment instanceof segm2f_Z);
   }
@@ -2179,14 +2352,17 @@ class segm2f_Z extends segm2f {
 
 //#region svg path object path2f
 class path2f extends shape2f {
-  constructor(list = []) {
+  constructor(abs = false, list = []) {
+    super(abs);
     this.list = list;
   }
+
   isClosed() {
     const list = this.list;
     const len = list.length;
     return (len > 0 && (list[len - 1] instanceof segm2f_Z));
   }
+
   add(segment) {
     const list = this.list;
     const len = list.length;
@@ -2196,44 +2372,58 @@ class path2f extends shape2f {
     }
     return false;
   }
+
   move(abs, x, y) {
     const segm = new segm2f_M(abs, x, y);
-    return add(segm);
+    return this.add(segm);
   }
+
   vertical(abs, y) {
     const segm = new segm2f_v(abs, y);
-    return add(segm);
+    return this.add(segm);
   }
+
   horizontal(abs, x) {
     const segm = new segm2f_h(abs, x);
-    return add(segm);
+    return this.add(segm);
   }
+
   line(abs, x, y) {
     const segm = new segm2f_l(abs, x, y);
-    return add(segm);
-  }
-  close() {
-    const segm = new seqm2f_Z();
-    return add(segm);
+    return this.add(segm);
   }
 
+  close() {
+    const segm = new segm2f_Z();
+    return this.add(segm);
+  }
 }
+
 //#endregion
 
+/* eslint-disable no-undef */
 // a dummy function to mimic the CSS-Paint-Api-1 specification
 const myRegisteredPaint__store__ = {};
 const myRegisterPaint = typeof registerPaint !== 'undefined'
   ? registerPaint
-  : (function () {
-    return function __registerPaint__(name, paintClass) {
+  : (function myRegisterPaint_initFunction() {
+    return function myRegisterPaint_registerPaint__(name, paintClass) {
       if (!myRegisteredPaint__store__.hasOwnProperty(name)) {
         myRegisteredPaint__store__[name] = paintClass;
       }
-    }        
+    };
   })();
 
+const workletState = Object.freeze(Object.seal({
+  init: 0,
+  loading: 1,
+  preparing: 2,
+  running: 3,
+  exiting: 4,
+  ended: 5,
+}));
 
-const workletState = Object.freeze({ init:0, loading:1, preparing:2, running:3, exiting:4, ended:5 });
+// Fork of hyperapp version 1 under MIT License
 
 class vnode {
   constructor(name, attributes, children) {
@@ -2244,12 +2434,6 @@ class vnode {
   }
 }
 
-/* eslint-disable func-names */
-/* eslint-disable curly */
-/* eslint-disable nonblock-statement-body-position */
-/* eslint-disable padded-blocks */
-/* eslint-disable prefer-arrow-callback */
-/* eslint-disable no-use-before-define */
 function h(name, attributes = {}, ...rest) {
   // the jsx transpiler sets null on the attributes parameter
   // when no parameter is defined, instead of 'undefined'.
@@ -2273,7 +2457,7 @@ function h(name, attributes = {}, ...rest) {
     itemx = rest[ix];
     ix++;
     if (itemx === undefined || itemx === null || itemx === false || itemx === true) continue;
-    else if (itemx.pop) {
+    if (itemx.pop) {
       // this is an array so fill the children array with the items of this one
       // we do not go any deeper!
       leny = itemx.length;
@@ -2347,10 +2531,10 @@ function app(state, actions, view, container) {
     return {
       nodeName: element.nodeName.toLowerCase(),
       attributes: {},
-      children: map.call(element.childNodes, function (element) {
-        return element.nodeType === 3 // Node.TEXT_NODE
-          ? element.nodeValue
-          : recycleElement(element);
+      children: map.call(element.childNodes, function hyperapp_recycleElement(el) {
+        return el.nodeType === 3 // Node.TEXT_NODE
+          ? el.nodeValue
+          : recycleElement(el);
       }),
     };
   }
@@ -2405,15 +2589,14 @@ function app(state, actions, view, container) {
     return source;
   }
 
-  function wireStateToActions(path, state, actions) {
-
+  function wireStateToActions(path, myState, myActions) {
     function createActionProxy(key, action) {
-      actions[key] = function actionProxy(data) {
+      myActions[key] = function actionProxy(data) {
         const slice = get(path, globalState);
 
         let result = action(data);
         if (typeof result === 'function') {
-          result = result(slice, actions);
+          result = result(slice, myActions);
         }
 
         if (result && result !== slice && !result.then) {
@@ -2425,20 +2608,21 @@ function app(state, actions, view, container) {
       };
     }
 
-    for (const key in actions) {
-      if (typeof actions[key] === 'function') {
-        createActionProxy(key, actions[key]);
+    for (const key in myActions) {
+      if (typeof myActions[key] === 'function') {
+        createActionProxy(key, myActions[key]);
       }
       else {
         // wire slice/namespace of state to actions
         wireStateToActions(
           path.concat(key),
-          (state[key] = clone(state[key])),
-          (actions[key] = clone(actions[key])));
+          (myState[key] = clone(myState[key])),
+          (myActions[key] = clone(myActions[key])),
+        );
       }
     }
 
-    return actions;
+    return myActions;
   }
 
   function getKey(node) {
@@ -2458,14 +2642,16 @@ function app(state, actions, view, container) {
         if (typeof oldValue === 'string') {
           oldValue = element.style.cssText = '';
         }
-
-        for (const i in clone(oldValue, value)) {
-          const style = value == null || value[i] == null ? '' : value[i];
-          if (i[0] === '-') {
-            element.style.setProperty(i, style);
-          }
-          else {
-            element.style[i] = style;
+        const lval = clone(oldValue, value);
+        for (const i in lval) {
+          if (lval.hasOwnProperty(i)) {
+            const style = (value == null || value[i] == null) ? '' : value[i];
+            if (i[0] === '-') {
+              element.style.setProperty(i, style);
+            }
+            else {
+              element.style[i] = style;
+            }
           }
         }
       }
@@ -2520,18 +2706,16 @@ function app(state, actions, view, container) {
   }
 
   function createElement(node, isSvg) {
-    const element = typeof node === 'string' || typeof node === 'number'
+    const element = (typeof node === 'string' || typeof node === 'number')
       ? document.createTextNode(node)
       : (isSvg || node.nodeName === 'svg')
-        ? document.createElementNS(
-          'http://www.w3.org/2000/svg',
-          node.nodeName)
+        ? document.createElementNS('http://www.w3.org/2000/svg', node.nodeName)
         : document.createElement(node.nodeName);
 
     const attributes = node.attributes;
     if (attributes) {
       if (attributes.oncreate) {
-        lifecycle.push(function () {
+        lifecycle.push(function hyperapp_createElement_lifecycle() {
           attributes.oncreate(element);
         });
       }
@@ -2542,8 +2726,10 @@ function app(state, actions, view, container) {
       }
 
       for (const name in attributes) {
-        const value = attributes[name];
-        updateAttribute(element, name, value, null, isSvg);
+        if (attributes.hasOwnProperty(name)) {
+          const value = attributes[name];
+          updateAttribute(element, name, value, null, isSvg);
+        }
       }
     }
 
@@ -2562,13 +2748,14 @@ function app(state, actions, view, container) {
           name,
           attributes[name],
           oldAttributes[name],
-          isSvg);
+          isSvg,
+        );
       }
     }
 
     const cb = isRecycling ? attributes.oncreate : attributes.onupdate;
     if (cb) {
-      lifecycle.push(function () {
+      lifecycle.push(function hyperapp_updateElement_lifecycle() {
         cb(element, oldAttributes);
       });
     }
@@ -2622,7 +2809,8 @@ function app(state, actions, view, container) {
           element,
           oldNode.attributes,
           node.attributes,
-          (isSvg = isSvg || node.nodeName === 'svg'));
+          (isSvg = isSvg || node.nodeName === 'svg'),
+        );
 
         const oldKeyed = {};
         const newKeyed = {};
@@ -2671,7 +2859,8 @@ function app(state, actions, view, container) {
                 element.insertBefore(keyedNode[0], oldElements[i]),
                 keyedNode[1],
                 children[k],
-                isSvg);
+                isSvg,
+              );
             }
             else {
               patch(element, oldElements[i], null, children[k], isSvg);
@@ -2689,9 +2878,11 @@ function app(state, actions, view, container) {
           i++;
         }
 
-        for (const i in oldKeyed) {
-          if (!newKeyed[i]) {
-            removeElement(element, oldKeyed[i][0], oldKeyed[i][1]);
+        for (const ik in oldKeyed) {
+          if (oldKeyed.hasOwnProperty(ik)) {
+            if (!newKeyed[ik]) {
+              removeElement(element, oldKeyed[ik][0], oldKeyed[ik][1]);
+            }
           }
         }
       }
@@ -2867,4 +3058,5 @@ const inputTypes = {
 
 // #endregion
 
-export { PRIMITIVES, _h, abbr, addCssClass, app, area, article, aside, audio, b, bdi, bdo, blockquote, button, caption, checkIfValueDisabled, circle2f, circle2f_POINTS, cite, clone, code, col, colgroup, collapseCssClass, collapseToString, copyAttributes, data, datalist, dd, deepEquals, def_vec2f, def_vec2i, def_vec3f, defaultInputType, del, details, dfn, div, dl, dt, em, embed, fetchImage, fieldset, figcaption, figure, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_gcd, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, footer, getFirstObjectItem, h, h1, h2, h3, h4, h5, h6, hasCssClass, header, hr, i, img, input, inputTypes, ins, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_clampu_u8a, int_clampu_u8b, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_random, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, isPureObject, kbd, label, legend, li, main, map, mark, mathf_EPSILON, mathf_PI, mathf_SQRTFIVE, mathf_abs, mathf_asin, mathf_atan2$1 as mathf_atan2, mathf_ciel, mathf_cos, mathf_floor$1 as mathf_floor, mathf_max$1 as mathf_max, mathf_min$1 as mathf_min, mathf_pow, mathf_random, mathf_round$1 as mathf_round, mathf_sin, mathf_sqrt, mathi_floor, mathi_max, mathi_min, mathi_round, mathi_sqrt, mergeArrays, mergeObjects, meter, myRegisterPaint, nav, object, ol, optgroup, option, output, p, param, path2f, picture, point2f, point2f_POINTS, pre, progress, q, rectangle2f, rectangle2f_POINTS, recursiveDeepCopy, removeCssClass, s, sanitizePrimitiveValue, section, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, select, shape2f, source, span, strong, sub, summary, sup, table, tbody, td, tfooter, th, thead, time, toggleCssClass, tr, track, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, u, ul, variable, vec2f, vec2f_about, vec2f_add, vec2f_addms, vec2f_adds, vec2f_angle, vec2f_ceil, vec2f_cross, vec2f_cross3, vec2f_dist, vec2f_dist2, vec2f_div, vec2f_divs, vec2f_dot, vec2f_eq, vec2f_eqs, vec2f_eqstrict, vec2f_floor, vec2f_iabout, vec2f_iadd, vec2f_iaddms, vec2f_iadds, vec2f_iceil, vec2f_idiv, vec2f_idivs$1 as vec2f_idivs, vec2f_ifloor, vec2f_iinv, vec2f_imax, vec2f_imin, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_inv, vec2f_iperp, vec2f_irot90$1 as vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_iround, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_lerp, vec2f_mag, vec2f_mag2, vec2f_max, vec2f_min, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_round, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit, video, vnode, wbr, workletState };
+export { PRIMITIVES, _h, abbr, addCssClass, app, area, article, aside, audio, b, bdi, bdo, blockquote, button, caption, checkIfValueDisabled, circle2f, circle2f_POINTS, cite, clone, code, col, colgroup, collapseCssClass, collapseToString, copyAttributes, data, datalist, dd, deepEquals, def_vec2f, def_vec2i, def_vec3f, defaultInputType, del, details, dfn, div, dl, dt, em, embed, fetchImage, fieldset, figcaption, figure, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_gcd, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, footer, getFirstObjectItem, h, h1, h2, h3, h4, h5, h6, hasCssClass, header, hr, i, img, input, inputTypes, ins, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_clampu_u8a, int_clampu_u8b, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_random, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, isPureObject, kbd, label, legend, li, main, map, mark, mathf_EPSILON, mathf_PI, mathf_SQRTFIVE, mathf_abs, mathf_asin, mathf_atan2, mathf_ceil, mathf_cos, mathf_floor, mathf_max, mathf_min, mathf_pow, mathf_random, mathf_round, mathf_sin, mathf_sqrt, mathi_abs, mathi_floor, mathi_max, mathi_min, mathi_round, mathi_sqrt, mergeArrays, mergeObjects, meter, myRegisterPaint, nav, object, ol, optgroup, option, output, p, param, path2f, picture, point2f, point2f_POINTS, pre, progress, q, rectangle2f, rectangle2f_POINTS, recursiveDeepCopy, removeCssClass, s, sanitizePrimitiveValue, section, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, select, shape2f, source, span, strong, sub, summary, sup, table, tbody, td, tfooter, th, thead, time, toggleCssClass, tr, track, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, u, ul, variable, vec2f, vec2f_about, vec2f_add, vec2f_addms, vec2f_adds, vec2f_angle, vec2f_ceil, vec2f_cross, vec2f_cross3, vec2f_dist, vec2f_dist2, vec2f_div, vec2f_divs, vec2f_dot, vec2f_eq, vec2f_eqs, vec2f_eqstrict, vec2f_floor, vec2f_iabout, vec2f_iadd, vec2f_iaddms, vec2f_iadds, vec2f_iceil, vec2f_idiv, vec2f_idivs, vec2f_ifloor, vec2f_iinv, vec2f_imax, vec2f_imin, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_inv, vec2f_iperp, vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_iround, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_lerp, vec2f_mag, vec2f_mag2, vec2f_max, vec2f_min, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_round, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit, video, vnode, wbr, workletState };
+//# sourceMappingURL=index.js.map

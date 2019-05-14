@@ -27,4 +27,3 @@ export function checkIfValueDisabled(value, nullable, disabled) {
   if (nullable && value === null) return false;
   return !PRIMITIVES.includes(typeof value);
 }
-

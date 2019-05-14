@@ -17,8 +17,14 @@ export class vec3f {
       this.z = +z;
     }
   }
-  gP1() { return new vec2f(+this.x, +this.y); }
-  clone() { return Object.create(this); }
+
+  gP1() {
+    return new vec2f(+this.x, +this.y);
+  }
+
+  clone() {
+    return Object.create(this);
+  }
 }
 
 //#region flat vec3f pure primitive operators
@@ -27,14 +33,14 @@ export function vec3f_div(a = def_vec3f, b = def_vec3f) {
   return new vec3f(
     +(+a.x / +b.x),
     +(+a.y / +b.y),
-    +(+a.z / +b.z)
+    +(+a.z / +b.z),
   );
 }
 export function vec3f_divs(v = def_vec3f, scalar = 0.0) {
   return new vec3f(
     +(+v.x / +scalar),
     +(+v.y / +scalar),
-    +(+v.z / +scalar)
+    +(+v.z / +scalar),
   );
 }
 
@@ -69,7 +75,7 @@ export function vec3f_unit(v = def_vec3f) {
   return vec3f_divs(v, +vec3f_mag(v));
 }
 export function vec3f_iunit(v = def_vec3f) {
-  return vec2f_idivs(v, +vec3f_mag(v));
+  return vec3f_idivs(v, +vec3f_mag(v));
 }
 
 export function vec3f_crossABAB(a = def_vec3f, b = def_vec3f) {
