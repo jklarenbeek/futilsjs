@@ -9,18 +9,6 @@ export function copyAttributes(src, dst) {
   }
 }
 
-// a dummy function to mimic the CSS-Paint-Api-1 specification
-const myRegisteredPaint__store__ = {};
-export const myRegisterPaint = typeof registerPaint !== 'undefined'
-  ? registerPaint
-  : (function () {
-    return function __registerPaint__(name, paintClass) {
-      if (!myRegisteredPaint__store__.hasOwnProperty(name)) {
-        myRegisteredPaint__store__[name] = paintClass;
-      }
-    }        
-  })();
-
 export function fetchImage(htmlElement, clientWidth, clientHeight) {
   return new Promise(function(resolve, reject) {
     if (typeof htmlElement === 'string') {
