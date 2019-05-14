@@ -2207,6 +2207,38 @@ function triangle2f_intersectsTangle(
     || triangle2f_intersectsRect(l1, l2, l3, r3, r1, rnorm));
 }
 
+const trapezoid2f_POINTS = 4;
+class trapezoid2f extends shape2f {
+  constructor(p1 = def_vec2f, p2 = def_vec2f, p3 = def_vec2f, p4 = def_vec2f) {
+    super();
+    this.p1 = p1;
+    this.p2 = p2;
+    this.p3 = p3;
+    this.p4 = p4;
+  }
+
+  gP1() {
+    return this.p1;
+  }
+
+  gP2() {
+    return this.p2;
+  }
+
+  gP3() {
+    return this.p3;
+  }
+
+  gP4() {
+    return this.p4;
+  }
+
+  pointCount() {
+    return rectangle2f_POINTS;
+  }
+}
+
+
 //#endregion
 
 //#region svg path segments
@@ -3058,5 +3090,5 @@ const inputTypes = {
 
 // #endregion
 
-export { PRIMITIVES, _h, abbr, addCssClass, app, area, article, aside, audio, b, bdi, bdo, blockquote, button, caption, checkIfValueDisabled, circle2f, circle2f_POINTS, cite, clone, code, col, colgroup, collapseCssClass, collapseToString, copyAttributes, data, datalist, dd, deepEquals, def_vec2f, def_vec2i, def_vec3f, defaultInputType, del, details, dfn, div, dl, dt, em, embed, fetchImage, fieldset, figcaption, figure, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_gcd, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, footer, getFirstObjectItem, h, h1, h2, h3, h4, h5, h6, hasCssClass, header, hr, i, img, input, inputTypes, ins, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_clampu_u8a, int_clampu_u8b, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_random, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, isPureObject, kbd, label, legend, li, main, map, mark, mathf_EPSILON, mathf_PI, mathf_SQRTFIVE, mathf_abs, mathf_asin, mathf_atan2, mathf_ceil, mathf_cos, mathf_floor, mathf_max, mathf_min, mathf_pow, mathf_random, mathf_round, mathf_sin, mathf_sqrt, mathi_abs, mathi_floor, mathi_max, mathi_min, mathi_round, mathi_sqrt, mergeArrays, mergeObjects, meter, myRegisterPaint, nav, object, ol, optgroup, option, output, p, param, path2f, picture, point2f, point2f_POINTS, pre, progress, q, rectangle2f, rectangle2f_POINTS, recursiveDeepCopy, removeCssClass, s, sanitizePrimitiveValue, section, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, select, shape2f, source, span, strong, sub, summary, sup, table, tbody, td, tfooter, th, thead, time, toggleCssClass, tr, track, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, u, ul, variable, vec2f, vec2f_about, vec2f_add, vec2f_addms, vec2f_adds, vec2f_angle, vec2f_ceil, vec2f_cross, vec2f_cross3, vec2f_dist, vec2f_dist2, vec2f_div, vec2f_divs, vec2f_dot, vec2f_eq, vec2f_eqs, vec2f_eqstrict, vec2f_floor, vec2f_iabout, vec2f_iadd, vec2f_iaddms, vec2f_iadds, vec2f_iceil, vec2f_idiv, vec2f_idivs, vec2f_ifloor, vec2f_iinv, vec2f_imax, vec2f_imin, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_inv, vec2f_iperp, vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_iround, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_lerp, vec2f_mag, vec2f_mag2, vec2f_max, vec2f_min, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_round, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit, video, vnode, wbr, workletState };
+export { PRIMITIVES, _h, abbr, addCssClass, app, area, article, aside, audio, b, bdi, bdo, blockquote, button, caption, checkIfValueDisabled, circle2f, circle2f_POINTS, cite, clone, code, col, colgroup, collapseCssClass, collapseToString, copyAttributes, data, datalist, dd, deepEquals, def_vec2f, def_vec2i, def_vec3f, defaultInputType, del, details, dfn, div, dl, dt, em, embed, fetchImage, fieldset, figcaption, figure, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_gcd, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, footer, getFirstObjectItem, h, h1, h2, h3, h4, h5, h6, hasCssClass, header, hr, i, img, input, inputTypes, ins, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_clampu_u8a, int_clampu_u8b, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_random, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, isPureObject, kbd, label, legend, li, main, map, mark, mathf_EPSILON, mathf_PI, mathf_SQRTFIVE, mathf_abs, mathf_asin, mathf_atan2, mathf_ceil, mathf_cos, mathf_floor, mathf_max, mathf_min, mathf_pow, mathf_random, mathf_round, mathf_sin, mathf_sqrt, mathi_abs, mathi_floor, mathi_max, mathi_min, mathi_round, mathi_sqrt, mergeArrays, mergeObjects, meter, myRegisterPaint, nav, object, ol, optgroup, option, output, p, param, path2f, picture, point2f, point2f_POINTS, pre, progress, q, rectangle2f, rectangle2f_POINTS, recursiveDeepCopy, removeCssClass, s, sanitizePrimitiveValue, section, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, select, shape2f, source, span, strong, sub, summary, sup, table, tbody, td, tfooter, th, thead, time, toggleCssClass, tr, track, trapezoid2f, trapezoid2f_POINTS, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, u, ul, variable, vec2f, vec2f_about, vec2f_add, vec2f_addms, vec2f_adds, vec2f_angle, vec2f_ceil, vec2f_cross, vec2f_cross3, vec2f_dist, vec2f_dist2, vec2f_div, vec2f_divs, vec2f_dot, vec2f_eq, vec2f_eqs, vec2f_eqstrict, vec2f_floor, vec2f_iabout, vec2f_iadd, vec2f_iaddms, vec2f_iadds, vec2f_iceil, vec2f_idiv, vec2f_idivs, vec2f_ifloor, vec2f_iinv, vec2f_imax, vec2f_imin, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_inv, vec2f_iperp, vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_iround, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_lerp, vec2f_mag, vec2f_mag2, vec2f_max, vec2f_min, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_round, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit, video, vnode, wbr, workletState };
 //# sourceMappingURL=index.js.map

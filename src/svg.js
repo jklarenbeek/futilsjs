@@ -154,6 +154,38 @@ export function triangle2f_intersectsTangle(
     || triangle2f_intersectsRect(l1, l2, l3, r3, r1, rnorm));
 }
 
+export const trapezoid2f_POINTS = 4;
+export class trapezoid2f extends shape2f {
+  constructor(p1 = def_vec2f, p2 = def_vec2f, p3 = def_vec2f, p4 = def_vec2f) {
+    super();
+    this.p1 = p1;
+    this.p2 = p2;
+    this.p3 = p3;
+    this.p4 = p4;
+  }
+
+  gP1() {
+    return this.p1;
+  }
+
+  gP2() {
+    return this.p2;
+  }
+
+  gP3() {
+    return this.p3;
+  }
+
+  gP4() {
+    return this.p4;
+  }
+
+  pointCount() {
+    return rectangle2f_POINTS;
+  }
+}
+
+
 //#endregion
 
 //#region svg path segments

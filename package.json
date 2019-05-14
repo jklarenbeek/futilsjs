@@ -1,6 +1,6 @@
 {
   "name": "futilsjs",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A collection of javascript helper functions for fast vector math and more.",
   "module": "./dist/index.js",
   "files": [
@@ -12,9 +12,9 @@
   "keywords": [
     "javascript",
     "math",
-    "float",
     "vector",
-    "integer"
+    "spa",
+    "jsx"
   ],
   "author": "jklarenbeek@gmail.com",
   "license": "MIT",
@@ -45,7 +45,6 @@
     "_lib/*",
     "_doc/*"
   ],
-  "$comment_eslintConfig": "dude, ... dont ask me, I dont understand this stuff.",
   "$comment_eslintConfig_parser": "babel-eslint",
   "eslintConfig": {
     "root": true,
