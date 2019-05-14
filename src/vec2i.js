@@ -210,7 +210,7 @@ export function vec2i_irot90(v = def_vec2i) {
   v.y = (v.x|0);
   return v;
 }
-export const vec2i_iperp = vec2f_irot90;
+export const vec2i_iperp = vec2i_irot90;
 
 //#endregion
 
@@ -218,12 +218,12 @@ export const vec2i_iperp = vec2f_irot90;
 
 /**
  * Tests if triangle intersects with a rectangle
- * 
- * @param {*} v1 
- * @param {*} v2 
- * @param {*} v3 
- * @param {*} r1 
- * @param {*} r2 
+ *
+ * @param {*} v1
+ * @param {*} v2
+ * @param {*} v3
+ * @param {*} r1
+ * @param {*} r2
  * @returns {boolean} true if they intersect.
  */
 export function triangle2i_intersectsRect(v1, v2, v3, r1, r2) {
@@ -299,15 +299,15 @@ export function triangle2i_intersectsRect(v1, v2, v3, r1, r2) {
 
 /**
  * just some notes
- * 
- * 
+ *
+ *
 const fastSin_B = 1.2732395; // 4/pi
 const fastSin_C = -0.40528473; // -4 / (pi²)
 export function fastSin(value) {
   // See  for graph and equations
   // https://www.desmos.com/calculator/8nkxlrmp7a
-  // logic explained here : http://devmaster.net/posts/9648/fast-and-accurate-sine-cosine			
-      
+  // logic explained here : http://devmaster.net/posts/9648/fast-and-accurate-sine-cosine
+
   return (value > 0)
     ? fastSin_B * value - fastSin_C * value * value
     : fastSin_B * value + fastSin_C * value * value;
@@ -326,7 +326,7 @@ export function fastSin2(a) {
     , 0 > c && (b = -b)
     , 2.44E-4 * b;
 };
-  
+
 export function fastSin3(a) {
   a *= 5214;
   let b = a << 17;
