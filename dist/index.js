@@ -37,7 +37,19 @@ function getFirstObjectItem(items) {
   return undefined;
 }
 
-function recursiveDeepCopy(o) {
+function clone(target, source) {
+  const out = {};
+
+  for (const t in target) {
+    if (target.hasOwnProperty(t)) out[t] = target[t];
+  }
+  for (const s in source) {
+    if (source.hasOwnProperty(s)) out[s] = source[s];
+  }
+  return out;
+}
+
+function cloneDeep(o) {
   if (typeof o !== 'object') {
     return o;
   }
@@ -48,7 +60,7 @@ function recursiveDeepCopy(o) {
   if (o instanceof Array) {
     const newO = [];
     for (let i = 0; i < o.length; i += 1) {
-      newO[i] = recursiveDeepCopy(o[i]);
+      newO[i] = cloneDeep(o[i]);
     }
     return newO;
   }
@@ -57,20 +69,20 @@ function recursiveDeepCopy(o) {
     const keys = Reflect.ownKeys(o);
     for (const i in keys) {
       if (keys.hasOwnProperty(i)) {
-        newO[i] = recursiveDeepCopy(o[i]);
+        newO[i] = cloneDeep(o[i]);
       }
     }
     return newO;
   }
 }
 
-function mergeObjects(target) {
-  const ln = arguments.length;
+function mergeObjects(target, ...rest) {
+  const ln = rest.length;
   const mergeFn = mergeObjects;
 
-  let i = 1;
+  let i = 0;
   for (; i < ln; i++) {
-    const object = arguments[i];
+    const object = rest[i];
     for (const key in object) {
       if (object.hasOwnProperty(key)) {
         const value = object[key];
@@ -103,6 +115,43 @@ function mergeArrays(a, b) {
   }
 
   return a;
+}
+
+function collapseArray(rest) {
+  const result = [];
+  let cursor = 0;
+
+  const lenx = rest.length;
+  let itemx = null;
+  let ix = 0;
+
+
+  let leny = 0;
+  let itemy = null;
+  let iy = 0;
+
+  // fill the children array with the rest parameters
+  while (ix < lenx) {
+    itemx = rest[ix];
+    ++ix;
+    if (itemx === undefined || itemx === null || itemx === false || itemx === true) continue;
+    if (itemx.pop) {
+      // this is an array so fill the children array with the items of this one
+      // we do not go any deeper!
+      leny = itemx.length;
+      iy = 0;
+      while (iy < leny) {
+        itemy = itemx[iy];
+        ++iy;
+        if (itemy === undefined || itemy === null || itemy === false || itemy === true) continue;
+        result[cursor++] = itemy;
+      }
+    }
+    else {
+      result[cursor++] = itemx;
+    }
+  }
+  return result;
 }
 
 //#region
@@ -2455,7 +2504,7 @@ const workletState = Object.freeze(Object.seal({
   ended: 5,
 }));
 
-// Fork of hyperapp version 1 under MIT License
+/* eslint-disable object-shorthand */
 
 class vnode {
   constructor(name, attributes, children) {
@@ -2466,45 +2515,14 @@ class vnode {
   }
 }
 
+
 function h(name, attributes = {}, ...rest) {
   // the jsx transpiler sets null on the attributes parameter
   // when no parameter is defined, instead of 'undefined'.
   // therefor the default operator doesn't kick in,
   attributes = attributes || {}; //  and do we need this kind of stuff.
 
-  const children = [];
-  let ic = 0;
-
-  const lenx = rest.length;
-  let itemx = null;
-  let ix = 0;
-
-
-  let leny = 0;
-  let itemy = null;
-  let iy = 0;
-
-  // fill the children array with the rest parameters
-  while (ix < lenx) {
-    itemx = rest[ix];
-    ix++;
-    if (itemx === undefined || itemx === null || itemx === false || itemx === true) continue;
-    if (itemx.pop) {
-      // this is an array so fill the children array with the items of this one
-      // we do not go any deeper!
-      leny = itemx.length;
-      iy = 0;
-      while (iy < leny) {
-        itemy = itemx[iy];
-        iy++;
-        if (itemy === undefined || itemy === null || itemy === false || itemy === true) continue;
-        children[ic++] = itemy;
-      }
-    }
-    else {
-      children[ic++] = itemx;
-    }
-  }
+  const children = collapseArray(rest);
 
   return typeof name === 'function'
     ? name(attributes, children)
@@ -2533,16 +2551,18 @@ function _h(name, attributes, ...rest) {
     : new vnode(name, attributes, children);
 }
 
-function clone(target, source) {
-  const out = {};
-
-  for (const t in target) {
-    if (target.hasOwnProperty(t)) out[t] = target[t];
+function hwrap(name, type) {
+  if (type === undefined) {
+    return function hwrap_innerName(attr, children) {
+      return h(name, attr, children);
+    };
   }
-  for (const s in source) {
-    if (source.hasOwnProperty(s)) out[s] = source[s];
+  else {
+    return function hwrap_innerType(attr, children) {
+      return h(name, { ...attr, type: type }, children);
+    };
   }
-  return out;
+  // return (attr, children) => h(name, attr, children);
 }
 
 function app(state, actions, view, container) {
@@ -2923,172 +2943,252 @@ function app(state, actions, view, container) {
   }
 }
 
+/* eslint-disable import/prefer-default-export */
+
+const html = function html_vnode(attr, children) {
+  return h('html', attr, children);
+};
+
 // #region html text elements
-const h1 = (attr, children) => h('h1', attr, children);
-const h2 = (attr, children) => h('h2', attr, children);
-const h3 = (attr, children) => h('h3', attr, children);
-const h4 = (attr, children) => h('h4', attr, children);
-const h5 = (attr, children) => h('h5', attr, children);
-const h6 = (attr, children) => h('h6', attr, children);
-const p = (attr, children) => h('p', attr, children);
+html.h1 = hwrap('h1');
+html.h2 = hwrap('h2');
+html.h3 = hwrap('h3');
+html.h4 = hwrap('h4');
+html.h5 = hwrap('h5');
+html.h6 = hwrap('h6');
+html.p = hwrap('p');
 
-const i = (attr, children) => h('i', attr, children);
-const b = (attr, children) => h('b', attr, children);
-const u = (attr, children) => h('u', attr, children);
-const s = (attr, children) => h('s', attr, children);
-const q = (attr, children) => h('q', attr, children);
-const pre = (attr, children) => h('pre', attr, children);
-const sub = (attr, children) => h('sub', attr, children);
-const sup = (attr, children) => h('sup', attr, children);
-const wbr = (attr, children) => h('wbr', attr, children);
-const blockquote = (attr, children) => h('blockquote', attr, children);
+html.i = hwrap('i');
+html.b = hwrap('b');
+html.u = hwrap('u');
+html.s = hwrap('s');
+html.q = hwrap('q');
+html.pre = hwrap('pre');
+html.sub = hwrap('sub');
+html.sup = hwrap('sup');
+html.wbr = hwrap('wbr');
+html.blockquote = hwrap('blockquote');
 
-const bdi = (attr, children) => h('bdi', attr, children);
-const bdo = (attr, children) => h('bdo', attr, children);
+html.bdi = hwrap('bdi');
+html.bdo = hwrap('bdo');
 // #endregion
 
 // #region html semantic text elements
-const cite = (attr, children) => h('cite', attr, children);
-const abbr = (attr, children) => h('abbr', attr, children);
-const dfn = (attr, children) => h('dfn', attr, children);
+html.cite = hwrap('cite');
+html.abbr = hwrap('abbr');
+html.dfn = hwrap('dfn');
 
-const del = (attr, children) => h('del', attr, children);
-const ins = (attr, children) => h('ins', attr, children);
-const mark = (attr, children) => h('mark', attr, children);
+html.del = hwrap('del');
+html.ins = hwrap('ins');
+html.mark = hwrap('mark');
 
-const time = (attr, children) => h('time', attr, children);
-const data = (attr, children) => h('data', attr, children);
+html.time = hwrap('time');
+html.data = hwrap('data');
 // #endregion
 
 // #region html phrase elements
-const em = (attr, children) => h('em', attr, children);
-const code = (attr, children) => h('code', attr, children);
-const strong = (attr, children) => h('strong', attr, children);
-const kbd = (attr, children) => h('kbd', attr, children);
-const variable = (attr, children) => h('var', attr, children);
+html.em = hwrap('em');
+html.code = hwrap('code');
+html.strong = hwrap('strong');
+html.kbd = hwrap('kbd');
+html.variable = hwrap('var');
 // #endregion
 
 // #region html common elements (non-semantic)
-const div = (attr, children) => h('div', attr, children);
-const span = (attr, children) => h('span', attr, children);
-const hr = (attr, children) => h('hr', attr, children);
+html.div = hwrap('div');
+html.span = hwrap('span');
+html.hr = hwrap('hr');
 // #endregion
 
 // #region html widget elements
-const progress = (attr, children) => h('progress', attr, children);
-const meter = (attr, children) => h('meter', attr, children);
+html.progress = hwrap('progress');
+html.meter = hwrap('meter');
 // #endregion
 
 // #region html semantic layout elements
-const main = (attr, children) => h('main', attr, children);
-const header = (attr, children) => h('header', attr, children);
-const nav = (attr, children) => h('nav', attr, children);
-const article = (attr, children) => h('article', attr, children);
-const section = (attr, children) => h('section', attr, children);
-const aside = (attr, children) => h('aside', attr, children);
-const footer = (attr, children) => h('footer', attr, children);
+html.main = hwrap('main');
+html.header = hwrap('header');
+html.nav = hwrap('nav');
+html.article = hwrap('article');
+html.section = hwrap('section');
+html.aside = hwrap('aside');
+html.footer = hwrap('footer');
 
-const details = (attr, children) => h('details', attr, children);
-const summary = (attr, children) => h('summary', attr, children);
+html.details = hwrap('details');
+html.summary = hwrap('summary');
 
-const figure = (attr, children) => h('figure', attr, children);
-const figcaption = (attr, children) => h('figcaption', attr, children);
+html.figure = hwrap('figure');
+html.figcaption = hwrap('figcaption');
 // #endregion
 
 // #region table elements
 // note: sort of in order of sequence
-const table = (attr, children) => h('table', attr, children);
-const caption = (attr, children) => h('caption', attr, children);
-const colgroup = (attr, children) => h('colgroup', attr, children);
-const col = (attr, children) => h('col', attr, children);
+html.table = hwrap('table');
+html.caption = hwrap('caption');
+html.colgroup = hwrap('colgroup');
+html.col = hwrap('col');
 
-const thead = (attr, children) => h('thead', attr, children);
-const tbody = (attr, children) => h('tbody', attr, children);
-const tfooter = (attr, children) => h('tfooter', attr, children);
+html.thead = hwrap('thead');
+html.tbody = hwrap('tbody');
+html.tfooter = hwrap('tfooter');
 
-const tr = (attr, children) => h('tr', attr, children);
-const th = (attr, children) => h('th', attr, children);
-const td = (attr, children) => h('td', attr, children);
+html.tr = hwrap('tr');
+html.th = hwrap('th');
+html.td = hwrap('td');
 // #endregion
 
 // #region html list elements
-const ul = (attr, children) => h('ul', attr, children);
-const ol = (attr, children) => h('ol', attr, children);
-const li = (attr, children) => h('li', attr, children);
+html.ul = hwrap('ul');
+html.ol = hwrap('ol');
+html.li = hwrap('li');
 
-const dl = (attr, children) => h('dl', attr, children);
-const dt = (attr, children) => h('dt', attr, children);
-const dd = (attr, children) => h('dd', attr, children);
+html.dl = hwrap('dl');
+html.dt = hwrap('dt');
+html.dd = hwrap('dd');
 // #endregion
 
 // #region html multimedia elements
-const img = (attr, children) => h('img', attr, children);
-const map = (attr, children) => h('map', attr, children);
-const area = (attr, children) => h('area', attr, children);
+html.img = hwrap('img');
+html.map = hwrap('map');
+html.area = hwrap('area');
 
-const audio = (attr, children) => h('audio', attr, children);
-const picture = (attr, children) => h('picture', attr, children);
-const video = (attr, children) => h('video', attr, children);
+html.audio = hwrap('audio');
+html.picture = hwrap('picture');
+html.video = hwrap('video');
 
-const source = (attr, children) => h('source', attr, children);
-const track = (attr, children) => h('track', attr, children);
+html.source = hwrap('source');
+html.track = hwrap('track');
 
-const object = (attr, children) => h('object', attr, children);
-const param = (attr, children) => h('param', attr, children);
+html.object = hwrap('object');
+html.param = hwrap('param');
 
-const embed = (attr, children) => h('embed', attr, children);
+html.embed = hwrap('embed');
 // #endregion
 
 // #region simple html form elements
-const fieldset = (attr, children) => h('fieldset', attr, children);
-const legend = (attr, children) => h('legend', attr, children);
+html.fieldset = hwrap('fieldset');
+html.legend = hwrap('legend');
 
-const label = (attr, children) => h('label', attr, children);
-const output = (attr, children) => h('output', attr, children);
+html.label = hwrap('label');
+html.output = hwrap('output');
 
-const input = (attr, children) => h('input', attr, children);
-const button = (attr, children) => h('button', attr, children);
+html.input = hwrap('input');
+html.button = hwrap('button');
 
-const datalist = (attr, children) => h('datalist', attr, children);
+html.datalist = hwrap('datalist');
 
-const select = (attr, children) => h('select', attr, children);
-const option = (attr, children) => h('option', attr, children);
-const optgroup = (attr, children) => h('optgroup', attr, children);
+html.select = hwrap('select');
+html.option = hwrap('option');
+html.optgroup = hwrap('optgroup');
 // #endregion
 
 // #region html input type elements
-const defaultInputType = 'text';
-const inputTypes = {
-  hidden: (attr, children) => h('input', { ...attr, type: 'hidden' }, children),
-  submit: (attr, children) => h('input', { ...attr, type: 'submit' }, children),
-  image: (attr, children) => h('input', { ...attr, type: 'image' }, children),
+html.defaultInputType = 'text';
 
-  text: (attr, children) => h('input', { ...attr, type: 'text' }, children),
-  number: (attr, children) => h('input', { ...attr, type: 'number' }, children),
-  password: (attr, children) => h('input', { ...attr, type: 'password' }, children),
-
-  checkbox: (attr, children) => h('input', { ...attr, type: 'checkbox' }, children),
-  radio: (attr, children) => h('input', { ...attr, type: 'radio' }, children),
-
-
-  file: (attr, children) => h('input', { ...attr, type: 'file' }, children),
-
-  email: (attr, children) => h('input', { ...attr, type: 'email' }, children),
-  tel: (attr, children) => h('input', { ...attr, type: 'tel' }, children),
-  url: (attr, children) => h('input', { ...attr, type: 'url' }, children),
-
-  range: (attr, children) => h('input', { ...attr, type: 'range' }, children),
-
-  color: (attr, children) => h('input', { ...attr, type: 'color' }, children),
-
-  date: (attr, children) => h('input', { ...attr, type: 'date' }, children),
-  'datetime-local': (attr, children) => h('input', { ...attr, type: 'datetime-local' }, children),
-  month: (attr, children) => h('input', { ...attr, type: 'month' }, children),
-  week: (attr, children) => h('input', { ...attr, type: 'week' }, children),
-  time: (attr, children) => h('input', { ...attr, type: 'time' }, children),
+const input = function input_vnode(attr, children) {
+  return h('input', attr, children);
 };
+
+input.hidden = hwrap('input', 'hidden');
+input.submit = hwrap('input', 'submit');
+input.image = hwrap('input', 'image');
+
+input.text = hwrap('input', 'text');
+input.number = hwrap('input', 'number');
+input.password = hwrap('input', 'password');
+
+input.checkbox = hwrap('input', 'checkbox');
+input.radio = hwrap('input', 'radio');
+
+
+input.file = hwrap('input', 'file');
+
+input.email = hwrap('input', 'email');
+input.tel = hwrap('input', 'tel');
+input.url = hwrap('input', 'url');
+
+input.range = hwrap('input', 'range');
+
+input.color = hwrap('input', 'color');
+
+input.date = hwrap('input', 'date');
+input.datetime_local = hwrap('input', 'datetime-local');
+input.month = hwrap('input', 'month');
+input.week = hwrap('input', 'week');
+input.time = hwrap('input', 'time');
 
 // #endregion
 
-export { PRIMITIVES, _h, abbr, addCssClass, app, area, article, aside, audio, b, bdi, bdo, blockquote, button, caption, checkIfValueDisabled, circle2f, circle2f_POINTS, cite, clone, code, col, colgroup, collapseCssClass, collapseToString, copyAttributes, data, datalist, dd, deepEquals, def_vec2f, def_vec2i, def_vec3f, defaultInputType, del, details, dfn, div, dl, dt, em, embed, fetchImage, fieldset, figcaption, figure, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_gcd, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, footer, getFirstObjectItem, h, h1, h2, h3, h4, h5, h6, hasCssClass, header, hr, i, img, input, inputTypes, ins, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_clampu_u8a, int_clampu_u8b, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_random, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, isPureObject, kbd, label, legend, li, main, map, mark, mathf_EPSILON, mathf_PI, mathf_SQRTFIVE, mathf_abs, mathf_asin, mathf_atan2, mathf_ceil, mathf_cos, mathf_floor, mathf_max, mathf_min, mathf_pow, mathf_random, mathf_round, mathf_sin, mathf_sqrt, mathi_abs, mathi_floor, mathi_max, mathi_min, mathi_round, mathi_sqrt, mergeArrays, mergeObjects, meter, myRegisterPaint, nav, object, ol, optgroup, option, output, p, param, path2f, picture, point2f, point2f_POINTS, pre, progress, q, rectangle2f, rectangle2f_POINTS, recursiveDeepCopy, removeCssClass, s, sanitizePrimitiveValue, section, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, select, shape2f, source, span, strong, sub, summary, sup, table, tbody, td, tfooter, th, thead, time, toggleCssClass, tr, track, trapezoid2f, trapezoid2f_POINTS, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, u, ul, variable, vec2f, vec2f_about, vec2f_add, vec2f_addms, vec2f_adds, vec2f_angle, vec2f_ceil, vec2f_cross, vec2f_cross3, vec2f_dist, vec2f_dist2, vec2f_div, vec2f_divs, vec2f_dot, vec2f_eq, vec2f_eqs, vec2f_eqstrict, vec2f_floor, vec2f_iabout, vec2f_iadd, vec2f_iaddms, vec2f_iadds, vec2f_iceil, vec2f_idiv, vec2f_idivs, vec2f_ifloor, vec2f_iinv, vec2f_imax, vec2f_imin, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_inv, vec2f_iperp, vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_iround, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_lerp, vec2f_mag, vec2f_mag2, vec2f_max, vec2f_min, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_round, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit, video, vnode, wbr, workletState };
+/* eslint-disable import/prefer-default-export */
+
+const svg = function svg_vnode(attr, children) {
+  return h('svg', attr, children);
+};
+
+svg.a = hwrap('a');
+
+svg.animate = hwrap('animate');
+svg.animateMotion = hwrap('animateMotion');
+svg.animateTransform = hwrap('animateTransform');
+svg.circle = hwrap('circle');
+svg.clipPath = hwrap('clipPath');
+svg.defs = hwrap('defs');
+svg.desc = hwrap('desc');
+svg.discard = hwrap('discard');
+svg.ellipse = hwrap('ellipse');
+
+svg.feBlend = hwrap('feBlend');
+svg.feColorMatrix = hwrap('feColorMatrix');
+svg.feComponentTransfer = hwrap('feComponentTransfer');
+svg.feComposite = hwrap('feComposite');
+svg.feConvolveMatrix = hwrap('feConvolveMatrix');
+svg.feDiffuseLighting = hwrap('feDiffuseLighting');
+svg.feDisplacementMap = hwrap('feDisplacementMap');
+svg.feDistantLight = hwrap('feDistantLight');
+svg.feDropShadow = hwrap('feDropShadow');
+svg.feFlood = hwrap('feFlood');
+svg.feFuncA = hwrap('feFuncA');
+svg.feFuncB = hwrap('feFuncB');
+svg.feFuncG = hwrap('feFuncG');
+svg.feFuncR = hwrap('feFuncR');
+svg.feGaussianBlur = hwrap('feGaussianBlur');
+svg.feImage = hwrap('feImage');
+svg.feMerge = hwrap('feMerge');
+svg.feMergeNode = hwrap('feMergeNode');
+svg.feMorphology = hwrap('feMorphology');
+svg.feOffset = hwrap('feOffset');
+svg.fePointLight = hwrap('fePointLight');
+svg.feSpecularLighting = hwrap('feSpecularLighting');
+svg.feSpotLight = hwrap('feSpotLight');
+svg.feTile = hwrap('feTile');
+svg.feTurbulence = hwrap('feTurbulence');
+
+svg.filter = hwrap('filter');
+svg.foreignObject = hwrap('foreignObject');
+svg.g = hwrap('g');
+svg.image = hwrap('image');
+svg.line = hwrap('line');
+svg.linearGradient = hwrap('linearGradient');
+svg.marker = hwrap('marker');
+svg.mask = hwrap('mask');
+svg.metadata = hwrap('metadata');
+svg.mpath = hwrap('mpath');
+svg.path = hwrap('path');
+svg.pattern = hwrap('pattern');
+svg.polygon = hwrap('polygon');
+svg.polyline = hwrap('polyline');
+svg.radialGradient = hwrap('radialGradient');
+svg.rect = hwrap('rect');
+svg.set = hwrap('set');
+svg.stop = hwrap('stop');
+svg.symbol = hwrap('symbol');
+svg.text = hwrap('text');
+svg.textPath = hwrap('textPath');
+
+svg.title = hwrap('title');
+svg.tspan = hwrap('tspan');
+svg.use = hwrap('use');
+svg.view = hwrap('view');
+
+export { PRIMITIVES, _h, addCssClass, app, checkIfValueDisabled, circle2f, circle2f_POINTS, clone, cloneDeep, collapseArray, collapseCssClass, collapseToString, copyAttributes, deepEquals, def_vec2f, def_vec2i, def_vec3f, fetchImage, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_gcd, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, getFirstObjectItem, h, hasCssClass, html, hwrap, input, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_clampu_u8a, int_clampu_u8b, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_random, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, isPureObject, mathf_EPSILON, mathf_PI, mathf_SQRTFIVE, mathf_abs, mathf_asin, mathf_atan2, mathf_ceil, mathf_cos, mathf_floor, mathf_max, mathf_min, mathf_pow, mathf_random, mathf_round, mathf_sin, mathf_sqrt, mathi_abs, mathi_floor, mathi_max, mathi_min, mathi_round, mathi_sqrt, mergeArrays, mergeObjects, myRegisterPaint, path2f, point2f, point2f_POINTS, rectangle2f, rectangle2f_POINTS, removeCssClass, sanitizePrimitiveValue, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, shape2f, svg, toggleCssClass, trapezoid2f, trapezoid2f_POINTS, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, vec2f, vec2f_about, vec2f_add, vec2f_addms, vec2f_adds, vec2f_angle, vec2f_ceil, vec2f_cross, vec2f_cross3, vec2f_dist, vec2f_dist2, vec2f_div, vec2f_divs, vec2f_dot, vec2f_eq, vec2f_eqs, vec2f_eqstrict, vec2f_floor, vec2f_iabout, vec2f_iadd, vec2f_iaddms, vec2f_iadds, vec2f_iceil, vec2f_idiv, vec2f_idivs, vec2f_ifloor, vec2f_iinv, vec2f_imax, vec2f_imin, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_inv, vec2f_iperp, vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_iround, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_lerp, vec2f_mag, vec2f_mag2, vec2f_max, vec2f_min, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_round, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit, vnode, workletState };
 //# sourceMappingURL=index.js.map

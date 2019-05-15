@@ -7,7 +7,19 @@ export function getFirstObjectItem(items) {
   return undefined;
 }
 
-export function recursiveDeepCopy(o) {
+export function clone(target, source) {
+  const out = {};
+
+  for (const t in target) {
+    if (target.hasOwnProperty(t)) out[t] = target[t];
+  }
+  for (const s in source) {
+    if (source.hasOwnProperty(s)) out[s] = source[s];
+  }
+  return out;
+}
+
+export function cloneDeep(o) {
   if (typeof o !== 'object') {
     return o;
   }
@@ -18,7 +30,7 @@ export function recursiveDeepCopy(o) {
   if (o instanceof Array) {
     const newO = [];
     for (let i = 0; i < o.length; i += 1) {
-      newO[i] = recursiveDeepCopy(o[i]);
+      newO[i] = cloneDeep(o[i]);
     }
     return newO;
   }
@@ -27,20 +39,20 @@ export function recursiveDeepCopy(o) {
     const keys = Reflect.ownKeys(o);
     for (const i in keys) {
       if (keys.hasOwnProperty(i)) {
-        newO[i] = recursiveDeepCopy(o[i]);
+        newO[i] = cloneDeep(o[i]);
       }
     }
     return newO;
   }
 }
 
-export function mergeObjects(target) {
-  const ln = arguments.length;
+export function mergeObjects(target, ...rest) {
+  const ln = rest.length;
   const mergeFn = mergeObjects;
 
-  let i = 1;
+  let i = 0;
   for (; i < ln; i++) {
-    const object = arguments[i];
+    const object = rest[i];
     for (const key in object) {
       if (object.hasOwnProperty(key)) {
         const value = object[key];
@@ -73,6 +85,43 @@ export function mergeArrays(a, b) {
   }
 
   return a;
+}
+
+export function collapseArray(rest) {
+  const result = [];
+  let cursor = 0;
+
+  const lenx = rest.length;
+  let itemx = null;
+  let ix = 0;
+
+
+  let leny = 0;
+  let itemy = null;
+  let iy = 0;
+
+  // fill the children array with the rest parameters
+  while (ix < lenx) {
+    itemx = rest[ix];
+    ++ix;
+    if (itemx === undefined || itemx === null || itemx === false || itemx === true) continue;
+    if (itemx.pop) {
+      // this is an array so fill the children array with the items of this one
+      // we do not go any deeper!
+      leny = itemx.length;
+      iy = 0;
+      while (iy < leny) {
+        itemy = itemx[iy];
+        ++iy;
+        if (itemy === undefined || itemy === null || itemy === false || itemy === true) continue;
+        result[cursor++] = itemy;
+      }
+    }
+    else {
+      result[cursor++] = itemx;
+    }
+  }
+  return result;
 }
 
 //#region

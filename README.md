@@ -1,10 +1,10 @@
-# futilsjs
+# ## futilsjs
 
 A collection of javascript helper functions for fast vector math and more, lots more!
 
 This library is created as a personal merge of some usefull javascript functions, modules and classes that I programmed or used over the years. There are also code snippits that I picked up from forums like stackoverflow and the like. Anyway, stuff that I used, or wanted to use, and some refactored from C or other languages just for that.
 
-To make my life even more fun, I forked the hyperapp version 1 sourcecode from github, refactored it and added some usefull stuff to it like css classname array handling. Therefor projects made with futilsjs are not backwards compatible with hyperapp. Don't worry, hyperapp version 2 is very different from its version 1 counterpart. For this reason I fork stuff and change it as I see fit. But not to break other public repositories that use futils; [like aformjs](https://github.com/jklarenbeek/aformjs).
+To make my life even more fun, I forked the hyperapp version 1 sourcecode from github, refactored it and added some usefull stuff to it like css classname array handling. Therefor projects made with futilsjs are not backwards compatible with hyperapp. Don't worry, hyperapp version 2 is very different from its version 1 counterpart. For this reason I fork stuff and change it as I see fit. But not to break other public repositories that use futilsjs; [like aformjs](https://github.com/jklarenbeek/aformjs).
 
 It is recommended to clone this repository first and then npm-link it into your own project. I do this, to fix bugs in futilsjs when they pop-up (immediatly) or add more functionality (when I get to it). There is more coming in the following months, so follow us. You don't have to clone the repo, because there is a npm package available as well. Follow the steps described below, to get futilsjs up and running.
 
@@ -19,7 +19,7 @@ $~/myprojectjs> npm install --save futilsjs
 This will do all the magick for you. Now you can use futilsjs by simply refering to it from your sourcecode like so:
 
 ```js
-import { isPureObject } from 'futils';
+import { isPureObject } from 'futilsjs';
 const a = isPureObject([]);
 console.log('an array is not a pure object ', a !== true);
 ```

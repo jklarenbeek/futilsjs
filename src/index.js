@@ -13,5 +13,6 @@ export * from './css';
 export * from './svg';
 export * from './worklet';
 
-export * from './hyperapp';
-export * from './hyperapp-html';
+export * from './vnode';
+export * from './vnode-html';
+export * from './vnode-svg';

@@ -1,3 +1,4 @@
+/* eslint-disable object-shorthand */
 // Fork of hyperapp version 1 under MIT License
 // at https://github.com/JorgeBucaran/hyperapp
 // Copyright © Jorge Bucaran < https://jorgebucaran.com>
@@ -24,6 +25,7 @@
 //
 
 import { collapseCssClass } from './css';
+import { collapseArray, clone } from './object';
 
 export class vnode {
   constructor(name, attributes, children) {
@@ -34,45 +36,14 @@ export class vnode {
   }
 }
 
+
 export function h(name, attributes = {}, ...rest) {
   // the jsx transpiler sets null on the attributes parameter
   // when no parameter is defined, instead of 'undefined'.
   // therefor the default operator doesn't kick in,
   attributes = attributes || {}; //  and do we need this kind of stuff.
 
-  const children = [];
-  let ic = 0;
-
-  const lenx = rest.length;
-  let itemx = null;
-  let ix = 0;
-
-
-  let leny = 0;
-  let itemy = null;
-  let iy = 0;
-
-  // fill the children array with the rest parameters
-  while (ix < lenx) {
-    itemx = rest[ix];
-    ix++;
-    if (itemx === undefined || itemx === null || itemx === false || itemx === true) continue;
-    if (itemx.pop) {
-      // this is an array so fill the children array with the items of this one
-      // we do not go any deeper!
-      leny = itemx.length;
-      iy = 0;
-      while (iy < leny) {
-        itemy = itemx[iy];
-        iy++;
-        if (itemy === undefined || itemy === null || itemy === false || itemy === true) continue;
-        children[ic++] = itemy;
-      }
-    }
-    else {
-      children[ic++] = itemx;
-    }
-  }
+  const children = collapseArray(rest);
 
   return typeof name === 'function'
     ? name(attributes, children)
@@ -101,16 +72,18 @@ export function _h(name, attributes, ...rest) {
     : new vnode(name, attributes, children);
 }
 
-export function clone(target, source) {
-  const out = {};
-
-  for (const t in target) {
-    if (target.hasOwnProperty(t)) out[t] = target[t];
+export function hwrap(name, type) {
+  if (type === undefined) {
+    return function hwrap_innerName(attr, children) {
+      return h(name, attr, children);
+    };
   }
-  for (const s in source) {
-    if (source.hasOwnProperty(s)) out[s] = source[s];
+  else {
+    return function hwrap_innerType(attr, children) {
+      return h(name, { ...attr, type: type }, children);
+    };
   }
-  return out;
+  // return (attr, children) => h(name, attr, children);
 }
 
 export function app(state, actions, view, container) {
