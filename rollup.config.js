@@ -11,6 +11,6 @@ export default {
     sourcemap: true,
   },
   plugins: [
-    eslint(),
+    eslint(pkg.eslintConfig),
   ],
 };

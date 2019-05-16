@@ -1,18 +1,29 @@
 export * from './types';
+
+export * from './int32-math';
+export { default as mathi32 } from './int32-math';
+export * from './int32-base';
+export { default as i32 } from './int32-base';
+export * from './int32-vec2';
+export { default as v2i32 } from './int32-vec2';
+
+export * from './float64-math';
+export { default as mathf64 } from './float64-math';
+export * from './float64-base';
+export { default as f64 } from './float64-base';
+export * from './float64-vec2';
+export { default as v2f64 } from './float64-vec2';
+export * from './float64-vec3';
+export { default as v3f64 } from './float64-vec2';
+export * from './float64-shape';
+
 export * from './object';
-
-export * from './int';
-export * from './vec2i';
-
-export * from './float';
-export * from './vec2f';
-export * from './vec3f';
 
 export * from './dom';
 export * from './css';
-export * from './svg';
+
 export * from './worklet';
 
-export * from './vnode';
+export * from './vnode-base';
 export * from './vnode-html';
-export * from './vnode-svg';
+export * from './vnode-app';

@@ -87,7 +87,7 @@ export function mergeArrays(a, b) {
   return a;
 }
 
-export function collapseArray(rest) {
+export function collapseNear(rest) {
   const result = [];
   let cursor = 0;
 

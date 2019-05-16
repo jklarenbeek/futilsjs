@@ -1,5 +1,10 @@
+/* eslint-disable lines-between-class-members */
 /* eslint-disable class-methods-use-this */
-import { vec2f, def_vec2f } from './vec2f';
+import {
+  vec2f64 as vec2f,
+  def_vec2f64 as def_vec2f,
+} from './float64-vec2';
+
 
 //#region basic svg object
 //#endregion
@@ -7,7 +12,15 @@ import { vec2f, def_vec2f } from './vec2f';
 //#region vec2d basic shapes
 
 export class shape2f {
-  pointCount() { return 0; }
+  getP1X() { return this.gP1() ? this.gP1().x : Number.NaN; }
+  getP1Y() { return this.gP1() ? this.gP1().y : Number.NaN; }
+  getP2X() { return this.gP2() ? this.gP2().x : Number.NaN; }
+  getP2Y() { return this.gP2() ? this.gP2().y : Number.NaN; }
+  getP3X() { return this.gP3() ? this.gP3().x : Number.NaN; }
+  getP3Y() { return this.gP3() ? this.gP3().y : Number.NaN; }
+  getP4X() { return this.gP4() ? this.gP4().x : Number.NaN; }
+  getP4Y() { return this.gP4() ? this.gP4().y : Number.NaN; }
+  pointCount() { return 0.0; }
 }
 
 export const point2f_POINTS = 1;
@@ -343,11 +356,13 @@ export class path2f extends shape2f {
   }
 
   add(segment) {
-    const list = this.list;
-    const len = list.length;
-    if (segment.hasValidPrecursor(len > 0 ? list[len - 1] : null)) {
-      list[len] = segment;
-      return true;
+    if (segment instanceof segm2f) {
+      const list = this.list;
+      const len = list.length;
+      if (segment.hasValidPrecursor(len > 0 ? list[len - 1] : null)) {
+        list[len] = segment;
+        return true;
+      }
     }
     return false;
   }

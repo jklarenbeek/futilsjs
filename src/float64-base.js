@@ -1,46 +1,41 @@
-export const mathf_abs = Math.abs;
+import {
+  mathf64_min,
+  mathf64_max,
+  mathf64_round,
+  mathf64_sqrt,
+  mathf64_pow,
+  mathf64_atan2,
+  mathf64_asin,
+  mathf64_SQRTFIVE,
+  mathf64_PI2,
+  mathf64_PI1H,
+  mathf64_PI41,
+  mathf64_PI42,
+} from './float64-math';
 
-export const mathf_sqrt = Math.sqrt;
-export const mathf_pow = Math.pow;
-export const mathf_sin = Math.sin;
-export const mathf_cos = Math.cos;
-export const mathf_atan2 = Math.atan2;
-export const mathf_asin = Math.asin;
-
-export const mathf_ceil = Math.ceil;
-export const mathf_floor = Math.floor;
-export const mathf_round = Math.round;
-export const mathf_min = Math.min;
-export const mathf_max = Math.max;
-
-export const mathf_random = Math.max;
-
-export const mathf_EPSILON = 0.000001;
-export const mathf_PI = Math.PI;
-
-export function float_gcd(a=0.0, b=0.0) {
+export function float64_gcd(a=0.0, b=0.0) {
   a = +a; b = +b;
   // For example, a 1024x768 monitor has a GCD of 256.
   // When you divide both values by that you get 4x3 or 4: 3.
-  return +((b === 0.0) ? +a : +float_gcd(b, a % b));
+  return +((b === 0.0) ? +a : +float64_gcd(b, a % b));
 }
 
-export function float_sqrt(n = 0.0) {
-  return +mathf_sqrt(+n);
+export function float64_sqrt(n = 0.0) {
+  return +mathf64_sqrt(+n);
 }
 
-export function float_hypot2(dx = 0.0, dy = 0.0) {
+export function float64_hypot2(dx = 0.0, dy = 0.0) {
   return +(+(+dx * +dx) + +(+dy * +dy));
 }
 
-export function float_hypot(dx = 0.0, dy = 0.0) {
-  return +Math.sqrt(+(+(+dx * +dx) + +(+dy * +dy)));
+export function float64_hypot(dx = 0.0, dy = 0.0) {
+  return +mathf64_sqrt(+(+(+dx * +dx) + +(+dy * +dy)));
 }
 
-export const float_isqrt = (function float_isqrt_oncompile() {
+export const float64_isqrt = (function float64_isqrt_oncompile() {
   const f = new Float32Array(1);
   const i = new Int32Array(f.buffer);
-  return function float_isqrt_impl(n = 0.0) {
+  return function float64_isqrt_impl(n = 0.0) {
     n = +n;
     const n2 = +(n * 0.5);
     f[0] = +n;
@@ -50,7 +45,7 @@ export const float_isqrt = (function float_isqrt_oncompile() {
   };
 })();
 
-export function float_fib(n = 0.0) {
+export function float64_fib(n = 0.0) {
   n = +n;
   let c = 0.0;
   let x = 1.0;
@@ -64,27 +59,26 @@ export function float_fib(n = 0.0) {
 }
 
 // https://gist.github.com/geraldyeo/988116export
-export const mathf_SQRTFIVE = +mathf_sqrt(5);
-export function float_fib2(value = 0.0) {
+export function float64_fib2(value = 0.0) {
   value = +value;
-  const fh = +(1.0 / +mathf_SQRTFIVE * +mathf_pow(+(+(1.0 + mathf_SQRTFIVE) / 2.0), +value));
-  const sh = +(1.0 / +mathf_SQRTFIVE * +mathf_pow(+(+(1.0 - mathf_SQRTFIVE) / 2.0), +value));
-  return +mathf_round(+(fh - sh));
+  const fh = +(1.0 / +mathf64_SQRTFIVE * +mathf64_pow(+(+(1.0 + mathf64_SQRTFIVE) / 2.0), +value));
+  const sh = +(1.0 / +mathf64_SQRTFIVE * +mathf64_pow(+(+(1.0 - mathf64_SQRTFIVE) / 2.0), +value));
+  return +mathf64_round(+(fh - sh));
 }
 
-export function float_norm(value = 0.0, min = 0.0, max = 0.0) {
+export function float64_norm(value = 0.0, min = 0.0, max = 0.0) {
   value = +value; min = +min; max = +max;
   return +((value - min) / (max - min));
 }
 
-export function float_lerp(norm = 0.0, min = 0.0, max = 0.0) {
+export function float64_lerp(norm = 0.0, min = 0.0, max = 0.0) {
   norm = +norm; min = +min; max = +max;
   return +((max - min) * (norm + min));
 }
 
-export function float_map(value = 0.0, smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
+export function float64_map(value = 0.0, smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
   value = +value; smin = +smin; smax = +smax; dmin = +dmin; dmax = +dmax;
-  return +float_lerp(+float_norm(value, smin, smax), dmin, dmax);
+  return +float64_lerp(+float64_norm(value, smin, smax), dmin, dmax);
 }
 
 /**
@@ -96,38 +90,38 @@ export function float_map(value = 0.0, smin = 0.0, smax = 0.0, dmin = 0.0, dmax 
  * @param {float} max maximum bounds
  * @returns {float} clamped value
  */
-export function float_clamp(value = 0.0, min = 0.0, max = 0.0) {
-  return +mathf_min(+mathf_max(+value, +mathf_min(+min, +max)), +mathf_max(+min, +max));
+export function float64_clamp(value = 0.0, min = 0.0, max = 0.0) {
+  return +mathf64_min(+mathf64_max(+value, +mathf64_min(+min, +max)), +mathf64_max(+min, +max));
 }
 /**
  * Clamps a value between an unchecked boundary
  * this function needs min < max!!
- * (see float_clamp for a checked boundary)
+ * (see float64_clamp for a checked boundary)
  *
  * @param {float} value input value
  * @param {float} min minimum bounds
  * @param {float} max maximum bounds
  * @returns {float} clamped value
  */
-export function float_clampu(value = 0.0, min = 0.0, max = 0.0) {
-  return +mathf_min(+mathf_max(+value, +min), +max);
+export function float64_clampu(value = 0.0, min = 0.0, max = 0.0) {
+  return +mathf64_min(+mathf64_max(+value, +min), +max);
 }
 
-export function float_inRange(value = 0.0, min = 0.0, max = 0.0) {
-  return +(+value >= +mathf_min(+min, +max) && +value <= +mathf_max(+min, +max));
+export function float64_inRange(value = 0.0, min = 0.0, max = 0.0) {
+  return +(+value >= +mathf64_min(+min, +max) && +value <= +mathf64_max(+min, +max));
 }
 
-export function float_intersectsRange(smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
-  return +(+mathf_max(+smin, +smax) >= +mathf_min(+dmin, +dmax)
-    && +mathf_min(+smin, +smax) <= +mathf_max(+dmin, +dmax));
+export function float64_intersectsRange(smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
+  return +(+mathf64_max(+smin, +smax) >= +mathf64_min(+dmin, +dmax)
+    && +mathf64_min(+smin, +smax) <= +mathf64_max(+dmin, +dmax));
 }
 
-export function float_intersectsRect(
+export function float64_intersectsRect(
   ax = 0.0, ay = 0.0, aw = 0.0, ah = 0.0,
   bx = 0.0, by = 0.0, bw = 0.0, bh = 0.0,
 ) {
-  return +(+(+float_intersectsRange(+ax, +(+ax + +aw), +bx, +(+bx + +bw)) > 0.0
-    && +float_intersectsRange(+ay, +(+ay + +ah), +by, +(+by + +bh)) > 0.0));
+  return +(+(+float64_intersectsRange(+ax, +(+ax + +aw), +bx, +(+bx + +bw)) > 0.0
+    && +float64_intersectsRange(+ay, +(+ay + +ah), +by, +(+by + +bh)) > 0.0));
 }
 
 /**
@@ -148,7 +142,7 @@ export function float_intersectsRect(
  * @param {float} by vector B y velocity
  * @returns {float} scalar of the dot product
  */
-export function float_dot(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
+export function float64_dot(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
   return +(+(+ax * +bx) + +(+ay * +by));
 }
 
@@ -184,50 +178,45 @@ export function float_dot(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
  * @param {float} bx
  * @param {float} by
  */
-export function float_cross(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
+export function float64_cross(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
   return +(+(+ax * +by) - +(+bx * +ay));
 }
 
 //#region trigonometry
 
-export const float_PIx2 = Math.PI * 2; // 6.28318531
-export const float_PIh = Math.PI / 2; // 1.57079632
-export const float_PI_A = 4 / Math.PI; // 1.27323954
-export const float_PI_B = 4 / (Math.PI * Math.PI); // 0.405284735
-
-export function float_toRadian(degrees = 0.0) {
+export function float64_toRadian(degrees = 0.0) {
   return +(+degrees * +Math.PI / 180.0);
 }
 
-export function float_toDegrees(radians = 0.0) {
+export function float64_toDegrees(radians = 0.0) {
   return +(+radians * 180.0 / +Math.PI);
 }
 
-export function float_wrapRadians(r = 0.0) {
+export function float64_wrapRadians(r = 0.0) {
   r = +r;
-  if (+r > Math.PI) return +(+r - +float_PIx2);
-  else if (+r < -Math.PI) return +(+r + +float_PIx2);
+  if (+r > Math.PI) return +(+r - +mathf64_PI2);
+  else if (+r < -Math.PI) return +(+r + +mathf64_PI2);
   return +r;
 }
 
-export function float_sinLpEx(r = 0.0) {
+export function float64_sinLpEx(r = 0.0) {
   r = +r;
   return +((r < 0.0)
-    ? +(+float_PI_A * +r + +float_PI_B * +r * +r)
-    : +(+float_PI_A * +r - +float_PI_B * +r * +r));
+    ? +(+mathf64_PI41 * +r + +mathf64_PI42 * +r * +r)
+    : +(+mathf64_PI41 * +r - +mathf64_PI42 * +r * +r));
 }
 
-export function float_sinLp(r = 0.0) {
+export function float64_sinLp(r = 0.0) {
   //always wrap input angle between -PI and PI
-  return +float_sinLpEx(+float_wrapRadians(+r));
+  return +float64_sinLpEx(+float64_wrapRadians(+r));
 }
 
-export function float_cosLp(r = 0.0) {
+export function float64_cosLp(r = 0.0) {
   //compute cosine: sin(x + PI/2) = cos(x)
-  return +float_sinLp(+(+r + +float_PIh));
+  return +float64_sinLp(+(+r + +mathf64_PI1H));
 }
 
-export function float_cosHp(r = 0.0) {
+export function float64_cosHp(r = 0.0) {
 //   template<typename T>
 // inline T cos(T x) noexcept
 // {
@@ -240,29 +229,29 @@ export function float_cosHp(r = 0.0) {
 //     #endif
 //     return x;
 // }
-  throw new Error('float_cosHp is not implemented! r=' + String(r));
+  throw new Error('float64_cosHp is not implemented! r=' + String(r));
 }
 
-export function float_sinMpEx(r = 0.0) {
+export function float64_sinMpEx(r = 0.0) {
   r = +r;
   const sin = +((r < 0.0)
-    ? +(float_PI_A * r + float_PI_B * r * r)
-    : +(float_PI_A * r - float_PI_B * r * r));
+    ? +(mathf64_PI41 * r + mathf64_PI42 * r * r)
+    : +(mathf64_PI41 * r - mathf64_PI42 * r * r));
   return +((sin < 0.0)
     ? +(0.225 * (sin * -sin - sin) + sin)
     : +(0.225 * (sin * sin - sin) + sin));
 }
 
-export function float_sinMp(r = 0.0) {
-  return +float_sinMpEx(+float_wrapRadians(+r));
+export function float64_sinMp(r = 0.0) {
+  return +float64_sinMpEx(+float64_wrapRadians(+r));
 }
-export function float_cosMp(r = 0.0) {
+export function float64_cosMp(r = 0.0) {
   //compute cosine: sin(x + PI/2) = cos(x)
-  return +float_sinMp(+(+r + +float_PIh));
+  return +float64_sinMp(+(+r + +mathf64_PI1H));
 }
 
-export function float_theta(x = 0.0, y = 0.0) {
-  return +mathf_atan2(+y, +x);
+export function float64_theta(x = 0.0, y = 0.0) {
+  return +mathf64_atan2(+y, +x);
   /*
     // alternative was faster, but not anymore.
     // error < 0.005
@@ -290,10 +279,39 @@ export function float_theta(x = 0.0, y = 0.0) {
     return +(atan);
   */
 }
-export const float_angle = float_theta;
 
-export function float_phi(y = 0.0, length = 0.0) {
-  return +mathf_asin(+y / +length);
+export function float64_phi(y = 0.0, length = 0.0) {
+  return +mathf64_asin(+y / +length);
 }
 
 //#endregion
+
+export default {
+  gcd: float64_gcd,
+  sqrt: float64_sqrt,
+  hypot2: float64_hypot2,
+  hypot: float64_hypot,
+  isqrt: float64_isqrt,
+  fib: float64_fib,
+  fib2: float64_fib2,
+  norm: float64_norm,
+  lerp: float64_lerp,
+
+  map: float64_map,
+  clamp: float64_clamp,
+  clampu: float64_clampu,
+
+  inrange: float64_inRange,
+  intersectsRange: float64_intersectsRange,
+  intersectsRect: float64_intersectsRect,
+
+  dot: float64_dot,
+  cross: float64_cross,
+
+  toRadian: float64_toRadian,
+  toDefrees: float64_toDegrees,
+  wrapRadians: float64_wrapRadians,
+
+  theta: float64_theta,
+  phi: float64_phi,
+};

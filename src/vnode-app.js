@@ -23,68 +23,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 //
-
 import { collapseCssClass } from './css';
-import { collapseArray, clone } from './object';
-
-export class vnode {
-  constructor(name, attributes, children) {
-    this.key = attributes.key;
-    this.attributes = attributes;
-    this.nodeName = name;
-    this.children = children;
-  }
-}
-
-
-export function h(name, attributes = {}, ...rest) {
-  // the jsx transpiler sets null on the attributes parameter
-  // when no parameter is defined, instead of 'undefined'.
-  // therefor the default operator doesn't kick in,
-  attributes = attributes || {}; //  and do we need this kind of stuff.
-
-  const children = collapseArray(rest);
-
-  return typeof name === 'function'
-    ? name(attributes, children)
-    : new vnode(name, attributes, children);
-}
-
-export function _h(name, attributes, ...rest) {
-  const children = [];
-  let length = arguments.length;
-
-  while (rest.length) {
-    const node = rest.pop();
-    if (node && node.pop) {
-      for (length = node.length; length--;) {
-        rest.push(node[length]);
-      }
-    }
-    else if (node != null && node !== true && node !== false) {
-      children.push(node);
-    }
-  }
-
-  attributes = attributes || {};
-  return typeof name === 'function'
-    ? name(attributes, children)
-    : new vnode(name, attributes, children);
-}
-
-export function hwrap(name, type) {
-  if (type === undefined) {
-    return function hwrap_innerName(attr, children) {
-      return h(name, attr, children);
-    };
-  }
-  else {
-    return function hwrap_innerType(attr, children) {
-      return h(name, { ...attr, type: type }, children);
-    };
-  }
-  // return (attr, children) => h(name, attr, children);
-}
+import { clone } from './object';
+import { vnode } from './vnode-base';
 
 export function app(state, actions, view, container) {
   const map = [].map;
@@ -101,15 +42,15 @@ export function app(state, actions, view, container) {
   return wiredActions;
 
   function recycleElement(element) {
-    return {
-      nodeName: element.nodeName.toLowerCase(),
-      attributes: {},
-      children: map.call(element.childNodes, function hyperapp_recycleElement(el) {
+    return new vnode(
+      element.nodeName.toLowerCase(),
+      {},
+      map.call(element.childNodes, function recycleElement_inner(el) {
         return el.nodeType === 3 // Node.TEXT_NODE
           ? el.nodeValue
           : recycleElement(el);
       }),
-    };
+    );
   }
 
   function resolveNode(node) {
@@ -270,72 +211,6 @@ export function app(state, actions, view, container) {
         }
         else {
           element.setAttribute(name, value === true ? '' : value);
-        }
-      }
-      else {
-        element.removeAttribute(name);
-      }
-    }
-  }
-
-  // eslint-disable-next-line no-unused-vars
-  function updateAttribute1(element, name, value, oldValue, isSvg) {
-    if (name !== 'key') {
-      if (name === 'style') {
-        const lval = clone(oldValue, value);
-        for (const i in lval) {
-          if (lval.hasOwnProperty(i)) {
-            const style = (value == null || value[i] == null) ? '' : value[i];
-            if (i[0] === '-') {
-              element[name].setProperty(i, style);
-            }
-            else {
-              element[name][i] = style;
-            }
-          }
-        }
-      }
-      else if (name.indexOf('on') === 0) {
-        name = name.slice(2);
-
-        if (element.events) {
-          if (!oldValue) oldValue = element.events[name];
-        }
-        else {
-          element.events = {};
-        }
-
-        element.events[name] = value;
-
-        if (value) {
-          if (!oldValue) {
-            element.addEventListener(name, eventListener);
-          }
-        }
-        else {
-          element.removeEventListener(name, eventListener);
-        }
-      }
-      else if (name === 'selected' && value != null && value !== false) {
-        element.setAttribute('selected', '');
-        element.selected = true;
-      }
-      else if (value && value.length > 0) {
-        if (name === 'class') {
-          element.className = collapseCssClass(value);
-        }
-        else if (name in element
-          && name !== 'list'
-          && name !== 'type'
-          && name !== 'draggable'
-          && name !== 'spellcheck'
-          && name !== 'translate'
-          && !isSvg
-        ) {
-          element[name] = value;
-        }
-        else {
-          element.setAttribute(name, value);
         }
       }
       else {

@@ -1,74 +1,78 @@
-import { int_MULTIPLIER } from './int';
-import { mathf_sqrt, mathf_asin, mathf_atan2 } from './float';
+import {
+  mathi32_MULTIPLIER,
+  mathi32_sqrt,
+  mathi32_asin,
+  mathi32_atan2,
+} from './int32-math';
 
-export class vec2i {
+export class vec2i32 {
   constructor(x = 0, y = 0) {
     this.x = x|0;
     this.y = y|0;
   }
 }
 
-export const def_vec2i = Object.freeze(Object.seal(new vec2i()));
+export const def_vec2i32 = Object.freeze(Object.seal(new vec2i32()));
 
 //#region flat vec2i pure primitive operators
 
-export function vec2i_neg(v = def_vec2i) {
-  return new vec2i(
+export function vec2i32_neg(v = def_vec2i32) {
+  return new vec2i32(
     (-(v.x|0))|0,
     (-(v.y|0))|0,
   );
 }
-export function vec2i_add(a = def_vec2i, b = def_vec2i) {
-  return new vec2i(
+export function vec2i32_add(a = def_vec2i32, b = def_vec2i32) {
+  return new vec2i32(
     ((a.x|0) + (b.x|0))|0,
     ((a.y|0) + (b.y|0))|0,
   );
 }
-export function vec2i_adds(v = def_vec2i, scalar = 0) {
+export function vec2i32_adds(v = def_vec2i32, scalar = 0) {
   scalar = scalar|0;
-  return new vec2i(
+  return new vec2i32(
     ((v.x|0) + scalar)|0,
     ((v.y|0) + scalar)|0,
   );
 }
 
-export function vec2i_sub(a = def_vec2i, b = def_vec2i) {
-  return new vec2i(
+export function vec2i32_sub(a = def_vec2i32, b = def_vec2i32) {
+  return new vec2i32(
     ((a.x|0) - (b.x|0))|0,
     ((a.y|0) - (b.y|0))|0,
   );
 }
-export function vec2i_subs(a = def_vec2i, scalar = 0) {
+export function vec2i32_subs(a = def_vec2i32, scalar = 0) {
   scalar = scalar|0;
-  return new vec2i(
+  return new vec2i32(
     ((a.x|0) - scalar)|0,
     ((a.y|0) - scalar)|0,
   );
 }
 
-export function vec2i_mul(a = def_vec2i, b = def_vec2i) {
-  return new vec2i(
+export function vec2i32_mul(a = def_vec2i32, b = def_vec2i32) {
+  return new vec2i32(
     ((a.x|0) * (b.x|0))|0,
     ((a.y|0) * (b.y|0))|0,
   );
 }
-export function vec2i_muls(v = def_vec2i, scalar = 0) {
+export function vec2i32_muls(v = def_vec2i32, scalar = 0) {
   scalar = scalar|0;
-  return new vec2i(
+  return new vec2i32(
     ((v.x|0) * scalar)|0,
     ((v.y|0) * scalar)|0,
   );
 }
 
-export function vec2i_div(a = def_vec2i, b = def_vec2i) {
-  return new vec2i(
+export function vec2i32_div(a = def_vec2i32, b = def_vec2i32) {
+  return new vec2i32(
     ((a.x|0) / (b.x|0))|0,
     ((a.y|0) / (b.y|0))|0,
   );
 }
-export function vec2i_divs(v = def_vec2i, scalar = 0) {
+export function vec2i32_divs(v = def_vec2i32, scalar = 0) {
   scalar = scalar|0;
-  return new vec2i(
+  return new vec2i32(
     ((v.x|0) / scalar)|0,
     ((v.y|0) / scalar)|0,
   );
@@ -79,54 +83,54 @@ export function vec2i_divs(v = def_vec2i, scalar = 0) {
 
 //#region flat vec2i impure primitive operators
 
-export function vec2i_ineg(v = def_vec2i) {
+export function vec2i32_ineg(v = def_vec2i32) {
   v.x = (-(v.x|0))|0;
   v.y = (-(v.y|0))|0;
   return v;
 }
 
-export function vec2i_iadd(a = def_vec2i, b = def_vec2i) {
+export function vec2i32_iadd(a = def_vec2i32, b = def_vec2i32) {
   a.x += (b.x|0)|0;
   a.y += (b.y|0)|0;
   return a;
 }
-export function vec2i_iadds(v = def_vec2i, scalar = 0) {
+export function vec2i32_iadds(v = def_vec2i32, scalar = 0) {
   scalar = scalar|0;
   v.x += scalar|0;
   v.y += scalar|0;
   return v;
 }
 
-export function vec2i_isub(a = def_vec2i, b = def_vec2i) {
+export function vec2i32_isub(a = def_vec2i32, b = def_vec2i32) {
   a.x -= (b.x|0)|0;
   a.y -= (b.y|0)|0;
   return a;
 }
-export function vec2i_isubs(v = def_vec2i, scalar = 0) {
+export function vec2i32_isubs(v = def_vec2i32, scalar = 0) {
   scalar = scalar|0;
   v.x -= scalar|0;
   v.y -= scalar|0;
   return v;
 }
 
-export function vec2i_imul(a = def_vec2i, b = def_vec2i) {
+export function vec2i32_imul(a = def_vec2i32, b = def_vec2i32) {
   a.x *= (b.x|0)|0;
   a.y *= (b.y|0)|0;
   return a;
 }
-export function vec2i_imuls(v = def_vec2i, scalar = 0) {
+export function vec2i32_imuls(v = def_vec2i32, scalar = 0) {
   scalar = scalar|0;
   v.x *= scalar;
   v.y *= scalar;
   return v;
 }
 
-export function vec2i_idiv(a = def_vec2i, b = def_vec2i) {
+export function vec2i32_idiv(a = def_vec2i32, b = def_vec2i32) {
   a.x /= b.x|0;
   a.y /= b.y|0;
   return a;
 }
-export function vec2i_idivs(v = def_vec2i, scalar = 0) {
+export function vec2i32_idivs(v = def_vec2i32, scalar = 0) {
   scalar = scalar|0;
   v.x /= scalar;
   v.y /= scalar;
@@ -137,32 +141,32 @@ export function vec2i_idivs(v = def_vec2i, scalar = 0) {
 
 //#region flat vec2i vector products
 
-export function vec2i_mag2(v = def_vec2i) {
+export function vec2i32_mag2(v = def_vec2i32) {
   return (((v.x|0) * (v.x|0)) + ((v.y|0) * (v.y|0)))|0;
 }
-export function vec2i_mag(v = def_vec2i) {
-  return mathf_sqrt(+vec2i_mag2(v))|0;
+export function vec2i32_mag(v = def_vec2i32) {
+  return mathi32_sqrt(+vec2i32_mag2(v))|0;
 }
 
-export function vec2i_dot(a = def_vec2i, b = def_vec2i) {
+export function vec2i32_dot(a = def_vec2i32, b = def_vec2i32) {
   return (((a.x|0) * (b.x|0)) + ((a.y|0) * (b.y|0)))|0;
 }
-export function vec2i_cross(a = def_vec2i, b = def_vec2i) {
+export function vec2i32_cross(a = def_vec2i32, b = def_vec2i32) {
   return (((a.x|0) * (b.y|0)) - ((a.y|0) * (b.x|0)))|0;
 }
 
-export function vec2i_cross3(a = def_vec2i, b = def_vec2i, c = def_vec2i) {
+export function vec2i32_cross3(a = def_vec2i32, b = def_vec2i32, c = def_vec2i32) {
   return ((((b.x | 0) - (a.x | 0)) * ((c.y | 0) - (a.y | 0)))
     - (((b.y|0) - (a.y|0)) * ((c.x|0) - (a.x|0))));
 }
 
-export function vec2i_thetaEx(v = def_vec2i) {
-  return (int_MULTIPLIER * mathf_atan2((v.y|0), (v.x|0)))|0;
+export function vec2i32_thetaEx(v = def_vec2i32) {
+  return (mathi32_MULTIPLIER * mathi32_atan2((v.y|0), (v.x|0)))|0;
 }
-export const vec2i_angleEx = vec2i_thetaEx;
+export const vec2i32_angleEx = vec2i32_thetaEx;
 
-export function vec2i_phiEx(v= def_vec2i) {
-  return (int_MULTIPLIER * mathf_asin((v.y|0) / vec2i_mag(v)));
+export function vec2i32_phiEx(v= def_vec2i32) {
+  return (mathi32_MULTIPLIER * mathi32_asin((v.y|0) / vec2i32_mag(v)));
 }
 
 
@@ -170,46 +174,46 @@ export function vec2i_phiEx(v= def_vec2i) {
 
 //#region flat vec2i pure advanced vector functions
 
-export function vec2i_norm(v = def_vec2i) {
-  return vec2i_divs(v, vec2i_mag(v)|0)|0;
+export function vec2i32_norm(v = def_vec2i32) {
+  return vec2i32_divs(v, vec2i32_mag(v)|0)|0;
 }
 
-export function vec2i_rotn90(v = def_vec2i) {
-  return new vec2i(
+export function vec2i32_rotn90(v = def_vec2i32) {
+  return new vec2i32(
     v.y|0,
     (-(v.x|0))|0,
   );
 }
-export function vec2i_rot90(v = def_vec2i) {
+export function vec2i32_rot90(v = def_vec2i32) {
   return {
     x: (-(v.y|0))|0,
     y: v.x|0,
   };
 }
-export const vec2i_perp = vec2i_rot90;
+export const vec2i32_perp = vec2i32_rot90;
 
 
 //#endregion
 
 //#region rotation
-export function vec2i_inorm(v = def_vec2i) {
-  return vec2i_idivs(v, vec2i_mag(v)|0)|0;
+export function vec2i32_inorm(v = def_vec2i32) {
+  return vec2i32_idivs(v, vec2i32_mag(v)|0)|0;
 }
 
-export function vec2i_irotn90(v = def_vec2i) {
+export function vec2i32_irotn90(v = def_vec2i32) {
   const t = v.x|0;
   v.x = v.y|0;
   v.y = (-(t))|0;
   return v;
 }
 
-export function vec2i_irot90(v = def_vec2i) {
+export function vec2i32_irot90(v = def_vec2i32) {
   const t = v.y|0;
   v.x = (-(t))|0;
   v.y = (v.x|0);
   return v;
 }
-export const vec2i_iperp = vec2i_irot90;
+export const vec2i32_iperp = vec2i32_irot90;
 
 //#endregion
 
@@ -380,3 +384,46 @@ export function fastSin3(a) {
 
 
  */
+
+export default {
+  vec2: vec2i32,
+  default: def_vec2i32,
+
+  neg: vec2i32_neg,
+  add: vec2i32_add,
+  adds: vec2i32_adds,
+  sub: vec2i32_sub,
+  subs: vec2i32_subs,
+  mul: vec2i32_mul,
+  muls: vec2i32_muls,
+  div: vec2i32_div,
+  divs: vec2i32_divs,
+
+  ineg: vec2i32_ineg,
+  iadd: vec2i32_iadd,
+  iadds: vec2i32_iadds,
+  isub: vec2i32_isub,
+  isubs: vec2i32_isubs,
+  imul: vec2i32_imul,
+  imuls: vec2i32_imuls,
+  idiv: vec2i32_idiv,
+  idivs: vec2i32_idivs,
+
+  mag2: vec2i32_mag2,
+  mag: vec2i32_mag,
+  dot: vec2i32_dot,
+  cross: vec2i32_cross,
+  cross3: vec2i32_cross3,
+  thetaEx: vec2i32_thetaEx,
+  angleEx: vec2i32_thetaEx,
+  phiEx: vec2i32_phiEx,
+  norm: vec2i32_norm,
+  rotn90: vec2i32_rotn90,
+  rot90: vec2i32_rot90,
+  perp: vec2i32_rot90,
+
+  inorm: vec2i32_inorm,
+  irotn90: vec2i32_irotn90,
+  irot90: vec2i32_irot90,
+  iperp: vec2i32_iperp,
+};

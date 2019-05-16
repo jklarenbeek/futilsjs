@@ -96,7 +96,9 @@
       "nonblock-statement-body-position": 0,
       "curly": 0,
       "no-nested-ternary": 0,
-      "no-unneeded-ternary": 0
+      "no-unneeded-ternary": 0,
+      "object-shorthand": 0,
+      "import/prefer-default-export": 0
     }
   }
 }

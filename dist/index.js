@@ -1,4 +1,14 @@
-const PRIMITIVES = ['boolean', 'integer', 'number', 'string'];
+function isPrimitiveTypeEx(typeString) {
+  return typeString === 'integer'
+    || typeString === 'number'
+    || typeString === 'string'
+    || typeString === 'boolean';
+}
+
+function isPrimitiveType(obj) {
+  const tp = typeof obj;
+  return isPrimitiveTypeEx(tp);
+}
 
 function isPureObject(obj) {
   return (obj !== undefined
@@ -10,23 +20,2142 @@ function isPureObject(obj) {
 function sanitizePrimitiveValue(value, nullable) {
   if (nullable) {
     if (!value) return null;
-    if (!PRIMITIVES.includes(typeof value)) return null;
+    if (!isPrimitiveType(value)) return null;
     return value;
   }
   else {
     if (!value) return undefined;
-    if (!PRIMITIVES.includes(typeof value)) return undefined;
+    if (!isPrimitiveType(value)) return undefined;
     return value;
   }
 }
 
 function checkIfValueDisabled(value, nullable, disabled) {
   if (disabled) return true;
-  if (typeof value === 'undefined') return true;
-
+  if (value === undefined) return true;
   if (nullable && value === null) return false;
-  return !PRIMITIVES.includes(typeof value);
+  return !isPrimitiveType(value);
 }
+
+const mathi32_MULTIPLIER = 10000;
+
+const mathi32_abs = Math.abs;
+const mathi32_round = Math.round;
+const mathi32_ceil = Math.ceil;
+const mathi32_floor = Math.floor;
+const mathi32_min = Math.min;
+const mathi32_max = Math.max;
+
+const mathi32_sqrt = Math.sqrt;
+const mathi32_asin = Math.asin;
+const mathi32_atan2 = Math.atan2;
+
+const mathi32_PI = (Math.PI * mathi32_MULTIPLIER)|0;
+const mathi32_PI2 = (mathi32_PI * 2)|0;
+const mathi32_PI1H = (mathi32_PI / 2)|0;
+const mathi32_PI41 = ((4 / Math.PI) * mathi32_MULTIPLIER)|0;
+const mathi32_PI42 = ((4 / (Math.PI * Math.PI)) * mathi32_MULTIPLIER)|0;
+
+var int32Math = {
+  abs: mathi32_abs,
+  round: mathi32_round,
+  floor: mathi32_floor,
+  min: mathi32_min,
+  max: mathi32_max,
+  sqrt: mathi32_sqrt,
+  asin: mathi32_asin,
+  atan2: mathi32_atan2,
+
+  MULTIPLIER: mathi32_MULTIPLIER,
+  PI: mathi32_PI,
+  PI2: mathi32_PI2,
+  PI1H: mathi32_PI1H,
+  PI41: mathi32_PI41,
+  PI42: mathi32_PI42,
+};
+
+const mathf64_abs = Math.abs;
+
+const mathf64_sqrt = Math.sqrt;
+const mathf64_pow = Math.pow;
+const mathf64_sin = Math.sin;
+const mathf64_cos = Math.cos;
+const mathf64_atan2 = Math.atan2;
+const mathf64_asin = Math.asin;
+
+const mathf64_ceil = Math.ceil;
+const mathf64_floor = Math.floor;
+const mathf64_round = Math.round;
+const mathf64_min = Math.min;
+const mathf64_max = Math.max;
+
+const mathf64_random = Math.random;
+
+const mathf64_EPSILON = +0.000001;
+
+const mathf64_SQRTFIVE = +mathf64_sqrt(5);
+
+const mathf64_PI = +Math.PI;
+const mathf64_PI2 = +(mathf64_PI * 2);
+const mathf64_PI1H = +(mathf64_PI / 2);
+const mathf64_PI41 = +(4 / mathf64_PI);
+const mathf64_PI42 = +(4 / (mathf64_PI * mathf64_PI));
+
+var float64Math = {
+  abs: mathf64_abs,
+
+  sqrt: mathf64_sqrt,
+  pow: mathf64_pow,
+  sin: mathf64_sin,
+  cos: mathf64_cos,
+  atan2: mathf64_atan2,
+  asin: mathf64_asin,
+
+  ceil: mathf64_ceil,
+  floor: mathf64_floor,
+  round: mathf64_round,
+  min: mathf64_min,
+  max: mathf64_max,
+
+  random: mathf64_random,
+
+  EPSILON: mathf64_EPSILON,
+
+  SQRTFIVE: mathf64_SQRTFIVE,
+
+  PI: mathf64_PI,
+  PI2: mathf64_PI2,
+  PI1H: mathf64_PI1H,
+  PI41: mathf64_PI41,
+  PI42: mathf64_PI42,
+};
+
+let random_seed = mathi32_abs(performance.now() ^ (+mathf64_random() * Number.MAX_SAFE_INTEGER));
+function int32_random() {
+  const x = (Math.sin(random_seed++) * mathi32_MULTIPLIER);
+  return x - Math.floor(x);
+}
+
+function int32_sqrtEx(n = 0) {
+  n = n|0;
+  return (mathi32_MULTIPLIER * mathi32_sqrt(n))|0;
+}
+
+function int32_sqrt(n = 0) {
+  n = n|0;
+  return mathi32_sqrt(n)|0;
+}
+
+function int32_fib(n = 0) {
+  n = n|0;
+  let c = 0;
+  let x = 1;
+  let i = 1;
+  for (; i !== n; i += 1) {
+    const t = (c + x)|0;
+    c = x|0;
+    x = t|0;
+  }
+  return c|0;
+}
+
+function int32_norm(value = 0, min = 0, max = 0) {
+  value = value|0; min = min|0; max = max|0;
+  return ((value - min) / (max - min))|0;
+}
+
+function int32_lerp(norm = 0, min = 0, max = 0) {
+  norm = norm|0; min = min|0; max = max|0;
+  return ((max - min) * (norm + min))|0;
+}
+
+function int32_map(value = 0, smin = 0, smax = 0, dmin = 0, dmax = 0) {
+  value = value|0; smin = smin|0; smax = smax|0; dmin = dmin|0; dmax = dmax|0;
+  // return int32_lerp(int32_norm(value, smin, smax), dmin, dmax) | 0;
+  return mathi32_round((value - smin) * (dmax - dmin) / (smax - smin) + dmin)|0;
+}
+
+function int32_clamp(value = 0, min = 0, max = 0) {
+  value = value|0; min = min|0; max = max|0;
+  return mathi32_min(mathi32_max(value, mathi32_min(min, max)), mathi32_max(min, max))|0;
+}
+function int32_clampu(value = 0, min = 0, max = 0) {
+  value = value|0; min = min|0; max = max|0;
+  // return mathi32_min(mathi32_max(value, min), max)|0;
+  return mathi32_max(min, mathi32_min(value, max))|0;
+}
+function int32_clampu_u8a(value = 0) {
+  value = value | 0;
+  return -((255 - value & (value - 255) >> 31)
+    - 255 & (255 - value & (value - 255) >> 31)
+    - 255 >> 31);
+}
+function int32_clampu_u8b(value = 0) {
+  value = value | 0;
+  value &= -(value >= 0);
+  return value | ~-!(value & -256);
+}
+
+function int32_inRange(value = 0, min = 0, max = 0) {
+  value = value|0; min = min|0; max = max|0;
+  return ((value >= mathi32_min(min, max))
+    && (value <= mathi32_max(min, max)))|0;
+}
+
+function int32_intersectsRange(smin = 0, smax = 0, dmin = 0, dmax = 0) {
+  smin = smin|0; smax = smax|0; dmin = dmin|0; dmax = dmax|0;
+  return ((mathi32_max(smin, smax) >= mathi32_min(dmin, dmax))
+    && (mathi32_min(smin, smax) <= mathi32_max(dmin, dmax)))|0;
+}
+
+function int32_intersectsRect(
+  ax = 0, ay = 0, aw = 0, ah = 0,
+  bx = 0, by = 0, bw = 0, bh = 0,
+) {
+  ax = ax|0; ay = ay|0; aw = aw|0; ah = ah|0; bx = bx|0; by = by|0; bw = bw|0; bh = bh|0;
+  return ((int32_intersectsRange(ax | 0, (ax + aw) | 0, bx | 0, (bx + bw) | 0) > 0)
+    && (int32_intersectsRange(ay|0, (ay + ah)|0, by|0, (by + bh)|0) > 0))|0;
+}
+
+function int32_mag2(dx = 0, dy = 0) {
+  dx = dx|0; dy = dy|0;
+  return ((dx * dx) + (dy * dy))|0;
+}
+
+function int32_hypot(dx = 0, dy = 0) {
+  dx = dx|0; dy = dy|0;
+  return int32_sqrt((dx * dx) + (dy * dy))|0;
+}
+
+function int32_hypotEx(dx = 0, dy = 0) {
+  dx = dx|0; dy = dy|0;
+  return int32_sqrtEx((dx * dx) + (dy * dy))|0;
+}
+
+function int32_dot(ax = 0, ay = 0, bx = 0, by = 0) {
+  ax = ax|0; ay = ay|0; bx = bx|0; by = by|0;
+  return ((ax * bx) + (ay * by))|0;
+}
+
+function int32_cross(ax = 0, ay = 0, bx = 0, by = 0) {
+  ax = ax|0; ay = ay|0; bx = bx|0; by = by|0;
+  return ((ax * by) - (bx * ay))|0;
+}
+
+//#region trigonometry
+
+function int32_toRadianEx(degrees = 0) {
+  degrees = degrees|0;
+  return ((degrees * mathi32_PI) / 180)|0;
+}
+
+function int32_toDegreesEx(radians = 0) {
+  radians = radians|0;
+  return ((mathi32_MULTIPLIER * radians * 180) / mathi32_PI)|0;
+}
+
+function int32_wrapRadians(r = 0) {
+  r = r|0;
+  if (r > mathi32_PI) return (r - mathi32_PI2)|0;
+  else if (r < -mathi32_PI) return (r + mathi32_PI2)|0;
+  return r|0;
+}
+
+function int32_sinLpEx(r = 0) {
+  r = r|0;
+  return ((r < 0)
+    ? (mathi32_PI41 * r + mathi32_PI42 * r * r)
+    : (mathi32_PI41 * r - mathi32_PI42 * r * r))|0;
+}
+
+function int32_sinLp(r = 0) {
+  r = r|0;
+  //always wrap input angle between -PI and PI
+  return int32_sinLpEx(int32_wrapRadians(r))|0;
+}
+
+var int32Base = {
+  random: int32_random,
+  sqrt: int32_sqrt,
+  sqrtEx: int32_sqrtEx,
+  fib: int32_fib,
+  norm: int32_norm,
+  lerp: int32_lerp,
+  map: int32_map,
+  clamp: int32_clamp,
+  clampu: int32_clampu,
+  clamp8u: int32_clampu_u8a,
+  clampu8a: int32_clampu_u8a,
+  clampu8b: int32_clampu_u8b,
+  inRange: int32_inRange,
+  intersectsRange: int32_intersectsRange,
+  intersectsRect: int32_intersectsRect,
+  mag2: int32_mag2,
+  hypot: int32_hypot,
+  hypotEx: int32_hypotEx,
+  dot: int32_dot,
+  cross: int32_cross,
+  toRadianEx: int32_toRadianEx,
+  toDegreesEx: int32_toDegreesEx,
+  wrapRadians: int32_wrapRadians,
+};
+
+class vec2i32 {
+  constructor(x = 0, y = 0) {
+    this.x = x|0;
+    this.y = y|0;
+  }
+}
+
+const def_vec2i32 = Object.freeze(Object.seal(new vec2i32()));
+
+//#region flat vec2i pure primitive operators
+
+function vec2i32_neg(v = def_vec2i32) {
+  return new vec2i32(
+    (-(v.x|0))|0,
+    (-(v.y|0))|0,
+  );
+}
+function vec2i32_add(a = def_vec2i32, b = def_vec2i32) {
+  return new vec2i32(
+    ((a.x|0) + (b.x|0))|0,
+    ((a.y|0) + (b.y|0))|0,
+  );
+}
+function vec2i32_adds(v = def_vec2i32, scalar = 0) {
+  scalar = scalar|0;
+  return new vec2i32(
+    ((v.x|0) + scalar)|0,
+    ((v.y|0) + scalar)|0,
+  );
+}
+
+function vec2i32_sub(a = def_vec2i32, b = def_vec2i32) {
+  return new vec2i32(
+    ((a.x|0) - (b.x|0))|0,
+    ((a.y|0) - (b.y|0))|0,
+  );
+}
+function vec2i32_subs(a = def_vec2i32, scalar = 0) {
+  scalar = scalar|0;
+  return new vec2i32(
+    ((a.x|0) - scalar)|0,
+    ((a.y|0) - scalar)|0,
+  );
+}
+
+function vec2i32_mul(a = def_vec2i32, b = def_vec2i32) {
+  return new vec2i32(
+    ((a.x|0) * (b.x|0))|0,
+    ((a.y|0) * (b.y|0))|0,
+  );
+}
+function vec2i32_muls(v = def_vec2i32, scalar = 0) {
+  scalar = scalar|0;
+  return new vec2i32(
+    ((v.x|0) * scalar)|0,
+    ((v.y|0) * scalar)|0,
+  );
+}
+
+function vec2i32_div(a = def_vec2i32, b = def_vec2i32) {
+  return new vec2i32(
+    ((a.x|0) / (b.x|0))|0,
+    ((a.y|0) / (b.y|0))|0,
+  );
+}
+function vec2i32_divs(v = def_vec2i32, scalar = 0) {
+  scalar = scalar|0;
+  return new vec2i32(
+    ((v.x|0) / scalar)|0,
+    ((v.y|0) / scalar)|0,
+  );
+}
+
+
+//#endregion
+
+//#region flat vec2i impure primitive operators
+
+function vec2i32_ineg(v = def_vec2i32) {
+  v.x = (-(v.x|0))|0;
+  v.y = (-(v.y|0))|0;
+  return v;
+}
+
+function vec2i32_iadd(a = def_vec2i32, b = def_vec2i32) {
+  a.x += (b.x|0)|0;
+  a.y += (b.y|0)|0;
+  return a;
+}
+function vec2i32_iadds(v = def_vec2i32, scalar = 0) {
+  scalar = scalar|0;
+  v.x += scalar|0;
+  v.y += scalar|0;
+  return v;
+}
+
+function vec2i32_isub(a = def_vec2i32, b = def_vec2i32) {
+  a.x -= (b.x|0)|0;
+  a.y -= (b.y|0)|0;
+  return a;
+}
+function vec2i32_isubs(v = def_vec2i32, scalar = 0) {
+  scalar = scalar|0;
+  v.x -= scalar|0;
+  v.y -= scalar|0;
+  return v;
+}
+
+function vec2i32_imul(a = def_vec2i32, b = def_vec2i32) {
+  a.x *= (b.x|0)|0;
+  a.y *= (b.y|0)|0;
+  return a;
+}
+function vec2i32_imuls(v = def_vec2i32, scalar = 0) {
+  scalar = scalar|0;
+  v.x *= scalar;
+  v.y *= scalar;
+  return v;
+}
+
+function vec2i32_idiv(a = def_vec2i32, b = def_vec2i32) {
+  a.x /= b.x|0;
+  a.y /= b.y|0;
+  return a;
+}
+function vec2i32_idivs(v = def_vec2i32, scalar = 0) {
+  scalar = scalar|0;
+  v.x /= scalar;
+  v.y /= scalar;
+  return v;
+}
+
+//#endregion
+
+//#region flat vec2i vector products
+
+function vec2i32_mag2(v = def_vec2i32) {
+  return (((v.x|0) * (v.x|0)) + ((v.y|0) * (v.y|0)))|0;
+}
+function vec2i32_mag(v = def_vec2i32) {
+  return mathi32_sqrt(+vec2i32_mag2(v))|0;
+}
+
+function vec2i32_dot(a = def_vec2i32, b = def_vec2i32) {
+  return (((a.x|0) * (b.x|0)) + ((a.y|0) * (b.y|0)))|0;
+}
+function vec2i32_cross(a = def_vec2i32, b = def_vec2i32) {
+  return (((a.x|0) * (b.y|0)) - ((a.y|0) * (b.x|0)))|0;
+}
+
+function vec2i32_cross3(a = def_vec2i32, b = def_vec2i32, c = def_vec2i32) {
+  return ((((b.x | 0) - (a.x | 0)) * ((c.y | 0) - (a.y | 0)))
+    - (((b.y|0) - (a.y|0)) * ((c.x|0) - (a.x|0))));
+}
+
+function vec2i32_thetaEx(v = def_vec2i32) {
+  return (mathi32_MULTIPLIER * mathi32_atan2((v.y|0), (v.x|0)))|0;
+}
+const vec2i32_angleEx = vec2i32_thetaEx;
+
+function vec2i32_phiEx(v= def_vec2i32) {
+  return (mathi32_MULTIPLIER * mathi32_asin((v.y|0) / vec2i32_mag(v)));
+}
+
+
+//#endregion
+
+//#region flat vec2i pure advanced vector functions
+
+function vec2i32_norm(v = def_vec2i32) {
+  return vec2i32_divs(v, vec2i32_mag(v)|0)|0;
+}
+
+function vec2i32_rotn90(v = def_vec2i32) {
+  return new vec2i32(
+    v.y|0,
+    (-(v.x|0))|0,
+  );
+}
+function vec2i32_rot90(v = def_vec2i32) {
+  return {
+    x: (-(v.y|0))|0,
+    y: v.x|0,
+  };
+}
+const vec2i32_perp = vec2i32_rot90;
+
+
+//#endregion
+
+//#region rotation
+function vec2i32_inorm(v = def_vec2i32) {
+  return vec2i32_idivs(v, vec2i32_mag(v)|0)|0;
+}
+
+function vec2i32_irotn90(v = def_vec2i32) {
+  const t = v.x|0;
+  v.x = v.y|0;
+  v.y = (-(t))|0;
+  return v;
+}
+
+function vec2i32_irot90(v = def_vec2i32) {
+  const t = v.y|0;
+  v.x = (-(t))|0;
+  v.y = (v.x|0);
+  return v;
+}
+const vec2i32_iperp = vec2i32_irot90;
+
+//#endregion
+
+//#region shapes
+
+/**
+ * Tests if triangle intersects with a rectangle
+ *
+ * @param {*} v1
+ * @param {*} v2
+ * @param {*} v3
+ * @param {*} r1
+ * @param {*} r2
+ * @returns {boolean} true if they intersect.
+ */
+function triangle2i_intersectsRect(v1, v2, v3, r1, r2) {
+  /*
+    This function borrowed faithfully from a wonderfl (:3) discussion on
+    calculating triangle collision with AABBs on the following blog:
+    http://sebleedelisle.com/2009/05/super-fast-trianglerectangle-intersection-test/
+
+    This particular optimization best suits my purposes and was contributed
+    to the discussion by someone from http://lab9.fr/
+  */
+
+  const x0 = v1.x|0;
+  const y0 = v1.y|0;
+  const x1 = v2.x|0;
+  const y1 = v2.y|0;
+  const x2 = v3.x|0;
+  const y2 = v3.y|0;
+
+  const l = r1.x|0;
+  const r = r2.x|0;
+  const t = r1.y|0;
+  const b = r2.y|0;
+
+  const b0 = (((x0 > l) ? 1 : 0)
+    | (((y0 > t) ? 1 : 0) << 1)
+    | (((x0 > r) ? 1 : 0) << 2)
+    | (((y0 > b) ? 1 : 0) << 3))|0;
+  if (b0 === 3) return true;
+
+  const b1 = ((x1 > l) ? 1 : 0)
+    | (((y1 > t) ? 1 : 0) << 1)
+    | (((x1 > r) ? 1 : 0) << 2)
+    | (((y1 > b) ? 1 : 0) << 3)|0;
+  if (b1 === 3) return true;
+
+  const b2 = ((x2 > l) ? 1 : 0)
+    | (((y2 > t) ? 1 : 0) << 1)
+    | (((x2 > r) ? 1 : 0) << 2)
+    | (((y2 > b) ? 1 : 0) << 3)|0;
+  if (b2 === 3) return true;
+
+  let c = 0;
+  let m = 0;
+  let s = 0;
+
+  const i0 = (b0 ^ b1)|0;
+  if (i0 !== 0) {
+    m = ((y1-y0) / (x1-x0))|0;
+    c = (y0 -(m * x0))|0;
+    if (i0 & 1) {
+      s = m * l + c;
+      if (s > t && s < b) return true;
+    }
+    if (i0 & 2) {
+      s = (t - c) / m;
+      if (s > l && s < r) return true;
+    }
+    if (i0 & 4) {
+      s = m * r + c;
+      if (s > t && s < b) return true;
+    }
+    if (i0 & 8) {
+      s = (b - c) / m;
+      if (s > l && s < r) return true;
+    }
+  }
+
+  const i1 = (b1 ^ b2)|0;
+  if (i1 !== 0) {
+    m = ((y2 - y1) / (x2 - x1))|0;
+    c = (y1 -(m * x1))|0;
+    if (i1 & 1) {
+      s = m * l + c;
+      if (s > t && s < b) return true;
+    }
+    if (i1 & 2) {
+      s = (t - c) / m;
+      if (s > l && s < r) return true;
+    }
+    if (i1 & 4) {
+      s = m * r + c;
+      if (s > t && s < b) return true;
+    }
+    if (i1 & 8) {
+      s = (b - c) / m;
+      if (s > l && s < r) return true;
+    }
+  }
+
+  const i2 = (b0 ^ b2)|0;
+  if (i2 !== 0) {
+    m = ((y2 - y0) / (x2 - x0))|0;
+    c = (y0 -(m * x0))|0;
+    if (i2 & 1) {
+      s = m * l + c;
+      if (s > t && s < b) return true;
+    }
+    if (i2 & 2) {
+      s = (t - c) / m;
+      if (s > l && s < r) return true;
+    }
+    if (i2 & 4) {
+      s = m * r + c;
+      if (s > t && s < b) return true;
+    }
+    if (i2 & 8) {
+      s = (b - c) / m;
+      if (s > l && s < r) return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * just some notes
+ *
+ *
+const fastSin_B = 1.2732395; // 4/pi
+const fastSin_C = -0.40528473; // -4 / (pi²)
+export function fastSin(value) {
+  // See  for graph and equations
+  // https://www.desmos.com/calculator/8nkxlrmp7a
+  // logic explained here : http://devmaster.net/posts/9648/fast-and-accurate-sine-cosine
+
+  return (value > 0)
+    ? fastSin_B * value - fastSin_C * value * value
+    : fastSin_B * value + fastSin_C * value * value;
+}
+
+export function fastSin2(a) {
+  let b, c;
+  return a *= 5214
+    , c = a << 17
+    , a -= 8192
+    , a <<= 18
+    , a >>= 18
+    , a = a * a >> 12
+    , b = 19900 - (3516 * a >> 14)
+    , b = 4096 - (a * b >> 16)
+    , 0 > c && (b = -b)
+    , 2.44E-4 * b;
+};
+
+export function fastSin3(a) {
+  a *= 5214;
+  let b = a << 17;
+  a = a - 8192 << 18 >> 18;
+  a = a * a >> 12;
+  a = 4096 - (a * (19900 - (3516 * a >> 14)) >> 16);
+  0 > b && (a = -a);
+  return 2.44E-4 * a
+};
+
+
+ */
+
+var int32Vec2 = {
+  vec2: vec2i32,
+  default: def_vec2i32,
+
+  neg: vec2i32_neg,
+  add: vec2i32_add,
+  adds: vec2i32_adds,
+  sub: vec2i32_sub,
+  subs: vec2i32_subs,
+  mul: vec2i32_mul,
+  muls: vec2i32_muls,
+  div: vec2i32_div,
+  divs: vec2i32_divs,
+
+  ineg: vec2i32_ineg,
+  iadd: vec2i32_iadd,
+  iadds: vec2i32_iadds,
+  isub: vec2i32_isub,
+  isubs: vec2i32_isubs,
+  imul: vec2i32_imul,
+  imuls: vec2i32_imuls,
+  idiv: vec2i32_idiv,
+  idivs: vec2i32_idivs,
+
+  mag2: vec2i32_mag2,
+  mag: vec2i32_mag,
+  dot: vec2i32_dot,
+  cross: vec2i32_cross,
+  cross3: vec2i32_cross3,
+  thetaEx: vec2i32_thetaEx,
+  angleEx: vec2i32_thetaEx,
+  phiEx: vec2i32_phiEx,
+  norm: vec2i32_norm,
+  rotn90: vec2i32_rotn90,
+  rot90: vec2i32_rot90,
+  perp: vec2i32_rot90,
+
+  inorm: vec2i32_inorm,
+  irotn90: vec2i32_irotn90,
+  irot90: vec2i32_irot90,
+  iperp: vec2i32_iperp,
+};
+
+function float64_gcd(a=0.0, b=0.0) {
+  a = +a; b = +b;
+  // For example, a 1024x768 monitor has a GCD of 256.
+  // When you divide both values by that you get 4x3 or 4: 3.
+  return +((b === 0.0) ? +a : +float64_gcd(b, a % b));
+}
+
+function float64_sqrt(n = 0.0) {
+  return +mathf64_sqrt(+n);
+}
+
+function float64_hypot2(dx = 0.0, dy = 0.0) {
+  return +(+(+dx * +dx) + +(+dy * +dy));
+}
+
+function float64_hypot(dx = 0.0, dy = 0.0) {
+  return +mathf64_sqrt(+(+(+dx * +dx) + +(+dy * +dy)));
+}
+
+const float64_isqrt = (function float64_isqrt_oncompile() {
+  const f = new Float32Array(1);
+  const i = new Int32Array(f.buffer);
+  return function float64_isqrt_impl(n = 0.0) {
+    n = +n;
+    const n2 = +(n * 0.5);
+    f[0] = +n;
+    i[0] = (0x5f375a86 - ((i[0]|0) >> 1))|0;
+    n = +f[0];
+    return +(+n * +(1.5 - (+n2 * +n * +n)));
+  };
+})();
+
+function float64_fib(n = 0.0) {
+  n = +n;
+  let c = 0.0;
+  let x = 1.0;
+  let i = 1.0;
+  for (; i !== n; i += 1.0) {
+    const t = +(+c + +x);
+    c = +x;
+    x = +t;
+  }
+  return +c;
+}
+
+// https://gist.github.com/geraldyeo/988116export
+function float64_fib2(value = 0.0) {
+  value = +value;
+  const fh = +(1.0 / +mathf64_SQRTFIVE * +mathf64_pow(+(+(1.0 + mathf64_SQRTFIVE) / 2.0), +value));
+  const sh = +(1.0 / +mathf64_SQRTFIVE * +mathf64_pow(+(+(1.0 - mathf64_SQRTFIVE) / 2.0), +value));
+  return +mathf64_round(+(fh - sh));
+}
+
+function float64_norm(value = 0.0, min = 0.0, max = 0.0) {
+  value = +value; min = +min; max = +max;
+  return +((value - min) / (max - min));
+}
+
+function float64_lerp(norm = 0.0, min = 0.0, max = 0.0) {
+  norm = +norm; min = +min; max = +max;
+  return +((max - min) * (norm + min));
+}
+
+function float64_map(value = 0.0, smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
+  value = +value; smin = +smin; smax = +smax; dmin = +dmin; dmax = +dmax;
+  return +float64_lerp(+float64_norm(value, smin, smax), dmin, dmax);
+}
+
+/**
+ * Clamps a value between a checked boudary.
+ * and can therefor handle swapped min/max arguments
+ *
+ * @param {float} value input value
+ * @param {float} min minimum bounds
+ * @param {float} max maximum bounds
+ * @returns {float} clamped value
+ */
+function float64_clamp(value = 0.0, min = 0.0, max = 0.0) {
+  return +mathf64_min(+mathf64_max(+value, +mathf64_min(+min, +max)), +mathf64_max(+min, +max));
+}
+/**
+ * Clamps a value between an unchecked boundary
+ * this function needs min < max!!
+ * (see float64_clamp for a checked boundary)
+ *
+ * @param {float} value input value
+ * @param {float} min minimum bounds
+ * @param {float} max maximum bounds
+ * @returns {float} clamped value
+ */
+function float64_clampu(value = 0.0, min = 0.0, max = 0.0) {
+  return +mathf64_min(+mathf64_max(+value, +min), +max);
+}
+
+function float64_inRange(value = 0.0, min = 0.0, max = 0.0) {
+  return +(+value >= +mathf64_min(+min, +max) && +value <= +mathf64_max(+min, +max));
+}
+
+function float64_intersectsRange(smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
+  return +(+mathf64_max(+smin, +smax) >= +mathf64_min(+dmin, +dmax)
+    && +mathf64_min(+smin, +smax) <= +mathf64_max(+dmin, +dmax));
+}
+
+function float64_intersectsRect(
+  ax = 0.0, ay = 0.0, aw = 0.0, ah = 0.0,
+  bx = 0.0, by = 0.0, bw = 0.0, bh = 0.0,
+) {
+  return +(+(+float64_intersectsRange(+ax, +(+ax + +aw), +bx, +(+bx + +bw)) > 0.0
+    && +float64_intersectsRange(+ay, +(+ay + +ah), +by, +(+by + +bh)) > 0.0));
+}
+
+/**
+ *
+ * We can calculate the Dot Product of two vectors this way:
+ *
+ *    a · b = |a| × |b| × cos(θ)
+ *
+ * or in this implementation as:
+ *
+ *    a · b = ax × bx + ay × by
+ *
+ * When two vectors are at right angles to each other the dot product is zero.
+ *
+ * @param {float} ax vector A x velocity
+ * @param {float} ay vector A y velocity
+ * @param {float} bx vector B x velocity
+ * @param {float} by vector B y velocity
+ * @returns {float} scalar of the dot product
+ */
+function float64_dot(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
+  return +(+(+ax * +bx) + +(+ay * +by));
+}
+
+/**
+ *
+ * The Cross Product Magnitude
+ * a × b of two vectors is another vector that is at right angles to both:
+ * The magnitude (length) of the cross product equals the area
+ * of a parallelogram with vectors a and b for sides:
+ *
+ * We can calculate the Cross Product this way:
+ *
+ *    a × b = |a| |b| sin(θ) n
+ *
+ * or as
+ *
+ *    a × b = ax × by - bx × ay
+ *
+ * Another useful property of the cross product is,
+ * that its magnitude is related to the sine of
+ * the angle between the two vectors:
+ *
+ *    | a x b | = |a| . |b| . sine(theta)
+ *
+ * or
+ *
+ *    sine(theta) = | a x b | / (|a| . |b|)
+ *
+ * So, in implementation 1 above, if a and b are known in advance
+ * to be unit vectors then the result of that function is exactly that sine() value.
+ * @param {float} ax
+ * @param {float} ay
+ * @param {float} bx
+ * @param {float} by
+ */
+function float64_cross(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
+  return +(+(+ax * +by) - +(+bx * +ay));
+}
+
+//#region trigonometry
+
+function float64_toRadian(degrees = 0.0) {
+  return +(+degrees * +Math.PI / 180.0);
+}
+
+function float64_toDegrees(radians = 0.0) {
+  return +(+radians * 180.0 / +Math.PI);
+}
+
+function float64_wrapRadians(r = 0.0) {
+  r = +r;
+  if (+r > Math.PI) return +(+r - +mathf64_PI2);
+  else if (+r < -Math.PI) return +(+r + +mathf64_PI2);
+  return +r;
+}
+
+function float64_sinLpEx(r = 0.0) {
+  r = +r;
+  return +((r < 0.0)
+    ? +(+mathf64_PI41 * +r + +mathf64_PI42 * +r * +r)
+    : +(+mathf64_PI41 * +r - +mathf64_PI42 * +r * +r));
+}
+
+function float64_sinLp(r = 0.0) {
+  //always wrap input angle between -PI and PI
+  return +float64_sinLpEx(+float64_wrapRadians(+r));
+}
+
+function float64_cosLp(r = 0.0) {
+  //compute cosine: sin(x + PI/2) = cos(x)
+  return +float64_sinLp(+(+r + +mathf64_PI1H));
+}
+
+function float64_cosHp(r = 0.0) {
+//   template<typename T>
+// inline T cos(T x) noexcept
+// {
+//     constexpr T tp = 1./(2.*M_PI);
+//     x *= tp;
+//     x -= T(.25) + std::floor(x + T(.25));
+//     x *= T(16.) * (std::abs(x) - T(.5));
+//     #if EXTRA_PRECISION
+//     x += T(.225) * x * (std::abs(x) - T(1.));
+//     #endif
+//     return x;
+// }
+  throw new Error('float64_cosHp is not implemented! r=' + String(r));
+}
+
+function float64_sinMpEx(r = 0.0) {
+  r = +r;
+  const sin = +((r < 0.0)
+    ? +(mathf64_PI41 * r + mathf64_PI42 * r * r)
+    : +(mathf64_PI41 * r - mathf64_PI42 * r * r));
+  return +((sin < 0.0)
+    ? +(0.225 * (sin * -sin - sin) + sin)
+    : +(0.225 * (sin * sin - sin) + sin));
+}
+
+function float64_sinMp(r = 0.0) {
+  return +float64_sinMpEx(+float64_wrapRadians(+r));
+}
+function float64_cosMp(r = 0.0) {
+  //compute cosine: sin(x + PI/2) = cos(x)
+  return +float64_sinMp(+(+r + +mathf64_PI1H));
+}
+
+function float64_theta(x = 0.0, y = 0.0) {
+  return +mathf64_atan2(+y, +x);
+  /*
+    // alternative was faster, but not anymore.
+    // error < 0.005
+    y = +y;
+    x = +x;
+    if (x == 0.0) {
+      if (y > 0.0) return +(Math.PI / 2.0);
+      if (y == 0.0) return 0.0;
+      return +(-Math.PI / 2.0);
+    }
+
+    const z = +(y / x);
+    var atan = 0.0;
+    if (+Math.abs(z) < 1.0) {
+      atan = +(z / (1.0 + 0.28 * z * z));
+      if (x < 0.0) {
+        if (y < 0.0) return +(atan - Math.PI);
+        return +(atan + Math.PI);
+      }
+    }
+    else {
+      atan = +(Math.PI / 2.0 - z / (z * z + 0.28));
+      if (y < 0.0) return +(atan - Math.PI);
+    }
+    return +(atan);
+  */
+}
+
+function float64_phi(y = 0.0, length = 0.0) {
+  return +mathf64_asin(+y / +length);
+}
+
+//#endregion
+
+var float64Base = {
+  gcd: float64_gcd,
+  sqrt: float64_sqrt,
+  hypot2: float64_hypot2,
+  hypot: float64_hypot,
+  isqrt: float64_isqrt,
+  fib: float64_fib,
+  fib2: float64_fib2,
+  norm: float64_norm,
+  lerp: float64_lerp,
+
+  map: float64_map,
+  clamp: float64_clamp,
+  clampu: float64_clampu,
+
+  inrange: float64_inRange,
+  intersectsRange: float64_intersectsRange,
+  intersectsRect: float64_intersectsRect,
+
+  dot: float64_dot,
+  cross: float64_cross,
+
+  toRadian: float64_toRadian,
+  toDefrees: float64_toDegrees,
+  wrapRadians: float64_wrapRadians,
+
+  theta: float64_theta,
+  phi: float64_phi,
+};
+
+/* eslint-disable one-var-declaration-per-line */
+
+class vec2f64 {
+  constructor(x = 0.0, y = 0.0) {
+    this.x = +x;
+    this.y = +y;
+  }
+}
+
+//#region -- object oriented implementation --
+
+//#region class pure primitive vector operators
+
+vec2f64.prototype.neg = function _vec2f64__neg() {
+  return new vec2f64(+(-(+this.x)), +(-(+this.y)));
+};
+
+vec2f64.prototype.add = function _vec2f64__add(vector = def_vec2f64) {
+  return new vec2f64(+(+this.x + +vector.x), +(+this.y + +vector.y));
+};
+vec2f64.prototype.adds = function _vec2f64__adds(scalar = 0.0) {
+  return new vec2f64(+(+this.x + +scalar), +(+this.y + +scalar));
+};
+
+vec2f64.prototype.sub = function _vec2f64__sub(vector = def_vec2f64) {
+  return new vec2f64(+(+this.x - +vector.x), +(+this.y - +vector.y));
+};
+vec2f64.prototype.subs = function _vec2f64__subs(scalar = 0.0) {
+  return new vec2f64(+(+this.x - +scalar), +(+this.y - +scalar));
+};
+
+vec2f64.prototype.mul = function _vec2f64__mul(vector = def_vec2f64) {
+  return new vec2f64(+(+this.x * +vector.x), +(+this.y * +vector.y));
+};
+vec2f64.prototype.muls = function _vec2f64__muls(scalar = 0.0) {
+  return new vec2f64(+(+this.x * +scalar), +(+this.y * +scalar));
+};
+
+vec2f64.prototype.div = function _vec2f64__div(vector = def_vec2f64) {
+  return new vec2f64(+(+this.x / +vector.x), +(+this.y / +vector.y));
+};
+vec2f64.prototype.divs = function _vec2f64__divs(scalar = 0.0) {
+  return new vec2f64(+(+this.x / +scalar), +(+this.y / +scalar));
+};
+
+//#endregion
+
+//#region class impure primitive vector operators
+vec2f64.prototype.ineg = function _vec2f64__ineg() {
+  this.x = +(-(+this.x));
+  this.y = +(-(+this.y));
+  return this;
+};
+
+vec2f64.prototype.iadd = function _vec2f64__iadd(vector = def_vec2f64) {
+  this.x += +vector.x;
+  this.y += +vector.y;
+  return this;
+};
+vec2f64.prototype.iadds = function _vec2f64__iadds(value = 0.0) {
+  this.x += +value;
+  this.y += +value;
+  return this;
+};
+
+vec2f64.prototype.isub = function _vec2f64__isub(vector = def_vec2f64) {
+  this.x -= +vector.x;
+  this.y -= +vector.y;
+  return this;
+};
+vec2f64.prototype.isubs = function _vec2f64__isubs(value = 0.0) {
+  this.x -= +value;
+  this.y -= +value;
+  return this;
+};
+
+vec2f64.prototype.imul = function _vec2f64__imul(vector = def_vec2f64) {
+  this.x *= +vector.x;
+  this.y *= +vector.y;
+  return this;
+};
+vec2f64.prototype.imuls = function _vec2f64__imuls(value = 0.0) {
+  this.x *= +value;
+  this.y *= +value;
+  return this;
+};
+
+vec2f64.prototype.idiv = function _vec2f64__idiv(vector = def_vec2f64) {
+  this.x /= +vector.x;
+  this.y /= +vector.y;
+  return this;
+};
+vec2f64.prototype.idivs = function _vec2f64__idivs(value = 0.0) {
+  this.x /= +value;
+  this.y /= +value;
+  return this;
+};
+
+//#endregion
+
+//#region class vector products
+vec2f64.prototype.mag2 = function _vec2f64__mag2() {
+  return +(+(+this.x * +this.x) + +(+this.y * +this.y));
+};
+vec2f64.prototype.mag = function _vec2f64__mag() {
+  return +mathf64_sqrt(+this.mag2());
+};
+
+vec2f64.prototype.dot = function _vec2f64__dot(vector = def_vec2f64) {
+  return +(+(+this.x * +vector.x) + +(+this.y * +vector.y));
+};
+
+/**
+ * Returns the cross-product of two vectors
+ *
+ * @param {vec2f64} vector B
+ * @returns {double} The cross product of two vectors
+ */
+vec2f64.prototype.cross = function _vec2f64__cross(vector = def_vec2f64) {
+  return +(+(+this.x * +vector.y) - +(+this.y * +vector.x));
+};
+
+/**
+ * Returns the cross-product of three vectors
+ *
+ * You can determine which side of a line a point is on
+ * by converting the line to hyperplane form (implicitly
+ * or explicitly) and then computing the perpendicular
+ * (pseudo)distance from the point to the hyperplane.
+ *
+ * With the crossproduct of two vectors A and B being the vector
+ *
+ * AxB = (AyBz − AzBy, AzBx − AxBz, AxBy − AyBx)
+ * with Az and Bz being zero you are left with the third component of that vector
+ *
+ *    AxBy - AyBx
+ *
+ * With A being the vector from point a to b, and B being the vector from point a to c means
+ *
+ *    Ax = (b[x]-a[x])
+ *    Ay = (b[y]-a[y])
+ *    Bx = (c[x]-a[x])
+ *    By = (c[y]-a[y])
+ *
+ * giving
+ *
+ *    AxBy - AyBx = (b[x]-a[x])*(c[y]-a[y])-(b[y]-a[y])*(c[x]-a[x])
+ *
+ * which is a scalar, the sign of that scalar will tell you wether point c
+ * lies to the left or right of vector ab
+ *
+ * @param {vec2f64} vector B
+ * @param {vec2f64} vector C
+ * @returns {double} The cross product of three vectors
+ *
+ */
+vec2f64.prototype.cross3 = function _vec2f64__cross3(vector2 = def_vec2f64, vector3 = def_vec2f64) {
+  return +(
+    +(+(+vector2.x - +this.x) * +(+vector3.y - +this.y))
+    - +(+(+vector2.y - +this.y) * +(+vector3.x - +this.x)));
+};
+
+/**
+ * Returns the angle in radians of its vector
+ *
+ * Math.atan2(dy, dx) === Math.asin(dy/Math.sqrt(dx*dx + dy*dy))
+ *
+ * @param {} v Vector
+ */
+function _vec2f64__theta() {
+  return +mathf64_atan2(+this.y, +this.x);
+}
+vec2f64.prototype.theta = _vec2f64__theta;
+vec2f64.prototype.angle = _vec2f64__theta;
+vec2f64.prototype.phi = function _vec2__phi() {
+  return +mathf64_asin(+this.y / +this.mag());
+};
+
+//#endregion
+
+//#region class pure advanced vector functions
+vec2f64.prototype.unit = function _vec2f64__unit() {
+  return this.divs(+this.mag());
+};
+
+vec2f64.prototype.rotn90 = function _vec2f64__rotn90() {
+  return new vec2f64(+this.y, +(-(+this.x)));
+};
+function _vec2f64__rot90() {
+  return new vec2f64(+(-(+this.y)), +this.x);
+}
+vec2f64.prototype.rot90 = _vec2f64__rot90;
+vec2f64.prototype.perp = _vec2f64__rot90;
+
+/**
+ * Rotates a vector by the specified angle in radians
+ *
+ * @param {float} r  angle in radians
+ * @returns {vec2f64} transformed output vector
+ */
+vec2f64.prototype.rotate = function _vec2f64__rotate(radians = 0.0) {
+  return new vec2f64(
+    +(+(+this.x * +mathf64_cos(+radians)) - +(+this.y * +mathf64_sin(+radians))),
+    +(+(+this.x * +mathf64_sin(+radians)) + +(+this.y * +mathf64_cos(+radians))),
+  );
+};
+vec2f64.prototype.about = function _vec2f64__about(vector = def_vec2f64, radians = 0.0) {
+  return new vec2f64(
+    +(+vector.x + +(+(+(+this.x - +vector.x) * +mathf64_cos(+radians))
+      - +(+(+this.y - +vector.y) * +mathf64_sin(+radians)))),
+    +(+vector.y + +(+(+(+this.x - +vector.x) * +mathf64_sin(+radians))
+      + +(+(+this.y - +vector.y) * +mathf64_cos(+radians)))),
+  );
+};
+
+//#endregion
+
+//#region class impure advanced vector functions
+vec2f64.prototype.iunit = function _vec2f64__iunit() {
+  return this.idivs(+this.mag());
+};
+
+vec2f64.prototype.irotn90 = function _vec2f64__irotn90() {
+  this.x = +this.y;
+  this.y = +(-(+this.x));
+  return this;
+};
+function _vec2f64__irot90() {
+  this.x = +(-(+this.y));
+  this.y = +this.x;
+  return this;
+}
+vec2f64.prototype.irot90 = _vec2f64__irot90;
+vec2f64.prototype.iperp = _vec2f64__irot90;
+
+vec2f64.prototype.irotate = function _vec2f64__irotate(radians = 0.0) {
+  this.x = +(+(+this.x * +mathf64_cos(+radians)) - +(+this.y * +mathf64_sin(+radians)));
+  this.y = +(+(+this.x * +mathf64_sin(+radians)) + +(+this.y * +mathf64_cos(+radians)));
+  return this;
+};
+vec2f64.prototype.iabout = function _vec2f64__iabout(vector = def_vec2f64, radians = 0.0) {
+  this.x = +(+vector.x + +(+(+(+this.x - +vector.x) * +mathf64_cos(+radians))
+    - +(+(+this.y - +vector.y) * +mathf64_sin(+radians))));
+  this.y = +(+vector.y + +(+(+(+this.x - +vector.x) * +mathf64_sin(+radians))
+    + +(+(+this.y - +vector.y) * +mathf64_cos(+radians))));
+  return this;
+};
+
+//#endregion
+
+//#endregion
+
+//#region -- functional implementation --
+
+//#region flat vec2f pure primitive operators
+
+function vec2f64_neg(v = def_vec2f64) {
+  return new vec2f64(
+    +(-(+v.x)),
+    +(-(+v.y)),
+  );
+}
+function vec2f64_add(a = def_vec2f64, b = def_vec2f64) {
+  return new vec2f64(
+    +(+a.x + +b.x),
+    +(+a.y + +b.y),
+  );
+}
+function vec2f64_adds(v = def_vec2f64, scalar = 0.0) {
+  return new vec2f64(
+    +(+v.x + +scalar),
+    +(+v.y + +scalar),
+  );
+}
+function vec2f64_addms(a = def_vec2f64, b = def_vec2f64, scalar = 1.0) {
+  return new vec2f64(
+    +(+a.x + +(+b.x * +scalar)),
+    +(+a.y + +(+b.y * +scalar)),
+  );
+}
+
+function vec2f64_sub(a = def_vec2f64, b = def_vec2f64) {
+  return new vec2f64(
+    +(+a.x - +b.x),
+    +(+a.y - +b.y),
+  );
+}
+function vec2f64_subs(a = def_vec2f64, scalar = 0.0) {
+  return new vec2f64(
+    +(+a.x - +scalar),
+    +(+a.y - +scalar),
+  );
+}
+
+function vec2f64_mul(a = def_vec2f64, b = def_vec2f64) {
+  return new vec2f64(
+    +(+a.x * +b.x),
+    +(+a.y * +b.y),
+  );
+}
+function vec2f64_muls(v = def_vec2f64, scalar = 1.0) {
+  return new vec2f64(
+    +(+v.x * +scalar),
+    +(+v.y * +scalar),
+  );
+}
+
+function vec2f64_div(a = def_vec2f64, b = def_vec2f64) {
+  return new vec2f64(
+    +(+a.x / +b.x),
+    +(+a.y / +b.y),
+  );
+}
+function vec2f64_divs(v = def_vec2f64, scalar = 1.0) {
+  return new vec2f64(
+    +(+v.x / +scalar),
+    +(+v.y / +scalar),
+  );
+}
+function vec2f64_inv(v = def_vec2f64) {
+  return new vec2f64(
+    1.0 / +v.x,
+    1.0 / +v.y,
+  );
+}
+
+function vec2f64_ceil(v = def_vec2f64) {
+  return new vec2f64(
+    +mathf64_ceil(+v.x),
+    +mathf64_ceil(+v.y),
+  );
+}
+function vec2f64_floor(v = def_vec2f64) {
+  return new vec2f64(
+    +mathf64_floor(+v.x),
+    +mathf64_floor(+v.y),
+  );
+}
+function vec2f64_round(v = def_vec2f64) {
+  return new vec2f64(
+    +mathf64_round(+v.x),
+    +mathf64_round(+v.y),
+  );
+}
+
+function vec2f64_min(a = def_vec2f64, b = def_vec2f64) {
+  return new vec2f64(
+    +mathf64_min(+a.x, +b.x),
+    +mathf64_min(+a.y, +b.y),
+  );
+}
+function vec2f64_max(a = def_vec2f64, b = def_vec2f64) {
+  return new vec2f64(
+    +mathf64_max(+a.x, +b.x),
+    +mathf64_max(+a.y, +b.y),
+  );
+}
+
+//#endregion
+
+//#region flat vec2f impure primitive operators
+function vec2f64_ineg(v = def_vec2f64) {
+  v.x = +(-(+v.x));
+  v.y = +(-(+v.y));
+  return v;
+}
+function vec2f64_iadd(a = def_vec2f64, b = def_vec2f64) {
+  a.x += +b.x;
+  a.y += +b.y;
+  return a;
+}
+function vec2f64_iadds(v = def_vec2f64, scalar = 0.0) {
+  v.x += +scalar;
+  v.y += +scalar;
+  return v;
+}
+function vec2f64_iaddms(a = def_vec2f64, b = def_vec2f64, scalar = 1.0) {
+  a.x = +(+a.x + +(+b.x * +scalar));
+  a.y = +(+a.y + +(+b.y * +scalar));
+  return a;
+}
+function vec2f64_isub(a = def_vec2f64, b = def_vec2f64) {
+  a.x -= +(+b.x);
+  a.y -= +(+b.y);
+  return a;
+}
+function vec2f64_isubs(v = def_vec2f64, scalar = 0.0) {
+  v.x -= +scalar;
+  v.y -= +scalar;
+  return v;
+}
+
+function vec2f64_imul(a = def_vec2f64, b = def_vec2f64) {
+  a.x *= +(+b.x);
+  a.y *= +(+b.y);
+  return a;
+}
+function vec2f64_imuls(v = def_vec2f64, scalar = 1.0) {
+  v.x *= +scalar;
+  v.y *= +scalar;
+  return v;
+}
+
+function vec2f64_idiv(a = def_vec2f64, b = def_vec2f64) {
+  a.x /= +(+b.x);
+  a.y /= +(+b.y);
+  return a;
+}
+function vec2f64_idivs(v = def_vec2f64, scalar = 1.0) {
+  v.x /= +scalar;
+  v.y /= +scalar;
+  return v;
+}
+function vec2f64_iinv(v = def_vec2f64) {
+  v.x = 1.0 / +v.x;
+  v.y = 1.0 / +v.y;
+  return v;
+}
+
+function vec2f64_iceil(v = def_vec2f64) {
+  v.x = +mathf64_ceil(+v.x);
+  v.y = +mathf64_ceil(+v.y);
+  return v;
+}
+function vec2f64_ifloor(v = def_vec2f64) {
+  v.x = +mathf64_floor(+v.x);
+  v.y = +mathf64_floor(+v.y);
+  return v;
+}
+function vec2f64_iround(v = def_vec2f64) {
+  v.x = +mathf64_round(+v.x);
+  v.y = +mathf64_round(+v.y);
+  return v;
+}
+
+function vec2f64_imin(a = def_vec2f64, b = def_vec2f64) {
+  a.x = +mathf64_min(+a.x, +b.x);
+  a.y = +mathf64_min(+a.y, +b.y);
+  return a;
+}
+function vec2f64_imax(a = def_vec2f64, b = def_vec2f64) {
+  a.x = +mathf64_max(+a.x, +b.x);
+  a.y = +mathf64_max(+a.y, +b.y);
+  return a;
+}
+
+//#endregion
+
+//#region flat vec2f boolean products
+function vec2f64_eqstrict(a = def_vec2f64, b = def_vec2f64) {
+  return a.x === b.x && a.y === b.y;
+}
+const vec2f64_eqs = vec2f64_eqstrict;
+function vec2f64_eq(a = def_vec2f64, b = def_vec2f64) {
+  const ax = +a.x, ay = +a.y, bx = +b.x, by = +b.y;
+  return (mathf64_abs(ax - bx)
+    <= mathf64_EPSILON * mathf64_max(1.0, mathf64_abs(ax), mathf64_abs(bx))
+    && mathf64_abs(ay - by)
+    <= mathf64_EPSILON * mathf64_max(1.0, mathf64_abs(ay), mathf64_abs(by))
+  );
+}
+
+//#endregion
+
+//#region flat vec2f vector products
+
+function vec2f64_mag2(v = def_vec2f64) {
+  return +(+(+v.x * +v.x) + +(+v.y * +v.y));
+}
+function vec2f64_mag(v = def_vec2f64) {
+  return +mathf64_sqrt(+vec2f64_mag2(v));
+}
+function vec2f64_dist2(a = def_vec2f64, b = def_vec2f64) {
+  const dx = +(+b.x - +a.x), dy = +(+b.y - +a.y);
+  return +(+(+dx * +dx) + +(+dy * +dy));
+}
+function vec2f64_dist(a = def_vec2f64, b = def_vec2f64) {
+  return +mathf64_sqrt(+vec2f64_dist2(a, b));
+}
+
+function vec2f64_dot(a = def_vec2f64, b = def_vec2f64) {
+  return +(+(+a.x * +b.x) + +(+a.y * +b.y));
+}
+function vec2f64_cross(a = def_vec2f64, b = def_vec2f64) {
+  return +(+(+a.x * +b.y) - +(+a.y * +b.x));
+}
+function vec2f64_cross3(a = def_vec2f64, b = def_vec2f64, c = def_vec2f64) {
+  return +(
+    +(+(+b.x - +a.x) * +(+c.y - +a.y))
+    - +(+(+b.y - +a.y) * +(+c.x - +a.x))
+  );
+}
+
+function vec2f64_theta(v = def_vec2f64) {
+  return +mathf64_atan2(+v.y, +v.x);
+}
+function vec2f64_phi(v = def_vec2f64) {
+  return +mathf64_asin(+v.y / +vec2f64_mag(v));
+}
+
+//#endregion
+
+//#region flat vec2f pure advanced vector functions
+function vec2f64_unit(v = def_vec2f64) {
+  const mag2 = +vec2f64_mag2();
+  return vec2f64_divs(
+    v,
+    +(mag2 > 0 ? 1.0 / +mathf64_sqrt(mag2) : 1),
+  );
+}
+
+function vec2f64_lerp(v = 0.0, a = def_vec2f64, b = def_vec2f64) {
+  const ax = +a.x, ay = +ay.y;
+  return new vec2f64(
+    +(ax + +v * (+b.x - ax)),
+    +(ay + +v * (+b.y - ay)),
+  );
+}
+
+function vec2f64_rotn90(v = def_vec2f64) {
+  return new vec2f64(
+    +v.y,
+    +(-(+v.x)),
+  );
+}
+function vec2f64_rot90(v = def_vec2f64) {
+  return new vec2f64(
+    +(-(+v.y)),
+    +v.x,
+  );
+}
+
+/**
+ * Rotates a vector by the specified angle in radians
+ *
+ * @param {float} r  angle in radians
+ * @returns {vec2f} transformed output vector
+ */
+function vec2f64_rotate(v = def_vec2f64, radians = 0.0) {
+  return new vec2f64(
+    +(+(+v.x * +mathf64_cos(+radians)) - +(+v.y * +mathf64_sin(+radians))),
+    +(+(+v.x * +mathf64_sin(+radians)) + +(+v.y * +mathf64_cos(+radians))),
+  );
+}
+function vec2f64_about(a = def_vec2f64, b = def_vec2f64, radians = 0.0) {
+  return new vec2f64(
+    +(+b.x
+      + +(+(+(+a.x - +b.x) * +mathf64_cos(+radians))
+      - +(+(+a.y - +b.y) * +mathf64_sin(+radians)))),
+    +(+b.y
+      + +(+(+(+a.x - +b.x) * +mathf64_sin(+radians))
+      + +(+(+a.y - +b.y) * +mathf64_cos(+radians)))),
+  );
+}
+
+
+//#endregion
+
+//#region flat vec2f impure advanced vector functions
+
+function vec2f64_iunit(v = def_vec2f64) {
+  return vec2f64_idivs(+vec2f64_mag(v));
+}
+
+function vec2f64_irotn90(v = def_vec2f64) {
+  v.x = +v.y;
+  v.y = +(-(+v.x));
+  return v;
+}
+function vec2f64_irot90(v = def_vec2f64) {
+  v.x = +(-(+v.y));
+  v.y = +v.x;
+  return v;
+}
+const vec2f64_iperp = vec2f64_irot90;
+
+function vec2f64_irotate(v = def_vec2f64, radians = 0.0) {
+  v.x = +(+(+v.x * +mathf64_cos(+radians)) - +(+v.y * +mathf64_sin(+radians)));
+  v.y = +(+(+v.x * +mathf64_sin(+radians)) + +(+v.y * +mathf64_cos(+radians)));
+  return v;
+}
+function vec2f64_iabout(a = def_vec2f64, b = def_vec2f64, radians = 0.0) {
+  a.x = +(+b.x + +(+(+(+a.x - +b.x) * +mathf64_cos(+radians))
+    - +(+(+a.y - +b.y) * +mathf64_sin(+radians))));
+  a.y = +(+b.y + +(+(+(+a.x - +b.x) * +mathf64_sin(+radians))
+    + +(+(+a.y - +b.y) * +mathf64_cos(+radians))));
+  return a;
+}
+
+//#endregion
+
+//#endregion
+
+const def_vec2f64 = Object.freeze(Object.seal(vec2f64_new()));
+function vec2f64_new(x = 0.0, y = 0.0) { return new vec2f64(+x, +y); }
+
+var float64Vec2 = {
+  vec2: vec2f64,
+  default: def_vec2f64,
+
+  neg: vec2f64_neg,
+  add: vec2f64_add,
+  adds: vec2f64_adds,
+  addms: vec2f64_addms,
+  sub: vec2f64_sub,
+  subs: vec2f64_subs,
+  mul: vec2f64_mul,
+  muls: vec2f64_muls,
+  div: vec2f64_div,
+  divs: vec2f64_divs,
+  inv: vec2f64_inv,
+  ceil: vec2f64_ceil,
+  floor: vec2f64_floor,
+  round: vec2f64_round,
+  min: vec2f64_min,
+  max: vec2f64_max,
+
+  ineg: vec2f64_ineg,
+  iadd: vec2f64_iadd,
+  iadds: vec2f64_iadds,
+  iaddms: vec2f64_iaddms,
+  isub: vec2f64_isub,
+  isubs: vec2f64_isubs,
+  imul: vec2f64_imul,
+  imuls: vec2f64_imuls,
+  idiv: vec2f64_idiv,
+  idivs: vec2f64_idivs,
+  iinv: vec2f64_iinv,
+  iceil: vec2f64_iceil,
+  ifloor: vec2f64_ifloor,
+  iround: vec2f64_iround,
+  imin: vec2f64_imin,
+  imax: vec2f64_imax,
+
+  eqstrict: vec2f64_eqstrict,
+  eq: vec2f64_eq,
+
+  mag2: vec2f64_mag2,
+  mag: vec2f64_mag,
+  dist2: vec2f64_dist2,
+  dist: vec2f64_dist,
+  dot: vec2f64_dot,
+  cross: vec2f64_cross,
+  cross3: vec2f64_cross3,
+  theta: vec2f64_theta,
+  angle: vec2f64_theta,
+  phi: vec2f64_phi,
+
+  unit: vec2f64_unit,
+  lerp: vec2f64_lerp,
+  rotn90: vec2f64_rotn90,
+  rot90: vec2f64_rot90,
+  perp: vec2f64_rot90,
+  rotate: vec2f64_rotate,
+  about: vec2f64_about,
+
+  new: vec2f64_new,
+};
+
+class vec3f64 {
+  constructor(x = 0.0, y = 0.0, z = 0.0) {
+    if (x instanceof vec2f64) {
+      this.x = +x.x;
+      this.y = +x.y;
+      this.z = +y;
+    }
+    else {
+      this.x = +x;
+      this.y = +y;
+      this.z = +z;
+    }
+  }
+}
+
+const def_vec3f64 = Object.freeze(Object.seal(vec3f64_new()));
+
+//#region flat vec3f pure primitive operators
+
+function vec3f64_div(a = def_vec3f64, b = def_vec3f64) {
+  return new vec3f64(
+    +(+a.x / +b.x),
+    +(+a.y / +b.y),
+    +(+a.z / +b.z),
+  );
+}
+function vec3f64_divs(v = def_vec3f64, scalar = 0.0) {
+  return new vec3f64(
+    +(+v.x / +scalar),
+    +(+v.y / +scalar),
+    +(+v.z / +scalar),
+  );
+}
+
+//#endregion
+
+//#region flat vec3f impure primitive operators
+
+function vec3f64_idiv(a = def_vec3f64, b = def_vec3f64) {
+  a.x /= +(+b.x);
+  a.y /= +(+b.y);
+  a.z /= +(+b.z);
+  return a;
+}
+function vec3f64_idivs(v = def_vec3f64, scalar = 0.0) {
+  v.x /= +scalar;
+  v.y /= +scalar;
+  v.z /= +scalar;
+  return v;
+}
+
+//#endregion
+
+//#region flat vec3f pure advanced operators
+
+function vec3f64_mag2(v = def_vec3f64) {
+  return +(+(+v.x * +v.x) + +(+v.y * +v.y) + +(+v.z * +v.z));
+}
+function vec3f64_mag(v = def_vec3f64) {
+  return +mathf64_sqrt(+vec3f64_mag2(v));
+}
+function vec3f64_unit(v = def_vec3f64) {
+  return vec3f64_divs(v, +vec3f64_mag(v));
+}
+function vec3f64_iunit(v = def_vec3f64) {
+  return vec3f64_idivs(v, +vec3f64_mag(v));
+}
+
+function vec3f64_crossABAB(a = def_vec3f64, b = def_vec3f64) {
+  return new vec3f64(
+    +(+(+a.y * +b.z) - +(+a.z * +b.y)),
+    +(+(+a.z * +b.x) - +(+a.x * +b.z)),
+    +(+(+a.x * +b.y) - +(+a.y * +b.x)),
+  );
+}
+
+//#endregion
+
+function vec3f64_new(x = 0.0, y = 0.0, z = 0.0) { return new vec3f64(+x, +y, +z); }
+
+/* eslint-disable lines-between-class-members */
+
+
+//#region basic svg object
+//#endregion
+
+//#region vec2d basic shapes
+
+class shape2f {
+  getP1X() { return this.gP1() ? this.gP1().x : Number.NaN; }
+  getP1Y() { return this.gP1() ? this.gP1().y : Number.NaN; }
+  getP2X() { return this.gP2() ? this.gP2().x : Number.NaN; }
+  getP2Y() { return this.gP2() ? this.gP2().y : Number.NaN; }
+  getP3X() { return this.gP3() ? this.gP3().x : Number.NaN; }
+  getP3Y() { return this.gP3() ? this.gP3().y : Number.NaN; }
+  getP4X() { return this.gP4() ? this.gP4().x : Number.NaN; }
+  getP4Y() { return this.gP4() ? this.gP4().y : Number.NaN; }
+  pointCount() { return 0.0; }
+}
+
+const point2f_POINTS = 1;
+class point2f extends shape2f {
+  constructor(p1 = def_vec2f64) {
+    super();
+    this.p1 = p1;
+  }
+
+  gP1() {
+    return this.p1;
+  }
+
+  pointCount() {
+    return point2f_POINTS;
+  }
+}
+
+const circle2f_POINTS = 1;
+class circle2f extends shape2f {
+  constructor(p1 = def_vec2f64, r = 1.0) {
+    super();
+    this.p1 = p1;
+    this.radius = +r;
+  }
+
+  gP1() {
+    return this.p1;
+  }
+
+  pointCount() {
+    return circle2f_POINTS;
+  }
+}
+
+const rectangle2f_POINTS = 2;
+class rectangle2f extends shape2f {
+  constructor(p1 = def_vec2f64, p2 = def_vec2f64) {
+    super();
+    this.p1 = p1;
+    this.p2 = p2;
+  }
+
+  gP1() {
+    return this.p1;
+  }
+
+  gP2() {
+    return this.p2;
+  }
+
+  pointCount() {
+    return rectangle2f_POINTS;
+  }
+}
+
+// TODO: argument initialiser to def_triangle2f
+
+const triangle2f_POINTS = 3;
+class triangle2f extends shape2f {
+  constructor(p1 = def_vec2f64, p2 = def_vec2f64, p3 = def_vec2f64) {
+    super();
+    this.p1 = p1;
+    this.p2 = p2;
+    this.p3 = p3;
+  }
+
+  gP1() {
+    return this.p1;
+  }
+
+  gP2() {
+    return this.p2;
+  }
+
+  gP3() {
+    return this.p3;
+  }
+
+  pointCount() {
+    return triangle2f_POINTS;
+  }
+
+  //#region intersects other shape
+
+  intersectsRect(rectangle = rectangle2f, normal = 1.0) {
+    return triangle2f_intersectsRect(
+      this.p1,
+      this.p2,
+      this.p3,
+      rectangle.p1,
+      rectangle.p2,
+      +normal,
+    );
+  }
+
+  intersectsTangle(triangle = triangle2f) {
+    return triangle2f_intersectsTangle(
+      this.p1,
+      this.p2,
+      this.p3,
+      triangle.p1,
+      triangle.p2,
+      triangle.p3,
+    );
+  }
+  //#endregion
+}
+
+/**
+ * Tests if triangle intersects with rectangle
+ *
+ * @param {rectangle2f} rectangle
+ * @param {*} normal
+ */
+function triangle2f_intersectsRect(
+  l1 = def_vec2f64, l2 = def_vec2f64, l3 = def_vec2f64,
+  r1 = def_vec2f64, r2 = def_vec2f64, normal = 1.0,
+) {
+  normal = +normal;
+  const dx = +(+r2.x - +r1.x);
+  const dy = +(+r2.y - +r1.y);
+  return !(
+    (((+l1.x - +r1.x) * +dy - (+l1.y - +r1.y) * +dx) * +normal < 0)
+    || (((+l2.x - +r1.x) * +dy - (+l2.y - +r1.y) * +dx) * +normal < 0)
+    || (((+l3.x - +r1.x) * +dy - (+l3.y - +r1.y) * +dx) * +normal < 0));
+}
+function triangle2f_intersectsTangle(
+  l1 = def_vec2f64, l2 = def_vec2f64, l3 = def_vec2f64,
+  r1 = def_vec2f64, r2 = def_vec2f64, r3 = def_vec2f64,
+) {
+  const lnorm = +(
+    +(+(+l2.x - +l1.x) * +(+l3.y - +l1.y))
+    - +(+(+l2.y - +l1.y) * +(+l3.x - +l1.x)));
+  const rnorm = +(
+    +(+(+r2.x - +r1.x) * +(+r3.y - +r1.y))
+    - +(+(+r2.y - +r1.y) * +(+r3.x - +r1.x)));
+
+  return !(triangle2f_intersectsRect(r1, r2, r3, l1, l2, lnorm)
+    || triangle2f_intersectsRect(r1, r2, r3, l2, l3, lnorm)
+    || triangle2f_intersectsRect(r1, r2, r3, l3, l1, lnorm)
+    || triangle2f_intersectsRect(l1, l2, l3, r1, r2, rnorm)
+    || triangle2f_intersectsRect(l1, l2, l3, r2, r3, rnorm)
+    || triangle2f_intersectsRect(l1, l2, l3, r3, r1, rnorm));
+}
+
+const trapezoid2f_POINTS = 4;
+class trapezoid2f extends shape2f {
+  constructor(p1 = def_vec2f64, p2 = def_vec2f64, p3 = def_vec2f64, p4 = def_vec2f64) {
+    super();
+    this.p1 = p1;
+    this.p2 = p2;
+    this.p3 = p3;
+    this.p4 = p4;
+  }
+
+  gP1() {
+    return this.p1;
+  }
+
+  gP2() {
+    return this.p2;
+  }
+
+  gP3() {
+    return this.p3;
+  }
+
+  gP4() {
+    return this.p4;
+  }
+
+  pointCount() {
+    return rectangle2f_POINTS;
+  }
+}
+
+
+//#endregion
+
+//#region svg path segments
+
+class segm2f {
+  constructor(abs = true) {
+    this.abs = (typeof abs === 'boolean')
+      ? abs // is the coordinate absolute or relative?
+      : true;
+  }
+
+  gAbs() {
+    return this.abs;
+  }
+
+  isValidPrecursor(segment) {
+    return (segment === undefined || segment === null)
+      || ((segment instanceof segm2f) && !(segment instanceof segm2f_Z));
+  }
+}
+
+class segm2f_M extends segm2f {
+  constructor(abs = true, x = 0.0, y = 0.0) {
+    super(abs);
+    this.p1 = (x instanceof vec2f64)
+      ? x
+      : new vec2f64(+x, +y);
+  }
+
+  gP1() {
+    return this.p1;
+  }
+}
+
+class segm2f_v extends segm2f {
+  constructor(abs = false, y = 0.0) {
+    super(abs);
+    this.y = (y instanceof vec2f64)
+      ? this.y = y.y
+      : y;
+  }
+
+  gY() {
+    return +this.y;
+  }
+
+  gP1() {
+    return new vec2f64(0.0, +this.y);
+  }
+}
+class segm2f_h extends segm2f {
+  constructor(abs = false, x = 0.0) {
+    super(abs);
+    this.x = +x;
+  }
+
+  gX() {
+    return +this.x;
+  }
+
+  gP1() {
+    return new vec2f64(+this.x, 0.0);
+  }
+}
+class segm2f_l extends segm2f {
+  constructor(abs = false, p1 = def_vec2f64, y = 0.0) {
+    super(abs);
+    this.p1 = (p1 instanceof vec2f64)
+      ? p1
+      : new vec2f64(+p1, +y);
+  }
+}
+
+class segm2f_q extends segm2f {
+  constructor(abs = false, p1 = def_vec2f64, p2 = def_vec2f64, x2 = 0.0, y2 = 0.0) {
+    super(abs);
+    if (p1 instanceof vec2f64) {
+      this.p1 = p1;
+      if (p2 instanceof vec2f64) {
+        this.p2 = p2;
+      }
+      else {
+        this.p2 = new vec2f64(+p2, +x2);
+      }
+    }
+    else {
+      this.p1 = new vec2f64(+p1, +p2);
+      this.p2 = new vec2f64(+x2, +y2);
+    }
+  }
+
+  gP1() {
+    return this.p1;
+  }
+
+  gP2() {
+    return this.p2;
+  }
+}
+class segm2f_t extends segm2f {
+  constructor(abs = false, p1 = def_vec2f64, y = 0.0) {
+    super(abs);
+    this.p1 = (p1 instanceof vec2f64)
+      ? p1
+      : new vec2f64(+p1, +y);
+  }
+
+  hasValidPrecursor(segment) {
+    return (segment instanceof segm2f_t)
+      || (segment instanceof segm2f_q);
+  }
+}
+
+class segm2f_c extends segm2f {
+  constructor(abs = false) {
+    super(abs);
+    // TODO
+  }
+}
+
+class segm2f_s extends segm2f {
+  constructor(abs = false) {
+    super(abs);
+    // TODO
+  }
+
+  hasValidPrecursor(segment) {
+    return (segment instanceof segm2f_s)
+      || (segment instanceof segm2f_c);
+  }
+}
+
+class segm2f_Z extends segm2f {
+  constructor() {
+    super(true);
+  }
+
+  hasValidPrecursor(segment) {
+    return !(segment instanceof segm2f_Z);
+  }
+}
+//#endregion
+
+//#region svg path object path2f
+class path2f extends shape2f {
+  constructor(abs = false, list = []) {
+    super(abs);
+    this.list = list;
+  }
+
+  isClosed() {
+    const list = this.list;
+    const len = list.length;
+    return (len > 0 && (list[len - 1] instanceof segm2f_Z));
+  }
+
+  add(segment) {
+    if (segment instanceof segm2f) {
+      const list = this.list;
+      const len = list.length;
+      if (segment.hasValidPrecursor(len > 0 ? list[len - 1] : null)) {
+        list[len] = segment;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  move(abs, x, y) {
+    const segm = new segm2f_M(abs, x, y);
+    return this.add(segm);
+  }
+
+  vertical(abs, y) {
+    const segm = new segm2f_v(abs, y);
+    return this.add(segm);
+  }
+
+  horizontal(abs, x) {
+    const segm = new segm2f_h(abs, x);
+    return this.add(segm);
+  }
+
+  line(abs, x, y) {
+    const segm = new segm2f_l(abs, x, y);
+    return this.add(segm);
+  }
+
+  close() {
+    const segm = new segm2f_Z();
+    return this.add(segm);
+  }
+}
+
+//#endregion
 
 /* eslint-disable prefer-rest-params */
 function getFirstObjectItem(items) {
@@ -117,7 +2246,7 @@ function mergeArrays(a, b) {
   return a;
 }
 
-function collapseArray(rest) {
+function collapseNear(rest) {
   const result = [];
   let cursor = 0;
 
@@ -344,1525 +2473,6 @@ function deepEquals(a, b, enforce_properties_order, cyclic) {
   return a === b // strick equality should be enough unless zero
     && a !== 0 // because 0 === -0, requires test by _equals()
     || _equals(a, b); // handles not strictly equal or zero values
-}
-
-//#endregion
-
-const mathi_abs = Math.abs;
-const mathi_sqrt = Math.sqrt;
-const mathi_round = Math.round;
-const mathi_floor = Math.floor;
-const mathi_min = Math.min;
-const mathi_max = Math.max;
-
-const int_MULTIPLIER = 10000;
-
-const int_PI = (Math.PI * int_MULTIPLIER)|0;
-const int_PI2 = (int_PI * 2)|0;
-const int_PI_A = ((4 / Math.PI) * int_MULTIPLIER)|0;
-const int_PI_B = ((4 / (Math.PI * Math.PI)) * int_MULTIPLIER)|0;
-
-let random_seed = performance.now();
-function int_random() {
-  const x = Math.sin(random_seed++) * int_MULTIPLIER;
-  return x - Math.floor(x);
-}
-
-function int_sqrtEx(n = 0) {
-  n = n|0;
-  return (int_MULTIPLIER * mathi_sqrt(n))|0;
-}
-
-function int_sqrt(n = 0) {
-  n = n|0;
-  return mathi_sqrt(n)|0;
-}
-
-function int_fib(n = 0) {
-  n = n|0;
-  let c = 0;
-  let x = 1;
-  let i = 1;
-  for (; i !== n; i += 1) {
-    const t = (c + x)|0;
-    c = x|0;
-    x = t|0;
-  }
-  return c|0;
-}
-
-function int_norm(value = 0, min = 0, max = 0) {
-  value = value|0; min = min|0; max = max|0;
-  return ((value - min) / (max - min))|0;
-}
-
-function int_lerp(norm = 0, min = 0, max = 0) {
-  norm = norm|0; min = min|0; max = max|0;
-  return ((max - min) * (norm + min))|0;
-}
-
-function int_map(value = 0, smin = 0, smax = 0, dmin = 0, dmax = 0) {
-  value = value|0; smin = smin|0; smax = smax|0; dmin = dmin|0; dmax = dmax|0;
-  // return int_lerp(int_norm(value, smin, smax), dmin, dmax) | 0;
-  return mathi_round((value - smin) * (dmax - dmin) / (smax - smin) + dmin)|0;
-}
-
-function int_clamp(value = 0, min = 0, max = 0) {
-  value = value|0; min = min|0; max = max|0;
-  return mathi_min(mathi_max(value, mathi_min(min, max)), mathi_max(min, max))|0;
-}
-function int_clampu(value = 0, min = 0, max = 0) {
-  value = value|0; min = min|0; max = max|0;
-  // return mathi_min(mathi_max(value, min), max)|0;
-  return mathi_max(min, mathi_min(value, max))|0;
-}
-function int_clampu_u8a(value = 0) {
-  value = value | 0;
-  return -((255 - value & (value - 255) >> 31)
-    - 255 & (255 - value & (value - 255) >> 31)
-    - 255 >> 31);
-}
-function int_clampu_u8b(value = 0) {
-  value = value | 0;
-  value &= -(value >= 0);
-  return value | ~-!(value & -256);
-}
-
-function int_inRange(value = 0, min = 0, max = 0) {
-  value = value|0; min = min|0; max = max|0;
-  return ((value >= mathi_min(min, max))
-    && (value <= mathi_max(min, max)))|0;
-}
-
-function int_intersectsRange(smin = 0, smax = 0, dmin = 0, dmax = 0) {
-  smin = smin|0; smax = smax|0; dmin = dmin|0; dmax = dmax|0;
-  return ((mathi_max(smin, smax) >= mathi_min(dmin, dmax))
-    && (mathi_min(smin, smax) <= mathi_max(dmin, dmax)))|0;
-}
-
-function int_intersectsRect(ax = 0, ay = 0, aw = 0, ah = 0, bx = 0, by = 0, bw = 0, bh = 0) {
-  ax = ax|0; ay = ay|0; aw = aw|0; ah = ah|0; bx = bx|0; by = by|0; bw = bw|0; bh = bh|0;
-  return ((int_intersectsRange(ax | 0, (ax + aw) | 0, bx | 0, (bx + bw) | 0) > 0)
-    && (int_intersectsRange(ay|0, (ay + ah)|0, by|0, (by + bh)|0) > 0))|0;
-}
-
-function int_mag2(dx = 0, dy = 0) {
-  dx = dx|0; dy = dy|0;
-  return ((dx * dx) + (dy * dy))|0;
-}
-
-function int_hypot(dx = 0, dy = 0) {
-  dx = dx|0; dy = dy|0;
-  return int_sqrt((dx * dx) + (dy * dy))|0;
-}
-
-function int_hypotEx(dx = 0, dy = 0) {
-  dx = dx|0; dy = dy|0;
-  return int_sqrtEx((dx * dx) + (dy * dy))|0;
-}
-
-function int_dot(ax = 0, ay = 0, bx = 0, by = 0) {
-  ax = ax|0; ay = ay|0; bx = bx|0; by = by|0;
-  return ((ax * bx) + (ay * by))|0;
-}
-
-function int_cross(ax = 0, ay = 0, bx = 0, by = 0) {
-  ax = ax|0; ay = ay|0; bx = bx|0; by = by|0;
-  return ((ax * by) - (bx * ay))|0;
-}
-
-//#region trigonometry
-
-function int_toRadianEx(degrees = 0) {
-  degrees = degrees|0;
-  return ((degrees * int_PI) / 180)|0;
-}
-
-function int_toDegreesEx(radians = 0) {
-  radians = radians|0;
-  return ((int_MULTIPLIER * radians * 180) / int_PI)|0;
-}
-
-function int_wrapRadians(r = 0) {
-  r = r|0;
-  if (r > int_PI) return (r - int_PI2)|0;
-  else if (r < -int_PI) return (r + int_PI2)|0;
-  return r|0;
-}
-
-function int_sinLpEx(r = 0) {
-  r = r|0;
-  return ((r < 0)
-    ? (int_PI_A * r + int_PI_B * r * r)
-    : (int_PI_A * r - int_PI_B * r * r))|0;
-}
-
-function int_sinLp(r = 0) {
-  r = r|0;
-  //always wrap input angle between -PI and PI
-  return int_sinLpEx(int_wrapRadians(r))|0;
-}
-
-const mathf_abs = Math.abs;
-
-const mathf_sqrt = Math.sqrt;
-const mathf_pow = Math.pow;
-const mathf_sin = Math.sin;
-const mathf_cos = Math.cos;
-const mathf_atan2 = Math.atan2;
-const mathf_asin = Math.asin;
-
-const mathf_ceil = Math.ceil;
-const mathf_floor = Math.floor;
-const mathf_round = Math.round;
-const mathf_min = Math.min;
-const mathf_max = Math.max;
-
-const mathf_random = Math.max;
-
-const mathf_EPSILON = 0.000001;
-const mathf_PI = Math.PI;
-
-function float_gcd(a=0.0, b=0.0) {
-  a = +a; b = +b;
-  // For example, a 1024x768 monitor has a GCD of 256.
-  // When you divide both values by that you get 4x3 or 4: 3.
-  return +((b === 0.0) ? +a : +float_gcd(b, a % b));
-}
-
-function float_sqrt(n = 0.0) {
-  return +mathf_sqrt(+n);
-}
-
-function float_hypot2(dx = 0.0, dy = 0.0) {
-  return +(+(+dx * +dx) + +(+dy * +dy));
-}
-
-function float_hypot(dx = 0.0, dy = 0.0) {
-  return +Math.sqrt(+(+(+dx * +dx) + +(+dy * +dy)));
-}
-
-const float_isqrt = (function float_isqrt_oncompile() {
-  const f = new Float32Array(1);
-  const i = new Int32Array(f.buffer);
-  return function float_isqrt_impl(n = 0.0) {
-    n = +n;
-    const n2 = +(n * 0.5);
-    f[0] = +n;
-    i[0] = (0x5f375a86 - ((i[0]|0) >> 1))|0;
-    n = +f[0];
-    return +(+n * +(1.5 - (+n2 * +n * +n)));
-  };
-})();
-
-function float_fib(n = 0.0) {
-  n = +n;
-  let c = 0.0;
-  let x = 1.0;
-  let i = 1.0;
-  for (; i !== n; i += 1.0) {
-    const t = +(+c + +x);
-    c = +x;
-    x = +t;
-  }
-  return +c;
-}
-
-// https://gist.github.com/geraldyeo/988116export
-const mathf_SQRTFIVE = +mathf_sqrt(5);
-function float_fib2(value = 0.0) {
-  value = +value;
-  const fh = +(1.0 / +mathf_SQRTFIVE * +mathf_pow(+(+(1.0 + mathf_SQRTFIVE) / 2.0), +value));
-  const sh = +(1.0 / +mathf_SQRTFIVE * +mathf_pow(+(+(1.0 - mathf_SQRTFIVE) / 2.0), +value));
-  return +mathf_round(+(fh - sh));
-}
-
-function float_norm(value = 0.0, min = 0.0, max = 0.0) {
-  value = +value; min = +min; max = +max;
-  return +((value - min) / (max - min));
-}
-
-function float_lerp(norm = 0.0, min = 0.0, max = 0.0) {
-  norm = +norm; min = +min; max = +max;
-  return +((max - min) * (norm + min));
-}
-
-function float_map(value = 0.0, smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
-  value = +value; smin = +smin; smax = +smax; dmin = +dmin; dmax = +dmax;
-  return +float_lerp(+float_norm(value, smin, smax), dmin, dmax);
-}
-
-/**
- * Clamps a value between a checked boudary.
- * and can therefor handle swapped min/max arguments
- *
- * @param {float} value input value
- * @param {float} min minimum bounds
- * @param {float} max maximum bounds
- * @returns {float} clamped value
- */
-function float_clamp(value = 0.0, min = 0.0, max = 0.0) {
-  return +mathf_min(+mathf_max(+value, +mathf_min(+min, +max)), +mathf_max(+min, +max));
-}
-/**
- * Clamps a value between an unchecked boundary
- * this function needs min < max!!
- * (see float_clamp for a checked boundary)
- *
- * @param {float} value input value
- * @param {float} min minimum bounds
- * @param {float} max maximum bounds
- * @returns {float} clamped value
- */
-function float_clampu(value = 0.0, min = 0.0, max = 0.0) {
-  return +mathf_min(+mathf_max(+value, +min), +max);
-}
-
-function float_inRange(value = 0.0, min = 0.0, max = 0.0) {
-  return +(+value >= +mathf_min(+min, +max) && +value <= +mathf_max(+min, +max));
-}
-
-function float_intersectsRange(smin = 0.0, smax = 0.0, dmin = 0.0, dmax = 0.0) {
-  return +(+mathf_max(+smin, +smax) >= +mathf_min(+dmin, +dmax)
-    && +mathf_min(+smin, +smax) <= +mathf_max(+dmin, +dmax));
-}
-
-function float_intersectsRect(
-  ax = 0.0, ay = 0.0, aw = 0.0, ah = 0.0,
-  bx = 0.0, by = 0.0, bw = 0.0, bh = 0.0,
-) {
-  return +(+(+float_intersectsRange(+ax, +(+ax + +aw), +bx, +(+bx + +bw)) > 0.0
-    && +float_intersectsRange(+ay, +(+ay + +ah), +by, +(+by + +bh)) > 0.0));
-}
-
-/**
- *
- * We can calculate the Dot Product of two vectors this way:
- *
- *    a · b = |a| × |b| × cos(θ)
- *
- * or in this implementation as:
- *
- *    a · b = ax × bx + ay × by
- *
- * When two vectors are at right angles to each other the dot product is zero.
- *
- * @param {float} ax vector A x velocity
- * @param {float} ay vector A y velocity
- * @param {float} bx vector B x velocity
- * @param {float} by vector B y velocity
- * @returns {float} scalar of the dot product
- */
-function float_dot(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
-  return +(+(+ax * +bx) + +(+ay * +by));
-}
-
-/**
- *
- * The Cross Product Magnitude
- * a × b of two vectors is another vector that is at right angles to both:
- * The magnitude (length) of the cross product equals the area
- * of a parallelogram with vectors a and b for sides:
- *
- * We can calculate the Cross Product this way:
- *
- *    a × b = |a| |b| sin(θ) n
- *
- * or as
- *
- *    a × b = ax × by - bx × ay
- *
- * Another useful property of the cross product is,
- * that its magnitude is related to the sine of
- * the angle between the two vectors:
- *
- *    | a x b | = |a| . |b| . sine(theta)
- *
- * or
- *
- *    sine(theta) = | a x b | / (|a| . |b|)
- *
- * So, in implementation 1 above, if a and b are known in advance
- * to be unit vectors then the result of that function is exactly that sine() value.
- * @param {float} ax
- * @param {float} ay
- * @param {float} bx
- * @param {float} by
- */
-function float_cross(ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0) {
-  return +(+(+ax * +by) - +(+bx * +ay));
-}
-
-//#region trigonometry
-
-const float_PIx2 = Math.PI * 2; // 6.28318531
-const float_PIh = Math.PI / 2; // 1.57079632
-const float_PI_A = 4 / Math.PI; // 1.27323954
-const float_PI_B = 4 / (Math.PI * Math.PI); // 0.405284735
-
-function float_toRadian(degrees = 0.0) {
-  return +(+degrees * +Math.PI / 180.0);
-}
-
-function float_toDegrees(radians = 0.0) {
-  return +(+radians * 180.0 / +Math.PI);
-}
-
-function float_wrapRadians(r = 0.0) {
-  r = +r;
-  if (+r > Math.PI) return +(+r - +float_PIx2);
-  else if (+r < -Math.PI) return +(+r + +float_PIx2);
-  return +r;
-}
-
-function float_sinLpEx(r = 0.0) {
-  r = +r;
-  return +((r < 0.0)
-    ? +(+float_PI_A * +r + +float_PI_B * +r * +r)
-    : +(+float_PI_A * +r - +float_PI_B * +r * +r));
-}
-
-function float_sinLp(r = 0.0) {
-  //always wrap input angle between -PI and PI
-  return +float_sinLpEx(+float_wrapRadians(+r));
-}
-
-function float_cosLp(r = 0.0) {
-  //compute cosine: sin(x + PI/2) = cos(x)
-  return +float_sinLp(+(+r + +float_PIh));
-}
-
-function float_cosHp(r = 0.0) {
-//   template<typename T>
-// inline T cos(T x) noexcept
-// {
-//     constexpr T tp = 1./(2.*M_PI);
-//     x *= tp;
-//     x -= T(.25) + std::floor(x + T(.25));
-//     x *= T(16.) * (std::abs(x) - T(.5));
-//     #if EXTRA_PRECISION
-//     x += T(.225) * x * (std::abs(x) - T(1.));
-//     #endif
-//     return x;
-// }
-  throw new Error('float_cosHp is not implemented! r=' + String(r));
-}
-
-function float_sinMpEx(r = 0.0) {
-  r = +r;
-  const sin = +((r < 0.0)
-    ? +(float_PI_A * r + float_PI_B * r * r)
-    : +(float_PI_A * r - float_PI_B * r * r));
-  return +((sin < 0.0)
-    ? +(0.225 * (sin * -sin - sin) + sin)
-    : +(0.225 * (sin * sin - sin) + sin));
-}
-
-function float_sinMp(r = 0.0) {
-  return +float_sinMpEx(+float_wrapRadians(+r));
-}
-function float_cosMp(r = 0.0) {
-  //compute cosine: sin(x + PI/2) = cos(x)
-  return +float_sinMp(+(+r + +float_PIh));
-}
-
-function float_theta(x = 0.0, y = 0.0) {
-  return +mathf_atan2(+y, +x);
-  /*
-    // alternative was faster, but not anymore.
-    // error < 0.005
-    y = +y;
-    x = +x;
-    if (x == 0.0) {
-      if (y > 0.0) return +(Math.PI / 2.0);
-      if (y == 0.0) return 0.0;
-      return +(-Math.PI / 2.0);
-    }
-
-    const z = +(y / x);
-    var atan = 0.0;
-    if (+Math.abs(z) < 1.0) {
-      atan = +(z / (1.0 + 0.28 * z * z));
-      if (x < 0.0) {
-        if (y < 0.0) return +(atan - Math.PI);
-        return +(atan + Math.PI);
-      }
-    }
-    else {
-      atan = +(Math.PI / 2.0 - z / (z * z + 0.28));
-      if (y < 0.0) return +(atan - Math.PI);
-    }
-    return +(atan);
-  */
-}
-const float_angle = float_theta;
-
-function float_phi(y = 0.0, length = 0.0) {
-  return +mathf_asin(+y / +length);
-}
-
-//#endregion
-
-class vec2i {
-  constructor(x = 0, y = 0) {
-    this.x = x|0;
-    this.y = y|0;
-  }
-}
-
-const def_vec2i = Object.freeze(Object.seal(new vec2i()));
-
-//#region flat vec2i pure primitive operators
-
-function vec2i_neg(v = def_vec2i) {
-  return new vec2i(
-    (-(v.x|0))|0,
-    (-(v.y|0))|0,
-  );
-}
-function vec2i_add(a = def_vec2i, b = def_vec2i) {
-  return new vec2i(
-    ((a.x|0) + (b.x|0))|0,
-    ((a.y|0) + (b.y|0))|0,
-  );
-}
-function vec2i_adds(v = def_vec2i, scalar = 0) {
-  scalar = scalar|0;
-  return new vec2i(
-    ((v.x|0) + scalar)|0,
-    ((v.y|0) + scalar)|0,
-  );
-}
-
-function vec2i_sub(a = def_vec2i, b = def_vec2i) {
-  return new vec2i(
-    ((a.x|0) - (b.x|0))|0,
-    ((a.y|0) - (b.y|0))|0,
-  );
-}
-function vec2i_subs(a = def_vec2i, scalar = 0) {
-  scalar = scalar|0;
-  return new vec2i(
-    ((a.x|0) - scalar)|0,
-    ((a.y|0) - scalar)|0,
-  );
-}
-
-function vec2i_mul(a = def_vec2i, b = def_vec2i) {
-  return new vec2i(
-    ((a.x|0) * (b.x|0))|0,
-    ((a.y|0) * (b.y|0))|0,
-  );
-}
-function vec2i_muls(v = def_vec2i, scalar = 0) {
-  scalar = scalar|0;
-  return new vec2i(
-    ((v.x|0) * scalar)|0,
-    ((v.y|0) * scalar)|0,
-  );
-}
-
-function vec2i_div(a = def_vec2i, b = def_vec2i) {
-  return new vec2i(
-    ((a.x|0) / (b.x|0))|0,
-    ((a.y|0) / (b.y|0))|0,
-  );
-}
-function vec2i_divs(v = def_vec2i, scalar = 0) {
-  scalar = scalar|0;
-  return new vec2i(
-    ((v.x|0) / scalar)|0,
-    ((v.y|0) / scalar)|0,
-  );
-}
-
-
-//#endregion
-
-//#region flat vec2i impure primitive operators
-
-function vec2i_ineg(v = def_vec2i) {
-  v.x = (-(v.x|0))|0;
-  v.y = (-(v.y|0))|0;
-  return v;
-}
-
-function vec2i_iadd(a = def_vec2i, b = def_vec2i) {
-  a.x += (b.x|0)|0;
-  a.y += (b.y|0)|0;
-  return a;
-}
-function vec2i_iadds(v = def_vec2i, scalar = 0) {
-  scalar = scalar|0;
-  v.x += scalar|0;
-  v.y += scalar|0;
-  return v;
-}
-
-function vec2i_isub(a = def_vec2i, b = def_vec2i) {
-  a.x -= (b.x|0)|0;
-  a.y -= (b.y|0)|0;
-  return a;
-}
-function vec2i_isubs(v = def_vec2i, scalar = 0) {
-  scalar = scalar|0;
-  v.x -= scalar|0;
-  v.y -= scalar|0;
-  return v;
-}
-
-function vec2i_imul(a = def_vec2i, b = def_vec2i) {
-  a.x *= (b.x|0)|0;
-  a.y *= (b.y|0)|0;
-  return a;
-}
-function vec2i_imuls(v = def_vec2i, scalar = 0) {
-  scalar = scalar|0;
-  v.x *= scalar;
-  v.y *= scalar;
-  return v;
-}
-
-function vec2i_idiv(a = def_vec2i, b = def_vec2i) {
-  a.x /= b.x|0;
-  a.y /= b.y|0;
-  return a;
-}
-function vec2i_idivs(v = def_vec2i, scalar = 0) {
-  scalar = scalar|0;
-  v.x /= scalar;
-  v.y /= scalar;
-  return v;
-}
-
-//#endregion
-
-//#region flat vec2i vector products
-
-function vec2i_mag2(v = def_vec2i) {
-  return (((v.x|0) * (v.x|0)) + ((v.y|0) * (v.y|0)))|0;
-}
-function vec2i_mag(v = def_vec2i) {
-  return mathf_sqrt(+vec2i_mag2(v))|0;
-}
-
-function vec2i_dot(a = def_vec2i, b = def_vec2i) {
-  return (((a.x|0) * (b.x|0)) + ((a.y|0) * (b.y|0)))|0;
-}
-function vec2i_cross(a = def_vec2i, b = def_vec2i) {
-  return (((a.x|0) * (b.y|0)) - ((a.y|0) * (b.x|0)))|0;
-}
-
-function vec2i_cross3(a = def_vec2i, b = def_vec2i, c = def_vec2i) {
-  return ((((b.x | 0) - (a.x | 0)) * ((c.y | 0) - (a.y | 0)))
-    - (((b.y|0) - (a.y|0)) * ((c.x|0) - (a.x|0))));
-}
-
-function vec2i_thetaEx(v = def_vec2i) {
-  return (int_MULTIPLIER * mathf_atan2((v.y|0), (v.x|0)))|0;
-}
-const vec2i_angleEx = vec2i_thetaEx;
-
-function vec2i_phiEx(v= def_vec2i) {
-  return (int_MULTIPLIER * mathf_asin((v.y|0) / vec2i_mag(v)));
-}
-
-
-//#endregion
-
-//#region flat vec2i pure advanced vector functions
-
-function vec2i_norm(v = def_vec2i) {
-  return vec2i_divs(v, vec2i_mag(v)|0)|0;
-}
-
-function vec2i_rotn90(v = def_vec2i) {
-  return new vec2i(
-    v.y|0,
-    (-(v.x|0))|0,
-  );
-}
-function vec2i_rot90(v = def_vec2i) {
-  return {
-    x: (-(v.y|0))|0,
-    y: v.x|0,
-  };
-}
-const vec2i_perp = vec2i_rot90;
-
-
-//#endregion
-
-//#region rotation
-function vec2i_inorm(v = def_vec2i) {
-  return vec2i_idivs(v, vec2i_mag(v)|0)|0;
-}
-
-function vec2i_irotn90(v = def_vec2i) {
-  const t = v.x|0;
-  v.x = v.y|0;
-  v.y = (-(t))|0;
-  return v;
-}
-
-function vec2i_irot90(v = def_vec2i) {
-  const t = v.y|0;
-  v.x = (-(t))|0;
-  v.y = (v.x|0);
-  return v;
-}
-const vec2i_iperp = vec2i_irot90;
-
-//#endregion
-
-//#region shapes
-
-/**
- * Tests if triangle intersects with a rectangle
- *
- * @param {*} v1
- * @param {*} v2
- * @param {*} v3
- * @param {*} r1
- * @param {*} r2
- * @returns {boolean} true if they intersect.
- */
-function triangle2i_intersectsRect(v1, v2, v3, r1, r2) {
-  /*
-    This function borrowed faithfully from a wonderfl (:3) discussion on
-    calculating triangle collision with AABBs on the following blog:
-    http://sebleedelisle.com/2009/05/super-fast-trianglerectangle-intersection-test/
-
-    This particular optimization best suits my purposes and was contributed
-    to the discussion by someone from http://lab9.fr/
-  */
-
-  const x0 = v1.x|0;
-  const y0 = v1.y|0;
-  const x1 = v2.x|0;
-  const y1 = v2.y|0;
-  const x2 = v3.x|0;
-  const y2 = v3.y|0;
-
-  const l = r1.x|0;
-  const r = r2.x|0;
-  const t = r1.y|0;
-  const b = r2.y|0;
-
-  const b0 = (((x0 > l) ? 1 : 0)
-    | (((y0 > t) ? 1 : 0) << 1)
-    | (((x0 > r) ? 1 : 0) << 2)
-    | (((y0 > b) ? 1 : 0) << 3))|0;
-  if (b0 === 3) return true;
-
-  const b1 = ((x1 > l) ? 1 : 0)
-    | (((y1 > t) ? 1 : 0) << 1)
-    | (((x1 > r) ? 1 : 0) << 2)
-    | (((y1 > b) ? 1 : 0) << 3)|0;
-  if (b1 === 3) return true;
-
-  const b2 = ((x2 > l) ? 1 : 0)
-    | (((y2 > t) ? 1 : 0) << 1)
-    | (((x2 > r) ? 1 : 0) << 2)
-    | (((y2 > b) ? 1 : 0) << 3)|0;
-  if (b2 === 3) return true;
-
-  let c = 0;
-  let m = 0;
-  let s = 0;
-
-  const i0 = (b0 ^ b1)|0;
-  if (i0 !== 0) {
-    m = ((y1-y0) / (x1-x0))|0;
-    c = (y0 -(m * x0))|0;
-    if (i0 & 1) {
-      s = m * l + c;
-      if (s > t && s < b) return true;
-    }
-    if (i0 & 2) {
-      s = (t - c) / m;
-      if (s > l && s < r) return true;
-    }
-    if (i0 & 4) {
-      s = m * r + c;
-      if (s > t && s < b) return true;
-    }
-    if (i0 & 8) {
-      s = (b - c) / m;
-      if (s > l && s < r) return true;
-    }
-  }
-
-  const i1 = (b1 ^ b2)|0;
-  if (i1 !== 0) {
-    m = ((y2 - y1) / (x2 - x1))|0;
-    c = (y1 -(m * x1))|0;
-    if (i1 & 1) {
-      s = m * l + c;
-      if (s > t && s < b) return true;
-    }
-    if (i1 & 2) {
-      s = (t - c) / m;
-      if (s > l && s < r) return true;
-    }
-    if (i1 & 4) {
-      s = m * r + c;
-      if (s > t && s < b) return true;
-    }
-    if (i1 & 8) {
-      s = (b - c) / m;
-      if (s > l && s < r) return true;
-    }
-  }
-
-  const i2 = (b0 ^ b2)|0;
-  if (i2 !== 0) {
-    m = ((y2 - y0) / (x2 - x0))|0;
-    c = (y0 -(m * x0))|0;
-    if (i2 & 1) {
-      s = m * l + c;
-      if (s > t && s < b) return true;
-    }
-    if (i2 & 2) {
-      s = (t - c) / m;
-      if (s > l && s < r) return true;
-    }
-    if (i2 & 4) {
-      s = m * r + c;
-      if (s > t && s < b) return true;
-    }
-    if (i2 & 8) {
-      s = (b - c) / m;
-      if (s > l && s < r) return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * just some notes
- *
- *
-const fastSin_B = 1.2732395; // 4/pi
-const fastSin_C = -0.40528473; // -4 / (pi²)
-export function fastSin(value) {
-  // See  for graph and equations
-  // https://www.desmos.com/calculator/8nkxlrmp7a
-  // logic explained here : http://devmaster.net/posts/9648/fast-and-accurate-sine-cosine
-
-  return (value > 0)
-    ? fastSin_B * value - fastSin_C * value * value
-    : fastSin_B * value + fastSin_C * value * value;
-}
-
-export function fastSin2(a) {
-  let b, c;
-  return a *= 5214
-    , c = a << 17
-    , a -= 8192
-    , a <<= 18
-    , a >>= 18
-    , a = a * a >> 12
-    , b = 19900 - (3516 * a >> 14)
-    , b = 4096 - (a * b >> 16)
-    , 0 > c && (b = -b)
-    , 2.44E-4 * b;
-};
-
-export function fastSin3(a) {
-  a *= 5214;
-  let b = a << 17;
-  a = a - 8192 << 18 >> 18;
-  a = a * a >> 12;
-  a = 4096 - (a * (19900 - (3516 * a >> 14)) >> 16);
-  0 > b && (a = -a);
-  return 2.44E-4 * a
-};
-
-
- */
-
-/* eslint-disable one-var-declaration-per-line */
-
-class vec2f {
-  constructor(x = 0.0, y = 0.0) {
-    this.x = +x;
-    this.y = +y;
-  }
-
-  gX() {
-    return +this.x;
-  }
-
-  gY() {
-    return +this.y;
-  }
-}
-
-const def_vec2f = Object.freeze(Object.seal(vec2f_new()));
-
-//#region class pure primitive vector operators
-
-vec2f.prototype.neg = function _vec2f__neg() {
-  return new vec2f(+(-(+this.x)), +(-(+this.y)));
-};
-
-vec2f.prototype.add = function _vec2f__add(vector = def_vec2f) {
-  return new vec2f(+(+this.x + +vector.x), +(+this.y + +vector.y));
-};
-vec2f.prototype.adds = function _vec2f__adds(scalar = 0.0) {
-  return new vec2f(+(+this.x + +scalar), +(+this.y + +scalar));
-};
-
-vec2f.prototype.sub = function _vec2f__sub(vector = def_vec2f) {
-  return new vec2f(+(+this.x - +vector.x), +(+this.y - +vector.y));
-};
-vec2f.prototype.subs = function _vec2f__subs(scalar = 0.0) {
-  return new vec2f(+(+this.x - +scalar), +(+this.y - +scalar));
-};
-
-vec2f.prototype.mul = function _vec2f__mul(vector = def_vec2f) {
-  return new vec2f(+(+this.x * +vector.x), +(+this.y * +vector.y));
-};
-vec2f.prototype.muls = function _vec2f__muls(scalar = 0.0) {
-  return new vec2f(+(+this.x * +scalar), +(+this.y * +scalar));
-};
-
-vec2f.prototype.div = function _vec2f__div(vector = def_vec2f) {
-  return new vec2f(+(+this.x / +vector.x), +(+this.y / +vector.y));
-};
-vec2f.prototype.divs = function _vec2f__divs(scalar = 0.0) {
-  return new vec2f(+(+this.x / +scalar), +(+this.y / +scalar));
-};
-
-//#endregion
-
-//#region class impure primitive vector operators
-vec2f.prototype.ineg = function _vec2f__ineg() {
-  this.x = +(-(+this.x));
-  this.y = +(-(+this.y));
-  return this;
-};
-
-vec2f.prototype.iadd = function _vec2f__iadd(vector = def_vec2f) {
-  this.x += +vector.x;
-  this.y += +vector.y;
-  return this;
-};
-vec2f.prototype.iadds = function _vec2f__iadds(value = 0.0) {
-  this.x += +value;
-  this.y += +value;
-  return this;
-};
-
-vec2f.prototype.isub = function _vec2f__isub(vector = def_vec2f) {
-  this.x -= +vector.x;
-  this.y -= +vector.y;
-  return this;
-};
-vec2f.prototype.isubs = function _vec2f__isubs(value = 0.0) {
-  this.x -= +value;
-  this.y -= +value;
-  return this;
-};
-
-vec2f.prototype.imul = function _vec2f__imul(vector = def_vec2f) {
-  this.x *= +vector.x;
-  this.y *= +vector.y;
-  return this;
-};
-vec2f.prototype.imuls = function _vec2f__imuls(value = 0.0) {
-  this.x *= +value;
-  this.y *= +value;
-  return this;
-};
-
-vec2f.prototype.idiv = function _vec2f__idiv(vector = def_vec2f) {
-  this.x /= +vector.x;
-  this.y /= +vector.y;
-  return this;
-};
-vec2f.prototype.idivs = function _vec2f__idivs(value = 0.0) {
-  this.x /= +value;
-  this.y /= +value;
-  return this;
-};
-
-//#endregion
-
-//#region class vector products
-vec2f.prototype.mag2 = function _vec2f__mag2() {
-  return +(+(+this.x * +this.x) + +(+this.y * +this.y));
-};
-vec2f.prototype.mag = function _vec2f__mag() {
-  return +mathf_sqrt(+this.mag2());
-};
-
-vec2f.prototype.dot = function _vec2f__dot(vector = def_vec2f) {
-  return +(+(+this.x * +vector.x) + +(+this.y * +vector.y));
-};
-
-/**
- * Returns the cross-product of two vectors
- *
- * @param {vec2f} vector B
- * @returns {double} The cross product of two vectors
- */
-vec2f.prototype.cross = function _vec2f__cross(vector = def_vec2f) {
-  return +(+(+this.x * +vector.y) - +(+this.y * +vector.x));
-};
-
-/**
- * Returns the cross-product of three vectors
- *
- * You can determine which side of a line a point is on
- * by converting the line to hyperplane form (implicitly
- * or explicitly) and then computing the perpendicular
- * (pseudo)distance from the point to the hyperplane.
- *
- * With the crossproduct of two vectors A and B being the vector
- *
- * AxB = (AyBz − AzBy, AzBx − AxBz, AxBy − AyBx)
- * with Az and Bz being zero you are left with the third component of that vector
- *
- *    AxBy - AyBx
- *
- * With A being the vector from point a to b, and B being the vector from point a to c means
- *
- *    Ax = (b[x]-a[x])
- *    Ay = (b[y]-a[y])
- *    Bx = (c[x]-a[x])
- *    By = (c[y]-a[y])
- *
- * giving
- *
- *    AxBy - AyBx = (b[x]-a[x])*(c[y]-a[y])-(b[y]-a[y])*(c[x]-a[x])
- *
- * which is a scalar, the sign of that scalar will tell you wether point c
- * lies to the left or right of vector ab
- *
- * @param {vec2f} vector B
- * @param {vec2f} vector C
- * @returns {double} The cross product of three vectors
- *
- */
-vec2f.prototype.cross3 = function _vec2f__cross3(vector2 = def_vec2f, vector3 = def_vec2f) {
-  return +(
-    +(+(+vector2.x - +this.x) * +(+vector3.y - +this.y))
-    - +(+(+vector2.y - +this.y) * +(+vector3.x - +this.x)));
-};
-
-/**
- * Returns the angle in radians of its vector
- *
- * Math.atan2(dy, dx) === Math.asin(dy/Math.sqrt(dx*dx + dy*dy))
- *
- * @param {} v Vector
- */
-function _vec2f__theta() {
-  return +mathf_atan2(+this.y, +this.x);
-}
-vec2f.prototype.theta = _vec2f__theta;
-vec2f.prototype.angle = _vec2f__theta;
-vec2f.prototype.phi = function _vec2__phi() {
-  return +mathf_asin(+this.y / +this.mag());
-};
-
-//#endregion
-
-//#region class pure advanced vector functions
-vec2f.prototype.unit = function _vec2f__unit() {
-  return this.divs(+this.mag());
-};
-
-vec2f.prototype.rotn90 = function _vec2f__rotn90() {
-  return new vec2f(+this.y, +(-(+this.x)));
-};
-function _vec2f__rot90() {
-  return new vec2f(+(-(+this.y)), +this.x);
-}
-vec2f.prototype.rot90 = _vec2f__rot90;
-vec2f.prototype.perp = _vec2f__rot90;
-
-/**
- * Rotates a vector by the specified angle in radians
- *
- * @param {float} r  angle in radians
- * @returns {vec2f} transformed output vector
- */
-vec2f.prototype.rotate = function _vec2f__rotate(radians = 0.0) {
-  return new vec2f(
-    +(+(+this.x * +mathf_cos(+radians)) - +(+this.y * +mathf_sin(+radians))),
-    +(+(+this.x * +mathf_sin(+radians)) + +(+this.y * +mathf_cos(+radians))),
-  );
-};
-vec2f.prototype.about = function _vec2f__about(vector = def_vec2f, radians = 0.0) {
-  return new vec2f(
-    +(+vector.x + +(+(+(+this.x - +vector.x) * +mathf_cos(+radians))
-      - +(+(+this.y - +vector.y) * +mathf_sin(+radians)))),
-    +(+vector.y + +(+(+(+this.x - +vector.x) * +mathf_sin(+radians))
-      + +(+(+this.y - +vector.y) * +mathf_cos(+radians)))),
-  );
-};
-
-//#endregion
-
-//#region class impure advanced vector functions
-vec2f.prototype.iunit = function _vec2f__iunit() {
-  return this.idivs(+this.mag());
-};
-
-vec2f.prototype.irotn90 = function _vec2f__irotn90() {
-  this.x = +this.y;
-  this.y = +(-(+this.x));
-  return this;
-};
-function _vec2f__irot90() {
-  this.x = +(-(+this.y));
-  this.y = +this.x;
-  return this;
-}
-vec2f.prototype.irot90 = _vec2f__irot90;
-vec2f.prototype.iperp = _vec2f__irot90;
-
-vec2f.prototype.irotate = function _vec2f__irotate(radians = 0.0) {
-  this.x = +(+(+this.x * +mathf_cos(+radians)) - +(+this.y * +mathf_sin(+radians)));
-  this.y = +(+(+this.x * +mathf_sin(+radians)) + +(+this.y * +mathf_cos(+radians)));
-  return this;
-};
-vec2f.prototype.iabout = function _vec2f__iabout(vector = def_vec2f, radians = 0.0) {
-  this.x = +(+vector.x + +(+(+(+this.x - +vector.x) * +mathf_cos(+radians))
-    - +(+(+this.y - +vector.y) * +mathf_sin(+radians))));
-  this.y = +(+vector.y + +(+(+(+this.x - +vector.x) * +mathf_sin(+radians))
-    + +(+(+this.y - +vector.y) * +mathf_cos(+radians))));
-  return this;
-};
-
-//#endregion
-
-//#region flat vec2f pure primitive operators
-
-function vec2f_neg(v = def_vec2f) {
-  return new vec2f(
-    +(-(+v.x)),
-    +(-(+v.y)),
-  );
-}
-function vec2f_add(a = def_vec2f, b = def_vec2f) {
-  return new vec2f(
-    +(+a.x + +b.x),
-    +(+a.y + +b.y),
-  );
-}
-function vec2f_adds(v = def_vec2f, scalar = 0.0) {
-  return new vec2f(
-    +(+v.x + +scalar),
-    +(+v.y + +scalar),
-  );
-}
-function vec2f_addms(a = def_vec2f, b = def_vec2f, scalar = 1.0) {
-  return new vec2f(
-    +(+a.x + +(+b.x * +scalar)),
-    +(+a.y + +(+b.y * +scalar)),
-  );
-}
-
-function vec2f_sub(a = def_vec2f, b = def_vec2f) {
-  return new vec2f(
-    +(+a.x - +b.x),
-    +(+a.y - +b.y),
-  );
-}
-function vec2f_subs(a = def_vec2f, scalar = 0.0) {
-  return new vec2f(
-    +(+a.x - +scalar),
-    +(+a.y - +scalar),
-  );
-}
-
-function vec2f_mul(a = def_vec2f, b = def_vec2f) {
-  return new vec2f(
-    +(+a.x * +b.x),
-    +(+a.y * +b.y),
-  );
-}
-function vec2f_muls(v = def_vec2f, scalar = 1.0) {
-  return new vec2f(
-    +(+v.x * +scalar),
-    +(+v.y * +scalar),
-  );
-}
-
-function vec2f_div(a = def_vec2f, b = def_vec2f) {
-  return new vec2f(
-    +(+a.x / +b.x),
-    +(+a.y / +b.y),
-  );
-}
-function vec2f_divs(v = def_vec2f, scalar = 1.0) {
-  return new vec2f(
-    +(+v.x / +scalar),
-    +(+v.y / +scalar),
-  );
-}
-function vec2f_inv(v = def_vec2f) {
-  return new vec2f(
-    1.0 / +v.x,
-    1.0 / +v.y,
-  );
-}
-
-function vec2f_ceil(v = def_vec2f) {
-  return new vec2f(
-    +mathf_ceil(+v.x),
-    +mathf_ceil(+v.y),
-  );
-}
-function vec2f_floor(v = def_vec2f) {
-  return new vec2f(
-    +mathf_floor(+v.x),
-    +mathf_floor(+v.y),
-  );
-}
-function vec2f_round(v = def_vec2f) {
-  return new vec2f(
-    +mathf_round(+v.x),
-    +mathf_round(+v.y),
-  );
-}
-
-function vec2f_min(a = def_vec2f, b = def_vec2f) {
-  return new vec2f(
-    +mathf_min(+a.x, +b.x),
-    +mathf_min(+a.y, +b.y),
-  );
-}
-function vec2f_max(a = def_vec2f, b = def_vec2f) {
-  return new vec2f(
-    +mathf_max(+a.x, +b.x),
-    +mathf_max(+a.y, +b.y),
-  );
-}
-
-//#endregion
-
-//#region flat vec2f impure primitive operators
-function vec2f_ineg(v = def_vec2f) {
-  v.x = +(-(+v.x));
-  v.y = +(-(+v.y));
-  return v;
-}
-function vec2f_iadd(a = def_vec2f, b = def_vec2f) {
-  a.x += +b.x;
-  a.y += +b.y;
-  return a;
-}
-function vec2f_iadds(v = def_vec2f, scalar = 0.0) {
-  v.x += +scalar;
-  v.y += +scalar;
-  return v;
-}
-function vec2f_iaddms(a = def_vec2f, b = def_vec2f, scalar = 1.0) {
-  a.x = +(+a.x + +(+b.x * +scalar));
-  a.y = +(+a.y + +(+b.y * +scalar));
-  return a;
-}
-function vec2f_isub(a = def_vec2f, b = def_vec2f) {
-  a.x -= +(+b.x);
-  a.y -= +(+b.y);
-  return a;
-}
-function vec2f_isubs(v = def_vec2f, scalar = 0.0) {
-  v.x -= +scalar;
-  v.y -= +scalar;
-  return v;
-}
-
-function vec2f_imul(a = def_vec2f, b = def_vec2f) {
-  a.x *= +(+b.x);
-  a.y *= +(+b.y);
-  return a;
-}
-function vec2f_imuls(v = def_vec2f, scalar = 1.0) {
-  v.x *= +scalar;
-  v.y *= +scalar;
-  return v;
-}
-
-function vec2f_idiv(a = def_vec2f, b = def_vec2f) {
-  a.x /= +(+b.x);
-  a.y /= +(+b.y);
-  return a;
-}
-function vec2f_idivs(v = def_vec2f, scalar = 1.0) {
-  v.x /= +scalar;
-  v.y /= +scalar;
-  return v;
-}
-function vec2f_iinv(v = def_vec2f) {
-  v.x = 1.0 / +v.x;
-  v.y = 1.0 / +v.y;
-  return v;
-}
-
-function vec2f_iceil(v = def_vec2f) {
-  v.x = +mathf_ceil(+v.x);
-  v.y = +mathf_ceil(+v.y);
-  return v;
-}
-function vec2f_ifloor(v = def_vec2f) {
-  v.x = +mathf_floor(+v.x);
-  v.y = +mathf_floor(+v.y);
-  return v;
-}
-function vec2f_iround(v = def_vec2f) {
-  v.x = +mathf_round(+v.x);
-  v.y = +mathf_round(+v.y);
-  return v;
-}
-
-function vec2f_imin(a = def_vec2f, b = def_vec2f) {
-  a.x = +mathf_min(+a.x, +b.x);
-  a.y = +mathf_min(+a.y, +b.y);
-  return a;
-}
-function vec2f_imax(a = def_vec2f, b = def_vec2f) {
-  a.x = +mathf_max(+a.x, +b.x);
-  a.y = +mathf_max(+a.y, +b.y);
-  return a;
-}
-
-//#endregion
-
-//#region flat vec2f boolean products
-function vec2f_eqstrict(a = def_vec2f, b = def_vec2f) {
-  return a.x === b.x && a.y === b.y;
-}
-const vec2f_eqs = vec2f_eqstrict;
-function vec2f_eq(a = def_vec2f, b = def_vec2f) {
-  const ax = +a.x, ay = +a.y, bx = +b.x, by = +b.y;
-  return (mathf_abs(ax - bx) <= mathf_EPSILON * mathf_max(1.0, mathf_abs(ax), mathf_abs(bx))
-    && mathf_abs(ay - by) <= mathf_EPSILON * mathf_max(1.0, mathf_abs(ay), mathf_abs(by))
-  );
-}
-
-//#endregion
-
-//#region flat vec2f vector products
-
-function vec2f_mag2(v = def_vec2f) {
-  return +(+(+v.x * +v.x) + +(+v.y * +v.y));
-}
-function vec2f_mag(v = def_vec2f) {
-  return +mathf_sqrt(+vec2f_mag2(v));
-}
-function vec2f_dist2(a = def_vec2f, b = def_vec2f) {
-  const dx = +(+b.x - +a.x), dy = +(+b.y - +a.y);
-  return +(+(+dx * +dx) + +(+dy * +dy));
-}
-function vec2f_dist(a = def_vec2f, b = def_vec2f) {
-  return +mathf_sqrt(+vec2f_dist2(a, b));
-}
-
-function vec2f_dot(a = def_vec2f, b = def_vec2f) {
-  return +(+(+a.x * +b.x) + +(+a.y * +b.y));
-}
-function vec2f_cross(a = def_vec2f, b = def_vec2f) {
-  return +(+(+a.x * +b.y) - +(+a.y * +b.x));
-}
-function vec2f_cross3(a = def_vec2f, b = def_vec2f, c = def_vec2f) {
-  return +(
-    +(+(+b.x - +a.x) * +(+c.y - +a.y))
-    - +(+(+b.y - +a.y) * +(+c.x - +a.x))
-  );
-}
-
-function vec2f_theta(v = def_vec2f) {
-  return +mathf_atan2(+v.y, +v.x);
-}
-const vec2f_angle = vec2f_theta;
-function vec2f_phi(v = def_vec2f) {
-  return +mathf_asin(+v.y / +vec2f_mag(v));
-}
-
-//#endregion
-
-//#region flat vec2f pure advanced vector functions
-function vec2f_unit(v = def_vec2f) {
-  const mag2 = +vec2f_mag2();
-  return vec2f_divs(
-    v,
-    +(mag2 > 0 ? 1.0 / +mathf_sqrt(mag2) : 1),
-  );
-}
-
-function vec2f_lerp(v = 0.0, a = def_vec2f, b = def_vec2f) {
-  const ax = +a.x, ay = +ay.y;
-  return new vec2f(
-    +(ax + +v * (+b.x - ax)),
-    +(ay + +v * (+b.y - ay)),
-  );
-}
-
-function vec2f_rotn90(v = def_vec2f) {
-  return new vec2f(
-    +v.y,
-    +(-(+v.x)),
-  );
-}
-function vec2f_rot90(v = def_vec2f) {
-  return new vec2f(
-    +(-(+v.y)),
-    +v.x,
-  );
-}
-const vec2f_perp = vec2f_rot90;
-
-/**
- * Rotates a vector by the specified angle in radians
- *
- * @param {float} r  angle in radians
- * @returns {vec2f} transformed output vector
- */
-function vec2f_rotate(v = def_vec2f, radians = 0.0) {
-  return new vec2f(
-    +(+(+v.x * +mathf_cos(+radians)) - +(+v.y * +mathf_sin(+radians))),
-    +(+(+v.x * +mathf_sin(+radians)) + +(+v.y * +mathf_cos(+radians))),
-  );
-}
-function vec2f_about(a = def_vec2f, b = def_vec2f, radians = 0.0) {
-  return new vec2f(
-    +(+b.x
-      + +(+(+(+a.x - +b.x) * +mathf_cos(+radians))
-      - +(+(+a.y - +b.y) * +mathf_sin(+radians)))),
-    +(+b.y
-      + +(+(+(+a.x - +b.x) * +mathf_sin(+radians))
-      + +(+(+a.y - +b.y) * +mathf_cos(+radians)))),
-  );
-}
-
-
-//#endregion
-
-//#region flat vec2f impure advanced vector functions
-
-function vec2f_iunit(v = def_vec2f) {
-  return vec2f_idivs(+vec2f_mag(v));
-}
-
-function vec2f_irotn90(v = def_vec2f) {
-  v.x = +v.y;
-  v.y = +(-(+v.x));
-  return v;
-}
-function vec2f_irot90(v = def_vec2f) {
-  v.x = +(-(+v.y));
-  v.y = +v.x;
-  return v;
-}
-const vec2f_iperp = vec2f_irot90;
-
-function vec2f_irotate(v = def_vec2f, radians = 0.0) {
-  v.x = +(+(+v.x * +mathf_cos(+radians)) - +(+v.y * +mathf_sin(+radians)));
-  v.y = +(+(+v.x * +mathf_sin(+radians)) + +(+v.y * +mathf_cos(+radians)));
-  return v;
-}
-function vec2f_iabout(a = def_vec2f, b = def_vec2f, radians = 0.0) {
-  a.x = +(+b.x + +(+(+(+a.x - +b.x) * +mathf_cos(+radians))
-    - +(+(+a.y - +b.y) * +mathf_sin(+radians))));
-  a.y = +(+b.y + +(+(+(+a.x - +b.x) * +mathf_sin(+radians))
-    + +(+(+a.y - +b.y) * +mathf_cos(+radians))));
-  return a;
-}
-
-//#endregion
-
-
-function vec2f_new(x = 0.0, y = 0.0) { return new vec2f(+x, +y); }
-
-class vec3f {
-  constructor(x = 0.0, y = 0.0, z = 0.0) {
-    if (x instanceof vec2f) {
-      this.x = +x.x;
-      this.y = +x.y;
-      this.z = +y;
-    }
-    else {
-      this.x = +x;
-      this.y = +y;
-      this.z = +z;
-    }
-  }
-
-  gP1() {
-    return new vec2f(+this.x, +this.y);
-  }
-
-  clone() {
-    return Object.create(this);
-  }
-}
-
-const def_vec3f = Object.freeze(Object.seal(new vec3f()));
-
-//#region flat vec3f pure primitive operators
-
-function vec3f_div(a = def_vec3f, b = def_vec3f) {
-  return new vec3f(
-    +(+a.x / +b.x),
-    +(+a.y / +b.y),
-    +(+a.z / +b.z),
-  );
-}
-function vec3f_divs(v = def_vec3f, scalar = 0.0) {
-  return new vec3f(
-    +(+v.x / +scalar),
-    +(+v.y / +scalar),
-    +(+v.z / +scalar),
-  );
-}
-
-//#endregion
-
-//#region flat vec3f impure primitive operators
-
-function vec3f_idiv(a = def_vec3f, b = def_vec3f) {
-  a.x /= +(+b.x);
-  a.y /= +(+b.y);
-  a.z /= +(+b.z);
-  return a;
-}
-function vec3f_idivs(v = def_vec3f, scalar = 0.0) {
-  v.x /= +scalar;
-  v.y /= +scalar;
-  v.z /= +scalar;
-  return v;
-}
-
-//#endregion
-
-//#region flat vec3f pure advanced operators
-
-function vec3f_mag2(v = def_vec3f) {
-  return +(+(+v.x * +v.x) + +(+v.y * +v.y) + +(+v.z * +v.z));
-}
-function vec3f_mag(v = def_vec3f) {
-  return +mathf_sqrt(+vec3f_mag2(v));
-}
-function vec3f_unit(v = def_vec3f) {
-  return vec3f_divs(v, +vec3f_mag(v));
-}
-function vec3f_iunit(v = def_vec3f) {
-  return vec3f_idivs(v, +vec3f_mag(v));
-}
-
-function vec3f_crossABAB(a = def_vec3f, b = def_vec3f) {
-  return new vec3f(
-    +(+(+a.y * +b.z) - +(+a.z * +b.y)),
-    +(+(+a.z * +b.x) - +(+a.x * +b.z)),
-    +(+(+a.x * +b.y) - +(+a.y * +b.x)),
-  );
 }
 
 //#endregion
@@ -2101,387 +2711,6 @@ function toggleCssClass(node, name) {
   return true;
 }
 
-/* eslint-disable class-methods-use-this */
-
-//#region basic svg object
-//#endregion
-
-//#region vec2d basic shapes
-
-class shape2f {
-  pointCount() { return 0; }
-}
-
-const point2f_POINTS = 1;
-class point2f extends shape2f {
-  constructor(p1 = def_vec2f) {
-    super();
-    this.p1 = p1;
-  }
-
-  gP1() {
-    return this.p1;
-  }
-
-  pointCount() {
-    return point2f_POINTS;
-  }
-}
-
-const circle2f_POINTS = 1;
-class circle2f extends shape2f {
-  constructor(p1 = def_vec2f, r = 1.0) {
-    super();
-    this.p1 = p1;
-    this.radius = +r;
-  }
-
-  gP1() {
-    return this.p1;
-  }
-
-  pointCount() {
-    return circle2f_POINTS;
-  }
-}
-
-const rectangle2f_POINTS = 2;
-class rectangle2f extends shape2f {
-  constructor(p1 = def_vec2f, p2 = def_vec2f) {
-    super();
-    this.p1 = p1;
-    this.p2 = p2;
-  }
-
-  gP1() {
-    return this.p1;
-  }
-
-  gP2() {
-    return this.p2;
-  }
-
-  pointCount() {
-    return rectangle2f_POINTS;
-  }
-}
-
-// TODO: argument initialiser to def_triangle2f
-
-const triangle2f_POINTS = 3;
-class triangle2f extends shape2f {
-  constructor(p1 = def_vec2f, p2 = def_vec2f, p3 = def_vec2f) {
-    super();
-    this.p1 = p1;
-    this.p2 = p2;
-    this.p3 = p3;
-  }
-
-  gP1() {
-    return this.p1;
-  }
-
-  gP2() {
-    return this.p2;
-  }
-
-  gP3() {
-    return this.p3;
-  }
-
-  pointCount() {
-    return triangle2f_POINTS;
-  }
-
-  //#region intersects other shape
-
-  intersectsRect(rectangle = rectangle2f, normal = 1.0) {
-    return triangle2f_intersectsRect(
-      this.p1,
-      this.p2,
-      this.p3,
-      rectangle.p1,
-      rectangle.p2,
-      +normal,
-    );
-  }
-
-  intersectsTangle(triangle = triangle2f) {
-    return triangle2f_intersectsTangle(
-      this.p1,
-      this.p2,
-      this.p3,
-      triangle.p1,
-      triangle.p2,
-      triangle.p3,
-    );
-  }
-  //#endregion
-}
-
-/**
- * Tests if triangle intersects with rectangle
- *
- * @param {rectangle2f} rectangle
- * @param {*} normal
- */
-function triangle2f_intersectsRect(
-  l1 = def_vec2f, l2 = def_vec2f, l3 = def_vec2f,
-  r1 = def_vec2f, r2 = def_vec2f, normal = 1.0,
-) {
-  normal = +normal;
-  const dx = +(+r2.x - +r1.x);
-  const dy = +(+r2.y - +r1.y);
-  return !(
-    (((+l1.x - +r1.x) * +dy - (+l1.y - +r1.y) * +dx) * +normal < 0)
-    || (((+l2.x - +r1.x) * +dy - (+l2.y - +r1.y) * +dx) * +normal < 0)
-    || (((+l3.x - +r1.x) * +dy - (+l3.y - +r1.y) * +dx) * +normal < 0));
-}
-function triangle2f_intersectsTangle(
-  l1 = def_vec2f, l2 = def_vec2f, l3 = def_vec2f,
-  r1 = def_vec2f, r2 = def_vec2f, r3 = def_vec2f,
-) {
-  const lnorm = +(
-    +(+(+l2.x - +l1.x) * +(+l3.y - +l1.y))
-    - +(+(+l2.y - +l1.y) * +(+l3.x - +l1.x)));
-  const rnorm = +(
-    +(+(+r2.x - +r1.x) * +(+r3.y - +r1.y))
-    - +(+(+r2.y - +r1.y) * +(+r3.x - +r1.x)));
-
-  return !(triangle2f_intersectsRect(r1, r2, r3, l1, l2, lnorm)
-    || triangle2f_intersectsRect(r1, r2, r3, l2, l3, lnorm)
-    || triangle2f_intersectsRect(r1, r2, r3, l3, l1, lnorm)
-    || triangle2f_intersectsRect(l1, l2, l3, r1, r2, rnorm)
-    || triangle2f_intersectsRect(l1, l2, l3, r2, r3, rnorm)
-    || triangle2f_intersectsRect(l1, l2, l3, r3, r1, rnorm));
-}
-
-const trapezoid2f_POINTS = 4;
-class trapezoid2f extends shape2f {
-  constructor(p1 = def_vec2f, p2 = def_vec2f, p3 = def_vec2f, p4 = def_vec2f) {
-    super();
-    this.p1 = p1;
-    this.p2 = p2;
-    this.p3 = p3;
-    this.p4 = p4;
-  }
-
-  gP1() {
-    return this.p1;
-  }
-
-  gP2() {
-    return this.p2;
-  }
-
-  gP3() {
-    return this.p3;
-  }
-
-  gP4() {
-    return this.p4;
-  }
-
-  pointCount() {
-    return rectangle2f_POINTS;
-  }
-}
-
-
-//#endregion
-
-//#region svg path segments
-
-class segm2f {
-  constructor(abs = true) {
-    this.abs = (typeof abs === 'boolean')
-      ? abs // is the coordinate absolute or relative?
-      : true;
-  }
-
-  gAbs() {
-    return this.abs;
-  }
-
-  isValidPrecursor(segment) {
-    return (segment === undefined || segment === null)
-      || ((segment instanceof segm2f) && !(segment instanceof segm2f_Z));
-  }
-}
-
-class segm2f_M extends segm2f {
-  constructor(abs = true, x = 0.0, y = 0.0) {
-    super(abs);
-    this.p1 = (x instanceof vec2f)
-      ? x
-      : new vec2f(+x, +y);
-  }
-
-  gP1() {
-    return this.p1;
-  }
-}
-
-class segm2f_v extends segm2f {
-  constructor(abs = false, y = 0.0) {
-    super(abs);
-    this.y = (y instanceof vec2f)
-      ? this.y = y.y
-      : y;
-  }
-
-  gY() {
-    return +this.y;
-  }
-
-  gP1() {
-    return new vec2f(0.0, +this.y);
-  }
-}
-class segm2f_h extends segm2f {
-  constructor(abs = false, x = 0.0) {
-    super(abs);
-    this.x = +x;
-  }
-
-  gX() {
-    return +this.x;
-  }
-
-  gP1() {
-    return new vec2f(+this.x, 0.0);
-  }
-}
-class segm2f_l extends segm2f {
-  constructor(abs = false, p1 = def_vec2f, y = 0.0) {
-    super(abs);
-    this.p1 = (p1 instanceof vec2f)
-      ? p1
-      : new vec2f(+p1, +y);
-  }
-}
-
-class segm2f_q extends segm2f {
-  constructor(abs = false, p1 = def_vec2f, p2 = def_vec2f, x2 = 0.0, y2 = 0.0) {
-    super(abs);
-    if (p1 instanceof vec2f) {
-      this.p1 = p1;
-      if (p2 instanceof vec2f) {
-        this.p2 = p2;
-      }
-      else {
-        this.p2 = new vec2f(+p2, +x2);
-      }
-    }
-    else {
-      this.p1 = new vec2f(+p1, +p2);
-      this.p2 = new vec2f(+x2, +y2);
-    }
-  }
-
-  gP1() {
-    return this.p1;
-  }
-
-  gP2() {
-    return this.p2;
-  }
-}
-class segm2f_t extends segm2f {
-  constructor(abs = false, p1 = def_vec2f, y = 0.0) {
-    super(abs);
-    this.p1 = (p1 instanceof vec2f)
-      ? p1
-      : new vec2f(+p1, +y);
-  }
-
-  hasValidPrecursor(segment) {
-    return (segment instanceof segm2f_t)
-      || (segment instanceof segm2f_q);
-  }
-}
-
-class segm2f_c extends segm2f {
-  constructor(abs = false) {
-    super(abs);
-    // TODO
-  }
-}
-
-class segm2f_s extends segm2f {
-  constructor(abs = false) {
-    super(abs);
-    // TODO
-  }
-
-  hasValidPrecursor(segment) {
-    return (segment instanceof segm2f_s)
-      || (segment instanceof segm2f_c);
-  }
-}
-
-class segm2f_Z extends segm2f {
-  constructor() {
-    super(true);
-  }
-
-  hasValidPrecursor(segment) {
-    return !(segment instanceof segm2f_Z);
-  }
-}
-//#endregion
-
-//#region svg path object path2f
-class path2f extends shape2f {
-  constructor(abs = false, list = []) {
-    super(abs);
-    this.list = list;
-  }
-
-  isClosed() {
-    const list = this.list;
-    const len = list.length;
-    return (len > 0 && (list[len - 1] instanceof segm2f_Z));
-  }
-
-  add(segment) {
-    const list = this.list;
-    const len = list.length;
-    if (segment.hasValidPrecursor(len > 0 ? list[len - 1] : null)) {
-      list[len] = segment;
-      return true;
-    }
-    return false;
-  }
-
-  move(abs, x, y) {
-    const segm = new segm2f_M(abs, x, y);
-    return this.add(segm);
-  }
-
-  vertical(abs, y) {
-    const segm = new segm2f_v(abs, y);
-    return this.add(segm);
-  }
-
-  horizontal(abs, x) {
-    const segm = new segm2f_h(abs, x);
-    return this.add(segm);
-  }
-
-  line(abs, x, y) {
-    const segm = new segm2f_l(abs, x, y);
-    return this.add(segm);
-  }
-
-  close() {
-    const segm = new segm2f_Z();
-    return this.add(segm);
-  }
-}
-
-//#endregion
-
 /* eslint-disable no-undef */
 // a dummy function to mimic the CSS-Paint-Api-1 specification
 const myRegisteredPaint__store__ = {};
@@ -2504,8 +2733,6 @@ const workletState = Object.freeze(Object.seal({
   ended: 5,
 }));
 
-/* eslint-disable object-shorthand */
-
 class vnode {
   constructor(name, attributes, children) {
     this.key = attributes.key;
@@ -2515,55 +2742,31 @@ class vnode {
   }
 }
 
-
-function h(name, attributes = {}, ...rest) {
-  // the jsx transpiler sets null on the attributes parameter
-  // when no parameter is defined, instead of 'undefined'.
-  // therefor the default operator doesn't kick in,
-  attributes = attributes || {}; //  and do we need this kind of stuff.
-
-  const children = collapseArray(rest);
-
-  return typeof name === 'function'
-    ? name(attributes, children)
-    : new vnode(name, attributes, children);
-}
-
-function _h(name, attributes, ...rest) {
-  const children = [];
-  let length = arguments.length;
-
-  while (rest.length) {
-    const node = rest.pop();
-    if (node && node.pop) {
-      for (length = node.length; length--;) {
-        rest.push(node[length]);
-      }
-    }
-    else if (node != null && node !== true && node !== false) {
-      children.push(node);
-    }
-  }
-
+function VN(name, attributes, ...rest) {
   attributes = attributes || {};
+  const children = collapseNear(rest);
   return typeof name === 'function'
     ? name(attributes, children)
     : new vnode(name, attributes, children);
 }
 
-function hwrap(name, type) {
+const h = VN;
+
+function wrapVN(name, type) {
   if (type === undefined) {
-    return function hwrap_innerName(attr, children) {
-      return h(name, attr, children);
+    return function wrapVN_common(attr, children) {
+      return VN(name, attr, children);
     };
   }
   else {
-    return function hwrap_innerType(attr, children) {
-      return h(name, { ...attr, type: type }, children);
+    return function wrapVN_astype(attr, children) {
+      return VN(name, { ...attr, type: type }, children);
     };
   }
   // return (attr, children) => h(name, attr, children);
 }
+
+/* eslint-disable object-shorthand */
 
 function app(state, actions, view, container) {
   const map = [].map;
@@ -2580,15 +2783,15 @@ function app(state, actions, view, container) {
   return wiredActions;
 
   function recycleElement(element) {
-    return {
-      nodeName: element.nodeName.toLowerCase(),
-      attributes: {},
-      children: map.call(element.childNodes, function hyperapp_recycleElement(el) {
+    return new vnode(
+      element.nodeName.toLowerCase(),
+      {},
+      map.call(element.childNodes, function recycleElement_inner(el) {
         return el.nodeType === 3 // Node.TEXT_NODE
           ? el.nodeValue
           : recycleElement(el);
       }),
-    };
+    );
   }
 
   function resolveNode(node) {
@@ -2943,252 +3146,5 @@ function app(state, actions, view, container) {
   }
 }
 
-/* eslint-disable import/prefer-default-export */
-
-const html = function html_vnode(attr, children) {
-  return h('html', attr, children);
-};
-
-// #region html text elements
-html.h1 = hwrap('h1');
-html.h2 = hwrap('h2');
-html.h3 = hwrap('h3');
-html.h4 = hwrap('h4');
-html.h5 = hwrap('h5');
-html.h6 = hwrap('h6');
-html.p = hwrap('p');
-
-html.i = hwrap('i');
-html.b = hwrap('b');
-html.u = hwrap('u');
-html.s = hwrap('s');
-html.q = hwrap('q');
-html.pre = hwrap('pre');
-html.sub = hwrap('sub');
-html.sup = hwrap('sup');
-html.wbr = hwrap('wbr');
-html.blockquote = hwrap('blockquote');
-
-html.bdi = hwrap('bdi');
-html.bdo = hwrap('bdo');
-// #endregion
-
-// #region html semantic text elements
-html.cite = hwrap('cite');
-html.abbr = hwrap('abbr');
-html.dfn = hwrap('dfn');
-
-html.del = hwrap('del');
-html.ins = hwrap('ins');
-html.mark = hwrap('mark');
-
-html.time = hwrap('time');
-html.data = hwrap('data');
-// #endregion
-
-// #region html phrase elements
-html.em = hwrap('em');
-html.code = hwrap('code');
-html.strong = hwrap('strong');
-html.kbd = hwrap('kbd');
-html.variable = hwrap('var');
-// #endregion
-
-// #region html common elements (non-semantic)
-html.div = hwrap('div');
-html.span = hwrap('span');
-html.hr = hwrap('hr');
-// #endregion
-
-// #region html widget elements
-html.progress = hwrap('progress');
-html.meter = hwrap('meter');
-// #endregion
-
-// #region html semantic layout elements
-html.main = hwrap('main');
-html.header = hwrap('header');
-html.nav = hwrap('nav');
-html.article = hwrap('article');
-html.section = hwrap('section');
-html.aside = hwrap('aside');
-html.footer = hwrap('footer');
-
-html.details = hwrap('details');
-html.summary = hwrap('summary');
-
-html.figure = hwrap('figure');
-html.figcaption = hwrap('figcaption');
-// #endregion
-
-// #region table elements
-// note: sort of in order of sequence
-html.table = hwrap('table');
-html.caption = hwrap('caption');
-html.colgroup = hwrap('colgroup');
-html.col = hwrap('col');
-
-html.thead = hwrap('thead');
-html.tbody = hwrap('tbody');
-html.tfooter = hwrap('tfooter');
-
-html.tr = hwrap('tr');
-html.th = hwrap('th');
-html.td = hwrap('td');
-// #endregion
-
-// #region html list elements
-html.ul = hwrap('ul');
-html.ol = hwrap('ol');
-html.li = hwrap('li');
-
-html.dl = hwrap('dl');
-html.dt = hwrap('dt');
-html.dd = hwrap('dd');
-// #endregion
-
-// #region html multimedia elements
-html.img = hwrap('img');
-html.map = hwrap('map');
-html.area = hwrap('area');
-
-html.audio = hwrap('audio');
-html.picture = hwrap('picture');
-html.video = hwrap('video');
-
-html.source = hwrap('source');
-html.track = hwrap('track');
-
-html.object = hwrap('object');
-html.param = hwrap('param');
-
-html.embed = hwrap('embed');
-// #endregion
-
-// #region simple html form elements
-html.fieldset = hwrap('fieldset');
-html.legend = hwrap('legend');
-
-html.label = hwrap('label');
-html.output = hwrap('output');
-
-html.input = hwrap('input');
-html.button = hwrap('button');
-
-html.datalist = hwrap('datalist');
-
-html.select = hwrap('select');
-html.option = hwrap('option');
-html.optgroup = hwrap('optgroup');
-// #endregion
-
-// #region html input type elements
-html.defaultInputType = 'text';
-
-const input = function input_vnode(attr, children) {
-  return h('input', attr, children);
-};
-
-input.hidden = hwrap('input', 'hidden');
-input.submit = hwrap('input', 'submit');
-input.image = hwrap('input', 'image');
-
-input.text = hwrap('input', 'text');
-input.number = hwrap('input', 'number');
-input.password = hwrap('input', 'password');
-
-input.checkbox = hwrap('input', 'checkbox');
-input.radio = hwrap('input', 'radio');
-
-
-input.file = hwrap('input', 'file');
-
-input.email = hwrap('input', 'email');
-input.tel = hwrap('input', 'tel');
-input.url = hwrap('input', 'url');
-
-input.range = hwrap('input', 'range');
-
-input.color = hwrap('input', 'color');
-
-input.date = hwrap('input', 'date');
-input.datetime_local = hwrap('input', 'datetime-local');
-input.month = hwrap('input', 'month');
-input.week = hwrap('input', 'week');
-input.time = hwrap('input', 'time');
-
-// #endregion
-
-/* eslint-disable import/prefer-default-export */
-
-const svg = function svg_vnode(attr, children) {
-  return h('svg', attr, children);
-};
-
-svg.a = hwrap('a');
-
-svg.animate = hwrap('animate');
-svg.animateMotion = hwrap('animateMotion');
-svg.animateTransform = hwrap('animateTransform');
-svg.circle = hwrap('circle');
-svg.clipPath = hwrap('clipPath');
-svg.defs = hwrap('defs');
-svg.desc = hwrap('desc');
-svg.discard = hwrap('discard');
-svg.ellipse = hwrap('ellipse');
-
-svg.feBlend = hwrap('feBlend');
-svg.feColorMatrix = hwrap('feColorMatrix');
-svg.feComponentTransfer = hwrap('feComponentTransfer');
-svg.feComposite = hwrap('feComposite');
-svg.feConvolveMatrix = hwrap('feConvolveMatrix');
-svg.feDiffuseLighting = hwrap('feDiffuseLighting');
-svg.feDisplacementMap = hwrap('feDisplacementMap');
-svg.feDistantLight = hwrap('feDistantLight');
-svg.feDropShadow = hwrap('feDropShadow');
-svg.feFlood = hwrap('feFlood');
-svg.feFuncA = hwrap('feFuncA');
-svg.feFuncB = hwrap('feFuncB');
-svg.feFuncG = hwrap('feFuncG');
-svg.feFuncR = hwrap('feFuncR');
-svg.feGaussianBlur = hwrap('feGaussianBlur');
-svg.feImage = hwrap('feImage');
-svg.feMerge = hwrap('feMerge');
-svg.feMergeNode = hwrap('feMergeNode');
-svg.feMorphology = hwrap('feMorphology');
-svg.feOffset = hwrap('feOffset');
-svg.fePointLight = hwrap('fePointLight');
-svg.feSpecularLighting = hwrap('feSpecularLighting');
-svg.feSpotLight = hwrap('feSpotLight');
-svg.feTile = hwrap('feTile');
-svg.feTurbulence = hwrap('feTurbulence');
-
-svg.filter = hwrap('filter');
-svg.foreignObject = hwrap('foreignObject');
-svg.g = hwrap('g');
-svg.image = hwrap('image');
-svg.line = hwrap('line');
-svg.linearGradient = hwrap('linearGradient');
-svg.marker = hwrap('marker');
-svg.mask = hwrap('mask');
-svg.metadata = hwrap('metadata');
-svg.mpath = hwrap('mpath');
-svg.path = hwrap('path');
-svg.pattern = hwrap('pattern');
-svg.polygon = hwrap('polygon');
-svg.polyline = hwrap('polyline');
-svg.radialGradient = hwrap('radialGradient');
-svg.rect = hwrap('rect');
-svg.set = hwrap('set');
-svg.stop = hwrap('stop');
-svg.symbol = hwrap('symbol');
-svg.text = hwrap('text');
-svg.textPath = hwrap('textPath');
-
-svg.title = hwrap('title');
-svg.tspan = hwrap('tspan');
-svg.use = hwrap('use');
-svg.view = hwrap('view');
-
-export { PRIMITIVES, _h, addCssClass, app, checkIfValueDisabled, circle2f, circle2f_POINTS, clone, cloneDeep, collapseArray, collapseCssClass, collapseToString, copyAttributes, deepEquals, def_vec2f, def_vec2i, def_vec3f, fetchImage, float_PI_A, float_PI_B, float_PIh, float_PIx2, float_angle, float_clamp, float_clampu, float_cosHp, float_cosLp, float_cosMp, float_cross, float_dot, float_fib, float_fib2, float_gcd, float_hypot, float_hypot2, float_inRange, float_intersectsRange, float_intersectsRect, float_isqrt, float_lerp, float_map, float_norm, float_phi, float_sinLp, float_sinLpEx, float_sinMp, float_sinMpEx, float_sqrt, float_theta, float_toDegrees, float_toRadian, float_wrapRadians, getFirstObjectItem, h, hasCssClass, html, hwrap, input, int_MULTIPLIER, int_PI, int_PI2, int_PI_A, int_PI_B, int_clamp, int_clampu, int_clampu_u8a, int_clampu_u8b, int_cross, int_dot, int_fib, int_hypot, int_hypotEx, int_inRange, int_intersectsRange, int_intersectsRect, int_lerp, int_mag2, int_map, int_norm, int_random, int_sinLp, int_sinLpEx, int_sqrt, int_sqrtEx, int_toDegreesEx, int_toRadianEx, int_wrapRadians, isPureObject, mathf_EPSILON, mathf_PI, mathf_SQRTFIVE, mathf_abs, mathf_asin, mathf_atan2, mathf_ceil, mathf_cos, mathf_floor, mathf_max, mathf_min, mathf_pow, mathf_random, mathf_round, mathf_sin, mathf_sqrt, mathi_abs, mathi_floor, mathi_max, mathi_min, mathi_round, mathi_sqrt, mergeArrays, mergeObjects, myRegisterPaint, path2f, point2f, point2f_POINTS, rectangle2f, rectangle2f_POINTS, removeCssClass, sanitizePrimitiveValue, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, shape2f, svg, toggleCssClass, trapezoid2f, trapezoid2f_POINTS, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, vec2f, vec2f_about, vec2f_add, vec2f_addms, vec2f_adds, vec2f_angle, vec2f_ceil, vec2f_cross, vec2f_cross3, vec2f_dist, vec2f_dist2, vec2f_div, vec2f_divs, vec2f_dot, vec2f_eq, vec2f_eqs, vec2f_eqstrict, vec2f_floor, vec2f_iabout, vec2f_iadd, vec2f_iaddms, vec2f_iadds, vec2f_iceil, vec2f_idiv, vec2f_idivs, vec2f_ifloor, vec2f_iinv, vec2f_imax, vec2f_imin, vec2f_imul, vec2f_imuls, vec2f_ineg, vec2f_inv, vec2f_iperp, vec2f_irot90, vec2f_irotate, vec2f_irotn90, vec2f_iround, vec2f_isub, vec2f_isubs, vec2f_iunit, vec2f_lerp, vec2f_mag, vec2f_mag2, vec2f_max, vec2f_min, vec2f_mul, vec2f_muls, vec2f_neg, vec2f_new, vec2f_perp, vec2f_phi, vec2f_rot90, vec2f_rotate, vec2f_rotn90, vec2f_round, vec2f_sub, vec2f_subs, vec2f_theta, vec2f_unit, vec2i, vec2i_add, vec2i_adds, vec2i_angleEx, vec2i_cross, vec2i_cross3, vec2i_div, vec2i_divs, vec2i_dot, vec2i_iadd, vec2i_iadds, vec2i_idiv, vec2i_idivs, vec2i_imul, vec2i_imuls, vec2i_ineg, vec2i_inorm, vec2i_iperp, vec2i_irot90, vec2i_irotn90, vec2i_isub, vec2i_isubs, vec2i_mag, vec2i_mag2, vec2i_mul, vec2i_muls, vec2i_neg, vec2i_norm, vec2i_perp, vec2i_phiEx, vec2i_rot90, vec2i_rotn90, vec2i_sub, vec2i_subs, vec2i_thetaEx, vec3f, vec3f_crossABAB, vec3f_div, vec3f_divs, vec3f_idiv, vec3f_idivs, vec3f_iunit, vec3f_mag, vec3f_mag2, vec3f_unit, vnode, workletState };
+export { VN, addCssClass, app, checkIfValueDisabled, circle2f, circle2f_POINTS, clone, cloneDeep, collapseCssClass, collapseNear, collapseToString, copyAttributes, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, getFirstObjectItem, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isPrimitiveType, isPrimitiveTypeEx, isPureObject, float64Math as mathf64, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, int32Math as mathi32, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeArrays, mergeObjects, myRegisterPaint, path2f, point2f, point2f_POINTS, rectangle2f, rectangle2f_POINTS, removeCssClass, sanitizePrimitiveValue, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, shape2f, toggleCssClass, trapezoid2f, trapezoid2f_POINTS, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec2 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, vnode, workletState, wrapVN };
 //# sourceMappingURL=index.js.map
