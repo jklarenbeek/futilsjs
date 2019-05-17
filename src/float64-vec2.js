@@ -610,8 +610,9 @@ export const def_vec2f64 = Object.freeze(Object.seal(vec2f64_new()));
 export function vec2f64_new(x = 0.0, y = 0.0) { return new vec2f64(+x, +y); }
 
 export default {
-  vec2: vec2f64,
-  default: def_vec2f64,
+  Vec2: vec2f64,
+  defVec2: def_vec2f64,
+  newVec2: vec2f64_new,
 
   neg: vec2f64_neg,
   add: vec2f64_add,
@@ -669,5 +670,4 @@ export default {
   rotate: vec2f64_rotate,
   about: vec2f64_about,
 
-  new: vec2f64_new,
 };

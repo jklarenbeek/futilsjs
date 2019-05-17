@@ -229,7 +229,7 @@ export function app(state, actions, view, container) {
     const attributes = node.attributes;
     if (attributes) {
       if (attributes.oncreate) {
-        lifecycle.push(function hyperapp_createElement_lifecycle() {
+        lifecycle.push(function hyperapp_lifecycle_createElement() {
           attributes.oncreate(element);
         });
       }

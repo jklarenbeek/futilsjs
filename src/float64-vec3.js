@@ -83,8 +83,10 @@ export function vec3f64_crossABAB(a = def_vec3f64, b = def_vec3f64) {
 export function vec3f64_new(x = 0.0, y = 0.0, z = 0.0) { return new vec3f64(+x, +y, +z); }
 
 export default {
-  vec3: vec3f64,
-  default: def_vec3f64,
+  Vec3: vec3f64,
+  defVec3: def_vec3f64,
+  newVec3: vec3f64_new,
+
   div: vec3f64_div,
   divs: vec3f64_divs,
   idiv: vec3f64_idiv,
@@ -95,5 +97,5 @@ export default {
   unit: vec3f64_unit,
   iunit: vec3f64_iunit,
   crossABAB: vec3f64_crossABAB,
-  new: vec3f64_new,
+
 };

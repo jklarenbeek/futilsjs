@@ -20,14 +20,10 @@ export function isPureObject(obj) {
 export function sanitizePrimitiveValue(value, nullable) {
   if (nullable) {
     if (!value) return null;
-    if (!isPrimitiveType(value)) return null;
-    return value;
+    return isPrimitiveType(value) ? value : null;
   }
-  else {
-    if (!value) return undefined;
-    if (!isPrimitiveType(value)) return undefined;
-    return value;
-  }
+  if (!value) return undefined;
+  return isPrimitiveType(value) ? value : undefined;
 }
 
 export function checkIfValueDisabled(value, nullable, disabled) {

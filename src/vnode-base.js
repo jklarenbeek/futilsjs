@@ -1,6 +1,6 @@
 
 
-import { collapseNear } from './object';
+import { collapseArrayShallow } from './object';
 
 export class vnode {
   constructor(name, attributes, children) {
@@ -13,7 +13,7 @@ export class vnode {
 
 export function VN(name, attributes, ...rest) {
   attributes = attributes || {};
-  const children = collapseNear(rest);
+  const children = collapseArrayShallow(rest);
   return typeof name === 'function'
     ? name(attributes, children)
     : new vnode(name, attributes, children);

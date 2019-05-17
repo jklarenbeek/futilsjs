@@ -1,8 +1,9 @@
 /* eslint-disable prefer-rest-params */
 export function getFirstObjectItem(items) {
   for (const item in items) {
-    if (!items.hasOwnProperty(item)) continue;
-    return item;
+    if (items.hasOwnProperty(item)) {
+      return item;
+    }
   }
   return undefined;
 }
@@ -27,7 +28,7 @@ export function cloneDeep(o) {
     return o;
   }
 
-  if (o instanceof Array) {
+  if (o.constructor === Array) {
     const newO = [];
     for (let i = 0; i < o.length; i += 1) {
       newO[i] = cloneDeep(o[i]);
@@ -36,7 +37,7 @@ export function cloneDeep(o) {
   }
   else {
     const newO = {};
-    const keys = Reflect.ownKeys(o);
+    const keys = Reflect.ownKeys(o); // TODO: SLOW!!! OMG SLOW!!!
     for (const i in keys) {
       if (keys.hasOwnProperty(i)) {
         newO[i] = cloneDeep(o[i]);
@@ -56,7 +57,8 @@ export function mergeObjects(target, ...rest) {
     for (const key in object) {
       if (object.hasOwnProperty(key)) {
         const value = object[key];
-        if (value && value.constructor === Object) {
+        if (value === undefined || value === null) continue;
+        if (typeof value === 'object' && value.constructor !== Array) {
           const sourceKey = target[key];
           mergeFn(sourceKey, value);
         }
@@ -87,7 +89,11 @@ export function mergeArrays(a, b) {
   return a;
 }
 
-export function collapseNear(rest) {
+export function collapseArrayIsToPrimitive(obj) {
+  return (obj === undefined || obj === null || obj === false || obj === true);
+}
+
+export function collapseArrayShallow(rest) {
   const result = [];
   let cursor = 0;
 
@@ -101,23 +107,23 @@ export function collapseNear(rest) {
   let iy = 0;
 
   // fill the children array with the rest parameters
-  while (ix < lenx) {
+  for (ix = 0; ix < lenx; ++ix) {
     itemx = rest[ix];
-    ++ix;
-    if (itemx === undefined || itemx === null || itemx === false || itemx === true) continue;
-    if (itemx.pop) {
-      // this is an array so fill the children array with the items of this one
-      // we do not go any deeper!
+    if (collapseArrayIsToPrimitive(itemx)) continue;
+    if (typeof itemx === 'object' && itemx.constructor === Array) {
+      // fill the result array with the
+      // items of this next loop. We do
+      // not go any deeper.
       leny = itemx.length;
-      iy = 0;
-      while (iy < leny) {
+      for (iy = 0; iy < leny; ++iy) {
         itemy = itemx[iy];
-        ++iy;
-        if (itemy === undefined || itemy === null || itemy === false || itemy === true) continue;
+        if (collapseArrayIsToPrimitive(itemy)) continue;
+        // whatever it is next, put it in!?
         result[cursor++] = itemy;
       }
     }
     else {
+      // whatever it is next, put it in!?
       result[cursor++] = itemx;
     }
   }

@@ -20,14 +20,10 @@ function isPureObject(obj) {
 function sanitizePrimitiveValue(value, nullable) {
   if (nullable) {
     if (!value) return null;
-    if (!isPrimitiveType(value)) return null;
-    return value;
+    return isPrimitiveType(value) ? value : null;
   }
-  else {
-    if (!value) return undefined;
-    if (!isPrimitiveType(value)) return undefined;
-    return value;
-  }
+  if (!value) return undefined;
+  return isPrimitiveType(value) ? value : undefined;
 }
 
 function checkIfValueDisabled(value, nullable, disabled) {
@@ -515,129 +511,6 @@ const vec2i32_iperp = vec2i32_irot90;
 //#region shapes
 
 /**
- * Tests if triangle intersects with a rectangle
- *
- * @param {*} v1
- * @param {*} v2
- * @param {*} v3
- * @param {*} r1
- * @param {*} r2
- * @returns {boolean} true if they intersect.
- */
-function triangle2i_intersectsRect(v1, v2, v3, r1, r2) {
-  /*
-    This function borrowed faithfully from a wonderfl (:3) discussion on
-    calculating triangle collision with AABBs on the following blog:
-    http://sebleedelisle.com/2009/05/super-fast-trianglerectangle-intersection-test/
-
-    This particular optimization best suits my purposes and was contributed
-    to the discussion by someone from http://lab9.fr/
-  */
-
-  const x0 = v1.x|0;
-  const y0 = v1.y|0;
-  const x1 = v2.x|0;
-  const y1 = v2.y|0;
-  const x2 = v3.x|0;
-  const y2 = v3.y|0;
-
-  const l = r1.x|0;
-  const r = r2.x|0;
-  const t = r1.y|0;
-  const b = r2.y|0;
-
-  const b0 = (((x0 > l) ? 1 : 0)
-    | (((y0 > t) ? 1 : 0) << 1)
-    | (((x0 > r) ? 1 : 0) << 2)
-    | (((y0 > b) ? 1 : 0) << 3))|0;
-  if (b0 === 3) return true;
-
-  const b1 = ((x1 > l) ? 1 : 0)
-    | (((y1 > t) ? 1 : 0) << 1)
-    | (((x1 > r) ? 1 : 0) << 2)
-    | (((y1 > b) ? 1 : 0) << 3)|0;
-  if (b1 === 3) return true;
-
-  const b2 = ((x2 > l) ? 1 : 0)
-    | (((y2 > t) ? 1 : 0) << 1)
-    | (((x2 > r) ? 1 : 0) << 2)
-    | (((y2 > b) ? 1 : 0) << 3)|0;
-  if (b2 === 3) return true;
-
-  let c = 0;
-  let m = 0;
-  let s = 0;
-
-  const i0 = (b0 ^ b1)|0;
-  if (i0 !== 0) {
-    m = ((y1-y0) / (x1-x0))|0;
-    c = (y0 -(m * x0))|0;
-    if (i0 & 1) {
-      s = m * l + c;
-      if (s > t && s < b) return true;
-    }
-    if (i0 & 2) {
-      s = (t - c) / m;
-      if (s > l && s < r) return true;
-    }
-    if (i0 & 4) {
-      s = m * r + c;
-      if (s > t && s < b) return true;
-    }
-    if (i0 & 8) {
-      s = (b - c) / m;
-      if (s > l && s < r) return true;
-    }
-  }
-
-  const i1 = (b1 ^ b2)|0;
-  if (i1 !== 0) {
-    m = ((y2 - y1) / (x2 - x1))|0;
-    c = (y1 -(m * x1))|0;
-    if (i1 & 1) {
-      s = m * l + c;
-      if (s > t && s < b) return true;
-    }
-    if (i1 & 2) {
-      s = (t - c) / m;
-      if (s > l && s < r) return true;
-    }
-    if (i1 & 4) {
-      s = m * r + c;
-      if (s > t && s < b) return true;
-    }
-    if (i1 & 8) {
-      s = (b - c) / m;
-      if (s > l && s < r) return true;
-    }
-  }
-
-  const i2 = (b0 ^ b2)|0;
-  if (i2 !== 0) {
-    m = ((y2 - y0) / (x2 - x0))|0;
-    c = (y0 -(m * x0))|0;
-    if (i2 & 1) {
-      s = m * l + c;
-      if (s > t && s < b) return true;
-    }
-    if (i2 & 2) {
-      s = (t - c) / m;
-      if (s > l && s < r) return true;
-    }
-    if (i2 & 4) {
-      s = m * r + c;
-      if (s > t && s < b) return true;
-    }
-    if (i2 & 8) {
-      s = (b - c) / m;
-      if (s > l && s < r) return true;
-    }
-  }
-
-  return false;
-}
-
-/**
  * just some notes
  *
  *
@@ -681,7 +554,7 @@ export function fastSin3(a) {
  */
 
 var int32Vec2 = {
-  vec2: vec2i32,
+  Vec2: vec2i32,
   default: def_vec2i32,
 
   neg: vec2i32_neg,
@@ -1623,8 +1496,9 @@ const def_vec2f64 = Object.freeze(Object.seal(vec2f64_new()));
 function vec2f64_new(x = 0.0, y = 0.0) { return new vec2f64(+x, +y); }
 
 var float64Vec2 = {
-  vec2: vec2f64,
-  default: def_vec2f64,
+  Vec2: vec2f64,
+  defVec2: def_vec2f64,
+  newVec2: vec2f64_new,
 
   neg: vec2f64_neg,
   add: vec2f64_add,
@@ -1682,7 +1556,6 @@ var float64Vec2 = {
   rotate: vec2f64_rotate,
   about: vec2f64_about,
 
-  new: vec2f64_new,
 };
 
 class vec3f64 {
@@ -1765,6 +1638,24 @@ function vec3f64_crossABAB(a = def_vec3f64, b = def_vec3f64) {
 
 function vec3f64_new(x = 0.0, y = 0.0, z = 0.0) { return new vec3f64(+x, +y, +z); }
 
+var float64Vec3 = {
+  Vec3: vec3f64,
+  defVec3: def_vec3f64,
+  newVec3: vec3f64_new,
+
+  div: vec3f64_div,
+  divs: vec3f64_divs,
+  idiv: vec3f64_idiv,
+  idivs: vec3f64_idivs,
+
+  mag2: vec3f64_mag2,
+  mag: vec3f64_mag,
+  unit: vec3f64_unit,
+  iunit: vec3f64_iunit,
+  crossABAB: vec3f64_crossABAB,
+
+};
+
 /* eslint-disable lines-between-class-members */
 
 
@@ -1773,7 +1664,7 @@ function vec3f64_new(x = 0.0, y = 0.0, z = 0.0) { return new vec3f64(+x, +y, +z)
 
 //#region vec2d basic shapes
 
-class shape2f {
+class shape2f64 {
   getP1X() { return this.gP1() ? this.gP1().x : Number.NaN; }
   getP1Y() { return this.gP1() ? this.gP1().y : Number.NaN; }
   getP2X() { return this.gP2() ? this.gP2().x : Number.NaN; }
@@ -1785,8 +1676,8 @@ class shape2f {
   pointCount() { return 0.0; }
 }
 
-const point2f_POINTS = 1;
-class point2f extends shape2f {
+const point2f64_POINTS = 1;
+class point2f64 extends shape2f64 {
   constructor(p1 = def_vec2f64) {
     super();
     this.p1 = p1;
@@ -1797,12 +1688,12 @@ class point2f extends shape2f {
   }
 
   pointCount() {
-    return point2f_POINTS;
+    return point2f64_POINTS;
   }
 }
 
-const circle2f_POINTS = 1;
-class circle2f extends shape2f {
+const circle2f64_POINTS = 1;
+class circle2f64 extends shape2f64 {
   constructor(p1 = def_vec2f64, r = 1.0) {
     super();
     this.p1 = p1;
@@ -1814,12 +1705,12 @@ class circle2f extends shape2f {
   }
 
   pointCount() {
-    return circle2f_POINTS;
+    return circle2f64_POINTS;
   }
 }
 
-const rectangle2f_POINTS = 2;
-class rectangle2f extends shape2f {
+const rectangle2f64_POINTS = 2;
+class rectangle2f64 extends shape2f64 {
   constructor(p1 = def_vec2f64, p2 = def_vec2f64) {
     super();
     this.p1 = p1;
@@ -1835,14 +1726,14 @@ class rectangle2f extends shape2f {
   }
 
   pointCount() {
-    return rectangle2f_POINTS;
+    return rectangle2f64_POINTS;
   }
 }
 
 // TODO: argument initialiser to def_triangle2f
 
-const triangle2f_POINTS = 3;
-class triangle2f extends shape2f {
+const triangle2f64_POINTS = 3;
+class triangle2f64 extends shape2f64 {
   constructor(p1 = def_vec2f64, p2 = def_vec2f64, p3 = def_vec2f64) {
     super();
     this.p1 = p1;
@@ -1863,13 +1754,13 @@ class triangle2f extends shape2f {
   }
 
   pointCount() {
-    return triangle2f_POINTS;
+    return triangle2f64_POINTS;
   }
 
   //#region intersects other shape
 
-  intersectsRect(rectangle = rectangle2f, normal = 1.0) {
-    return triangle2f_intersectsRect(
+  intersectsRect(rectangle = rectangle2f64, normal = 1.0) {
+    return triangle2f64_intersectsRect(
       this.p1,
       this.p2,
       this.p3,
@@ -1879,8 +1770,8 @@ class triangle2f extends shape2f {
     );
   }
 
-  intersectsTangle(triangle = triangle2f) {
-    return triangle2f_intersectsTangle(
+  intersectsTriangle(triangle = triangle2f64) {
+    return triangle2f64_intersectsTriangle(
       this.p1,
       this.p2,
       this.p3,
@@ -1898,7 +1789,7 @@ class triangle2f extends shape2f {
  * @param {rectangle2f} rectangle
  * @param {*} normal
  */
-function triangle2f_intersectsRect(
+function triangle2f64_intersectsRect(
   l1 = def_vec2f64, l2 = def_vec2f64, l3 = def_vec2f64,
   r1 = def_vec2f64, r2 = def_vec2f64, normal = 1.0,
 ) {
@@ -1910,7 +1801,7 @@ function triangle2f_intersectsRect(
     || (((+l2.x - +r1.x) * +dy - (+l2.y - +r1.y) * +dx) * +normal < 0)
     || (((+l3.x - +r1.x) * +dy - (+l3.y - +r1.y) * +dx) * +normal < 0));
 }
-function triangle2f_intersectsTangle(
+function triangle2f64_intersectsTriangle(
   l1 = def_vec2f64, l2 = def_vec2f64, l3 = def_vec2f64,
   r1 = def_vec2f64, r2 = def_vec2f64, r3 = def_vec2f64,
 ) {
@@ -1921,16 +1812,140 @@ function triangle2f_intersectsTangle(
     +(+(+r2.x - +r1.x) * +(+r3.y - +r1.y))
     - +(+(+r2.y - +r1.y) * +(+r3.x - +r1.x)));
 
-  return !(triangle2f_intersectsRect(r1, r2, r3, l1, l2, lnorm)
-    || triangle2f_intersectsRect(r1, r2, r3, l2, l3, lnorm)
-    || triangle2f_intersectsRect(r1, r2, r3, l3, l1, lnorm)
-    || triangle2f_intersectsRect(l1, l2, l3, r1, r2, rnorm)
-    || triangle2f_intersectsRect(l1, l2, l3, r2, r3, rnorm)
-    || triangle2f_intersectsRect(l1, l2, l3, r3, r1, rnorm));
+  return !(triangle2f64_intersectsRect(r1, r2, r3, l1, l2, lnorm)
+    || triangle2f64_intersectsRect(r1, r2, r3, l2, l3, lnorm)
+    || triangle2f64_intersectsRect(r1, r2, r3, l3, l1, lnorm)
+    || triangle2f64_intersectsRect(l1, l2, l3, r1, r2, rnorm)
+    || triangle2f64_intersectsRect(l1, l2, l3, r2, r3, rnorm)
+    || triangle2f64_intersectsRect(l1, l2, l3, r3, r1, rnorm));
 }
 
-const trapezoid2f_POINTS = 4;
-class trapezoid2f extends shape2f {
+/**
+ * Tests if triangle intersects with a rectangle
+ *
+ * @param {*} v1
+ * @param {*} v2
+ * @param {*} v3
+ * @param {*} r1
+ * @param {*} r2
+ * @returns {boolean} true if they intersect.
+ */
+function triangle2i64_intersectsRect(v1, v2, v3, r1, r2) {
+  /*
+    This function borrowed faithfully from a wonderfl (:3) discussion on
+    calculating triangle collision with AABBs on the following blog:
+    http://sebleedelisle.com/2009/05/super-fast-trianglerectangle-intersection-test/
+
+    This particular optimization best suits my purposes and was contributed
+    to the discussion by someone from http://lab9.fr/
+  */
+
+  const x0 = v1.x|0;
+  const y0 = v1.y|0;
+  const x1 = v2.x|0;
+  const y1 = v2.y|0;
+  const x2 = v3.x|0;
+  const y2 = v3.y|0;
+
+  const l = r1.x|0;
+  const r = r2.x|0;
+  const t = r1.y|0;
+  const b = r2.y|0;
+
+  const b0 = (((x0 > l) ? 1 : 0)
+    | (((y0 > t) ? 1 : 0) << 1)
+    | (((x0 > r) ? 1 : 0) << 2)
+    | (((y0 > b) ? 1 : 0) << 3))|0;
+  if (b0 === 3) return true;
+
+  const b1 = ((x1 > l) ? 1 : 0)
+    | (((y1 > t) ? 1 : 0) << 1)
+    | (((x1 > r) ? 1 : 0) << 2)
+    | (((y1 > b) ? 1 : 0) << 3)|0;
+  if (b1 === 3) return true;
+
+  const b2 = ((x2 > l) ? 1 : 0)
+    | (((y2 > t) ? 1 : 0) << 1)
+    | (((x2 > r) ? 1 : 0) << 2)
+    | (((y2 > b) ? 1 : 0) << 3)|0;
+  if (b2 === 3) return true;
+
+  let c = 0;
+  let m = 0;
+  let s = 0;
+
+  const i0 = (b0 ^ b1)|0;
+  if (i0 !== 0) {
+    m = ((y1-y0) / (x1-x0))|0;
+    c = (y0 -(m * x0))|0;
+    if (i0 & 1) {
+      s = m * l + c;
+      if (s > t && s < b) return true;
+    }
+    if (i0 & 2) {
+      s = (t - c) / m;
+      if (s > l && s < r) return true;
+    }
+    if (i0 & 4) {
+      s = m * r + c;
+      if (s > t && s < b) return true;
+    }
+    if (i0 & 8) {
+      s = (b - c) / m;
+      if (s > l && s < r) return true;
+    }
+  }
+
+  const i1 = (b1 ^ b2)|0;
+  if (i1 !== 0) {
+    m = ((y2 - y1) / (x2 - x1))|0;
+    c = (y1 -(m * x1))|0;
+    if (i1 & 1) {
+      s = m * l + c;
+      if (s > t && s < b) return true;
+    }
+    if (i1 & 2) {
+      s = (t - c) / m;
+      if (s > l && s < r) return true;
+    }
+    if (i1 & 4) {
+      s = m * r + c;
+      if (s > t && s < b) return true;
+    }
+    if (i1 & 8) {
+      s = (b - c) / m;
+      if (s > l && s < r) return true;
+    }
+  }
+
+  const i2 = (b0 ^ b2)|0;
+  if (i2 !== 0) {
+    m = ((y2 - y0) / (x2 - x0))|0;
+    c = (y0 -(m * x0))|0;
+    if (i2 & 1) {
+      s = m * l + c;
+      if (s > t && s < b) return true;
+    }
+    if (i2 & 2) {
+      s = (t - c) / m;
+      if (s > l && s < r) return true;
+    }
+    if (i2 & 4) {
+      s = m * r + c;
+      if (s > t && s < b) return true;
+    }
+    if (i2 & 8) {
+      s = (b - c) / m;
+      if (s > l && s < r) return true;
+    }
+  }
+
+  return false;
+}
+
+
+const trapezoid2f64_POINTS = 4;
+class trapezoid2f64 extends shape2f64 {
   constructor(p1 = def_vec2f64, p2 = def_vec2f64, p3 = def_vec2f64, p4 = def_vec2f64) {
     super();
     this.p1 = p1;
@@ -1956,7 +1971,7 @@ class trapezoid2f extends shape2f {
   }
 
   pointCount() {
-    return rectangle2f_POINTS;
+    return trapezoid2f64_POINTS;
   }
 }
 
@@ -1965,11 +1980,14 @@ class trapezoid2f extends shape2f {
 
 //#region svg path segments
 
-class segm2f {
+class segm2f64 {
   constructor(abs = true) {
-    this.abs = (typeof abs === 'boolean')
-      ? abs // is the coordinate absolute or relative?
-      : true;
+    // is the coordinate absolute or relative?
+    this.abs = (abs === false || abs === true)
+      ? abs
+      : (typeof abs === 'number')
+        ? abs > 0 ? true : false
+        : true;
   }
 
   gAbs() {
@@ -1978,14 +1996,14 @@ class segm2f {
 
   isValidPrecursor(segment) {
     return (segment === undefined || segment === null)
-      || ((segment instanceof segm2f) && !(segment instanceof segm2f_Z));
+      || ((segment instanceof segm2f64) && (segment.constructor !== segm2f64_Z));
   }
 }
 
-class segm2f_M extends segm2f {
+class segm2f64_M extends segm2f64 {
   constructor(abs = true, x = 0.0, y = 0.0) {
     super(abs);
-    this.p1 = (x instanceof vec2f64)
+    this.p1 = (x.constructor === vec2f64)
       ? x
       : new vec2f64(+x, +y);
   }
@@ -1995,10 +2013,10 @@ class segm2f_M extends segm2f {
   }
 }
 
-class segm2f_v extends segm2f {
+class segm2f64_v extends segm2f64 {
   constructor(abs = false, y = 0.0) {
     super(abs);
-    this.y = (y instanceof vec2f64)
+    this.y = (y.constructor === vec2f64)
       ? this.y = y.y
       : y;
   }
@@ -2011,7 +2029,7 @@ class segm2f_v extends segm2f {
     return new vec2f64(0.0, +this.y);
   }
 }
-class segm2f_h extends segm2f {
+class segm2f64_h extends segm2f64 {
   constructor(abs = false, x = 0.0) {
     super(abs);
     this.x = +x;
@@ -2025,21 +2043,21 @@ class segm2f_h extends segm2f {
     return new vec2f64(+this.x, 0.0);
   }
 }
-class segm2f_l extends segm2f {
+class segm2f64_l extends segm2f64 {
   constructor(abs = false, p1 = def_vec2f64, y = 0.0) {
     super(abs);
-    this.p1 = (p1 instanceof vec2f64)
+    this.p1 = (p1.constructor === vec2f64)
       ? p1
       : new vec2f64(+p1, +y);
   }
 }
 
-class segm2f_q extends segm2f {
+class segm2f64_q extends segm2f64 {
   constructor(abs = false, p1 = def_vec2f64, p2 = def_vec2f64, x2 = 0.0, y2 = 0.0) {
     super(abs);
-    if (p1 instanceof vec2f64) {
+    if (p1.constructor === vec2f64) {
       this.p1 = p1;
-      if (p2 instanceof vec2f64) {
+      if (p2.constructor === vec2f64) {
         this.p2 = p2;
       }
       else {
@@ -2060,52 +2078,52 @@ class segm2f_q extends segm2f {
     return this.p2;
   }
 }
-class segm2f_t extends segm2f {
+class segm2f64_t extends segm2f64 {
   constructor(abs = false, p1 = def_vec2f64, y = 0.0) {
     super(abs);
-    this.p1 = (p1 instanceof vec2f64)
+    this.p1 = (p1.constructor === vec2f64)
       ? p1
       : new vec2f64(+p1, +y);
   }
 
   hasValidPrecursor(segment) {
-    return (segment instanceof segm2f_t)
-      || (segment instanceof segm2f_q);
+    return (segment.constructor === segm2f64_t)
+      || (segment.constructor === segm2f64_q);
   }
 }
 
-class segm2f_c extends segm2f {
+class segm2f64_c extends segm2f64 {
   constructor(abs = false) {
     super(abs);
     // TODO
   }
 }
 
-class segm2f_s extends segm2f {
+class segm2f64_s extends segm2f64 {
   constructor(abs = false) {
     super(abs);
     // TODO
   }
 
   hasValidPrecursor(segment) {
-    return (segment instanceof segm2f_s)
-      || (segment instanceof segm2f_c);
+    return (segment.constructor === segm2f64_s)
+      || (segment.constructor === segm2f64_c);
   }
 }
 
-class segm2f_Z extends segm2f {
+class segm2f64_Z extends segm2f64 {
   constructor() {
     super(true);
   }
 
   hasValidPrecursor(segment) {
-    return !(segment instanceof segm2f_Z);
+    return !(segment.constructor === segm2f64_Z);
   }
 }
 //#endregion
 
 //#region svg path object path2f
-class path2f extends shape2f {
+class path2f64 extends shape2f64 {
   constructor(abs = false, list = []) {
     super(abs);
     this.list = list;
@@ -2114,11 +2132,11 @@ class path2f extends shape2f {
   isClosed() {
     const list = this.list;
     const len = list.length;
-    return (len > 0 && (list[len - 1] instanceof segm2f_Z));
+    return (len > 0 && (list[len - 1].constructor === segm2f64_Z));
   }
 
   add(segment) {
-    if (segment instanceof segm2f) {
+    if (segment instanceof segm2f64) {
       const list = this.list;
       const len = list.length;
       if (segment.hasValidPrecursor(len > 0 ? list[len - 1] : null)) {
@@ -2130,38 +2148,58 @@ class path2f extends shape2f {
   }
 
   move(abs, x, y) {
-    const segm = new segm2f_M(abs, x, y);
+    const segm = new segm2f64_M(abs, x, y);
     return this.add(segm);
   }
 
   vertical(abs, y) {
-    const segm = new segm2f_v(abs, y);
+    const segm = new segm2f64_v(abs, y);
     return this.add(segm);
   }
 
   horizontal(abs, x) {
-    const segm = new segm2f_h(abs, x);
+    const segm = new segm2f64_h(abs, x);
     return this.add(segm);
   }
 
   line(abs, x, y) {
-    const segm = new segm2f_l(abs, x, y);
+    const segm = new segm2f64_l(abs, x, y);
     return this.add(segm);
   }
 
   close() {
-    const segm = new segm2f_Z();
+    const segm = new segm2f64_Z();
     return this.add(segm);
   }
 }
 
 //#endregion
 
+var float64Shape = {
+  Shape: shape2f64,
+  Point: point2f64,
+  Circle: circle2f64,
+  Rectangle: rectangle2f64,
+  Triangle: triangle2f64,
+  Trapezoid: trapezoid2f64,
+  Path: path2f64,
+  PSM: segm2f64_M,
+  PSv: segm2f64_v,
+  PSh: segm2f64_h,
+  PSl: segm2f64_l,
+  PSq: segm2f64_q,
+  PSt: segm2f64_t,
+  PSc: segm2f64_c,
+  PSs: segm2f64_s,
+  PSZ: segm2f64_Z,
+};
+
 /* eslint-disable prefer-rest-params */
 function getFirstObjectItem(items) {
   for (const item in items) {
-    if (!items.hasOwnProperty(item)) continue;
-    return item;
+    if (items.hasOwnProperty(item)) {
+      return item;
+    }
   }
   return undefined;
 }
@@ -2186,7 +2224,7 @@ function cloneDeep(o) {
     return o;
   }
 
-  if (o instanceof Array) {
+  if (o.constructor === Array) {
     const newO = [];
     for (let i = 0; i < o.length; i += 1) {
       newO[i] = cloneDeep(o[i]);
@@ -2195,7 +2233,7 @@ function cloneDeep(o) {
   }
   else {
     const newO = {};
-    const keys = Reflect.ownKeys(o);
+    const keys = Reflect.ownKeys(o); // TODO: SLOW!!! OMG SLOW!!!
     for (const i in keys) {
       if (keys.hasOwnProperty(i)) {
         newO[i] = cloneDeep(o[i]);
@@ -2215,7 +2253,8 @@ function mergeObjects(target, ...rest) {
     for (const key in object) {
       if (object.hasOwnProperty(key)) {
         const value = object[key];
-        if (value && value.constructor === Object) {
+        if (value === undefined || value === null) continue;
+        if (typeof value === 'object' && value.constructor !== Array) {
           const sourceKey = target[key];
           mergeFn(sourceKey, value);
         }
@@ -2246,7 +2285,11 @@ function mergeArrays(a, b) {
   return a;
 }
 
-function collapseNear(rest) {
+function collapseArrayIsToPrimitive(obj) {
+  return (obj === undefined || obj === null || obj === false || obj === true);
+}
+
+function collapseArrayShallow(rest) {
   const result = [];
   let cursor = 0;
 
@@ -2260,23 +2303,23 @@ function collapseNear(rest) {
   let iy = 0;
 
   // fill the children array with the rest parameters
-  while (ix < lenx) {
+  for (ix = 0; ix < lenx; ++ix) {
     itemx = rest[ix];
-    ++ix;
-    if (itemx === undefined || itemx === null || itemx === false || itemx === true) continue;
-    if (itemx.pop) {
-      // this is an array so fill the children array with the items of this one
-      // we do not go any deeper!
+    if (collapseArrayIsToPrimitive(itemx)) continue;
+    if (typeof itemx === 'object' && itemx.constructor === Array) {
+      // fill the result array with the
+      // items of this next loop. We do
+      // not go any deeper.
       leny = itemx.length;
-      iy = 0;
-      while (iy < leny) {
+      for (iy = 0; iy < leny; ++iy) {
         itemy = itemx[iy];
-        ++iy;
-        if (itemy === undefined || itemy === null || itemy === false || itemy === true) continue;
+        if (collapseArrayIsToPrimitive(itemy)) continue;
+        // whatever it is next, put it in!?
         result[cursor++] = itemy;
       }
     }
     else {
+      // whatever it is next, put it in!?
       result[cursor++] = itemx;
     }
   }
@@ -2744,7 +2787,7 @@ class vnode {
 
 function VN(name, attributes, ...rest) {
   attributes = attributes || {};
-  const children = collapseNear(rest);
+  const children = collapseArrayShallow(rest);
   return typeof name === 'function'
     ? name(attributes, children)
     : new vnode(name, attributes, children);
@@ -2970,7 +3013,7 @@ function app(state, actions, view, container) {
     const attributes = node.attributes;
     if (attributes) {
       if (attributes.oncreate) {
-        lifecycle.push(function hyperapp_createElement_lifecycle() {
+        lifecycle.push(function hyperapp_lifecycle_createElement() {
           attributes.oncreate(element);
         });
       }
@@ -3146,5 +3189,5 @@ function app(state, actions, view, container) {
   }
 }
 
-export { VN, addCssClass, app, checkIfValueDisabled, circle2f, circle2f_POINTS, clone, cloneDeep, collapseCssClass, collapseNear, collapseToString, copyAttributes, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, getFirstObjectItem, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isPrimitiveType, isPrimitiveTypeEx, isPureObject, float64Math as mathf64, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, int32Math as mathi32, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeArrays, mergeObjects, myRegisterPaint, path2f, point2f, point2f_POINTS, rectangle2f, rectangle2f_POINTS, removeCssClass, sanitizePrimitiveValue, segm2f, segm2f_M, segm2f_Z, segm2f_c, segm2f_h, segm2f_l, segm2f_q, segm2f_s, segm2f_t, segm2f_v, shape2f, toggleCssClass, trapezoid2f, trapezoid2f_POINTS, triangle2f, triangle2f_POINTS, triangle2f_intersectsRect, triangle2f_intersectsTangle, triangle2i_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec2 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, vnode, workletState, wrapVN };
+export { VN, addCssClass, app, checkIfValueDisabled, circle2f64, circle2f64_POINTS, clone, cloneDeep, collapseArrayIsToPrimitive, collapseArrayShallow, collapseCssClass, collapseToString, copyAttributes, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getFirstObjectItem, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isPrimitiveType, isPrimitiveTypeEx, isPureObject, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeArrays, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, vnode, workletState, wrapVN };
 //# sourceMappingURL=index.js.map
