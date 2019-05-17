@@ -1,11 +1,15 @@
 /* eslint-disable prefer-rest-params */
-export function getFirstObjectItem(items) {
-  for (const item in items) {
-    if (items.hasOwnProperty(item)) {
+export function getFirstObjectItem(obj) {
+  for (const item in obj) {
+    if (obj.hasOwnProperty(item)) {
       return item;
     }
   }
   return undefined;
+}
+
+export function isObjectEmpty(obj) {
+  return getFirstObjectItem(obj) === undefined;
 }
 
 export function clone(target, source) {
