@@ -6,6 +6,7 @@ export class vnode {
   constructor(name, attributes, children) {
     this.key = attributes.key;
     this.attributes = attributes;
+    if (name.constructor !== String) throw new Error('ERROR: new vnode without name');
     this.nodeName = name;
     this.children = children;
   }
