@@ -1,5 +1,5 @@
 /* eslint-disable prefer-rest-params */
-export function getFirstObjectItem(obj) {
+export function getObjectFirstItem(obj) {
   for (const item in obj) {
     if (obj.hasOwnProperty(item)) {
       return item;
@@ -8,8 +8,18 @@ export function getFirstObjectItem(obj) {
   return undefined;
 }
 
+export function getObjectCountItems(obj) {
+  let count = 0;
+  for (const item in obj) {
+    if (obj.hasOwnProperty(item)) {
+      ++count;
+    }
+  }
+  return count;
+}
+
 export function isObjectEmpty(obj) {
-  return getFirstObjectItem(obj) === undefined;
+  return getObjectFirstItem(obj) === undefined;
 }
 
 export function clone(target, source) {
