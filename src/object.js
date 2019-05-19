@@ -85,6 +85,13 @@ export function mergeObjects(target, ...rest) {
   return target;
 }
 
+//#region Arrays
+
+export function getUniqueArray(array) {
+  return array.filter((el, index, a) => index === a.indexOf(el));
+  // return Array.from(new Set(array));
+}
+
 // e3Merge from https://jsperf.com/merge-two-arrays-keeping-only-unique-values/22
 export function mergeArrays(a, b) {
   const hash = {};
