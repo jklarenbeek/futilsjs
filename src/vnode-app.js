@@ -25,7 +25,7 @@
 //
 import { collapseCssClass } from './css';
 import { clone } from './object';
-import { vnode } from './vnode-base';
+import { VNode } from './vnode-base';
 
 export function app(state, actions, view, container) {
   const map = [].map;
@@ -42,7 +42,7 @@ export function app(state, actions, view, container) {
   return wiredActions;
 
   function recycleElement(element) {
-    return new vnode(
+    return new VNode(
       element.nodeName.toLowerCase(),
       {},
       map.call(element.childNodes, function recycleElement_inner(el) {

@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 /* eslint-disable no-labels */
 import { getObjectCountItems } from './object';
 
@@ -9,11 +10,33 @@ export function JSONSchema_isUnknownSchema(schema) {
     && schema.items == null);
 }
 
-export function JSONSchema_isValidState(schema, dataType = '', data) {
+export function JSONSchema_isValidState(schema, dstType = '', data) {
   const err = [];
-  if ((schema.required != null && schema.required !== false) && data == null) err.push('required');
-  if (schema.nullable === false && data == null) err.push('nullable');
-  if (data != null && (typeof data !== dataType)) err.push('type');
+  if (data == null) {
+    if (data === undefined && schema.required != null && schema.required !== false) err.push('required');
+    if (data === null && schema.nullable !== true) err.push('nullable');
+  }
+  else {
+    // const risk = (dstType === 'array' && data.constructor !== Array)
+    //   || (dstType === 'object' && typeof data !== 'object')
+    //   || (dstType = 'string' && typeof data !== 'string')
+    //   || (dstType = 'number' && typeof data !== 'number')
+    //   || (dstType = 'boolean' && typeof data !== 'boolean');
+    // eslint-disable-next-line valid-typeof
+    const srcType = typeof data;
+    if (dstType === 'array') {
+      if (!(srcType === 'object' && data.constructor === Array)) err.push('type');
+    }
+    else if (dstType === 'tuple') {
+      throw new Error('Not Implemented!'); // TODO: Not Implemented!
+    }
+    else if (dstType === 'map') {
+      throw new Error('Not Implemented!'); // TODO: Not Implemented!
+    }
+    else {
+      if (srcType !== dstType) err.push('type');
+    }
+  }
   return err;
 }
 
@@ -73,14 +96,12 @@ function JSONSchema_isValidNumberConstraint(schema, err, data) {
   }
   return err;
 }
-
 export function JSONSchema_isValidNumber(schema, data) {
   const err = JSONSchema_isValidState(schema, 'number', data);
   if (err.length > 0) return err;
   if (data == null) return err;
   return JSONSchema_isValidNumberConstraint(schema, err, data);
 }
-
 export function JSONSchema_isValidInteger(schema, data) {
   const err = JSONSchema_isValidState(schema, 'number', data);
   if (data == null) return err;
@@ -100,7 +121,6 @@ export function JSONSchema_isString(schema) {
 
   return isknown || isvalid;
 }
-
 export function JSONSchema_isValidString(schema, data) {
   const err = JSONSchema_isValidState(schema, 'string', data);
   if (err.length > 0) return err;
@@ -184,6 +204,7 @@ export function JSONSchema_isValidObject(schema, data) {
       }
     }
   }
+  if (err.length > 0) return err;
 
   if (schema.additionalProperties === false) {
     // test whether all properties of data are
@@ -195,17 +216,33 @@ export function JSONSchema_isValidObject(schema, data) {
 
     const hasproperties = typeof properties === 'object'
       && properties.constructor !== Array;
-    const haspattern = typeof patterns === 'object'
+    const haspatterns = typeof patterns === 'object'
       && patterns.constructor !== Array;
 
+    next:
     for (const prop in data) {
       if (data.hasOwnProperty(prop)) {
-        if (hasproperties || haspattern) {
-          if (properties.hasOwnProperty(prop) === false) err.push(['properties', prop]);
+        if (hasproperties) {
+          if (properties.hasOwnProperty(prop) === true) continue;
         }
+
+        if (haspatterns) {
+          for (const pattern in patterns) {
+            if (patterns.hasOwnProperty(pattern)) {
+              const rgx = new RegExp(pattern);
+              if (rgx.search(prop) !== -1) continue next;
+            }
+          }
+          err.push(['patternProperties', prop]);
+          continue;
+        }
+
+        err.push(['properties', prop]);
       }
     }
   }
+
+  return err;
 }
 
 export function JSONSchema_isArray(schema) {
@@ -218,6 +255,17 @@ export function JSONSchema_isArray(schema) {
   return isknown || isvalid;
 }
 
+export function JSONSchema_isValidArray(schema, data) {
+  const err = JSONSchema_isValidState(schema, 'array', data);
+  if (data == null) return err;
+  if (err.length > 0) return err;
+  if (err.length > 0) return err;
+
+  // const count = data.length;
+
+  throw new Error('Not Implemented', schema, data);
+}
+
 export function JSONSchema_isTuple(schema) {
   const isknown = schema.type === 'tuple';
   const isknowable = isknown || schema.type === 'array' || schema.type == null;
@@ -227,6 +275,57 @@ export function JSONSchema_isTuple(schema) {
   return isknown || isvalid;
 }
 
-export default class JSONSchema {
+export function JSONSchema_isValidTuple(schema, data) {
+  throw new Error('Not Implemented', schema, data);
+}
 
+export function JSONSchema_isMap(schema) {
+  const isknown = schema.type === 'map';
+  const isvalid = isknown
+    && typeof schema.items === 'object'
+    && schema.items.constructor === Array
+    && schema.items.length === 2;
+  return isvalid;
+}
+
+export function JSONSchema_isValidMap(schema, data) {
+  throw new Error('Not Implemented', schema, data);
+}
+
+export default class JSONSchema {
+  constructor(schema) {
+    this.schema = schema;
+  }
+
+  registerBooleanHandler(format, callback) {
+    throw new Error('Not Implemented', format, callback);
+  }
+
+  registerNumberHandler(format, callback) {
+    throw new Error('Not Implemented', format, callback);
+  }
+
+  registerIntegerHandler(format, callback) {
+    throw new Error('Not Implemented', format, callback);
+  }
+
+  registerStringHandler(format, callback) {
+    throw new Error('Not Implemented', format, callback);
+  }
+
+  registerObjectHandler(format, callback) {
+    throw new Error('Not Implemented', format, callback);
+  }
+
+  registerArrayHandler(format, callback) {
+    throw new Error('Not Implemented', format, callback);
+  }
+
+  registerTupleHandler(format, callback) {
+    throw new Error('Not Implemented', format, callback);
+  }
+
+  registerMapHandler(format, callback) {
+    throw new Error('Not Implemented', format, callback);
+  }
 }
