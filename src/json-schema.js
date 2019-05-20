@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable no-labels */
 /* eslint-disable no-lonely-if */
-import { getObjectCountItems } from './object';
+import { getObjectCountItems, isPureObject } from './object';
 
 
 export const JSONPath_separator = '/';
@@ -58,6 +58,14 @@ export function JSONSchema_constructBooleanSchema(schema) {
 }
 export function JSONSchema_isValidBoolean(path = '/', schema, data, err = []) {
   return JSONSchema_isValidState(path, schema, 'boolean', data, err);
+}
+
+export const JSONSchema_formatNumber = ['number', 'range', 'date', 'datetime', 'datetime-local', 'month', 'time', 'week'];
+
+export function JSONSchema_getFormatNumberType(schema) {
+  return JSONSchema_formatNumber.includes(schema.format)
+    ? schema.format
+    : 'number';
 }
 
 function JSONSchema_isValidNumberConstraint(path, schema, data, err) {
@@ -361,7 +369,7 @@ export function JSONSchema_isValid(path = '/', schema, data, err = [], callback)
   return err;
 }
 
-export default class JSONDocument {
+export default class JSONSchemaDocument {
   constructor(schema, data) {
     this.schema = schema;
     this.data = data;
@@ -369,8 +377,33 @@ export default class JSONDocument {
 }
 
 export class JSONSchema {
-  constructor(schema) {
-    this.type = schema.type;
+  constructor(owner, path, schema) {
+    if (!(owner instanceof JSONSchemaDocument)) throw new TypeError('owner');
+    if (typeof path !== 'string') throw new TypeError('path');
+    if (typeof schema !== 'object') throw new TypeError('schema');
+
+    this._owner = owner;
+    this._path = path;
+
+    this.type = (typeof schema.type === 'string')
+      ? schema.type
+      : 'unknown';
+    this.format = (typeof schema.format === 'string')
+      ? schema.format
+      : null;
+    this.required = schema.required === true;
+    this.nullable = schema.nullable === true;
+    this.readOnly = schema.readOnly === true;
+    this.writeOnly = schema.writeOnly === true;
+
+    this.title = schema.title;
+    this.$comment = schema.$comment;
+    this.description = schema.description;
+    this.placeholder = schema.placeholder;
+    this.default = schema.default;
+    this.examples = schema.examples;
+
+    this.layout = isPureObject(this.layout) ? this.layout : {};
   }
 }
 
@@ -378,6 +411,100 @@ export class JSONSchemaBoolean extends JSONSchema {
 }
 
 export class JSONSchemaNumber extends JSONSchema {
+  constructor(owner, path, schema) {
+    super(owner, path, schema);
+
+    if (schema.type === 'integer') {
+      this.type = 'integer';
+      // this.primitive = schema.primitive;
+    }
+    else if (schema.type === 'number') {
+      this.type = 'number';
+      // this.primitive = schema.primitive;
+    }
+    else if (schema.type.indexOf('int') === 0) {
+      this.type = 'integer';
+      this.primitive = schema.type;
+    }
+    else if (schema.type.indexOf('uint') === 0) {
+      this.type = 'integer';
+      this.primitive = schema.type;
+    }
+    else {
+      this.type = 'number';
+      this.primitive = schema.type;
+    }
+    this.format = getNumberFormatType();
+
+    const min = this.type === 'integer'
+      ? (schema.minimum && parseInt(schema.minimum)) || 0
+      : (schema.minimum && Number(schema.minimum)) || 0.0;
+    const max = this.type === 'integer'
+      ? Math.max((schema.maximum && parseInt(schema.maximum)), min)
+      : Math.max((schema.maximum && Number(schema.maximum)), min);
+
+    if (!Number.isNaN(schema.minimum)) {
+      this.minimum = min;
+      this.exclusiveMinimim = typeof schema.exclusiveMinimim === 'boolean'
+        ? schema.exclusiveMinimim
+        : false;
+      this._minimum = !schema.exclusiveMinimim ? schema.minimum : schema.minimum + 1;
+    }
+
+    if (!Number.isNaN(schema.maximum)) {
+      if (max > 0 || max > min) {
+        this.maximum = max;
+        this.exclusiveMaximim = typeof schema.exclusiveMaximim === 'boolean'
+          ? schema.exclusiveMaximim
+          : false;
+        this._maximum = !schema.exclusiveMaximim ? schema.maximum : schema.maximum - 1;
+      }
+    }
+
+    const low = this.type === 'integer'
+      ? (schema.low && parseInt(schema.low)) || min
+      : (schema.low && Number(schema.low)) || min;
+    const high = this.type === 'integer'
+      ? Math.max(((schema.high && parseInt(schema.high)) || max), low)
+      : Math.max(((schema.high && Number(schema.high)) || max), low);
+
+    if (!Number.isNaN(schema.low)) {
+      if (low > min && low < high) {
+        this.low = low;
+      }
+    }
+    if (!Number.isNaN(schema.high)) {
+      if (high > low && high < max) {
+        this.high = high;
+      }
+    }
+
+    const optimum = this.type === 'integer'
+      ? (schema.optimum && parseInt(schema.optimum)) || min
+      : (schema.optimum && Number(schema.optimum)) || min;
+    if (!Number.isNaN(schema.optimum)) {
+      if (optimum > min && optimum < max) {
+        this.optimum = optimum;
+      }
+    }
+
+    if (!Number.isNaN(schema.multipleOf)) {
+      this.multipleOf = this.type === 'integer'
+        ? parseInt(schema.multipleOf)
+        : Number(schema.multipleOf);
+    }
+    else if (this.type === 'integer') this.multipleOf = 1;
+
+    if (!Number.isNaN(schema.default)) {
+      this.default = this.type === 'integer'
+        ? this.default = parseInt(schema.default)
+        : this.default = Number(schema.default);
+    }
+
+    this._value = this.default;
+    this._valid = false;
+    this._error = null;
+  }
 }
 
 export class JSONSchemaInteger extends JSONSchema {
