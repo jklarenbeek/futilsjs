@@ -1,16 +1,10 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable no-labels */
 /* eslint-disable no-lonely-if */
-import { getObjectCountItems, isPureObject } from './object';
-
-
-export const JSONPath_separator = '/';
-export function JSONPath_addFolder(path, folder) {
-  // TODO: test folder name is valid
-  if (path === JSONPath_separator) {
-    return path + folder;
-  }
-}
+import { isPureObject } from './types';
+import { getObjectCountItems } from './object';
+import { mathi32_max } from './int32-math';
+import { JSONPointer_addFolder } from './json-pointer';
 
 export function JSONSchema_isUnknownSchema(schema) {
   return (schema.type == null
@@ -18,24 +12,37 @@ export function JSONSchema_isUnknownSchema(schema) {
     && schema.items == null);
 }
 
-export function JSONSchema_isValidState(path, schema, dstType = '', data, err) {
+export function JSONSchema_isValidState(schema, path, type, data, err) {
   if (data == null) {
-    if (data === undefined && schema.required != null && schema.required !== false) err.push([path, 'required']);
-    if (data === null && schema.nullable !== true) err.push([path, 'nullable', schema.nullable]);
+    if (data === undefined
+      && schema.required != null
+      && schema.required !== false) err.push([path, 'required']);
+    if (data === null
+      && schema.nullable !== true) err.push([path, 'nullable', schema.nullable]);
   }
   else {
-    const srcType = typeof data;
-    if (dstType === 'array') {
-      if (!(srcType === 'object' && data.constructor === Array)) err.push([path, 'type', dstType, srcType]);
-    }
-    else if (dstType === 'tuple') {
-      err.push([path, 'implementation', dstType, srcType]);
-    }
-    else if (dstType === 'map') {
-      err.push([path, 'implementation', dstType, srcType]);
+    const srcType = typeof data === 'object'
+      ? data.constructor.name
+      : typeof data;
+    if (typeof type === 'function') {
+      if (!(srcType === 'object' && data.constructor === type)) {
+        err.push([
+          path,
+          'type',
+          type.name,
+          srcType,
+        ]);
+      }
     }
     else {
-      if (srcType !== dstType) err.push([path, 'type', dstType, srcType]);
+      if (srcType !== type) {
+        err.push([
+          path,
+          'type',
+          type,
+          srcType,
+        ]);
+      }
     }
   }
   return err;
@@ -53,22 +60,11 @@ export function JSONSchema_isBoolean(schema) {
         && schema.enum.length === 2);
   return isknown || isvalid || isenum;
 }
-export function JSONSchema_constructBooleanSchema(schema) {
-  schema.type = 'boolean';
-}
-export function JSONSchema_isValidBoolean(path = '/', schema, data, err = []) {
-  return JSONSchema_isValidState(path, schema, 'boolean', data, err);
+export function JSONSchema_isValidBoolean(schema, path = '/', data, err = []) {
+  return JSONSchema_isValidState(schema, path, 'boolean', data, err);
 }
 
-export const JSONSchema_formatNumber = ['number', 'range', 'date', 'datetime', 'datetime-local', 'month', 'time', 'week'];
-
-export function JSONSchema_getFormatNumberType(schema) {
-  return JSONSchema_formatNumber.includes(schema.format)
-    ? schema.format
-    : 'number';
-}
-
-function JSONSchema_isValidNumberConstraint(path, schema, data, err) {
+function JSONSchema_isValidNumberConstraint(schema, path, data, err) {
   if (typeof schema.minimum === 'number') {
     if (schema.exclusiveMinimum === true) {
       if (data < schema.minimum) err.push([path, 'exclusiveMinumum', schema.minimum, data]);
@@ -92,60 +88,55 @@ function JSONSchema_isValidNumberConstraint(path, schema, data, err) {
 }
 
 export function JSONSchema_isNumber(schema) {
-  const isknown = schema.type === 'number';
-  const isknowable = isknown || JSONSchema_isUnknownSchema(schema);
-  const isvalid = isknowable
+  const isknown = schema.type === 'number'
+    || schema.type === 'float'
+    || schema.type === 'double';
+  const isformat = schema.format === 'float'
+    || schema.format === 'double';
+  const isvalid = JSONSchema_isUnknownSchema(schema)
     && (typeof schema.const === 'number'
       || typeof schema.default === 'number');
 
-  return isknown || isvalid;
+  return isknown || isformat || isvalid;
 }
-export function JSONSchema_constructNumberSchema(schema) {
-  schema.type = 'number';
-}
-export function JSONSchema_isValidNumber(path = '/', schema, data, err = []) {
-  err = JSONSchema_isValidState(path, schema, 'number', data, err);
+export function JSONSchema_isValidNumber(schema, path = '/', data, err = []) {
+  err = JSONSchema_isValidState(schema, path, 'number', data, err);
   if (err.length > 0) return err;
   if (data == null) return err;
-  return JSONSchema_isValidNumberConstraint(path, schema, data, err);
+  return JSONSchema_isValidNumberConstraint(schema, path, data, err);
 }
 
 export function JSONSchema_isInteger(schema) {
-  const isknown = schema.type === 'integer';
-  const isknowable = isknown || JSONSchema_isUnknownSchema(schema);
-  const isvalid = isknowable
+  const isknown = schema.type === 'integer'
+    || schema.type === 'int32'
+    || schema.type === 'int64';
+  const isformat = schema.format === 'int32'
+      || schema.format === 'int64';
+  const isvalid = JSONSchema_isUnknownSchema(schema)
     && (Number.isInteger(schema.const)
       || Number.isInteger(schema.default));
-  return isknown || isvalid;
-}
-export function JSONSchema_constructIntegerSchema(schema) {
-  schema.type = 'integer';
+  return isknown || isformat || isvalid;
 }
 export function JSONSchema_isValidInteger(path = '/', schema, data, err = []) {
-  err = JSONSchema_isValidState(path, schema, 'number', data, err);
+  err = JSONSchema_isValidState(schema, path, 'number', data, err);
   if (data == null) return err;
   if (!Number.isInteger(data)) {
     err.push([path, 'type', 'integer', typeof data]);
   }
   if (err.length > 0) return err;
-  return JSONSchema_isValidNumberConstraint(path, schema, data, err);
+  return JSONSchema_isValidNumberConstraint(schema, path, data, err);
 }
 
 export function JSONSchema_isString(schema) {
   const isknown = schema.type === 'string';
-  const isknowable = isknown || JSONSchema_isUnknownSchema(schema);
-  const isvalid = isknowable
-    || typeof schema.const === 'string'
-    || typeof schema.default === 'string';
+  const isvalid = JSONSchema_isUnknownSchema(schema)
+    && (typeof schema.const === 'string'
+      || typeof schema.default === 'string');
 
   return isknown || isvalid;
 }
-
-export function JSONSchema_constructStringSchema(schema) {
-  schema.type = 'string';
-}
-export function JSONSchema_isValidString(path = '/', schema, data, err = []) {
-  err = JSONSchema_isValidState(path, schema, 'string', data, err);
+export function JSONSchema_isValidString(schema, path = '/', data, err = []) {
+  err = JSONSchema_isValidState(schema, path, 'string', data, err);
   if (err.length > 0) return err;
   if (data == null) return err;
 
@@ -167,12 +158,15 @@ export function JSONSchema_isValidString(path = '/', schema, data, err = []) {
 
 export function JSONSchema_isObject(schema) {
   const isknown = schema.type === 'object';
-  const isvalid = schema.hasOwnProperty('properties');
+  const isvalid = schema.type == null && schema.items == null
+    && ((typeof schema.properties === 'object' && schema.properties.constructor !== Array)
+      || (typeof schema.const === 'object' && schema.const.constructor !== Array)
+      || (typeof schema.default === 'object' && schema.default.constructor !== Array));
   return isknown || isvalid;
 }
 
-export function JSONSchema_isValidObject(path = '/', schema, data, err = [], callback) {
-  err = JSONSchema_isValidState(path, schema, 'object', data, err);
+export function JSONSchema_isValidObject(schema, path = '/', data, err = [], callback) {
+  err = JSONSchema_isValidState(schema, path, 'object', data, err);
   if (data == null) return err;
   if (data.constructor === Array) err.push([path, 'type', 'object', 'array']);
   if (err.length > 0) return err;
@@ -240,7 +234,10 @@ export function JSONSchema_isValidObject(path = '/', schema, data, err = [], cal
       if (hasproperties) {
         if (properties.hasOwnProperty(prop) === true) {
           if (callback) {
-            callback(JSONPath_addFolder(path, prop), properties[prop], data[prop], err);
+            const s = properties[prop];
+            const d = data[prop];
+            const p = JSONPointer_addFolder(path, prop);
+            callback(s, p, d, err);
           }
           continue;
         }
@@ -252,7 +249,10 @@ export function JSONSchema_isValidObject(path = '/', schema, data, err = [], cal
             const rgx = new RegExp(pattern);
             if (rgx.search(prop) !== -1) {
               if (callback) {
-                callback(JSONPath_addFolder(path, prop), patterns[prop], data[prop], err);
+                const s = patterns[prop];
+                const d = data[prop];
+                const p = JSONPointer_addFolder(path, prop);
+                callback(s, p, d, err);
               }
               continue next;
             }
@@ -269,30 +269,23 @@ export function JSONSchema_isValidObject(path = '/', schema, data, err = [], cal
   return err;
 }
 
-export function JSONSchema_constructObject(schema) {
-  schema.type = 'object';
-  schema.items = schema.properties || {};
-  return schema;
-}
-
 export function JSONSchema_isArray(schema) {
   const isknown = schema.type === 'array';
-  const isvalid = typeof schema.items === 'object'
+  const isitems = schema.type == null
+    && typeof schema.items === 'object'
     && schema.items.constructor !== Array;
-
-  return isknown || isvalid;
+  const iscontains = schema.type == null
+    && typeof schema.contains === 'object';
+  const isvalid = schema.type == null
+    && schema.properties == null
+    && ((typeof schema.const === 'object' && schema.const.constructor === Array)
+      || (typeof schema.default === 'object' && schema.default.constructor === Array));
+  return isknown || isitems || iscontains || isvalid;
 }
-
-export function JSONSchema_constructArray(schema) {
-  schema.type = 'array';
-  schema.items = schema.items || {};
-  return schema;
-}
-
-export function JSONSchema_isValidArray(path = '/', schema, data, err = [], callback) {
-  err = JSONSchema_isValidState(path, schema, 'array', data, err);
-  if (data == null) return err;
+export function JSONSchema_isValidArray(schema, path = '/', data, err = [], callback) {
+  err = JSONSchema_isValidState(schema, path, Array, data, err);
   if (err.length > 0) return err;
+  if (data == null) return err;
 
   const length = data.length;
   if (typeof schema.minItems === 'number') {
@@ -307,66 +300,138 @@ export function JSONSchema_isValidArray(path = '/', schema, data, err = [], call
   }
 
   if (callback) {
-    const itemschema = schema.items;
+    const s = schema.items;
+    const c = schema.contains;
     for (let i = 0; i < length; ++i) {
-      callback(JSONPath_addFolder(path, i), itemschema, data[i], err);
+      const d = data[i];
+      const p = JSONPointer_addFolder(path, i);
+      if (c) {
+        if (callback(c, p, d).length === 0) break;
+      }
+      else {
+        callback(s, p, d, err);
+      }
     }
   }
+
+  return err;
 }
 
 export function JSONSchema_isTuple(schema) {
   const isknown = schema.type === 'tuple';
-  const isvalid = schema.type == null
+  const istuple = schema.type == null
     && typeof schema.items === 'object'
     && schema.items.constructor === Array;
-  return isknown || isvalid;
+  const isadditional = schema.type == null
+    && schema.hasOwnProperty('additionalItems');
+  return isknown || istuple || isadditional;
 }
 
-export function JSONSchema_isValidTuple(path = '/', schema, data, err = [], callback) {
-  throw new Error('Not Implemented', schema, data);
+export function JSONSchema_isValidTuple(schema, path = '/', data, err = [], callback) {
+  err = JSONSchema_isValidState(schema, path, Array, data, err);
+  if (err.length > 0) return err;
+  if (data == null) return err;
+
+  const length = data.length;
+  const size = schema.items.length;
+  if (length !== size) err.push([path, 'items', size, length]);
+
+  if (callback) {
+    for (let i = 0; i < size; ++i) {
+      const s = schema.items[i];
+      const d = i < data.length ? data[i] : undefined;
+      const p = JSONPointer_addFolder(path, i);
+      callback(s, p, d, err);
+    }
+  }
+
+  if (schema.additionalItems) {
+    const minitems = mathi32_max(schema.minItems > 0 ? schema.minItems : size, size);
+    const maxitems = mathi32_max(schema.maxItems > 0 ? schema.maxItems : size, size);
+
+    if (length < minitems) err.push([path, 'minItems', minitems, length]);
+    if (length > maxitems) err.push([path, 'maxItems', maxitems, length]);
+
+    if (schema.uniqueItems === true) {
+      // TODO: implementation.uniqueItems
+      err.push([path, 'implementation', 'uniqueItems']);
+    }
+
+    if (callback) {
+      for (let i = size; i < data.length; ++i) {
+        const s = schema.additionalItems;
+        const d = data[i];
+        const p = JSONPointer_addFolder(path, i);
+        callback(s, p, d, err);
+      }
+    }
+  }
+  return err;
 }
 
 export function JSONSchema_isMap(schema) {
   const isknown = schema.type === 'map';
-  const isvalid = isknown
+  const isvalid = schema.type == null
     && typeof schema.items === 'object'
     && schema.items.constructor === Array
     && schema.items.length === 2;
-  return isvalid;
+  return isknown || isvalid;
 }
 
-export function JSONSchema_isValidMap(path = '/', schema, data, err = [], callback) {
-  throw new Error('Not Implemented', schema, data);
+export function JSONSchema_isValidMap(schema, path = '/', data, err = [], callback) {
+  err = JSONSchema_isValidState(schema, path, Map, data, err);
+  if (err.length > 0) return err;
+  if (data == null) return err;
+
+  const length = data.length;
+  const size = schema.items.length;
 }
 
-export function JSONSchema_isValid(path = '/', schema, data, err = [], callback) {
+export function JSONSchema_isValid(schema, path = '/', data, err = [], callback) {
   if (JSONSchema_isBoolean(schema)) {
-    return JSONSchema_isValidBoolean(path, schema, data, err);
+    return JSONSchema_isValidBoolean(schema, path, data, err);
   }
   if (JSONSchema_isNumber(schema)) {
-    return JSONSchema_isValidNumber(path, schema, data, err);
+    return JSONSchema_isValidNumber(schema, path, data, err);
   }
   if (JSONSchema_isInteger(schema)) {
-    return JSONSchema_isValidInteger(path, schema, data, err);
+    return JSONSchema_isValidInteger(schema, path, data, err);
   }
   if (JSONSchema_isString(schema)) {
-    return JSONSchema_isValidString(path, schema, data, err);
+    return JSONSchema_isValidString(schema, path, data, err);
   }
   if (JSONSchema_isObject(schema)) {
-    return JSONSchema_isValidObject(path, schema, data, err, callback || JSONSchema_isValid);
+    return JSONSchema_isValidObject(schema, path, data, err, callback || JSONSchema_isValid);
   }
   if (JSONSchema_isArray(schema)) {
-    return JSONSchema_isValidArray(path, schema, data, err, callback || JSONSchema_isValid);
+    return JSONSchema_isValidArray(schema, path, data, err, callback || JSONSchema_isValid);
   }
   if (JSONSchema_isTuple(schema)) {
-    return JSONSchema_isValidTuple(path, schema, data, err, callback || JSONSchema_isValid);
+    return JSONSchema_isValidTuple(schema, path, data, err, callback || JSONSchema_isValid);
   }
   if (JSONSchema_isMap(schema)) {
-    return JSONSchema_isValidMap(path, schema, data, err, callback || JSONSchema_isValid);
+    return JSONSchema_isValidMap(schema, path, data, err, callback || JSONSchema_isValid);
   }
 
   err.push([path, 'error', schema, data]);
   return err;
+}
+
+export const JSONSchema_NUMBER_FORMATS = ['number', 'range', 'date', 'datetime', 'datetime-local', 'month', 'time', 'week'];
+
+export function JSONSchema_getNumberFormatType(schema) {
+  return JSONSchema_NUMBER_FORMATS.includes(schema.format)
+    ? schema.format
+    : JSONSchema_NUMBER_FORMATS[0];
+}
+
+export const JSONSchema_STRING_FORMATS = ['text', 'date', 'search', 'url', 'tel', 'email', 'password'];
+
+export function getStringFormatType(schema) {
+  if (schema.writeOnly === true) return 'password';
+  return JSONSchema_STRING_FORMATS.includes(schema.format)
+    ? schema.format
+    : JSONSchema_STRING_FORMATS[0];
 }
 
 export default class JSONSchemaDocument {
