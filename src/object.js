@@ -1,4 +1,12 @@
 /* eslint-disable prefer-rest-params */
+export function getAllObjectKeys(obj) {
+  const arr = [];
+  for (const i in obj) {
+    if (obj.hasOwnProperty(i)) arr.push(i);
+  }
+  return arr;
+}
+
 export function getObjectFirstItem(obj) {
   for (const item in obj) {
     if (obj.hasOwnProperty(item)) {
