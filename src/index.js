@@ -27,3 +27,6 @@ export * from './worklet';
 export * from './vnode-base';
 export * from './vnode-html';
 export * from './vnode-app';
+
+export * from './json-pointer';
+export * from './json-schema';

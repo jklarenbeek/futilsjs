@@ -3221,5 +3221,1199 @@ function app(state, actions, view, container) {
   }
 }
 
-export { VN, VNode, addCssClass, app, checkIfValueDisabled, circle2f64, circle2f64_POINTS, clone, cloneDeep, collapseArrayIsToPrimitive, collapseArrayShallow, collapseCssClass, collapseToString, copyAttributes, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getAllObjectKeys, getObjectCountItems, getObjectFirstItem, getUniqueArray, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureObject, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeArrays, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, workletState, wrapVN };
+const JSONPointer_pathSeparator = '/';
+function JSONPointer_addFolder(path, folder) {
+  // TODO: test folder name is valid
+  if (path === JSONPointer_pathSeparator) {
+    return path + folder;
+  }
+}
+
+/* eslint-disable class-methods-use-this */
+
+function JSONSchema_isUnknownSchema(schema) {
+  return (schema.type == null
+    && schema.properties == null
+    && schema.items == null);
+}
+
+function JSONSchema_isValidState(schema, path, type, data, err) {
+  if (data == null) {
+    if (data === undefined
+      && schema.required != null
+      && schema.required !== false) err.push([path, 'required']);
+    if (data === null
+      && schema.nullable !== true) err.push([path, 'nullable', schema.nullable]);
+  }
+  else {
+    const srcType = typeof data === 'object'
+      ? data.constructor.name
+      : typeof data;
+    if (typeof type === 'function') {
+      if (!(srcType === 'object' && (data instanceof type))) {
+        err.push([
+          path,
+          'type',
+          type.name,
+          srcType,
+        ]);
+      }
+    }
+    else {
+      if (srcType !== type) {
+        err.push([
+          path,
+          'type',
+          type,
+          srcType,
+        ]);
+      }
+    }
+  }
+  return err;
+}
+
+function JSONSchema_isBoolean(schema) {
+  const isknown = schema.type === 'boolean';
+  const isknowable = isknown || JSONSchema_isUnknownSchema(schema);
+  const isvalid = isknowable
+    && (typeof schema.const === 'boolean'
+      || typeof schema.default === 'boolean');
+  const isenum = isknowable
+      && (typeof schema.enum === 'object'
+        && schema.enum.constructor === Array
+        && schema.enum.length === 2);
+  return isknown || isvalid || isenum;
+}
+function JSONSchema_isValidBoolean(schema, path = '/', data, err = []) {
+  return JSONSchema_isValidState(schema, path, 'boolean', data, err);
+}
+
+function JSONSchema_isValidNumberConstraint(schema, path, data, err) {
+  if (typeof schema.minimum === 'number') {
+    if (schema.exclusiveMinimum === true) {
+      if (data < schema.minimum) err.push([path, 'exclusiveMinumum', schema.minimum, data]);
+    }
+    else {
+      if (data <= schema.minimum) err.push([path, 'minimum', schema.minimum, data]);
+    }
+  }
+  if (typeof schema.maximum === 'number') {
+    if (schema.exclusiveMaximum === true) {
+      if (data > schema.maximum) err.push([path, 'exclusiveMaximum', schema.maximum, data]);
+    }
+    else {
+      if (data >= schema.maximum) err.push([path, 'maximum', schema.maximum, data]);
+    }
+  }
+  if (typeof schema.multipleOf === 'number') {
+    if (data === 0 || ((data % schema.multipleOf) !== 0)) err.push([path, 'multipleOf', schema.multipleOf, data]);
+  }
+  return err;
+}
+
+function JSONSchema_isNumber(schema) {
+  const isknown = schema.type === 'number'
+    || schema.type === 'float'
+    || schema.type === 'double';
+  const isformat = schema.format === 'float'
+    || schema.format === 'double';
+  const isvalid = JSONSchema_isUnknownSchema(schema)
+    && (typeof schema.const === 'number'
+      || typeof schema.default === 'number');
+
+  return isknown || isformat || isvalid;
+}
+function JSONSchema_isValidNumber(schema, path = '/', data, err = []) {
+  err = JSONSchema_isValidState(schema, path, 'number', data, err);
+  if (err.length > 0) return err;
+  if (data == null) return err;
+  return JSONSchema_isValidNumberConstraint(schema, path, data, err);
+}
+
+function JSONSchema_isInteger(schema) {
+  const isknown = schema.type === 'integer'
+    || schema.type === 'int32'
+    || schema.type === 'int64';
+  const isformat = schema.format === 'int32'
+      || schema.format === 'int64';
+  const isvalid = JSONSchema_isUnknownSchema(schema)
+    && (Number.isInteger(schema.const)
+      || Number.isInteger(schema.default));
+  return isknown || isformat || isvalid;
+}
+function JSONSchema_isValidInteger(path = '/', schema, data, err = []) {
+  err = JSONSchema_isValidState(schema, path, 'number', data, err);
+  if (data == null) return err;
+  if (!Number.isInteger(data)) {
+    err.push([path, 'type', 'integer', typeof data]);
+  }
+  if (err.length > 0) return err;
+  return JSONSchema_isValidNumberConstraint(schema, path, data, err);
+}
+
+function JSONSchema_isString(schema) {
+  const isknown = schema.type === 'string';
+  const isvalid = JSONSchema_isUnknownSchema(schema)
+    && (typeof schema.const === 'string'
+      || typeof schema.default === 'string');
+
+  return isknown || isvalid;
+}
+function JSONSchema_isValidString(schema, path = '/', data, err = []) {
+  err = JSONSchema_isValidState(schema, path, 'string', data, err);
+  if (err.length > 0) return err;
+  if (data == null) return err;
+
+  if (typeof schema.maxLength === 'number') {
+    if (data.length > schema.maxLength) err.push([path, 'maxLength', schema.maxLength, data.length]);
+  }
+  if (typeof schema.minLength === 'number') {
+    if (data.length < schema.minLength) err.push([path, 'maxLength', schema.maxLength, data.length]);
+  }
+  if (typeof schema.pattern === 'string') {
+    const pattern = new RegExp(schema.pattern);
+    if (data.search(pattern) === -1) err.push([path, 'pattern', schema.pattern, data]);
+  }
+  if (typeof schema.pattern === 'object' && schema.pattern.constructor === Array) {
+    const pattern = new RegExp(...schema.pattern);
+    if (data.search(pattern) === -1) err.push([path, 'pattern', '[\'' + schema.pattern.join('\', \'') + '\']', data]);
+  }
+}
+
+function JSONSchema_isObject(schema) {
+  const isknown = schema.type === 'object';
+  const isvalid = schema.type == null && schema.items == null
+    && ((typeof schema.properties === 'object' && schema.properties.constructor !== Array)
+      || (typeof schema.const === 'object' && schema.const.constructor !== Array)
+      || (typeof schema.default === 'object' && schema.default.constructor !== Array));
+  return isknown || isvalid;
+}
+
+function JSONSchema_isValidObject(schema, path = '/', data, err = [], callback) {
+  err = JSONSchema_isValidState(schema, path, 'object', data, err);
+  if (data == null) return err;
+  if (data.constructor === Array) err.push([path, 'type', 'object', 'array']);
+  if (err.length > 0) return err;
+
+  const count = getObjectCountItems(data)|0;
+  if (typeof schema.maxProperties === 'number') {
+    if (count > schema.maxProperties) err.push([path, 'maxProperties', schema.maxProperties, count]);
+  }
+  if (typeof schema.minProperties === 'number') {
+    if (count < schema.minProperties) err.push([path, 'minProperties', schema.minProperties, count]);
+  }
+
+  if (typeof schema.required === 'object') {
+    const required = schema.required;
+    if (required.constructor === Array) {
+      for (let i = 0; i < required.length; ++i) {
+        const prop = required[i];
+        if (!data.hasOwnProperty(prop)) err.push([path, 'required', prop]);
+      }
+    }
+    else {
+      for (const prop in required) {
+        if (required.hasOwnProperty(prop)) {
+          if (!data.hasOwnProperty(prop)) err.push([path, 'required', prop]);
+        }
+      }
+    }
+  }
+
+  if (typeof schema.patternRequired === 'object') {
+    const required = schema.patternRequired;
+    if (required.constructor === Array) {
+      loop:
+      for (let i = 0; i < required.length; ++i) {
+        const rgx = required[i];
+        if (typeof rgx === 'string') {
+          const pattern = new RegExp(rgx);
+          for (const item in data) {
+            if (data.hasOwnProperty(item)) {
+              if (pattern.exec(item) != null) continue loop;
+            }
+          }
+          err.push([path, 'patternRequired', rgx]);
+        }
+      }
+    }
+  }
+  if (err.length > 0) return err;
+
+  const properties = schema.properties;
+  const patterns = schema.patternProperties;
+
+  const hasproperties = typeof properties === 'object'
+    && properties.constructor !== Array;
+  const haspatterns = typeof patterns === 'object'
+    && patterns.constructor !== Array;
+
+  next:
+  for (const prop in data) {
+    if (data.hasOwnProperty(prop)) {
+      // test whether all properties of data are
+      // within limits of properties and patternProperties
+      // defined in schema.
+
+      if (hasproperties) {
+        if (properties.hasOwnProperty(prop) === true) {
+          if (callback) {
+            const s = properties[prop];
+            const d = data[prop];
+            const p = JSONPointer_addFolder(path, prop);
+            callback(s, p, d, err);
+          }
+          continue;
+        }
+      }
+
+      if (haspatterns) {
+        for (const pattern in patterns) {
+          if (patterns.hasOwnProperty(pattern)) {
+            const rgx = new RegExp(pattern);
+            if (rgx.search(prop) !== -1) {
+              if (callback) {
+                const s = patterns[prop];
+                const d = data[prop];
+                const p = JSONPointer_addFolder(path, prop);
+                callback(s, p, d, err);
+              }
+              continue next;
+            }
+          }
+        }
+        if (schema.additionalProperties === false) err.push([path, 'patternProperties', prop]);
+        continue;
+      }
+      else {
+        if (schema.additionalProperties === false) err.push([path, 'properties', prop]);
+      }
+    }
+  }
+  return err;
+}
+
+function JSONSchema_isArray(schema) {
+  const isknown = schema.type === 'array';
+  const isitems = schema.type == null
+    && typeof schema.items === 'object'
+    && schema.items.constructor !== Array;
+  const iscontains = schema.type == null
+    && typeof schema.contains === 'object';
+  const isvalid = schema.type == null
+    && schema.properties == null
+    && ((typeof schema.const === 'object' && schema.const.constructor === Array)
+      || (typeof schema.default === 'object' && schema.default.constructor === Array));
+  return isknown || isitems || iscontains || isvalid;
+}
+function JSONSchema_isValidArray(schema, path = '/', data, err = [], callback) {
+  err = JSONSchema_isValidState(schema, path, Array, data, err);
+  if (err.length > 0) return err;
+  if (data == null) return err;
+
+  const length = data.length;
+  if (typeof schema.minItems === 'number') {
+    if (length < schema.minItems) err.push([path, 'minItems', schema.minItems, length]);
+  }
+  if (typeof schema.maxItems === 'number') {
+    if (length > schema.maxItems) err.push([path, 'maxItems', schema.maxItems, length]);
+  }
+  if (schema.uniqueItems === true) {
+    // TODO: implementation.uniqueItems
+    err.push([path, 'implementation', 'uniqueItems']);
+  }
+
+  if (callback) {
+    const s = schema.items;
+    const c = schema.contains;
+    for (let i = 0; i < length; ++i) {
+      const d = data[i];
+      const p = JSONPointer_addFolder(path, i);
+      if (c) {
+        if (callback(c, p, d).length === 0) break;
+      }
+      else {
+        callback(s, p, d, err);
+      }
+    }
+  }
+
+  return err;
+}
+
+function JSONSchema_isTuple(schema) {
+  const isknown = schema.type === 'tuple';
+  const istuple = schema.type == null
+    && typeof schema.items === 'object'
+    && schema.items.constructor === Array;
+  const isadditional = schema.type == null
+    && schema.hasOwnProperty('additionalItems');
+  return isknown || istuple || isadditional;
+}
+
+function JSONSchema_isValidTuple(schema, path = '/', data, err = [], callback) {
+  err = JSONSchema_isValidState(schema, path, Array, data, err);
+  if (err.length > 0) return err;
+  if (data == null) return err;
+
+  const length = data.length;
+  const size = schema.items.length;
+  if (length !== size) err.push([path, 'items', size, length]);
+
+  if (callback) {
+    for (let i = 0; i < size; ++i) {
+      const s = schema.items[i];
+      const d = i < data.length ? data[i] : undefined;
+      const p = JSONPointer_addFolder(path, i);
+      callback(s, p, d, err);
+    }
+  }
+
+  if (schema.additionalItems) {
+    const minitems = mathi32_max(schema.minItems > 0 ? schema.minItems : size, size);
+    const maxitems = mathi32_max(schema.maxItems > 0 ? schema.maxItems : size, size);
+
+    if (length < minitems) err.push([path, 'minItems', minitems, length]);
+    if (length > maxitems) err.push([path, 'maxItems', maxitems, length]);
+
+    if (schema.uniqueItems === true) {
+      // TODO: implementation.uniqueItems
+      err.push([path, 'implementation', 'uniqueItems']);
+    }
+
+    if (callback) {
+      for (let i = size; i < data.length; ++i) {
+        const s = schema.additionalItems;
+        const d = data[i];
+        const p = JSONPointer_addFolder(path, i);
+        callback(s, p, d, err);
+      }
+    }
+  }
+  return err;
+}
+
+function JSONSchema_isMap(schema) {
+  const isknown = schema.type === 'map';
+  const isvalid = schema.type == null
+    && typeof schema.items === 'object'
+    && schema.items.constructor === Array
+    && schema.items.length === 2;
+  return isknown || isvalid;
+}
+
+function JSONSchema_isValidMap(schema, path = '/', data, err = [], callback) {
+  err = JSONSchema_isValidState(schema, path, Map, data, err);
+  if (err.length > 0) return err;
+  if (data == null) return err;
+
+  const size = data.size;
+  if (typeof schema.minItems === 'number') {
+    if (size < schema.minItems) err.push([path, 'minItems', schema.minItems, size]);
+  }
+  if (typeof schema.maxItems === 'number') {
+    if (size > schema.maxItems) err.push([path, 'maxItems', schema.maxItems, size]);
+  }
+
+  if (callback) {
+    const ks = schema.items[0];
+    const vs = schema.items[1];
+    for (const [key, value] of data) {
+      const p = JSONPointer_addFolder(path, key);
+      callback(ks, p, key, err);
+      callback(vs, p, value, err);
+    }
+  }
+  return err;
+}
+
+function JSONSchema_isValid(schema, path = '/', data, err = [], callback) {
+  if (JSONSchema_isBoolean(schema)) {
+    return JSONSchema_isValidBoolean(schema, path, data, err);
+  }
+  if (JSONSchema_isNumber(schema)) {
+    return JSONSchema_isValidNumber(schema, path, data, err);
+  }
+  if (JSONSchema_isInteger(schema)) {
+    return JSONSchema_isValidInteger(schema, path, data, err);
+  }
+  if (JSONSchema_isString(schema)) {
+    return JSONSchema_isValidString(schema, path, data, err);
+  }
+  if (JSONSchema_isObject(schema)) {
+    return JSONSchema_isValidObject(schema, path, data, err, callback || JSONSchema_isValid);
+  }
+  if (JSONSchema_isArray(schema)) {
+    return JSONSchema_isValidArray(schema, path, data, err, callback || JSONSchema_isValid);
+  }
+  if (JSONSchema_isTuple(schema)) {
+    return JSONSchema_isValidTuple(schema, path, data, err, callback || JSONSchema_isValid);
+  }
+  if (JSONSchema_isMap(schema)) {
+    return JSONSchema_isValidMap(schema, path, data, err, callback || JSONSchema_isValid);
+  }
+
+  err.push([path, 'error', schema, data]);
+  return err;
+}
+
+const JSONSchema_NUMBER_FORMATS = ['number', 'range', 'date', 'month', 'time', 'week', 'int32', 'int64'];
+
+function JSONSchema_getNumberFormatType(schema) {
+  return JSONSchema_NUMBER_FORMATS.includes(schema.format)
+    ? schema.format
+    : JSONSchema_NUMBER_FORMATS[0];
+}
+
+const JSONSchema_STRING_FORMATS = ['text', 'date', 'datetime', 'datetime-local', 'search', 'url', 'tel', 'email', 'password'];
+
+function getStringFormatType(schema) {
+  if (schema.writeOnly === true) return 'password';
+  return JSONSchema_STRING_FORMATS.includes(schema.format)
+    ? schema.format
+    : JSONSchema_STRING_FORMATS[0];
+}
+
+class JSONSchemaDocument {
+  constructor() {
+    this.schema = null;
+    this.schemaHandlers = {};
+  }
+
+  registerSchemaHandlerEx(formatterName = 'default', primaryType, handlerObj) {
+    if (handlerObj instanceof primaryType) {
+      const primaryName = primaryType.name;
+      if (!this.schemaHandlers[primaryName]) {
+        this.schemaHandlers[primaryName] = {};
+      }
+      const formatters = this.schemaHandlers[primaryName];
+      if (formatters.hasOwnProperty(formatterName) === false) {
+        formatters[formatterName] = handlerObj.constructor;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  registerSchemaHandler(formatName = 'default', schemaHandler) {
+    if (schemaHandler instanceof JSONSchema) {
+      const primaryType = schemaHandler.getPrimaryType();
+      if (schemaHandler instanceof primaryType) {
+        const primaryName = primaryType.name;
+        if (!this.schemaHandlers[primaryName]) {
+          this.schemaHandlers[primaryName] = {};
+        }
+        const formatters = this.schemaHandlers[primaryName];
+        if (formatters.hasOwnProperty(formatName) === false) {
+          formatters[formatName] = schemaHandler.constructor;
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  registerDefaultHandlers() {
+    return this.registerSchemaHandler('default', new JSONSchemaBoolean())
+      && this.registerSchemaHandler('default', new JSONSchemaNumber())
+      && this.registerSchemaHandler('default', new JSONSchemaInteger())
+      && this.registerSchemaHandler('default', new JSONSchemaString())
+      && this.registerSchemaHandler('default', new JSONSchemaObject())
+      && this.registerSchemaHandler('default', new JSONSchemaArray())
+      && this.registerSchemaHandler('default', new JSONSchemaTuple())
+      && this.registerSchemaHandler('default', new JSONSchemaMap());
+  }
+
+  importSchema(schema) {
+    this.schema = schema;
+  }
+}
+
+function JSONSchema_parseDocument(schema, err = []) {
+  const owner = new JSONSchemaDocument();
+  JSONSchema_loadSchema(owner, JSONPointer_pathSeparator, schema, err);
+}
+function JSONSchema_loadSchema(owner, path, schema, err) {
+  if (typeof schema === 'object' && schema.constructor !== Array) {
+    let Handler = null;
+    if (JSONSchema_isBoolean(schema)) {
+      Handler = owner.booleanHandler.default;
+    }
+    else if (JSONSchema_isNumber(schema)) {
+      Handler = owner.booleanHandler.default;
+    }
+    else if (JSONSchema_isInteger(schema)) {
+      Handler = owner.booleanHandler.default;
+    }
+    else if (JSONSchema_isString(schema)) {
+      Handler = owner.booleanHandler.default;
+    }
+    else if (JSONSchema_isObject(schema)) {
+      Handler = owner.booleanHandler.default;
+    }
+    else if (JSONSchema_isArray(schema)) {
+      Handler = owner.booleanHandler.default;
+    }
+    else if (JSONSchema_isTuple(schema)) {
+      Handler = owner.booleanHandler.default;
+    }
+    else if (JSONSchema_isMap(schema)) {
+      Handler = owner.booleanHandler.default;
+    }
+    else {
+      err.push([path, 'schema', 'undefined', schema]);
+      return err;
+    }
+    return new Handler(owner, path, schema);
+  }
+  else {
+    err.push([
+      path,
+      'type',
+      'object',
+      typeof schema === 'object' ? schema.constructor.name : typeof schema,
+    ]);
+    return err;
+  }
+}
+
+class JSONSchema {
+  constructor(owner = {}, path, schema = {}, type) {
+    // if (!(owner instanceof JSONSchemaDocument)) throw new TypeError('owner');
+    // if (typeof path !== 'string') throw new TypeError('path');
+    // if (typeof schema !== 'object') throw new TypeError('schema');
+
+    this._owner = owner;
+    this._path = path;
+
+    this.type = typeof type === 'string'
+      ? type
+      : (typeof schema.type === 'string')
+        ? schema.type
+        : 'undefined';
+    this.format = (typeof schema.format === 'string')
+      ? schema.format
+      : null;
+    this.required = schema.required === true;
+    this.nullable = schema.nullable === true;
+    this.readOnly = schema.readOnly === true;
+    this.writeOnly = schema.writeOnly === true;
+
+    this.title = schema.title;
+    this.$comment = schema.$comment;
+    this.description = schema.description; // MarkDown
+    this.placeholder = schema.placeholder;
+    this.default = schema.default;
+    this.examples = schema.examples;
+  }
+
+  getPrimaryType() { throw new Error('Abstract Method'); }
+
+  isValidState(type, data, err) {
+    if (data === undefined && this.required === true) {
+      err.push([this._path, 'required']);
+    }
+    else if (data === null && this.nullable === false) {
+      err.push([this._path, 'nullable', this.nullable]);
+    }
+    else if (data != null) {
+      const srcType = typeof data === 'object'
+        ? data.constructor.name
+        : typeof data;
+      if (typeof type === 'function') {
+        if (!(data instanceof type)) {
+          err.push([
+            this.path,
+            'type',
+            type.name,
+            srcType,
+          ]);
+        }
+      }
+      else {
+        if (srcType !== type) {
+          err.push([
+            this.path,
+            'type',
+            type,
+            srcType,
+          ]);
+        }
+      }
+    }
+    return err;
+  }
+}
+
+class JSONSchemaBoolean extends JSONSchema {
+  constructor(owner, path, schema) {
+    super(owner, path, schema, 'boolean');
+  }
+
+  getPrimaryType() { return JSONSchemaBoolean; }
+
+  isValid(data, err = []) {
+    return super.isValidState('boolean', data, err);
+  }
+}
+
+class JSONSchemaNumber extends JSONSchema {
+  constructor(owner, path, schema) {
+    super(owner, path, schema, 'number');
+
+    this.minimum = typeof schema.minimum === 'number' ? schema.minimum : undefined;
+    this.maximum = typeof schema.maximum === 'number' ? schema.maximum : undefined;
+    this.exclusiveMinimim = schema.exclusiveMinimim === true;
+    this.exclusiveMaximim = schema.exclusiveMaximim === true;
+
+    this.low = typeof schema.low === 'number' ? schema.low : undefined;
+    this.high = typeof schema.high === 'number' ? schema.high : undefined;
+    this.optimum = typeof schema.optimum === 'number' ? schema.optimum : undefined;
+    this.multipleOf = typeof schema.multipleOf === 'number' ? schema.multipleOf : undefined;
+  }
+
+  getPrimaryType() { return JSONSchemaNumber; }
+
+  isValidNumberConstraint(data, err) {
+    if (this.minimum) {
+      if (this.exclusiveMinimum === true) {
+        if (data < this.minimum) {
+          err.push([this._path, 'exclusiveMinumum', this.minimum, data]);
+        }
+      }
+      else {
+        if (data <= this.minimum) {
+          err.push([this._path, 'minimum', this.minimum, data]);
+        }
+      }
+    }
+    if (this.maximum) {
+      if (this.exclusiveMaximum === true) {
+        if (data > this.maximum) {
+          err.push([this._path, 'exclusiveMaximum', this.maximum, data]);
+        }
+      }
+      else {
+        if (data >= this.maximum) {
+          err.push([this._path, 'maximum', this.maximum, data]);
+        }
+      }
+    }
+    if (this.multipleOf) {
+      if (data === 0 || ((data % this.multipleOf) !== 0)) {
+        err.push([this.path, 'multipleOf', this.multipleOf, data]);
+      }
+    }
+    return err;
+  }
+
+  isValid(data, err = []) {
+    err = super.isValidState('number', data, err);
+    if (err.length > 0) return err;
+    if (data == null) return err;
+    return this.isValidNumberConstraint(data, err);
+  }
+}
+
+class JSONSchemaInteger extends JSONSchema {
+  constructor(owner, path, schema) {
+    super(owner, path, schema, 'integer');
+    this.minimum = typeof schema.minimum === 'number'
+      ? Math.round(schema.minimum)
+      : undefined;
+    this.maximum = typeof schema.maximum === 'number'
+      ? Math.round(schema.maximum)
+      : undefined;
+    this.exclusiveMinimim = schema.exclusiveMinimim === true;
+    this.exclusiveMaximim = schema.exclusiveMaximim === true;
+
+    this.low = typeof schema.low === 'number'
+      ? Math.round(schema.low)
+      : undefined;
+    this.high = typeof schema.high === 'number'
+      ? Math.round(schema.high)
+      : undefined;
+    this.optimum = typeof schema.optimum === 'number'
+      ? Math.round(schema.optimum)
+      : undefined;
+    this.multipleOf = typeof schema.multipleOf === 'number'
+      ? Math.round(schema.multipleOf)
+      : undefined;
+  }
+
+  getPrimaryType() { return JSONSchemaInteger; }
+
+  isValidNumberConstraint(data, err) {
+    if (this.minimum) {
+      if (this.exclusiveMinimum === true) {
+        if (data < this.minimum) {
+          err.push([this._path, 'exclusiveMinumum', this.minimum, data]);
+        }
+      }
+      else {
+        if (data <= this.minimum) {
+          err.push([this._path, 'minimum', this.minimum, data]);
+        }
+      }
+    }
+    if (this.maximum) {
+      if (this.exclusiveMaximum === true) {
+        if (data > this.maximum) {
+          err.push([this._path, 'exclusiveMaximum', this.maximum, data]);
+        }
+      }
+      else {
+        if (data >= this.maximum) {
+          err.push([this._path, 'maximum', this.maximum, data]);
+        }
+      }
+    }
+    if (this.multipleOf) {
+      if (data === 0 || ((data % this.multipleOf) !== 0)) {
+        err.push([this.path, 'multipleOf', this.multipleOf, data]);
+      }
+    }
+    return err;
+  }
+
+
+  isValid(data, err = []) {
+    err = super.isValidState('number', data, err);
+    if (data == null) return err;
+    if (!Number.isInteger(data)) {
+      err.push([this.path, 'type', 'integer', typeof data]);
+    }
+    if (err.length > 0) return err;
+    return this.isValidNumberConstraint(data, err);
+  }
+}
+class JSONSchemaString extends JSONSchema {
+  constructor(owner, path, schema) {
+    super(owner, path, schema, 'string');
+    this.maxLength = typeof schema.maxLength === 'number'
+      ? Math.round(schema.maxLength)
+      : undefined;
+    this.minLength = typeof schema.minLength === 'number'
+      ? Math.round(schema.minLength)
+      : undefined;
+    if (schema.pattern != null && schema._pattern == null) {
+      const isvalid = (schema.pattern.constructor === String
+          || schema.pattern.constructor === Array);
+      this.pattern = isvalid ? schema.pattern : undefined;
+      if (isvalid && schema.pattern.constructor === String) {
+        this._pattern = new RegExp(this.pattern);
+      }
+      else if (isvalid) {
+        this._pattern = new RegExp(...this.pattern);
+      }
+    }
+    else if (schema._pattern != null) {
+      this.pattern = schema.pattern;
+      this._pattern = schema._pattern;
+    }
+  }
+
+  getPrimaryType() { return JSONSchemaString; }
+
+  isValid(data, err = []) {
+    err = super.isValidState('string', data, err);
+    if (err.length > 0) return err;
+    if (data == null) return err;
+
+    const length = data.length;
+    if (this.maxLength) {
+      if (length > this.maxLength) {
+        err.push([this._path, 'maxLength', this.maxLength, data.length]);
+      }
+    }
+    if (this.minLength) {
+      if (length < this.minLength) {
+        err.push([this._path, 'maxLength', this.maxLength, data.length]);
+      }
+    }
+    if (this._pattern) {
+      if (this._pattern.search(data) === -1) {
+        err.push([this._path, 'pattern', this.pattern, data]);
+      }
+    }
+    return err;
+  }
+}
+
+class JSONSchemaObject extends JSONSchema {
+  constructor(owner, path, schema) {
+    super(owner, path, schema, 'object');
+
+    this.maxProperties = typeof schema.maxProperties === 'number'
+      ? schema.maxProperties
+      : undefined;
+    this.minProperties = typeof schema.minProperties === 'number'
+      ? schema.minProperties
+      : undefined;
+
+    this.required = schema.required === true
+      || (schema.required != null
+      && schema.required.constructor === Array)
+      ? schema.required
+      : undefined;
+
+    if (schema.patternRequired && !this._patternRequired) {
+      this.patternRequired = schema.patternRequired != null
+        && schema.patternRequired.constructor === Array
+        && schema.patternRequired.length > 0
+        ? schema.patternRequired
+        : undefined;
+      if (this.patternRequired) {
+        const required = [];
+        for (let i = 0; i < this.patternRequired.length; ++i) {
+          const pattern = this.patternRequired[i];
+          // TODO: Test if valid regexp pattern before adding
+          if (pattern.constructor === String) {
+            const rxp = new RegExp(pattern);
+            required.push(rxp);
+          }
+          else {
+            const rxp = new RegExp(...pattern);
+            required.push(rxp);
+          }
+        }
+        this._patternRequired = required;
+      }
+    }
+    else if (schema._patternRequired) {
+      this.patternRequired = schema.patternRequired;
+      this._patternRequired = schema._patternRequired;
+    }
+    else {
+      this.patternRequired = undefined;
+      this._patternRequired = undefined;
+    }
+
+    const properties = schema.properties;
+    this.properties = typeof properties === 'object' && properties.constructor !== Array
+      ? properties
+      : {};
+
+    if (schema.patternProperties && !this._patternProperties) {
+      this.patternProperties = schema.patternProperties != null
+        && schema.patternProperties.constructor !== Array
+        ? schema.patternProperties
+        : undefined;
+      if (this.patternProperties) {
+        const patterns = this.patternProperties;
+        const props = {};
+        for (const i in patterns) {
+          if (patterns.hasOwnProperty(i)) {
+            const rxp = new RegExp(i);
+            props[i] = rxp;
+          }
+        }
+        this._patternProperties = props;
+      }
+    }
+    else if (schema._patternProperties) {
+      this.patternProperties = schema.patternProperties;
+      this._patternProperties = schema._patternProperties;
+    }
+    else {
+      this.patternProperties = undefined;
+      this._patternProperties = undefined;
+    }
+
+    this.additionalProperties = schema.additionalProperties === true;
+  }
+
+  getPrimaryType() { return JSONSchemaObject; }
+
+  isValid(data, err = [], callback) {
+    err = super.isValidState('object', data, err);
+    if (data == null) return err;
+    if (data.constructor === Array) {
+      err.push([this._path, 'type', 'object', 'Array']);
+    }
+    if (err.length > 0) return err;
+
+    const count = getObjectCountItems(data)|0;
+    if (this.maxProperties) {
+      if (count > this.maxProperties) {
+        err.push([this._path, 'maxProperties', this.maxProperties, count]);
+      }
+    }
+    if (this.minProperties) {
+      if (count < this.minProperties) {
+        err.push([this._path, 'minProperties', this.minProperties, count]);
+      }
+    }
+
+    if (this.required) {
+      const required = this.required !== true
+        ? this.required
+        : getAllObjectKeys(this.properties);
+
+      if (required.constructor === Array) {
+        for (let i = 0; i < required.length; ++i) {
+          const prop = required[i];
+          if (!data.hasOwnProperty(prop)) {
+            err.push([this._path, 'required', prop]);
+          }
+        }
+      }
+      else {
+        for (const prop in required) {
+          if (required.hasOwnProperty(prop)) {
+            if (!data.hasOwnProperty(prop)) {
+              err.push([this._path, 'required', prop]);
+            }
+          }
+        }
+      }
+    }
+
+    if (this._patternRequired) {
+      const required = this._patternRequired;
+      if (required.constructor === Array) {
+        loop:
+        for (let i = 0; i < required.length; ++i) {
+          const rgx = required[i];
+          for (const item in data) {
+            if (data.hasOwnProperty(item)) {
+              if (rgx.exec(item) != null) continue loop;
+            }
+          }
+          err.push([this._path, 'patternRequired', rgx]);
+        }
+      }
+    }
+    if (err.length > 0) return err;
+
+    const properties = this.properties;
+    const patterns = this._patternProperties;
+
+    next:
+    for (const prop in data) {
+      if (data.hasOwnProperty(prop)) {
+        // test whether all properties of data are
+        // within limits of properties and patternProperties
+        // defined in schema.
+
+        if (properties.hasOwnProperty(prop) === true) {
+          if (callback) {
+            const s = properties[prop];
+            const d = data[prop];
+            const p = JSONPointer_addFolder(this._path, prop);
+            callback(s, p, d, err);
+          }
+          continue;
+        }
+
+        if (patterns) {
+          for (const pattern in patterns) {
+            if (patterns.hasOwnProperty(pattern)) {
+              const rgx = patterns[pattern];
+              if (rgx && rgx.exec(prop) != null) {
+                if (callback) {
+                  const s = this.patternProperties[pattern];
+                  const d = data[prop];
+                  const p = JSONPointer_addFolder(this._path, prop);
+                  callback(s, p, d, err);
+                }
+                continue next;
+              }
+            }
+          }
+          if (this.additionalProperties === false) {
+            err.push([this._path, 'patternProperties', prop]);
+          }
+          continue;
+        }
+        else {
+          if (this.additionalProperties === false) {
+            err.push([this._path, 'properties', prop]);
+          }
+        }
+      }
+    }
+    return err;
+  }
+}
+
+class JSONSchemaArray extends JSONSchema {
+  constructor(owner, path, schema) {
+    super(owner, path, schema, 'array');
+    this.minItems = typeof schema.minItems === 'number'
+      ? Math.round(schema.minItems)
+      : undefined;
+    this.maxItems = typeof schema.maxItems === 'number'
+      ? Math.round(schema.maxItems)
+      : undefined;
+    this.uniqueItems = schema.uniqueItems === true;
+    this.items = typeof schema.items === 'object' && schema.items.constructor !== Array
+      ? schema.items
+      : undefined;
+    this.contains = typeof schema.contains === 'object' && schema.contains.constructor !== Array
+      ? schema.contains
+      : undefined;
+  }
+
+  getPrimaryType() { return JSONSchemaArray; }
+
+  isValid(data, err = [], callback) {
+    err = super.isValidState(Array, data, err);
+    if (err.length > 0) return err;
+    if (data == null) return err;
+
+    const length = data.length;
+    if (this.minItems) {
+      if (length < this.minItems) {
+        err.push([this._path, 'minItems', this.minItems, length]);
+      }
+    }
+    if (this.maxItems) {
+      if (length > this.maxItems) {
+        err.push([this._path, 'maxItems', this.maxItems, length]);
+      }
+    }
+    if (this.uniqueItems === true) {
+      // TODO: implementation.uniqueItems
+      err.push([this._path, 'implementation', 'uniqueItems']);
+    }
+
+    if (callback) {
+      const s = this.items;
+      const c = this.contains;
+      for (let i = 0; i < length; ++i) {
+        const d = data[i];
+        const p = JSONPointer_addFolder(this._path, i);
+        if (c) {
+          if (callback(c, p, d).length === 0) break;
+        }
+        else {
+          callback(s, p, d, err);
+        }
+      }
+    }
+    return err;
+  }
+}
+
+class JSONSchemaTuple extends JSONSchema {
+  constructor(owner, path, schema) {
+    super(owner, path, schema, 'tuple');
+
+    this.items = typeof schema.items === 'object' && schema.items.constructor === Array
+      ? schema.items
+      : undefined;
+    this.additionalItems = typeof schema.additionalItems === 'object'
+      ? schema.additionalItems
+      : undefined;
+    if (this.additionalItems) {
+      this.minItems = this.additionalItems && typeof schema.minItems === 'number'
+        ? schema.minItems
+        : undefined;
+      this.maxItems = this.additionalItems && typeof schema.maxItems === 'number'
+        ? schema.maxItems
+        : undefined;
+      this.uniqueItems = this.additionalItems && schema.uniqueItems === true;
+    }
+  }
+
+  getPrimaryType() { return JSONSchemaTuple; }
+
+  isValid(data, err = [], callback) {
+    err = super.isValidState(Array, data, err);
+    if (err.length > 0) return err;
+    if (data == null) return err;
+
+    const length = data.length;
+    const size = this.items.length;
+    if (length !== size) {
+      err.push([this._path, 'items', size, length]);
+    }
+
+    if (callback) {
+      for (let i = 0; i < size; ++i) {
+        const s = this.items[i];
+        const d = i < data.length ? data[i] : undefined;
+        const p = JSONPointer_addFolder(this._path, i);
+        callback(s, p, d, err);
+      }
+    }
+
+    if (this.additionalItems) {
+      const minitems = mathi32_max(this.minItems > 0 ? this.minItems : size, size);
+      const maxitems = mathi32_max(this.maxItems > 0 ? this.maxItems : size, size);
+
+      if (length < minitems) {
+        err.push([this._path, 'minItems', minitems, length]);
+      }
+      if (length > maxitems) {
+        err.push([this._path, 'maxItems', maxitems, length]);
+      }
+
+      if (this.uniqueItems === true) {
+        // TODO: implementation.uniqueItems
+        err.push([this._path, 'implementation', 'uniqueItems']);
+      }
+
+      if (callback) {
+        const s = this.additionalItems;
+        for (let i = size; i < data.length; ++i) {
+          const d = data[i];
+          const p = JSONPointer_addFolder(this._path, i);
+          callback(s, p, d, err);
+        }
+      }
+    }
+    return err;
+  }
+}
+
+class JSONSchemaMap extends JSONSchema {
+  constructor(owner, path, schema) {
+    super(owner, path, schema, 'map');
+    this.minItems = typeof schema.minItems === 'number'
+      ? Math.round(schema.minItems)
+      : undefined;
+    this.maxItems = typeof schema.maxItems === 'number'
+      ? Math.round(schema.maxItems)
+      : undefined;
+    this.items = typeof schema.items === 'object' && schema.items.constructor === Array
+      ? schema.items
+      : undefined;
+  }
+
+  getPrimaryType() { return JSONSchemaMap; }
+
+  isValid(data, err = [], callback) {
+    err = super.isValidState(Map, data, err);
+    if (err.length > 0) return err;
+    if (data == null) return err;
+
+    const size = data.size;
+    if (this.minItems) {
+      if (size < this.minItems) {
+        err.push([this._path, 'minItems', this.minItems, size]);
+      }
+    }
+    if (this.maxItems) {
+      if (size > this.maxItems) {
+        err.push([this._path, 'maxItems', this.maxItems, size]);
+      }
+    }
+
+    if (callback) {
+      const ks = this.items[0];
+      const vs = this.items[1];
+      for (const [key, value] of data) {
+        const p = JSONPointer_addFolder(this._path, key);
+        callback(ks, p, key, err);
+        callback(vs, p, value, err);
+      }
+    }
+    return err;
+  }
+}
+
+export { JSONPointer_addFolder, JSONPointer_pathSeparator, JSONSchema, JSONSchemaArray, JSONSchemaBoolean, JSONSchemaInteger, JSONSchemaMap, JSONSchemaNumber, JSONSchemaObject, JSONSchemaString, JSONSchemaTuple, JSONSchema_NUMBER_FORMATS, JSONSchema_STRING_FORMATS, JSONSchema_getNumberFormatType, JSONSchema_isArray, JSONSchema_isBoolean, JSONSchema_isInteger, JSONSchema_isMap, JSONSchema_isNumber, JSONSchema_isObject, JSONSchema_isString, JSONSchema_isTuple, JSONSchema_isUnknownSchema, JSONSchema_isValid, JSONSchema_isValidArray, JSONSchema_isValidBoolean, JSONSchema_isValidInteger, JSONSchema_isValidMap, JSONSchema_isValidNumber, JSONSchema_isValidObject, JSONSchema_isValidState, JSONSchema_isValidString, JSONSchema_isValidTuple, JSONSchema_loadSchema, JSONSchema_parseDocument, VN, VNode, addCssClass, app, checkIfValueDisabled, circle2f64, circle2f64_POINTS, clone, cloneDeep, collapseArrayIsToPrimitive, collapseArrayShallow, collapseCssClass, collapseToString, copyAttributes, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getAllObjectKeys, getObjectCountItems, getObjectFirstItem, getStringFormatType, getUniqueArray, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureObject, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeArrays, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, workletState, wrapVN };
 //# sourceMappingURL=index.js.map

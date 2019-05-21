@@ -5,4 +5,3 @@ export function JSONPointer_addFolder(path, folder) {
     return path + folder;
   }
 }
-
