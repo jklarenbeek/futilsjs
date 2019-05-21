@@ -452,6 +452,14 @@ export function getStringFormatType(schema) {
 export default class JSONSchemaDocument {
   constructor() {
     this.schema = null;
+    this.booleanHandler = { default: JSONSchemaBoolean };
+    this.numberHandler = { default: JSONSchemaNumber };
+    this.integerHandler = { default: JSONSchemaInteger };
+    this.stringHandler = { default: JSONSchemaString };
+    this.objectHandler = { default: JSONSchemaObject };
+    this.arrayHandler = { default: JSONSchemaArray };
+    this.tupleHandler = { default: JSONSchemaTuple };
+    this.mapHandler = { default: JSONSchemaMap };
   }
 
   importSchema(schema) {
@@ -461,41 +469,40 @@ export default class JSONSchemaDocument {
 
 export function JSONSchema_parseDocument(schema, err = []) {
   const owner = new JSONSchemaDocument();
-  JSONSchema_parseSchema(owner, JSONPointer_pathSeparator, schema, err);
+  JSONSchema_loadSchema(owner, JSONPointer_pathSeparator, schema, err);
 }
-export function JSONSchema_parseSchema(owner, path, schema, err) {
+export function JSONSchema_loadSchema(owner, path, schema, err) {
   if (typeof schema === 'object' && schema.constructor !== Array) {
-    let node = null;
-
+    let Handler = null;
     if (JSONSchema_isBoolean(schema)) {
-      node = new JSONSchemaBoolean(owner, path, schema);
+      Handler = owner.booleanHandler.default;
     }
     else if (JSONSchema_isNumber(schema)) {
-      node = new JSONSchemaNumber(owner, path, schema);
+      Handler = owner.booleanHandler.default;
     }
     else if (JSONSchema_isInteger(schema)) {
-      node = new JSONSchemaInteger(owner, path, schema);
+      Handler = owner.booleanHandler.default;
     }
     else if (JSONSchema_isString(schema)) {
-      node = new JSONSchemaString(owner, path, schema);
+      Handler = owner.booleanHandler.default;
     }
     else if (JSONSchema_isObject(schema)) {
-      node = new JSONSchemaObject(owner, path, schema);
+      Handler = owner.booleanHandler.default;
     }
     else if (JSONSchema_isArray(schema)) {
-      node = new JSONSchemaArray(owner, path, schema);
+      Handler = owner.booleanHandler.default;
     }
     else if (JSONSchema_isTuple(schema)) {
-      node = new JSONSchemaTuple(owner, path, schema);
+      Handler = owner.booleanHandler.default;
     }
     else if (JSONSchema_isMap(schema)) {
-      node = new JSONSchemaMap(owner, path, schema);
+      Handler = owner.booleanHandler.default;
     }
     else {
       err.push([path, 'schema', 'undefined', schema]);
       return err;
     }
-    return node;
+    return new Handler(owner, path, schema);
   }
   else {
     err.push([
