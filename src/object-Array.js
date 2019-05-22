@@ -1,5 +1,5 @@
 /* eslint-disable no-extend-native */
-import { isArray } from './object-base';
+import { isPureArray } from './object-base';
 
 export function Array_unique(array) {
   return array.filter((el, index, a) => index === a.indexOf(el));

@@ -6,7 +6,7 @@ import {
   getObjectCountItems,
   getAllObjectKeys,
   isPureObject,
-  isArray,
+  isPureArray,
 } from './object-base';
 import {
   JSONPointer_addFolder,

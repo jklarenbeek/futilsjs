@@ -20,7 +20,7 @@ function isPureObject(obj) {
   return (typeof obj === 'object' && obj.constructor !== Array);
 }
 
-function isArray(obj) {
+function isPureArray(obj) {
   return (obj != null && obj.constructor === Array);
 }
 
@@ -120,8 +120,8 @@ function mergeObjects(target, ...rest) {
     for (const key in object) {
       if (object.hasOwnProperty(key)) {
         const value = object[key];
-        if (value === undefined || value === null) continue;
-        if (typeof value === 'object' && value.constructor !== Array) {
+        if (value == null) continue;
+        if (isPureObject(value)) {
           const sourceKey = target[key];
           mergeFn(sourceKey, value);
         }
@@ -331,14 +331,14 @@ function deepEquals(a, b, enforce_properties_order, cyclic) {
 
 /* eslint-disable no-extend-native */
 
-function Array_getUnique(array) {
+function Array_unique(array) {
   return array.filter((el, index, a) => index === a.indexOf(el));
   // return Array.from(new Set(array));
 }
 
 
 // e3Merge from https://jsperf.com/merge-two-arrays-keeping-only-unique-values/22
-function Array_mergeUnique(a = [], b = []) {
+function Array_uniqueMerge(a = [], b = []) {
   const hash = {};
   let i = (a = a.slice(0)).length;
 
@@ -371,18 +371,16 @@ function Array_collapseShallow(array) {
   for (ix = 0; ix < lenx; ++ix) {
     itemx = array[ix];
     if (itemx == null) continue;
-    if (typeof itemx === 'object') {
-      if (itemx.constructor === Array) {
-        // fill the result array with the
-        // items of this next loop. We do
-        // not go any deeper.
-        leny = itemx.length;
-        for (iy = 0; iy < leny; ++iy) {
-          itemy = itemx[iy];
-          if (itemy == null) continue;
-          // whatever it is next, put it in!?
-          result[cursor++] = itemy;
-        }
+    if (isPureArray(itemx)) {
+      // fill the result array with the
+      // items of this next loop. We do
+      // not go any deeper.
+      leny = itemx.length;
+      for (iy = 0; iy < leny; ++iy) {
+        itemy = itemx[iy];
+        if (itemy == null) continue;
+        // whatever it is next, put it in!?
+        result[cursor++] = itemy;
       }
     }
     else {
@@ -404,10 +402,10 @@ function Array_patchPrototype() {
     return value;
   };
   Array.prototype.getUnique = function Array_prototype_getUnique() {
-    return Array_getUnique(this);
+    return Array_unique(this);
   };
   Array.prototype.mergeUnique = function Array_prototype_mergeUnique(right = []) {
-    return Array_mergeUnique(this, right);
+    return Array_uniqueMerge(this, right);
   };
   Array.prototype.collapseShallow = function Array_prototype_collapseShallow() {
     return Array_collapseShallow(this);
@@ -3354,9 +3352,7 @@ function JSONSchema_isBoolean(schema) {
     && (typeof schema.const === 'boolean'
       || typeof schema.default === 'boolean');
   const isenum = isknowable
-      && (typeof schema.enum === 'object'
-        && schema.enum.constructor === Array
-        && schema.enum.length === 2);
+      && (isPureArray(schema.enum) && schema.enum.length === 2);
   return isknown || isvalid || isenum;
 }
 function JSONSchema_isValidBoolean(schema, path = '/', data, err = []) {
@@ -3449,7 +3445,7 @@ function JSONSchema_isValidString(schema, path = '/', data, err = []) {
     const pattern = new RegExp(schema.pattern);
     if (data.search(pattern) === -1) err.push([path, 'pattern', schema.pattern, data]);
   }
-  if (typeof schema.pattern === 'object' && schema.pattern.constructor === Array) {
+  if (isPureArray(schema.pattern)) {
     const pattern = new RegExp(...schema.pattern);
     if (data.search(pattern) === -1) err.push([path, 'pattern', '[\'' + schema.pattern.join('\', \'') + '\']', data]);
   }
@@ -3457,11 +3453,10 @@ function JSONSchema_isValidString(schema, path = '/', data, err = []) {
 
 function JSONSchema_isObject(schema) {
   const isknown = schema.type === 'object';
-  const isvalid = schema.type == null && schema.items == null
-    && ((typeof schema.properties === 'object' && schema.properties.constructor !== Array)
-      || (typeof schema.const === 'object' && schema.const.constructor !== Array)
-      || (typeof schema.default === 'object' && schema.default.constructor !== Array));
-  return isknown || isvalid;
+  const isprops = isPureObject(schema.properties);
+  const isvalid = schema.type == null
+      && (isPureObject(schema.const) || isPureObject(schema.default));
+  return isknown || isprops || isvalid;
 }
 
 function JSONSchema_isValidObject(schema, path = '/', data, err = [], callback) {
@@ -3518,10 +3513,8 @@ function JSONSchema_isValidObject(schema, path = '/', data, err = [], callback) 
   const properties = schema.properties;
   const patterns = schema.patternProperties;
 
-  const hasproperties = typeof properties === 'object'
-    && properties.constructor !== Array;
-  const haspatterns = typeof patterns === 'object'
-    && patterns.constructor !== Array;
+  const hasproperties = isPureObject(properties);
+  const haspatterns = isPureObject(patterns);
 
   next:
   for (const prop in data) {
@@ -3570,15 +3563,10 @@ function JSONSchema_isValidObject(schema, path = '/', data, err = [], callback) 
 
 function JSONSchema_isArray(schema) {
   const isknown = schema.type === 'array';
-  const isitems = schema.type == null
-    && typeof schema.items === 'object'
-    && schema.items.constructor !== Array;
-  const iscontains = schema.type == null
-    && typeof schema.contains === 'object';
+  const isitems = isPureObject(schema.items);
+  const iscontains = isPureObject(schema.contains);
   const isvalid = schema.type == null
-    && schema.properties == null
-    && ((typeof schema.const === 'object' && schema.const.constructor === Array)
-      || (typeof schema.default === 'object' && schema.default.constructor === Array));
+    && (isPureArray(schema.const) || isPureArray(schema.default));
   return isknown || isitems || iscontains || isvalid;
 }
 function JSONSchema_isValidArray(schema, path = '/', data, err = [], callback) {
@@ -3618,9 +3606,7 @@ function JSONSchema_isValidArray(schema, path = '/', data, err = [], callback) {
 
 function JSONSchema_isTuple(schema) {
   const isknown = schema.type === 'tuple';
-  const istuple = schema.type == null
-    && typeof schema.items === 'object'
-    && schema.items.constructor === Array;
+  const istuple = isPureArray(schema.items);
   const isadditional = schema.type == null
     && schema.hasOwnProperty('additionalItems');
   return isknown || istuple || isadditional;
@@ -3671,8 +3657,7 @@ function JSONSchema_isValidTuple(schema, path = '/', data, err = [], callback) {
 function JSONSchema_isMap(schema) {
   const isknown = schema.type === 'map';
   const isvalid = schema.type == null
-    && typeof schema.items === 'object'
-    && schema.items.constructor === Array
+    && isPureArray(schema.items)
     && schema.items.length === 2;
   return isknown || isvalid;
 }
@@ -3786,7 +3771,7 @@ class JSONSchemaDocument {
   }
 
   getSchemaHandler(schema) {
-    if (typeof schema === 'object' && schema.constructor !== Array) {
+    if (isPureObject(schema)) {
       let name = null;
 
       if (JSONSchema_isBoolean(schema)) {
@@ -3848,7 +3833,7 @@ function JSONSchema_parseDocument(schema, err = []) {
   JSONSchema_loadSchema(owner, JSONPointer_pathSeparator, schema, err);
 }
 function JSONSchema_loadSchema(owner, path, schema, err) {
-  if (typeof schema === 'object' && schema.constructor !== Array) {
+  if (isPureObject(schema)) {
     let Handler = null;
     if (JSONSchema_isBoolean(schema)) {
       Handler = owner.booleanHandler.default;
@@ -4184,8 +4169,7 @@ class JSONSchemaObject extends JSONSchema {
       : undefined;
 
     if (schema.patternRequired && !this._patternRequired) {
-      this.patternRequired = schema.patternRequired != null
-        && schema.patternRequired.constructor === Array
+      this.patternRequired = isPureArray(schema.patternRequired)
         && schema.patternRequired.length > 0
         ? schema.patternRequired
         : undefined;
@@ -4215,14 +4199,12 @@ class JSONSchemaObject extends JSONSchema {
       this._patternRequired = undefined;
     }
 
-    const properties = schema.properties;
-    this.properties = typeof properties === 'object' && properties.constructor !== Array
-      ? properties
+    this.properties = isPureObject(schema.properties)
+      ? schema.properties
       : {};
 
     if (schema.patternProperties && !this._patternProperties) {
-      this.patternProperties = schema.patternProperties != null
-        && schema.patternProperties.constructor !== Array
+      this.patternProperties = isPureObject(schema.patternProperties)
         ? schema.patternProperties
         : undefined;
       if (this.patternProperties) {
@@ -4373,10 +4355,10 @@ class JSONSchemaArray extends JSONSchema {
       ? Math.round(schema.maxItems)
       : undefined;
     this.uniqueItems = schema.uniqueItems === true;
-    this.items = typeof schema.items === 'object' && schema.items.constructor !== Array
+    this.items = isPureObject(schema.items)
       ? schema.items
       : undefined;
-    this.contains = typeof schema.contains === 'object' && schema.contains.constructor !== Array
+    this.contains = isPureObject(schema.contains)
       ? schema.contains
       : undefined;
   }
@@ -4426,9 +4408,7 @@ class JSONSchemaTuple extends JSONSchema {
   constructor(owner, path, schema) {
     super(owner, path, schema, 'tuple');
 
-    this.items = typeof schema.items === 'object' && schema.items.constructor === Array
-      ? schema.items
-      : undefined;
+    this.items = isPureArray(schema.items) ? schema.items : undefined;
     this.additionalItems = typeof schema.additionalItems === 'object'
       ? schema.additionalItems
       : undefined;
@@ -4503,9 +4483,7 @@ class JSONSchemaMap extends JSONSchema {
     this.maxItems = typeof schema.maxItems === 'number'
       ? Math.round(schema.maxItems)
       : undefined;
-    this.items = typeof schema.items === 'object' && schema.items.constructor === Array
-      ? schema.items
-      : undefined;
+    this.items = isPureArray(schema.items) ? schema.items : undefined;
   }
 
   getPrimaryType() { return JSONSchemaMap; }
@@ -4540,5 +4518,5 @@ class JSONSchemaMap extends JSONSchema {
   }
 }
 
-export { Array_collapseShallow, Array_getUnique, Array_mergeUnique, Array_patchPrototype, BetterMap, BetterMap_prototype_getItem, BetterMap_prototype_set, BetterMap_prototype_setItem, JSONPointer_addFolder, JSONPointer_pathSeparator, JSONSchema, JSONSchemaArray, JSONSchemaBoolean, JSONSchemaInteger, JSONSchemaMap, JSONSchemaNumber, JSONSchemaObject, JSONSchemaString, JSONSchemaTuple, JSONSchema_NUMBER_FORMATS, JSONSchema_STRING_FORMATS, JSONSchema_getNumberFormatType, JSONSchema_isArray, JSONSchema_isBoolean, JSONSchema_isInteger, JSONSchema_isMap, JSONSchema_isNumber, JSONSchema_isObject, JSONSchema_isString, JSONSchema_isTuple, JSONSchema_isUnknownSchema, JSONSchema_isValid, JSONSchema_isValidArray, JSONSchema_isValidBoolean, JSONSchema_isValidInteger, JSONSchema_isValidMap, JSONSchema_isValidNumber, JSONSchema_isValidObject, JSONSchema_isValidState, JSONSchema_isValidString, JSONSchema_isValidTuple, JSONSchema_loadSchema, JSONSchema_parseDocument, Map_patchPrototype, VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseToString, copyAttributes, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getAllObjectKeys, getObjectCountItems, getObjectFirstItem, getStringFormatType, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isArray, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureObject, isTypedArray, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, workletState, wrapVN };
+export { Array_collapseShallow, Array_patchPrototype, Array_unique, Array_uniqueMerge, BetterMap, BetterMap_prototype_getItem, BetterMap_prototype_set, BetterMap_prototype_setItem, JSONPointer_addFolder, JSONPointer_pathSeparator, JSONSchema, JSONSchemaArray, JSONSchemaBoolean, JSONSchemaInteger, JSONSchemaMap, JSONSchemaNumber, JSONSchemaObject, JSONSchemaString, JSONSchemaTuple, JSONSchema_NUMBER_FORMATS, JSONSchema_STRING_FORMATS, JSONSchema_getNumberFormatType, JSONSchema_isArray, JSONSchema_isBoolean, JSONSchema_isInteger, JSONSchema_isMap, JSONSchema_isNumber, JSONSchema_isObject, JSONSchema_isString, JSONSchema_isTuple, JSONSchema_isUnknownSchema, JSONSchema_isValid, JSONSchema_isValidArray, JSONSchema_isValidBoolean, JSONSchema_isValidInteger, JSONSchema_isValidMap, JSONSchema_isValidNumber, JSONSchema_isValidObject, JSONSchema_isValidState, JSONSchema_isValidString, JSONSchema_isValidTuple, JSONSchema_loadSchema, JSONSchema_parseDocument, Map_patchPrototype, VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseToString, copyAttributes, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getAllObjectKeys, getObjectCountItems, getObjectFirstItem, getStringFormatType, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureArray, isPureObject, isTypedArray, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, workletState, wrapVN };
 //# sourceMappingURL=index.js.map
