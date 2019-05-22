@@ -447,19 +447,18 @@ export function getStringFormatType(schema) {
 export default class JSONSchemaDocument {
   constructor() {
     this.schema = null;
-    this.schemaHandlers = {};
+    this.handlers = {};
   }
 
   registerSchemaHandler(formatName = 'default', schemaHandler) {
     if (schemaHandler instanceof JSONSchema) {
       const primaryType = schemaHandler.getPrimaryType();
-      // insanity check!
       if (schemaHandler instanceof primaryType) {
         const primaryName = primaryType.name;
-        if (!this.schemaHandlers[primaryName]) {
-          this.schemaHandlers[primaryName] = {};
+        if (!this.handlers[primaryName]) {
+          this.handlers[primaryName] = {};
         }
-        const formats = this.schemaHandlers[primaryName];
+        const formats = this.handlers[primaryName];
         if (formats.hasOwnProperty(formatName) === false) {
           formats[formatName] = schemaHandler.constructor;
           return true;
@@ -512,8 +511,8 @@ export default class JSONSchemaDocument {
         return undefined;
       }
 
-      if (this.schemaHandlers.hasOwnProperty(name)) {
-        const formats = this.schemaHandlers[name];
+      if (this.handlers.hasOwnProperty(name)) {
+        const formats = this.handlers[name];
         const format = typeof schema.format === 'string'
           ? schema.format
           : 'default';
@@ -524,13 +523,17 @@ export default class JSONSchemaDocument {
     return undefined;
   }
 
-  parseSchema(schema) {
-    // we do NOT check for the type of the schema, we reinitialise it.
-    return schema;
-  }
-
-  importSchema(schema) {
+  importSchema(schema, path) {
+    path = path || '/';
     // we only change the owner and path here!
+    if (!(schema instanceof JSONSchema)) {
+      const handler = this.getSchemaHandler(schema);
+      if (handler) {
+        const c = schema.prototype.constructor;
+        schema.prototype = handler;
+        schema.prototype.constructor = c;
+      }
+    }
     if (schema instanceof JSONSchema) {
       this.schema = schema;
       throw new Error('not implemented: schema is instanceof JSONSchema with different owner (and path?).');
@@ -626,8 +629,12 @@ export class JSONSchema {
       && Object_prototype_propertyIsEnumerable.call(this, prop);
   }
 
-  hasSchemaChildren() {
+  canHaveSchemaChildren() {
     return false;
+  }
+
+  getSchemaChildren() {
+    return undefined;
   }
 
   isValidState(type, data, err) {
@@ -943,6 +950,15 @@ export class JSONSchemaObject extends JSONSchema {
 
   getPrimaryType() { return JSONSchemaObject; }
 
+  canHaveSchemaChildren() { return true; }
+
+  getSchemaChildren() {
+    return {
+      ...this.properties,
+      ...this.patternProperties,
+    };
+  }
+
   isValid(data, err = [], callback) {
     err = this.isValidState('object', data, err);
     if (data == null) return err;
@@ -1075,6 +1091,15 @@ export class JSONSchemaArray extends JSONSchema {
 
   getPrimaryType() { return JSONSchemaArray; }
 
+  canHaveSchemaChildren() { return true; }
+
+  getSchemaChildren() {
+    return {
+      items: this.items,
+      contains: this.contains,
+    };
+  }
+
   isValid(data, err = [], callback) {
     err = this.isValidState(Array, data, err);
     if (err.length > 0) return err;
@@ -1135,6 +1160,15 @@ export class JSONSchemaTuple extends JSONSchema {
 
   getPrimaryType() { return JSONSchemaTuple; }
 
+  canHaveSchemaChildren() { return true; }
+
+  getSchemaChildren() {
+    return {
+      items: this.items,
+      additionalItems: this.additionalItems,
+    };
+  }
+
   isValid(data, err = [], callback) {
     err = this.isValidState(Array, data, err);
     if (err.length > 0) return err;
@@ -1193,10 +1227,21 @@ export class JSONSchemaMap extends JSONSchema {
     this.maxItems = typeof schema.maxItems === 'number'
       ? Math.round(schema.maxItems)
       : undefined;
-    this.items = isPureArray(schema.items) ? schema.items : undefined;
+    this.items = isPureArray(schema.items) ? schema.items : [];
   }
 
   getPrimaryType() { return JSONSchemaMap; }
+
+  canHaveSchemaChildren() {
+    return true;
+  }
+
+  getSchemaChildren() {
+    return {
+      key: this.items[0],
+      value: this.items[1],
+    };
+  }
 
   isValid(data, err = [], callback) {
     err = this.isValidState(Map, data, err);

@@ -16,6 +16,10 @@ export function sanitizePrimitiveValue(value, nullable, defaultValue = undefined
   return isPrimitiveType(value) ? value : defaultValue;
 }
 
+export function toInt32(value) {
+  return Math.round(value) || undefined;
+}
+
 export function isPureObject(obj) {
   return (typeof obj === 'object' && obj.constructor !== Array);
 }
@@ -48,6 +52,13 @@ export function getAllObjectKeys(obj) {
   return arr;
 }
 
+export function getAllObjectValues(obj) {
+  const arr = [];
+  for (const i in obj) {
+    if (obj.hasOwnProperty(i)) arr.push(obj[i]);
+  }
+  return arr;
+}
 export function getObjectFirstItem(obj) {
   for (const item in obj) {
     if (obj.hasOwnProperty(item)) {
