@@ -1,9 +1,17 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable no-labels */
 /* eslint-disable no-lonely-if */
-import { getObjectCountItems, getAllObjectKeys } from './object-base';
 import { mathi32_max } from './int32-math';
-import { JSONPointer_addFolder, JSONPointer_pathSeparator } from './json-pointer';
+import {
+  getObjectCountItems,
+  getAllObjectKeys,
+  isPureObject,
+  isArray,
+} from './object-base';
+import {
+  JSONPointer_addFolder,
+  JSONPointer_pathSeparator,
+} from './json-pointer';
 
 export function JSONSchema_isUnknownSchema(schema) {
   return (schema.type == null
@@ -54,9 +62,7 @@ export function JSONSchema_isBoolean(schema) {
     && (typeof schema.const === 'boolean'
       || typeof schema.default === 'boolean');
   const isenum = isknowable
-      && (typeof schema.enum === 'object'
-        && schema.enum.constructor === Array
-        && schema.enum.length === 2);
+      && (isPureArray(schema.enum) && schema.enum.length === 2);
   return isknown || isvalid || isenum;
 }
 export function JSONSchema_isValidBoolean(schema, path = '/', data, err = []) {
@@ -149,7 +155,7 @@ export function JSONSchema_isValidString(schema, path = '/', data, err = []) {
     const pattern = new RegExp(schema.pattern);
     if (data.search(pattern) === -1) err.push([path, 'pattern', schema.pattern, data]);
   }
-  if (typeof schema.pattern === 'object' && schema.pattern.constructor === Array) {
+  if (isPureArray(schema.pattern)) {
     const pattern = new RegExp(...schema.pattern);
     if (data.search(pattern) === -1) err.push([path, 'pattern', '[\'' + schema.pattern.join('\', \'') + '\']', data]);
   }
@@ -157,11 +163,10 @@ export function JSONSchema_isValidString(schema, path = '/', data, err = []) {
 
 export function JSONSchema_isObject(schema) {
   const isknown = schema.type === 'object';
-  const isvalid = schema.type == null && schema.items == null
-    && ((typeof schema.properties === 'object' && schema.properties.constructor !== Array)
-      || (typeof schema.const === 'object' && schema.const.constructor !== Array)
-      || (typeof schema.default === 'object' && schema.default.constructor !== Array));
-  return isknown || isvalid;
+  const isprops = isPureObject(schema.properties);
+  const isvalid = schema.type == null
+      && (isPureObject(schema.const) || isPureObject(schema.default));
+  return isknown || isprops || isvalid;
 }
 
 export function JSONSchema_isValidObject(schema, path = '/', data, err = [], callback) {
@@ -218,10 +223,8 @@ export function JSONSchema_isValidObject(schema, path = '/', data, err = [], cal
   const properties = schema.properties;
   const patterns = schema.patternProperties;
 
-  const hasproperties = typeof properties === 'object'
-    && properties.constructor !== Array;
-  const haspatterns = typeof patterns === 'object'
-    && patterns.constructor !== Array;
+  const hasproperties = isPureObject(properties);
+  const haspatterns = isPureObject(patterns);
 
   next:
   for (const prop in data) {
@@ -270,15 +273,10 @@ export function JSONSchema_isValidObject(schema, path = '/', data, err = [], cal
 
 export function JSONSchema_isArray(schema) {
   const isknown = schema.type === 'array';
-  const isitems = schema.type == null
-    && typeof schema.items === 'object'
-    && schema.items.constructor !== Array;
-  const iscontains = schema.type == null
-    && typeof schema.contains === 'object';
+  const isitems = isPureObject(schema.items);
+  const iscontains = isPureObject(schema.contains);
   const isvalid = schema.type == null
-    && schema.properties == null
-    && ((typeof schema.const === 'object' && schema.const.constructor === Array)
-      || (typeof schema.default === 'object' && schema.default.constructor === Array));
+    && (isPureArray(schema.const) || isPureArray(schema.default));
   return isknown || isitems || iscontains || isvalid;
 }
 export function JSONSchema_isValidArray(schema, path = '/', data, err = [], callback) {
@@ -318,9 +316,7 @@ export function JSONSchema_isValidArray(schema, path = '/', data, err = [], call
 
 export function JSONSchema_isTuple(schema) {
   const isknown = schema.type === 'tuple';
-  const istuple = schema.type == null
-    && typeof schema.items === 'object'
-    && schema.items.constructor === Array;
+  const istuple = isPureArray(schema.items);
   const isadditional = schema.type == null
     && schema.hasOwnProperty('additionalItems');
   return isknown || istuple || isadditional;
@@ -371,8 +367,7 @@ export function JSONSchema_isValidTuple(schema, path = '/', data, err = [], call
 export function JSONSchema_isMap(schema) {
   const isknown = schema.type === 'map';
   const isvalid = schema.type == null
-    && typeof schema.items === 'object'
-    && schema.items.constructor === Array
+    && isPureArray(schema.items)
     && schema.items.length === 2;
   return isknown || isvalid;
 }
@@ -486,7 +481,7 @@ export default class JSONSchemaDocument {
   }
 
   getSchemaHandler(schema) {
-    if (typeof schema === 'object' && schema.constructor !== Array) {
+    if (isPureObject(schema)) {
       let name = null;
 
       if (JSONSchema_isBoolean(schema)) {
@@ -548,7 +543,7 @@ export function JSONSchema_parseDocument(schema, err = []) {
   JSONSchema_loadSchema(owner, JSONPointer_pathSeparator, schema, err);
 }
 export function JSONSchema_loadSchema(owner, path, schema, err) {
-  if (typeof schema === 'object' && schema.constructor !== Array) {
+  if (isPureObject(schema)) {
     let Handler = null;
     if (JSONSchema_isBoolean(schema)) {
       Handler = owner.booleanHandler.default;
@@ -884,8 +879,7 @@ export class JSONSchemaObject extends JSONSchema {
       : undefined;
 
     if (schema.patternRequired && !this._patternRequired) {
-      this.patternRequired = schema.patternRequired != null
-        && schema.patternRequired.constructor === Array
+      this.patternRequired = isPureArray(schema.patternRequired)
         && schema.patternRequired.length > 0
         ? schema.patternRequired
         : undefined;
@@ -915,14 +909,12 @@ export class JSONSchemaObject extends JSONSchema {
       this._patternRequired = undefined;
     }
 
-    const properties = schema.properties;
-    this.properties = typeof properties === 'object' && properties.constructor !== Array
-      ? properties
+    this.properties = isPureObject(schema.properties)
+      ? schema.properties
       : {};
 
     if (schema.patternProperties && !this._patternProperties) {
-      this.patternProperties = schema.patternProperties != null
-        && schema.patternProperties.constructor !== Array
+      this.patternProperties = isPureObject(schema.patternProperties)
         ? schema.patternProperties
         : undefined;
       if (this.patternProperties) {
@@ -1073,10 +1065,10 @@ export class JSONSchemaArray extends JSONSchema {
       ? Math.round(schema.maxItems)
       : undefined;
     this.uniqueItems = schema.uniqueItems === true;
-    this.items = typeof schema.items === 'object' && schema.items.constructor !== Array
+    this.items = isPureObject(schema.items)
       ? schema.items
       : undefined;
-    this.contains = typeof schema.contains === 'object' && schema.contains.constructor !== Array
+    this.contains = isPureObject(schema.contains)
       ? schema.contains
       : undefined;
   }
@@ -1126,9 +1118,7 @@ export class JSONSchemaTuple extends JSONSchema {
   constructor(owner, path, schema) {
     super(owner, path, schema, 'tuple');
 
-    this.items = typeof schema.items === 'object' && schema.items.constructor === Array
-      ? schema.items
-      : undefined;
+    this.items = isPureArray(schema.items) ? schema.items : undefined;
     this.additionalItems = typeof schema.additionalItems === 'object'
       ? schema.additionalItems
       : undefined;
@@ -1203,9 +1193,7 @@ export class JSONSchemaMap extends JSONSchema {
     this.maxItems = typeof schema.maxItems === 'number'
       ? Math.round(schema.maxItems)
       : undefined;
-    this.items = typeof schema.items === 'object' && schema.items.constructor === Array
-      ? schema.items
-      : undefined;
+    this.items = isPureArray(schema.items) ? schema.items : undefined;
   }
 
   getPrimaryType() { return JSONSchemaMap; }

@@ -20,7 +20,7 @@ export function isPureObject(obj) {
   return (typeof obj === 'object' && obj.constructor !== Array);
 }
 
-export function isArray(obj) {
+export function isPureArray(obj) {
   return (obj != null && obj.constructor === Array);
 }
 
@@ -120,8 +120,8 @@ export function mergeObjects(target, ...rest) {
     for (const key in object) {
       if (object.hasOwnProperty(key)) {
         const value = object[key];
-        if (value === undefined || value === null) continue;
-        if (typeof value === 'object' && value.constructor !== Array) {
+        if (value == null) continue;
+        if (isPureObject(value)) {
           const sourceKey = target[key];
           mergeFn(sourceKey, value);
         }

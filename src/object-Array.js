@@ -1,4 +1,5 @@
 /* eslint-disable no-extend-native */
+import { isArray } from './object-base';
 
 export function Array_unique(array) {
   return array.filter((el, index, a) => index === a.indexOf(el));
@@ -40,18 +41,16 @@ export function Array_collapseShallow(array) {
   for (ix = 0; ix < lenx; ++ix) {
     itemx = array[ix];
     if (itemx == null) continue;
-    if (typeof itemx === 'object') {
-      if (itemx.constructor === Array) {
-        // fill the result array with the
-        // items of this next loop. We do
-        // not go any deeper.
-        leny = itemx.length;
-        for (iy = 0; iy < leny; ++iy) {
-          itemy = itemx[iy];
-          if (itemy == null) continue;
-          // whatever it is next, put it in!?
-          result[cursor++] = itemy;
-        }
+    if (isPureArray(itemx)) {
+      // fill the result array with the
+      // items of this next loop. We do
+      // not go any deeper.
+      leny = itemx.length;
+      for (iy = 0; iy < leny; ++iy) {
+        itemy = itemx[iy];
+        if (itemy == null) continue;
+        // whatever it is next, put it in!?
+        result[cursor++] = itemy;
       }
     }
     else {
