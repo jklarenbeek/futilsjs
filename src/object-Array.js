@@ -1,13 +1,13 @@
 /* eslint-disable no-extend-native */
 
-export function Array_getUnique(array) {
+export function Array_unique(array) {
   return array.filter((el, index, a) => index === a.indexOf(el));
   // return Array.from(new Set(array));
 }
 
 
 // e3Merge from https://jsperf.com/merge-two-arrays-keeping-only-unique-values/22
-export function Array_mergeUnique(a = [], b = []) {
+export function Array_uniqueMerge(a = [], b = []) {
   const hash = {};
   let i = (a = a.slice(0)).length;
 
@@ -73,12 +73,18 @@ export function Array_patchPrototype() {
     return value;
   };
   Array.prototype.getUnique = function Array_prototype_getUnique() {
-    return Array_getUnique(this);
+    return Array_unique(this);
   };
   Array.prototype.mergeUnique = function Array_prototype_mergeUnique(right = []) {
-    return Array_mergeUnique(this, right);
+    return Array_uniqueMerge(this, right);
   };
   Array.prototype.collapseShallow = function Array_prototype_collapseShallow() {
     return Array_collapseShallow(this);
   };
 }
+
+export default {
+  unique: Array_unique,
+  uniqueMerge: Array_uniqueMerge,
+  collapseShallow: Array_collapseShallow,
+};
