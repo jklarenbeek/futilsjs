@@ -24,7 +24,7 @@
 // DEALINGS IN THE SOFTWARE.
 //
 import { collapseCssClass } from './css';
-import { clone } from './object';
+import { cloneObject as clone } from './object-base';
 import { VNode } from './vnode-base';
 
 export function app(state, actions, view, container) {

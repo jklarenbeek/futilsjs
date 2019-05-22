@@ -1,3 +1,44 @@
+export function isPrimitiveTypeEx(typeString) {
+  return typeString === 'integer'
+    || typeString === 'number'
+    || typeString === 'string'
+    || typeString === 'boolean';
+}
+
+export function isPrimitiveType(obj) {
+  const tp = typeof obj;
+  return isPrimitiveTypeEx(tp);
+}
+
+export function sanitizePrimitiveValue(value, nullable, defaultValue = undefined) {
+  if (nullable && value == null) return value;
+  if (value == null) return defaultValue;
+  return isPrimitiveType(value) ? value : defaultValue;
+}
+
+export function isPureObject(obj) {
+  return (typeof obj === 'object' && obj.constructor !== Array);
+}
+
+export function isArray(obj) {
+  return (obj != null && obj.constructor === Array);
+}
+
+export function isTypedArray(obj) {
+  return (obj != null
+    && (obj.constructor === Int8Array
+      || obj.constructor === Int16Array
+      || obj.constructor === Int32Array
+      //|| obj.constructor === BigInt64Array
+      //|| obj.constructor === UInt8Array
+      || obj.constructor === Uint8ClampedArray
+      //|| obj.constructor === UInt32Array
+      //|| obj.constructor === UInt16Array
+      //|| obj.constructor === UInt32Array
+      //|| obj.constructor === BigUint64Array
+    ));
+}
+
 /* eslint-disable prefer-rest-params */
 export function getAllObjectKeys(obj) {
   const arr = [];
@@ -30,7 +71,7 @@ export function isObjectEmpty(obj) {
   return getObjectFirstItem(obj) === undefined;
 }
 
-export function clone(target, source) {
+export function cloneObject(target, source) {
   const out = {};
 
   for (const t in target) {
@@ -93,73 +134,8 @@ export function mergeObjects(target, ...rest) {
   return target;
 }
 
-//#region Arrays
-
-export function getUniqueArray(array) {
-  return array.filter((el, index, a) => index === a.indexOf(el));
-  // return Array.from(new Set(array));
-}
-
-// e3Merge from https://jsperf.com/merge-two-arrays-keeping-only-unique-values/22
-export function mergeArrays(a, b) {
-  const hash = {};
-  let i = (a = a.slice(0)).length;
-
-  while (i--) {
-    hash[a[i]] = 1;
-  }
-
-  for (i = 0; i < b.length; i++) {
-    const e = b[i];
-    // eslint-disable-next-line no-unused-expressions
-    hash[e] || a.push(e);
-  }
-
-  return a;
-}
-
-export function collapseArrayIsToPrimitive(obj) {
-  return (obj === undefined || obj === null || obj === false || obj === true);
-}
-
-export function collapseArrayShallow(rest) {
-  const result = [];
-  let cursor = 0;
-
-  const lenx = rest.length;
-  let itemx = null;
-  let ix = 0;
-
-
-  let leny = 0;
-  let itemy = null;
-  let iy = 0;
-
-  // fill the children array with the rest parameters
-  for (ix = 0; ix < lenx; ++ix) {
-    itemx = rest[ix];
-    if (collapseArrayIsToPrimitive(itemx)) continue;
-    if (typeof itemx === 'object' && itemx.constructor === Array) {
-      // fill the result array with the
-      // items of this next loop. We do
-      // not go any deeper.
-      leny = itemx.length;
-      for (iy = 0; iy < leny; ++iy) {
-        itemy = itemx[iy];
-        if (collapseArrayIsToPrimitive(itemy)) continue;
-        // whatever it is next, put it in!?
-        result[cursor++] = itemy;
-      }
-    }
-    else {
-      // whatever it is next, put it in!?
-      result[cursor++] = itemx;
-    }
-  }
-  return result;
-}
-
 //#region
+
 /* -----------------------------------------------------------------------------------------
     deepEquals( a, b [, enforce_properties_order, cyclic] )
     https://stackoverflow.com/a/6713782/4598221

@@ -10,27 +10,456 @@ function isPrimitiveType(obj) {
   return isPrimitiveTypeEx(tp);
 }
 
+function sanitizePrimitiveValue(value, nullable, defaultValue = undefined) {
+  if (nullable && value == null) return value;
+  if (value == null) return defaultValue;
+  return isPrimitiveType(value) ? value : defaultValue;
+}
+
 function isPureObject(obj) {
-  return (obj !== undefined
-    && obj !== null
-    && obj.constructor !== Array
-    && typeof obj === 'object');
+  return (typeof obj === 'object' && obj.constructor !== Array);
 }
 
-function sanitizePrimitiveValue(value, nullable) {
-  if (nullable) {
-    if (!value) return null;
-    return isPrimitiveType(value) ? value : null;
+function isArray(obj) {
+  return (obj != null && obj.constructor === Array);
+}
+
+function isTypedArray(obj) {
+  return (obj != null
+    && (obj.constructor === Int8Array
+      || obj.constructor === Int16Array
+      || obj.constructor === Int32Array
+      //|| obj.constructor === BigInt64Array
+      //|| obj.constructor === UInt8Array
+      || obj.constructor === Uint8ClampedArray
+      //|| obj.constructor === UInt32Array
+      //|| obj.constructor === UInt16Array
+      //|| obj.constructor === UInt32Array
+      //|| obj.constructor === BigUint64Array
+    ));
+}
+
+/* eslint-disable prefer-rest-params */
+function getAllObjectKeys(obj) {
+  const arr = [];
+  for (const i in obj) {
+    if (obj.hasOwnProperty(i)) arr.push(i);
   }
-  if (!value) return undefined;
-  return isPrimitiveType(value) ? value : undefined;
+  return arr;
 }
 
-function checkIfValueDisabled(value, nullable, disabled) {
-  if (disabled) return true;
-  if (value === undefined) return true;
-  if (nullable && value === null) return false;
-  return !isPrimitiveType(value);
+function getObjectFirstItem(obj) {
+  for (const item in obj) {
+    if (obj.hasOwnProperty(item)) {
+      return item;
+    }
+  }
+  return undefined;
+}
+
+function getObjectCountItems(obj) {
+  let count = 0;
+  for (const item in obj) {
+    if (obj.hasOwnProperty(item)) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+function isObjectEmpty(obj) {
+  return getObjectFirstItem(obj) === undefined;
+}
+
+function cloneObject(target, source) {
+  const out = {};
+
+  for (const t in target) {
+    if (target.hasOwnProperty(t)) out[t] = target[t];
+  }
+  for (const s in source) {
+    if (source.hasOwnProperty(s)) out[s] = source[s];
+  }
+  return out;
+}
+
+function cloneDeep(o) {
+  if (typeof o !== 'object') {
+    return o;
+  }
+  if (!o) {
+    return o;
+  }
+
+  if (o.constructor === Array) {
+    const newO = [];
+    for (let i = 0; i < o.length; i += 1) {
+      newO[i] = cloneDeep(o[i]);
+    }
+    return newO;
+  }
+  else {
+    const newO = {};
+    const keys = Reflect.ownKeys(o); // TODO: SLOW!!! OMG SLOW!!!
+    for (const i in keys) {
+      if (keys.hasOwnProperty(i)) {
+        newO[i] = cloneDeep(o[i]);
+      }
+    }
+    return newO;
+  }
+}
+
+function mergeObjects(target, ...rest) {
+  const ln = rest.length;
+  const mergeFn = mergeObjects;
+
+  let i = 0;
+  for (; i < ln; i++) {
+    const object = rest[i];
+    for (const key in object) {
+      if (object.hasOwnProperty(key)) {
+        const value = object[key];
+        if (value === undefined || value === null) continue;
+        if (typeof value === 'object' && value.constructor !== Array) {
+          const sourceKey = target[key];
+          mergeFn(sourceKey, value);
+        }
+        else {
+          target[key] = value;
+        }
+      }
+    }
+  }
+  return target;
+}
+
+//#region
+
+/* -----------------------------------------------------------------------------------------
+    deepEquals( a, b [, enforce_properties_order, cyclic] )
+    https://stackoverflow.com/a/6713782/4598221
+
+    Returns true if a and b are deeply equal, false otherwise.
+
+    Parameters:
+      - a (Any type): value to compare to b
+      - b (Any type): value compared to a
+
+    Optional Parameters:
+      - enforce_properties_order (Boolean): true to check if Object properties are provided
+        in the same order between a and b
+
+      - cyclic (Boolean): true to check for cycles in cyclic objects
+
+    Implementation:
+      'a' is considered equal to 'b' if all scalar values in a and b are strictly equal as
+      compared with operator '===' except for these two special cases:
+        - 0 === -0 but are not equal.
+        - NaN is not === to itself but is equal.
+
+      RegExp objects are considered equal if they have the same lastIndex, i.e. both regular
+      expressions have matched the same number of times.
+
+      Functions must be identical, so that they have the same closure context.
+
+      "undefined" is a valid value, including in Objects
+
+      106 automated tests.
+
+      Provide options for slower, less-common use cases:
+
+        - Unless enforce_properties_order is true, if 'a' and 'b' are non-Array Objects, the
+          order of occurence of their attributes is considered irrelevant:
+            { a: 1, b: 2 } is considered equal to { b: 2, a: 1 }
+
+        - Unless cyclic is true, Cyclic objects will throw:
+            RangeError: Maximum call stack size exceeded
+*/
+function deepEquals(a, b, enforce_properties_order, cyclic) {
+  /* -----------------------------------------------------------------------------------------
+    reference_equals( a, b )
+
+    Helper function to compare object references on cyclic objects or arrays.
+
+    Returns:
+      - null if a or b is not part of a cycle, adding them to object_references array
+      - true: same cycle found for a and b
+      - false: different cycle found for a and b
+
+    On the first call of a specific invocation of equal(), replaces self with inner function
+    holding object_references array object in closure context.
+
+    This allows to create a context only if and when an invocation of equal() compares
+    objects or arrays.
+  */
+  function reference_equals(a1, b1) {
+    const object_references = [];
+
+    function _reference_equals(a2, b2) {
+      let l = object_references.length;
+
+      while (l--) {
+        if (object_references[l--] === b2) {
+          return object_references[l] === a2;
+        }
+      }
+      object_references.push(a2, b2);
+      return null;
+    }
+
+    return _reference_equals(a1, b1);
+  }
+
+
+  function _equals(a1, b1) {
+    // They should have the same toString() signature
+    const s = toString.call(a1);
+    if (s !== toString.call(b1)) return false;
+
+    switch (s) {
+      default: // Boolean, Date, String
+        return a1.valueOf() === b1.valueOf();
+
+      case '[object Number]':
+        // Converts Number instances into primitive values
+        // This is required also for NaN test bellow
+        a1 = +a1;
+        b1 = +b1;
+
+        // return a ?         // a is Non-zero and Non-NaN
+        //     a === b
+        //   :                // a is 0, -0 or NaN
+        //     a === a ?      // a is 0 or -0
+        //     1/a === 1/b    // 1/0 !== 1/-0 because Infinity !== -Infinity
+        //   : b !== b;        // NaN, the only Number not equal to itself!
+        // ;
+
+        // eslint-disable-next-line no-nested-ternary
+        return a1
+          ? a1 === b1
+          // eslint-disable-next-line no-self-compare
+          : a1 === a1
+            ? 1 / a1 === 1 / b1
+            // eslint-disable-next-line no-self-compare
+            : b1 !== b1;
+
+      case '[object RegExp]':
+        return a1.source === b1.source
+          && a1.global === b1.global
+          && a1.ignoreCase === b1.ignoreCase
+          && a1.multiline === b1.multiline
+          && a1.lastIndex === b1.lastIndex;
+
+      case '[object Function]':
+        return false; // functions should be strictly equal because of closure context
+
+      case '[object Array]': {
+        const r = reference_equals(a1, b1);
+        if ((cyclic && r) !== null) return r; // intentionally duplicated bellow for [object Object]
+
+        let l = a1.length;
+        if (l !== b1.length) return false;
+        // Both have as many elements
+
+        while (l--) {
+          const x = a1[l];
+          const y = b1[l];
+          if (x === y && x !== 0 || _equals(x, y)) continue;
+
+          return false;
+        }
+
+        return true;
+      }
+
+      case '[object Object]': {
+        const r = reference_equals(a1, b1);
+        // intentionally duplicated from above for [object Array]
+        if ((cyclic && r) !== null) return r;
+
+        if (enforce_properties_order) {
+          const properties = [];
+
+          for (const p in a1) {
+            if (a1.hasOwnProperty(p)) {
+              properties.push(p);
+              const x = a1[p];
+              const y = b1[p];
+              if (x === y && x !== 0 || _equals(x, y)) continue;
+              return false;
+            }
+          }
+
+          // Check if 'b' has as the same properties as 'a' in the same order
+          let l = 0;
+          for (const p in b1) {
+            if (b1.hasOwnProperty(p)) {
+              if (properties[l] !== p) return false;
+              l++;
+            }
+          }
+        }
+        else {
+          let l = 0;
+          for (const p in a1) {
+            if (a1.hasOwnProperty(p)) {
+              ++l;
+              const x = a1[p];
+              const y = b1[p];
+              if (x === y && x !== 0 || _equals(x, y)) continue;
+
+              return false;
+            }
+          }
+          // Check if 'b' has as not more own properties than 'a'
+          for (const p in b1) {
+            if (b1.hasOwnProperty(p) && --l < 0) return false;
+          }
+        }
+        return true;
+      }
+    }
+  }
+
+  return a === b // strick equality should be enough unless zero
+    && a !== 0 // because 0 === -0, requires test by _equals()
+    || _equals(a, b); // handles not strictly equal or zero values
+}
+
+//#endregion
+
+/* eslint-disable no-extend-native */
+
+function Array_getUnique(array) {
+  return array.filter((el, index, a) => index === a.indexOf(el));
+  // return Array.from(new Set(array));
+}
+
+
+// e3Merge from https://jsperf.com/merge-two-arrays-keeping-only-unique-values/22
+function Array_mergeUnique(a = [], b = []) {
+  const hash = {};
+  let i = (a = a.slice(0)).length;
+
+  while (i--) {
+    hash[a[i]] = 1;
+  }
+
+  for (i = 0; i < b.length; i++) {
+    const e = b[i];
+    // eslint-disable-next-line no-unused-expressions
+    hash[e] || a.push(e);
+  }
+  return a;
+}
+
+function Array_collapseShallow(array) {
+  const result = [];
+  let cursor = 0;
+
+  const lenx = array.length;
+  let itemx = null;
+  let ix = 0;
+
+
+  let leny = 0;
+  let itemy = null;
+  let iy = 0;
+
+  // fill the children array with the array argument
+  for (ix = 0; ix < lenx; ++ix) {
+    itemx = array[ix];
+    if (itemx == null) continue;
+    if (typeof itemx === 'object') {
+      if (itemx.constructor === Array) {
+        // fill the result array with the
+        // items of this next loop. We do
+        // not go any deeper.
+        leny = itemx.length;
+        for (iy = 0; iy < leny; ++iy) {
+          itemy = itemx[iy];
+          if (itemy == null) continue;
+          // whatever it is next, put it in!?
+          result[cursor++] = itemy;
+        }
+      }
+    }
+    else {
+      // whatever it is next, put it in!?
+      result[cursor++] = itemx;
+    }
+  }
+  return result;
+}
+
+function Array_patchPrototype() {
+  Array.prototype.getItem = function Array_prototype_getItem(index = 0) {
+    index = index | 0;
+    return this[index];
+  };
+  Array.prototype.setItem = function Array_prototype_setItem(index = 0, value) {
+    index = index | 0;
+    this[index] = value;
+    return value;
+  };
+  Array.prototype.getUnique = function Array_prototype_getUnique() {
+    return Array_getUnique(this);
+  };
+  Array.prototype.mergeUnique = function Array_prototype_mergeUnique(right = []) {
+    return Array_mergeUnique(this, right);
+  };
+  Array.prototype.collapseShallow = function Array_prototype_collapseShallow() {
+    return Array_collapseShallow(this);
+  };
+}
+
+/* eslint-disable no-extend-native */
+const Map_prototype_set = Map.prototype.set;
+function BetterMap_prototype_set(key, value) {
+  this._keys = undefined;
+  Map_prototype_set.call(this, key, value);
+}
+
+function BetterMap_prototype_getItem(index = 0) {
+  if (this._keys === undefined) {
+    this._keys = Array.from(this.keys());
+  }
+  return this.get(this._keys[index | 0]);
+}
+
+function BetterMap_prototype_setItem(index = 0, value) {
+  const len = this.size;
+  const ret = Map_prototype_set.call(this, this._keys[index | 0], value);
+  if (len !== this.size) {
+    this._keys = undefined;
+  }
+  return ret;
+}
+
+function Map_patchPrototype() {
+  Map.prototype.set = BetterMap_prototype_set;
+  Map.prototype.getItem = BetterMap_prototype_getItem;
+  Map.prototype.setItem = BetterMap_prototype_setItem;
+}
+
+class BetterMap extends Map {
+  constructor(iterable) {
+    super(iterable);
+    this._keys = undefined;
+  }
+
+  set(key, value) {
+    return BetterMap_prototype_set.call(this, key, value);
+  }
+
+  getItem(index = 0) {
+    return BetterMap_prototype_getItem.call(this, index | 0);
+  }
+
+  setItem(index = 0, value) {
+    return BetterMap_prototype_setItem.call(this, index | 0, value);
+  }
 }
 
 const mathi32_MULTIPLIER = 10000;
@@ -2196,361 +2625,6 @@ var float64Shape = {
   PSZ: segm2f64_Z,
 };
 
-/* eslint-disable prefer-rest-params */
-function getAllObjectKeys(obj) {
-  const arr = [];
-  for (const i in obj) {
-    if (obj.hasOwnProperty(i)) arr.push(i);
-  }
-  return arr;
-}
-
-function getObjectFirstItem(obj) {
-  for (const item in obj) {
-    if (obj.hasOwnProperty(item)) {
-      return item;
-    }
-  }
-  return undefined;
-}
-
-function getObjectCountItems(obj) {
-  let count = 0;
-  for (const item in obj) {
-    if (obj.hasOwnProperty(item)) {
-      ++count;
-    }
-  }
-  return count;
-}
-
-function isObjectEmpty(obj) {
-  return getObjectFirstItem(obj) === undefined;
-}
-
-function clone(target, source) {
-  const out = {};
-
-  for (const t in target) {
-    if (target.hasOwnProperty(t)) out[t] = target[t];
-  }
-  for (const s in source) {
-    if (source.hasOwnProperty(s)) out[s] = source[s];
-  }
-  return out;
-}
-
-function cloneDeep(o) {
-  if (typeof o !== 'object') {
-    return o;
-  }
-  if (!o) {
-    return o;
-  }
-
-  if (o.constructor === Array) {
-    const newO = [];
-    for (let i = 0; i < o.length; i += 1) {
-      newO[i] = cloneDeep(o[i]);
-    }
-    return newO;
-  }
-  else {
-    const newO = {};
-    const keys = Reflect.ownKeys(o); // TODO: SLOW!!! OMG SLOW!!!
-    for (const i in keys) {
-      if (keys.hasOwnProperty(i)) {
-        newO[i] = cloneDeep(o[i]);
-      }
-    }
-    return newO;
-  }
-}
-
-function mergeObjects(target, ...rest) {
-  const ln = rest.length;
-  const mergeFn = mergeObjects;
-
-  let i = 0;
-  for (; i < ln; i++) {
-    const object = rest[i];
-    for (const key in object) {
-      if (object.hasOwnProperty(key)) {
-        const value = object[key];
-        if (value === undefined || value === null) continue;
-        if (typeof value === 'object' && value.constructor !== Array) {
-          const sourceKey = target[key];
-          mergeFn(sourceKey, value);
-        }
-        else {
-          target[key] = value;
-        }
-      }
-    }
-  }
-  return target;
-}
-
-//#region Arrays
-
-function getUniqueArray(array) {
-  return array.filter((el, index, a) => index === a.indexOf(el));
-  // return Array.from(new Set(array));
-}
-
-// e3Merge from https://jsperf.com/merge-two-arrays-keeping-only-unique-values/22
-function mergeArrays(a, b) {
-  const hash = {};
-  let i = (a = a.slice(0)).length;
-
-  while (i--) {
-    hash[a[i]] = 1;
-  }
-
-  for (i = 0; i < b.length; i++) {
-    const e = b[i];
-    // eslint-disable-next-line no-unused-expressions
-    hash[e] || a.push(e);
-  }
-
-  return a;
-}
-
-function collapseArrayIsToPrimitive(obj) {
-  return (obj === undefined || obj === null || obj === false || obj === true);
-}
-
-function collapseArrayShallow(rest) {
-  const result = [];
-  let cursor = 0;
-
-  const lenx = rest.length;
-  let itemx = null;
-  let ix = 0;
-
-
-  let leny = 0;
-  let itemy = null;
-  let iy = 0;
-
-  // fill the children array with the rest parameters
-  for (ix = 0; ix < lenx; ++ix) {
-    itemx = rest[ix];
-    if (collapseArrayIsToPrimitive(itemx)) continue;
-    if (typeof itemx === 'object' && itemx.constructor === Array) {
-      // fill the result array with the
-      // items of this next loop. We do
-      // not go any deeper.
-      leny = itemx.length;
-      for (iy = 0; iy < leny; ++iy) {
-        itemy = itemx[iy];
-        if (collapseArrayIsToPrimitive(itemy)) continue;
-        // whatever it is next, put it in!?
-        result[cursor++] = itemy;
-      }
-    }
-    else {
-      // whatever it is next, put it in!?
-      result[cursor++] = itemx;
-    }
-  }
-  return result;
-}
-
-//#region
-/* -----------------------------------------------------------------------------------------
-    deepEquals( a, b [, enforce_properties_order, cyclic] )
-    https://stackoverflow.com/a/6713782/4598221
-
-    Returns true if a and b are deeply equal, false otherwise.
-
-    Parameters:
-      - a (Any type): value to compare to b
-      - b (Any type): value compared to a
-
-    Optional Parameters:
-      - enforce_properties_order (Boolean): true to check if Object properties are provided
-        in the same order between a and b
-
-      - cyclic (Boolean): true to check for cycles in cyclic objects
-
-    Implementation:
-      'a' is considered equal to 'b' if all scalar values in a and b are strictly equal as
-      compared with operator '===' except for these two special cases:
-        - 0 === -0 but are not equal.
-        - NaN is not === to itself but is equal.
-
-      RegExp objects are considered equal if they have the same lastIndex, i.e. both regular
-      expressions have matched the same number of times.
-
-      Functions must be identical, so that they have the same closure context.
-
-      "undefined" is a valid value, including in Objects
-
-      106 automated tests.
-
-      Provide options for slower, less-common use cases:
-
-        - Unless enforce_properties_order is true, if 'a' and 'b' are non-Array Objects, the
-          order of occurence of their attributes is considered irrelevant:
-            { a: 1, b: 2 } is considered equal to { b: 2, a: 1 }
-
-        - Unless cyclic is true, Cyclic objects will throw:
-            RangeError: Maximum call stack size exceeded
-*/
-function deepEquals(a, b, enforce_properties_order, cyclic) {
-  /* -----------------------------------------------------------------------------------------
-    reference_equals( a, b )
-
-    Helper function to compare object references on cyclic objects or arrays.
-
-    Returns:
-      - null if a or b is not part of a cycle, adding them to object_references array
-      - true: same cycle found for a and b
-      - false: different cycle found for a and b
-
-    On the first call of a specific invocation of equal(), replaces self with inner function
-    holding object_references array object in closure context.
-
-    This allows to create a context only if and when an invocation of equal() compares
-    objects or arrays.
-  */
-  function reference_equals(a1, b1) {
-    const object_references = [];
-
-    function _reference_equals(a2, b2) {
-      let l = object_references.length;
-
-      while (l--) {
-        if (object_references[l--] === b2) {
-          return object_references[l] === a2;
-        }
-      }
-      object_references.push(a2, b2);
-      return null;
-    }
-
-    return _reference_equals(a1, b1);
-  }
-
-
-  function _equals(a1, b1) {
-    // They should have the same toString() signature
-    const s = toString.call(a1);
-    if (s !== toString.call(b1)) return false;
-
-    switch (s) {
-      default: // Boolean, Date, String
-        return a1.valueOf() === b1.valueOf();
-
-      case '[object Number]':
-        // Converts Number instances into primitive values
-        // This is required also for NaN test bellow
-        a1 = +a1;
-        b1 = +b1;
-
-        // return a ?         // a is Non-zero and Non-NaN
-        //     a === b
-        //   :                // a is 0, -0 or NaN
-        //     a === a ?      // a is 0 or -0
-        //     1/a === 1/b    // 1/0 !== 1/-0 because Infinity !== -Infinity
-        //   : b !== b;        // NaN, the only Number not equal to itself!
-        // ;
-
-        // eslint-disable-next-line no-nested-ternary
-        return a1
-          ? a1 === b1
-          // eslint-disable-next-line no-self-compare
-          : a1 === a1
-            ? 1 / a1 === 1 / b1
-            // eslint-disable-next-line no-self-compare
-            : b1 !== b1;
-
-      case '[object RegExp]':
-        return a1.source === b1.source
-          && a1.global === b1.global
-          && a1.ignoreCase === b1.ignoreCase
-          && a1.multiline === b1.multiline
-          && a1.lastIndex === b1.lastIndex;
-
-      case '[object Function]':
-        return false; // functions should be strictly equal because of closure context
-
-      case '[object Array]': {
-        const r = reference_equals(a1, b1);
-        if ((cyclic && r) !== null) return r; // intentionally duplicated bellow for [object Object]
-
-        let l = a1.length;
-        if (l !== b1.length) return false;
-        // Both have as many elements
-
-        while (l--) {
-          const x = a1[l];
-          const y = b1[l];
-          if (x === y && x !== 0 || _equals(x, y)) continue;
-
-          return false;
-        }
-
-        return true;
-      }
-
-      case '[object Object]': {
-        const r = reference_equals(a1, b1);
-        // intentionally duplicated from above for [object Array]
-        if ((cyclic && r) !== null) return r;
-
-        if (enforce_properties_order) {
-          const properties = [];
-
-          for (const p in a1) {
-            if (a1.hasOwnProperty(p)) {
-              properties.push(p);
-              const x = a1[p];
-              const y = b1[p];
-              if (x === y && x !== 0 || _equals(x, y)) continue;
-              return false;
-            }
-          }
-
-          // Check if 'b' has as the same properties as 'a' in the same order
-          let l = 0;
-          for (const p in b1) {
-            if (b1.hasOwnProperty(p)) {
-              if (properties[l] !== p) return false;
-              l++;
-            }
-          }
-        }
-        else {
-          let l = 0;
-          for (const p in a1) {
-            if (a1.hasOwnProperty(p)) {
-              ++l;
-              const x = a1[p];
-              const y = b1[p];
-              if (x === y && x !== 0 || _equals(x, y)) continue;
-
-              return false;
-            }
-          }
-          // Check if 'b' has as not more own properties than 'a'
-          for (const p in b1) {
-            if (b1.hasOwnProperty(p) && --l < 0) return false;
-          }
-        }
-        return true;
-      }
-    }
-  }
-
-  return a === b // strick equality should be enough unless zero
-    && a !== 0 // because 0 === -0, requires test by _equals()
-    || _equals(a, b); // handles not strictly equal or zero values
-}
-
-//#endregion
-
 function copyAttributes(src, dst) {
   if (src.hasAttributes()) {
     const attr = src.attributes;
@@ -2819,7 +2893,7 @@ class VNode {
 
 function VN(name, attributes, ...rest) {
   attributes = attributes || {};
-  const children = collapseArrayShallow(rest);
+  const children = Array_collapseShallow(rest);
   return typeof name === 'function'
     ? name(attributes, children)
     : new VNode(name, attributes, children);
@@ -2850,8 +2924,8 @@ function app(state, actions, view, container) {
   const lifecycle = [];
   let skipRender = false;
   let isRecycling = true;
-  let globalState = clone(state);
-  const wiredActions = wireStateToActions([], globalState, clone(actions));
+  let globalState = cloneObject(state);
+  const wiredActions = wireStateToActions([], globalState, cloneObject(actions));
 
   scheduleRender();
 
@@ -2905,7 +2979,7 @@ function app(state, actions, view, container) {
       target[path[0]] = path.length > 1
         ? set(path.slice(1), value, source[path[0]])
         : value;
-      return clone(source, target);
+      return cloneObject(source, target);
     }
     return value;
   }
@@ -2930,7 +3004,7 @@ function app(state, actions, view, container) {
         }
 
         if (result && result !== slice && !result.then) {
-          globalState = set(path, clone(slice, result), globalState);
+          globalState = set(path, cloneObject(slice, result), globalState);
           scheduleRender(globalState);
         }
 
@@ -2946,8 +3020,8 @@ function app(state, actions, view, container) {
         // wire slice/namespace of state to actions
         wireStateToActions(
           path.concat(key),
-          (myState[key] = clone(myState[key])),
-          (myActions[key] = clone(myActions[key])),
+          (myState[key] = cloneObject(myState[key])),
+          (myActions[key] = cloneObject(myActions[key])),
         );
       }
     }
@@ -2972,7 +3046,7 @@ function app(state, actions, view, container) {
         if (typeof oldValue === 'string') {
           oldValue = element.style.cssText = '';
         }
-        const lval = clone(oldValue, value);
+        const lval = cloneObject(oldValue, value);
         for (const i in lval) {
           if (lval.hasOwnProperty(i)) {
             const style = (value == null || value[i] == null) ? '' : value[i];
@@ -3067,7 +3141,7 @@ function app(state, actions, view, container) {
   }
 
   function updateElement(element, oldAttributes, attributes, isSvg) {
-    for (const name in clone(oldAttributes, attributes)) {
+    for (const name in cloneObject(oldAttributes, attributes)) {
       // eslint-disable-next-line operator-linebreak
       if (attributes[name] !==
         (name === 'value' || name === 'checked'
@@ -3681,32 +3755,18 @@ class JSONSchemaDocument {
     this.schemaHandlers = {};
   }
 
-  registerSchemaHandlerEx(formatterName = 'default', primaryType, handlerObj) {
-    if (handlerObj instanceof primaryType) {
-      const primaryName = primaryType.name;
-      if (!this.schemaHandlers[primaryName]) {
-        this.schemaHandlers[primaryName] = {};
-      }
-      const formatters = this.schemaHandlers[primaryName];
-      if (formatters.hasOwnProperty(formatterName) === false) {
-        formatters[formatterName] = handlerObj.constructor;
-        return true;
-      }
-    }
-    return false;
-  }
-
   registerSchemaHandler(formatName = 'default', schemaHandler) {
     if (schemaHandler instanceof JSONSchema) {
       const primaryType = schemaHandler.getPrimaryType();
+      // insanity check!
       if (schemaHandler instanceof primaryType) {
         const primaryName = primaryType.name;
         if (!this.schemaHandlers[primaryName]) {
           this.schemaHandlers[primaryName] = {};
         }
-        const formatters = this.schemaHandlers[primaryName];
-        if (formatters.hasOwnProperty(formatName) === false) {
-          formatters[formatName] = schemaHandler.constructor;
+        const formats = this.schemaHandlers[primaryName];
+        if (formats.hasOwnProperty(formatName) === false) {
+          formats[formatName] = schemaHandler.constructor;
           return true;
         }
       }
@@ -3714,7 +3774,7 @@ class JSONSchemaDocument {
     return false;
   }
 
-  registerDefaultHandlers() {
+  registerDefaultSchemaHandlers() {
     return this.registerSchemaHandler('default', new JSONSchemaBoolean())
       && this.registerSchemaHandler('default', new JSONSchemaNumber())
       && this.registerSchemaHandler('default', new JSONSchemaInteger())
@@ -3725,8 +3785,61 @@ class JSONSchemaDocument {
       && this.registerSchemaHandler('default', new JSONSchemaMap());
   }
 
+  getSchemaHandler(schema) {
+    if (typeof schema === 'object' && schema.constructor !== Array) {
+      let name = null;
+
+      if (JSONSchema_isBoolean(schema)) {
+        name = JSONSchemaBoolean.name;
+      }
+      else if (JSONSchema_isNumber(schema)) {
+        name = JSONSchemaNumber.name;
+      }
+      else if (JSONSchema_isInteger(schema)) {
+        name = JSONSchemaInteger.name;
+      }
+      else if (JSONSchema_isString(schema)) {
+        name = JSONSchemaString.name;
+      }
+      else if (JSONSchema_isObject(schema)) {
+        name = JSONSchemaString.name;
+      }
+      else if (JSONSchema_isArray(schema)) {
+        name = JSONSchemaString.name;
+      }
+      else if (JSONSchema_isTuple(schema)) {
+        name = JSONSchemaString.name;
+      }
+      else if (JSONSchema_isMap(schema)) {
+        name = JSONSchemaString.name;
+      }
+      else {
+        return undefined;
+      }
+
+      if (this.schemaHandlers.hasOwnProperty(name)) {
+        const formats = this.schemaHandlers[name];
+        const format = typeof schema.format === 'string'
+          ? schema.format
+          : 'default';
+        // eslint-disable-next-line dot-notation
+        return formats[format] || formats['default'];
+      }
+    }
+    return undefined;
+  }
+
+  parseSchema(schema) {
+    // we do NOT check for the type of the schema, we reinitialise it.
+    return schema;
+  }
+
   importSchema(schema) {
-    this.schema = schema;
+    // we only change the owner and path here!
+    if (schema instanceof JSONSchema) {
+      this.schema = schema;
+      throw new Error('not implemented: schema is instanceof JSONSchema with different owner (and path?).');
+    }
   }
 }
 
@@ -3778,11 +3891,14 @@ function JSONSchema_loadSchema(owner, path, schema, err) {
   }
 }
 
+const Object_prototype_propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
+
 class JSONSchema {
   constructor(owner = {}, path, schema = {}, type) {
     // if (!(owner instanceof JSONSchemaDocument)) throw new TypeError('owner');
     // if (typeof path !== 'string') throw new TypeError('path');
     // if (typeof schema !== 'object') throw new TypeError('schema');
+    if (this.constructor === JSONSchema) throw new SyntaxError('JSONSchema is an abstract class');
 
     this._owner = owner;
     this._path = path;
@@ -3809,6 +3925,15 @@ class JSONSchema {
   }
 
   getPrimaryType() { throw new Error('Abstract Method'); }
+
+  propertyIsEnumerable(prop) {
+    return (typeof prop === 'string' || prop.indexOf('_') !== 0)
+      && Object_prototype_propertyIsEnumerable.call(this, prop);
+  }
+
+  hasSchemaChildren() {
+    return false;
+  }
 
   isValidState(type, data, err) {
     if (data === undefined && this.required === true) {
@@ -3854,7 +3979,7 @@ class JSONSchemaBoolean extends JSONSchema {
   getPrimaryType() { return JSONSchemaBoolean; }
 
   isValid(data, err = []) {
-    return super.isValidState('boolean', data, err);
+    return this.isValidState('boolean', data, err);
   }
 }
 
@@ -3909,7 +4034,7 @@ class JSONSchemaNumber extends JSONSchema {
   }
 
   isValid(data, err = []) {
-    err = super.isValidState('number', data, err);
+    err = this.isValidState('number', data, err);
     if (err.length > 0) return err;
     if (data == null) return err;
     return this.isValidNumberConstraint(data, err);
@@ -3979,7 +4104,7 @@ class JSONSchemaInteger extends JSONSchema {
 
 
   isValid(data, err = []) {
-    err = super.isValidState('number', data, err);
+    err = this.isValidState('number', data, err);
     if (data == null) return err;
     if (!Number.isInteger(data)) {
       err.push([this.path, 'type', 'integer', typeof data]);
@@ -4017,7 +4142,7 @@ class JSONSchemaString extends JSONSchema {
   getPrimaryType() { return JSONSchemaString; }
 
   isValid(data, err = []) {
-    err = super.isValidState('string', data, err);
+    err = this.isValidState('string', data, err);
     if (err.length > 0) return err;
     if (data == null) return err;
 
@@ -4127,7 +4252,7 @@ class JSONSchemaObject extends JSONSchema {
   getPrimaryType() { return JSONSchemaObject; }
 
   isValid(data, err = [], callback) {
-    err = super.isValidState('object', data, err);
+    err = this.isValidState('object', data, err);
     if (data == null) return err;
     if (data.constructor === Array) {
       err.push([this._path, 'type', 'object', 'Array']);
@@ -4259,7 +4384,7 @@ class JSONSchemaArray extends JSONSchema {
   getPrimaryType() { return JSONSchemaArray; }
 
   isValid(data, err = [], callback) {
-    err = super.isValidState(Array, data, err);
+    err = this.isValidState(Array, data, err);
     if (err.length > 0) return err;
     if (data == null) return err;
 
@@ -4321,7 +4446,7 @@ class JSONSchemaTuple extends JSONSchema {
   getPrimaryType() { return JSONSchemaTuple; }
 
   isValid(data, err = [], callback) {
-    err = super.isValidState(Array, data, err);
+    err = this.isValidState(Array, data, err);
     if (err.length > 0) return err;
     if (data == null) return err;
 
@@ -4386,7 +4511,7 @@ class JSONSchemaMap extends JSONSchema {
   getPrimaryType() { return JSONSchemaMap; }
 
   isValid(data, err = [], callback) {
-    err = super.isValidState(Map, data, err);
+    err = this.isValidState(Map, data, err);
     if (err.length > 0) return err;
     if (data == null) return err;
 
@@ -4415,5 +4540,5 @@ class JSONSchemaMap extends JSONSchema {
   }
 }
 
-export { JSONPointer_addFolder, JSONPointer_pathSeparator, JSONSchema, JSONSchemaArray, JSONSchemaBoolean, JSONSchemaInteger, JSONSchemaMap, JSONSchemaNumber, JSONSchemaObject, JSONSchemaString, JSONSchemaTuple, JSONSchema_NUMBER_FORMATS, JSONSchema_STRING_FORMATS, JSONSchema_getNumberFormatType, JSONSchema_isArray, JSONSchema_isBoolean, JSONSchema_isInteger, JSONSchema_isMap, JSONSchema_isNumber, JSONSchema_isObject, JSONSchema_isString, JSONSchema_isTuple, JSONSchema_isUnknownSchema, JSONSchema_isValid, JSONSchema_isValidArray, JSONSchema_isValidBoolean, JSONSchema_isValidInteger, JSONSchema_isValidMap, JSONSchema_isValidNumber, JSONSchema_isValidObject, JSONSchema_isValidState, JSONSchema_isValidString, JSONSchema_isValidTuple, JSONSchema_loadSchema, JSONSchema_parseDocument, VN, VNode, addCssClass, app, checkIfValueDisabled, circle2f64, circle2f64_POINTS, clone, cloneDeep, collapseArrayIsToPrimitive, collapseArrayShallow, collapseCssClass, collapseToString, copyAttributes, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getAllObjectKeys, getObjectCountItems, getObjectFirstItem, getStringFormatType, getUniqueArray, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureObject, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeArrays, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, workletState, wrapVN };
+export { Array_collapseShallow, Array_getUnique, Array_mergeUnique, Array_patchPrototype, BetterMap, BetterMap_prototype_getItem, BetterMap_prototype_set, BetterMap_prototype_setItem, JSONPointer_addFolder, JSONPointer_pathSeparator, JSONSchema, JSONSchemaArray, JSONSchemaBoolean, JSONSchemaInteger, JSONSchemaMap, JSONSchemaNumber, JSONSchemaObject, JSONSchemaString, JSONSchemaTuple, JSONSchema_NUMBER_FORMATS, JSONSchema_STRING_FORMATS, JSONSchema_getNumberFormatType, JSONSchema_isArray, JSONSchema_isBoolean, JSONSchema_isInteger, JSONSchema_isMap, JSONSchema_isNumber, JSONSchema_isObject, JSONSchema_isString, JSONSchema_isTuple, JSONSchema_isUnknownSchema, JSONSchema_isValid, JSONSchema_isValidArray, JSONSchema_isValidBoolean, JSONSchema_isValidInteger, JSONSchema_isValidMap, JSONSchema_isValidNumber, JSONSchema_isValidObject, JSONSchema_isValidState, JSONSchema_isValidString, JSONSchema_isValidTuple, JSONSchema_loadSchema, JSONSchema_parseDocument, Map_patchPrototype, VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseToString, copyAttributes, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getAllObjectKeys, getObjectCountItems, getObjectFirstItem, getStringFormatType, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isArray, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureObject, isTypedArray, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, workletState, wrapVN };
 //# sourceMappingURL=index.js.map

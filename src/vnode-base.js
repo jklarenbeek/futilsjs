@@ -1,6 +1,6 @@
 
 
-import { collapseArrayShallow } from './object';
+import { Array_collapseShallow } from './object-Array';
 
 export class VNode {
   constructor(name, attributes, children) {
@@ -14,7 +14,7 @@ export class VNode {
 
 export function VN(name, attributes, ...rest) {
   attributes = attributes || {};
-  const children = collapseArrayShallow(rest);
+  const children = Array_collapseShallow(rest);
   return typeof name === 'function'
     ? name(attributes, children)
     : new VNode(name, attributes, children);

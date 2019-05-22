@@ -1,4 +1,6 @@
-export * from './types';
+export * from './object-base';
+export * from './object-Array';
+export * from './object-Map';
 
 export * from './int32-math';
 export { default as mi32 } from './int32-math';
@@ -17,7 +19,6 @@ export * from './float64-vec3';
 export { default as v3f64 } from './float64-vec3';
 export * from './float64-shape';
 export { default as s2f64 } from './float64-shape';
-export * from './object';
 
 export * from './dom';
 export * from './css';
