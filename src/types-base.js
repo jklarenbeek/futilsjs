@@ -1,3 +1,5 @@
+import { mathi32_round } from './int32-math';
+
 export function isPrimitiveTypeEx(typeString) {
   return typeString === 'integer'
     || typeString === 'number'
@@ -16,8 +18,12 @@ export function sanitizePrimitiveValue(value, nullable, defaultValue = undefined
   return isPrimitiveType(value) ? value : defaultValue;
 }
 
-export function toInt32(value) {
-  return Math.round(value) || undefined;
+export function isPureNumber(obj) {
+  return (Number(obj) || false) !== false;
+}
+
+export function isPureString(obj) {
+  return obj != null && obj.constructor === String;
 }
 
 export function isPureObject(obj) {
@@ -28,7 +34,7 @@ export function isPureArray(obj) {
   return (obj != null && obj.constructor === Array);
 }
 
-export function isTypedArray(obj) {
+export function isPureTypedArray(obj) {
   return (obj != null
     && (obj.constructor === Int8Array
       || obj.constructor === Int16Array
@@ -41,6 +47,54 @@ export function isTypedArray(obj) {
       //|| obj.constructor === UInt32Array
       //|| obj.constructor === BigUint64Array
     ));
+}
+
+export function isBoolOrArray(obj) {
+  return obj != null
+    && (obj === true
+      || obj === false
+      || obj.constructor === Array);
+}
+
+export function isStringOrArray(obj) {
+  return obj != null
+    && (obj.constructor === String
+      || obj.constructor === Array);
+}
+
+export function getBoolOrArray(obj, def) {
+  return isBoolOrArray(obj) ? obj : def;
+}
+
+export function getStringOrArray(obj, def) {
+  return isStringOrArray(obj) ? obj : def;
+}
+
+export function getPureObject(obj, def) {
+  return isPureObject(obj) ? obj : def;
+}
+export function getPureArray(obj, def) {
+  return isPureArray(obj) ? obj : def;
+}
+
+export function getPureArrayGTLength(obj, len, def) {
+  return isPureArray(obj) && obj.length > len ? obj: def;
+}
+
+export function getPureString(obj, def) {
+  return (obj != null && obj.constructor === String) ? obj : def;
+}
+
+export function getPureNumber(obj, def) {
+  return Number(obj) || def; // TODO: performance check for isNaN and Number!!!
+}
+
+export function getPureInteger(obj, def) {
+  return mathi32_round(obj) || def;
+}
+
+export function getPureBool(obj, def) {
+  return obj === true || obj === false ? obj : def;
 }
 
 /* eslint-disable prefer-rest-params */

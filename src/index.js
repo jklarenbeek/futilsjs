@@ -1,6 +1,7 @@
-export * from './object-base';
-export * from './object-Array';
-export * from './object-Map';
+export * from './types-base';
+export * from './types-String';
+export * from './types-Array';
+export * from './types-Map';
 
 export * from './int32-math';
 export { default as mi32 } from './int32-math';

@@ -1,3 +1,4 @@
+/* eslint-disable dot-notation */
 /* eslint-disable class-methods-use-this */
 /* eslint-disable no-labels */
 /* eslint-disable no-lonely-if */
@@ -5,19 +6,120 @@ import { mathi32_max } from './int32-math';
 import {
   getObjectCountItems,
   getAllObjectKeys,
+  isPureString,
   isPureObject,
   isPureArray,
-} from './object-base';
+  isPureTypedArray,
+  getPureObject,
+  getBoolOrArray,
+  getPureArray,
+  getPureArrayGTLength,
+  getPureString,
+  getPureBool,
+  getPureNumber,
+  getPureInteger,
+  cloneObject,
+} from './types-base';
 import {
   JSONPointer_addFolder,
-  JSONPointer_pathSeparator,
+  JSONPointer_addEntry,
 } from './json-pointer';
+
+//#region Pure Schema Type Tests
 
 export function JSONSchema_isUnknownSchema(schema) {
   return (schema.type == null
     && schema.properties == null
     && schema.items == null);
 }
+
+export function JSONSchema_getSelectorName(schema) {
+  const name = schema.allOf ? 'allOf'
+    : schema.anyOf ? 'anyOf'
+      : schema.oneOf ? 'oneOf'
+        : schema.not ? 'not'
+          : undefined;
+  return name;
+}
+
+export function JSONSchema_isBoolean(schema) {
+  const isknown = schema.type === 'boolean';
+  const isknowable = isknown || JSONSchema_isUnknownSchema(schema);
+  const isvalid = isknowable
+    && (typeof schema.const === 'boolean'
+      || typeof schema.default === 'boolean');
+  const isenum = isknowable
+      && (isPureArray(schema.enum) && schema.enum.length === 2);
+  return isknown || isvalid || isenum;
+}
+export function JSONSchema_isNumber(schema) {
+  const isknown = schema.type === 'number'
+    || schema.type === 'float'
+    || schema.type === 'double';
+  const isformat = schema.format === 'float'
+    || schema.format === 'double';
+  const isvalid = JSONSchema_isUnknownSchema(schema)
+    && (typeof schema.const === 'number'
+      || typeof schema.default === 'number');
+
+  return isknown || isformat || isvalid;
+}
+export function JSONSchema_isInteger(schema) {
+  const isknown = schema.type === 'integer'
+    || schema.type === 'int32'
+    || schema.type === 'int64';
+  const isformat = schema.format === 'int32'
+      || schema.format === 'int64';
+  const isvalid = JSONSchema_isUnknownSchema(schema)
+    && (Number.isInteger(schema.const)
+      || Number.isInteger(schema.default));
+  return isknown || isformat || isvalid;
+}
+export function JSONSchema_isString(schema) {
+  const isknown = schema.type === 'string';
+  const isvalid = JSONSchema_isUnknownSchema(schema)
+    && (typeof schema.const === 'string'
+      || typeof schema.default === 'string');
+
+  return isknown || isvalid;
+}
+export function JSONSchema_isObject(schema) {
+  const isknown = schema.type === 'object';
+  const isprops = isPureObject(schema.properties);
+  const isvalid = schema.type == null
+      && (isPureObject(schema.const) || isPureObject(schema.default));
+  return isknown || isprops || isvalid;
+}
+export function JSONSchema_isArray(schema) {
+  const isknown = schema.type === 'array';
+  const isitems = isPureObject(schema.items);
+  const iscontains = isPureObject(schema.contains);
+  const isvalid = schema.type == null
+    && (isPureArray(schema.const) || isPureArray(schema.default));
+  return isknown || isitems || iscontains || isvalid;
+}
+
+export function JSONSchema_isTuple(schema) {
+  const isknown = schema.type === 'tuple';
+  const istuple = isPureArray(schema.items);
+  const isadditional = schema.type == null
+    && schema.hasOwnProperty('additionalItems');
+  return isknown || istuple || isadditional;
+}
+
+export function JSONSchema_isMap(schema) {
+  const isknown = schema.type === 'map';
+  const isvalid = schema.type == null
+    && isPureArray(schema.items)
+    && schema.items.length === 2;
+  return isknown || isvalid;
+}
+
+//#endregion
+
+//#region Pure Validators
+
+// is think we will get rid of this anytime soon...
 
 export function JSONSchema_isValidState(schema, path, type, data, err) {
   if (data == null) {
@@ -55,16 +157,6 @@ export function JSONSchema_isValidState(schema, path, type, data, err) {
   return err;
 }
 
-export function JSONSchema_isBoolean(schema) {
-  const isknown = schema.type === 'boolean';
-  const isknowable = isknown || JSONSchema_isUnknownSchema(schema);
-  const isvalid = isknowable
-    && (typeof schema.const === 'boolean'
-      || typeof schema.default === 'boolean');
-  const isenum = isknowable
-      && (isPureArray(schema.enum) && schema.enum.length === 2);
-  return isknown || isvalid || isenum;
-}
 export function JSONSchema_isValidBoolean(schema, path = '/', data, err = []) {
   return JSONSchema_isValidState(schema, path, 'boolean', data, err);
 }
@@ -92,18 +184,6 @@ function JSONSchema_isValidNumberConstraint(schema, path, data, err) {
   return err;
 }
 
-export function JSONSchema_isNumber(schema) {
-  const isknown = schema.type === 'number'
-    || schema.type === 'float'
-    || schema.type === 'double';
-  const isformat = schema.format === 'float'
-    || schema.format === 'double';
-  const isvalid = JSONSchema_isUnknownSchema(schema)
-    && (typeof schema.const === 'number'
-      || typeof schema.default === 'number');
-
-  return isknown || isformat || isvalid;
-}
 export function JSONSchema_isValidNumber(schema, path = '/', data, err = []) {
   err = JSONSchema_isValidState(schema, path, 'number', data, err);
   if (err.length > 0) return err;
@@ -111,17 +191,6 @@ export function JSONSchema_isValidNumber(schema, path = '/', data, err = []) {
   return JSONSchema_isValidNumberConstraint(schema, path, data, err);
 }
 
-export function JSONSchema_isInteger(schema) {
-  const isknown = schema.type === 'integer'
-    || schema.type === 'int32'
-    || schema.type === 'int64';
-  const isformat = schema.format === 'int32'
-      || schema.format === 'int64';
-  const isvalid = JSONSchema_isUnknownSchema(schema)
-    && (Number.isInteger(schema.const)
-      || Number.isInteger(schema.default));
-  return isknown || isformat || isvalid;
-}
 export function JSONSchema_isValidInteger(path = '/', schema, data, err = []) {
   err = JSONSchema_isValidState(schema, path, 'number', data, err);
   if (data == null) return err;
@@ -132,14 +201,6 @@ export function JSONSchema_isValidInteger(path = '/', schema, data, err = []) {
   return JSONSchema_isValidNumberConstraint(schema, path, data, err);
 }
 
-export function JSONSchema_isString(schema) {
-  const isknown = schema.type === 'string';
-  const isvalid = JSONSchema_isUnknownSchema(schema)
-    && (typeof schema.const === 'string'
-      || typeof schema.default === 'string');
-
-  return isknown || isvalid;
-}
 export function JSONSchema_isValidString(schema, path = '/', data, err = []) {
   err = JSONSchema_isValidState(schema, path, 'string', data, err);
   if (err.length > 0) return err;
@@ -159,14 +220,6 @@ export function JSONSchema_isValidString(schema, path = '/', data, err = []) {
     const pattern = new RegExp(...schema.pattern);
     if (data.search(pattern) === -1) err.push([path, 'pattern', '[\'' + schema.pattern.join('\', \'') + '\']', data]);
   }
-}
-
-export function JSONSchema_isObject(schema) {
-  const isknown = schema.type === 'object';
-  const isprops = isPureObject(schema.properties);
-  const isvalid = schema.type == null
-      && (isPureObject(schema.const) || isPureObject(schema.default));
-  return isknown || isprops || isvalid;
 }
 
 export function JSONSchema_isValidObject(schema, path = '/', data, err = [], callback) {
@@ -271,14 +324,6 @@ export function JSONSchema_isValidObject(schema, path = '/', data, err = [], cal
   return err;
 }
 
-export function JSONSchema_isArray(schema) {
-  const isknown = schema.type === 'array';
-  const isitems = isPureObject(schema.items);
-  const iscontains = isPureObject(schema.contains);
-  const isvalid = schema.type == null
-    && (isPureArray(schema.const) || isPureArray(schema.default));
-  return isknown || isitems || iscontains || isvalid;
-}
 export function JSONSchema_isValidArray(schema, path = '/', data, err = [], callback) {
   err = JSONSchema_isValidState(schema, path, Array, data, err);
   if (err.length > 0) return err;
@@ -312,14 +357,6 @@ export function JSONSchema_isValidArray(schema, path = '/', data, err = [], call
   }
 
   return err;
-}
-
-export function JSONSchema_isTuple(schema) {
-  const isknown = schema.type === 'tuple';
-  const istuple = isPureArray(schema.items);
-  const isadditional = schema.type == null
-    && schema.hasOwnProperty('additionalItems');
-  return isknown || istuple || isadditional;
 }
 
 export function JSONSchema_isValidTuple(schema, path = '/', data, err = [], callback) {
@@ -362,14 +399,6 @@ export function JSONSchema_isValidTuple(schema, path = '/', data, err = [], call
     }
   }
   return err;
-}
-
-export function JSONSchema_isMap(schema) {
-  const isknown = schema.type === 'map';
-  const isvalid = schema.type == null
-    && isPureArray(schema.items)
-    && schema.items.length === 2;
-  return isknown || isvalid;
 }
 
 export function JSONSchema_isValidMap(schema, path = '/', data, err = [], callback) {
@@ -427,7 +456,7 @@ export function JSONSchema_isValid(schema, path = '/', data, err = [], callback)
   return err;
 }
 
-export const JSONSchema_NUMBER_FORMATS = ['number', 'range', 'date', 'month', 'time', 'week', 'int32', 'int64'];
+const JSONSchema_NUMBER_FORMATS = ['number', 'range', 'date', 'month', 'time', 'week', 'int32', 'int64'];
 
 export function JSONSchema_getNumberFormatType(schema) {
   return JSONSchema_NUMBER_FORMATS.includes(schema.format)
@@ -435,14 +464,18 @@ export function JSONSchema_getNumberFormatType(schema) {
     : JSONSchema_NUMBER_FORMATS[0];
 }
 
-export const JSONSchema_STRING_FORMATS = ['text', 'date', 'datetime', 'datetime-local', 'search', 'url', 'tel', 'email', 'password'];
+const JSONSchema_STRING_FORMATS = ['text', 'date', 'datetime', 'datetime-local', 'search', 'url', 'tel', 'email', 'password'];
 
-export function getStringFormatType(schema) {
+export function JSONSchema_getStringFormatType(schema) {
   if (schema.writeOnly === true) return 'password';
   return JSONSchema_STRING_FORMATS.includes(schema.format)
     ? schema.format
     : JSONSchema_STRING_FORMATS[0];
 }
+
+//#endregion
+
+//#region Schema type classes
 
 export default class JSONSchemaDocument {
   constructor() {
@@ -469,7 +502,8 @@ export default class JSONSchemaDocument {
   }
 
   registerDefaultSchemaHandlers() {
-    return this.registerSchemaHandler('default', new JSONSchemaBoolean())
+    return this.registerSchemaHandler('default', new JSONSchemaSelector())
+      && this.registerSchemaHandler('default', new JSONSchemaBoolean())
       && this.registerSchemaHandler('default', new JSONSchemaNumber())
       && this.registerSchemaHandler('default', new JSONSchemaInteger())
       && this.registerSchemaHandler('default', new JSONSchemaString())
@@ -480,10 +514,14 @@ export default class JSONSchemaDocument {
   }
 
   getSchemaHandler(schema) {
-    if (isPureObject(schema)) {
+    if (!(isPureArray(schema) || isPureTypedArray(schema))) {
       let name = null;
 
-      if (JSONSchema_isBoolean(schema)) {
+      const selector = JSONSchema_getSelectorName(schema);
+      if (selector) {
+        name = JSONSchemaSelector.name;
+      }
+      else if (JSONSchema_isBoolean(schema)) {
         name = JSONSchemaBoolean.name;
       }
       else if (JSONSchema_isNumber(schema)) {
@@ -522,107 +560,41 @@ export default class JSONSchemaDocument {
     }
     return undefined;
   }
-
-  importSchema(schema, path) {
-    path = path || '/';
-    // we only change the owner and path here!
-    if (!(schema instanceof JSONSchema)) {
-      const handler = this.getSchemaHandler(schema);
-      if (handler) {
-        const c = schema.prototype.constructor;
-        schema.prototype = handler;
-        schema.prototype.constructor = c;
-      }
-    }
-    if (schema instanceof JSONSchema) {
-      this.schema = schema;
-      throw new Error('not implemented: schema is instanceof JSONSchema with different owner (and path?).');
-    }
-  }
-}
-
-export function JSONSchema_parseDocument(schema, err = []) {
-  const owner = new JSONSchemaDocument();
-  JSONSchema_loadSchema(owner, JSONPointer_pathSeparator, schema, err);
-}
-export function JSONSchema_loadSchema(owner, path, schema, err) {
-  if (isPureObject(schema)) {
-    let Handler = null;
-    if (JSONSchema_isBoolean(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else if (JSONSchema_isNumber(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else if (JSONSchema_isInteger(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else if (JSONSchema_isString(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else if (JSONSchema_isObject(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else if (JSONSchema_isArray(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else if (JSONSchema_isTuple(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else if (JSONSchema_isMap(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else {
-      err.push([path, 'schema', 'undefined', schema]);
-      return err;
-    }
-    return new Handler(owner, path, schema);
-  }
-  else {
-    err.push([
-      path,
-      'type',
-      'object',
-      typeof schema === 'object' ? schema.constructor.name : typeof schema,
-    ]);
-    return err;
-  }
 }
 
 const Object_prototype_propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
 
 export class JSONSchema {
-  constructor(owner = {}, path, schema = {}, type) {
-    // if (!(owner instanceof JSONSchemaDocument)) throw new TypeError('owner');
-    // if (typeof path !== 'string') throw new TypeError('path');
-    // if (typeof schema !== 'object') throw new TypeError('schema');
-    if (this.constructor === JSONSchema) throw new SyntaxError('JSONSchema is an abstract class');
+  constructor(owner, path, schema, type) {
+    if (this.constructor === JSONSchema)
+      throw new TypeError('JSONSchema is an abstract class');
+    if (owner != null && !(owner instanceof JSONSchemaDocument))
+      throw new TypeError('JSONSchema owner MUST be of type JSONSchemaDocument');
 
     this._owner = owner;
     this._path = path;
 
-    this.type = typeof type === 'string'
-      ? type
-      : (typeof schema.type === 'string')
-        ? schema.type
-        : 'undefined';
-    this.format = (typeof schema.format === 'string')
-      ? schema.format
-      : null;
-    this.required = schema.required === true;
-    this.nullable = schema.nullable === true;
-    this.readOnly = schema.readOnly === true;
-    this.writeOnly = schema.writeOnly === true;
+    this.type = getPureString(type, getPureString(schema.type));
+    this.format = getPureString(schema.format);
+    this.required = getBoolOrArray(schema.required);
+    this.nullable = getBoolOrArray(schema.nullable);
+    this.readOnly = getBoolOrArray(schema.readOnly);
+    this.writeOnly = getBoolOrArray(schema.writeOnly);
 
-    this.title = schema.title;
-    this.$comment = schema.$comment;
-    this.description = schema.description; // MarkDown
-    this.placeholder = schema.placeholder;
-    this.default = schema.default;
-    this.examples = schema.examples;
+    this.title = getPureString(schema.title);
+    this.$comment = getPureString(schema.$comment);
+    this.description = getPureString(schema.description); // MarkDown
+    this.placeholder = getPureString(schema.placeholder);
+    this.default = schema.default !== null ? schema.default : undefined;
+    this.examples = getPureArray(schema.examples);
+    this.const = schema.const !== null ? schema.const : undefined;
   }
 
   getPrimaryType() { throw new Error('Abstract Method'); }
+
+  getDefault() {
+    return this.const || this.default;
+  }
 
   propertyIsEnumerable(prop) {
     return (typeof prop === 'string' || prop.indexOf('_') !== 0)
@@ -633,9 +605,42 @@ export class JSONSchema {
     return false;
   }
 
-  getSchemaChildren() {
+  createSchemaHandler(path, schema, base) {
+    const merge = { ...base, ...schema };
+    const Handler = this._owner.getSchemaHandler(merge);
+    if (Handler) {
+      return new Handler(this._owner, path, merge);
+    }
     return undefined;
   }
+
+  constructSchemaObjectChildren(path, obj, base, jpadd = JSONPointer_addFolder) {
+    const out = {};
+    let empty = true;
+    for (const name in obj) {
+      if (obj.hasOwnProperty(name)) {
+        const child = this.createSchemaHandler(jpadd(path, name), obj[name], base);
+        if (child) {
+          out[name] = child;
+          empty = false;
+        }
+      }
+    }
+    return empty ? undefined : out;
+  }
+
+  constructSchemaArrayChildren(path, items, base, jpadd = JSONPointer_addFolder) {
+    const out = [];
+    const len = items.length;
+    for (let i = 0; i < len; ++i) {
+      const child = this.createSchemaHandler(jpadd(path, i), items[i], base);
+      if (child) {
+        out.push(child);
+      }
+    }
+    return out.length > 0 ? out : undefined;
+  }
+
 
   isValidState(type, data, err) {
     if (data === undefined && this.required === true) {
@@ -673,9 +678,54 @@ export class JSONSchema {
   }
 }
 
-export class JSONSchemaBoolean extends JSONSchema {
+export class JSONSchemaSelector extends JSONSchema {
   constructor(owner, path, schema) {
-    super(owner, path, schema, 'boolean');
+    super(owner, path, schema, undefined);
+    const name = JSONSchema_getSelectorName(schema);
+    const items = getPureArrayGTLength(schema[name], 0);
+    if (items) {
+      const selectors = [];
+
+      const base = Object.create(schema);
+      delete base.oneOf;
+      delete base.anyOf;
+      delete base.allOf;
+      delete base.not;
+
+      const len = items.length;
+      for (let i = 0; i < len; i++) {
+        const item = cloneObject(base, items[i]);
+        const Handler = owner.getSchemaHandler(item);
+        if (Handler) {
+          const child = new Handler(
+            owner,
+            JSONPointer_addEntry(path, i),
+            item,
+          );
+          selectors.push(child);
+        }
+      }
+
+      if (selectors.length > 0) {
+        this._selectName = name;
+        this._selectItems = selectors;
+        this[name] = selectors;
+      }
+    }
+  }
+
+  getPrimaryType() { return JSONSchemaSelector; }
+
+  canHaveSchemaChildren() { return true; }
+
+  isValid(data, err = [], callback) {
+    throw new Error('not implemented', data, err, callback);
+  }
+}
+
+export class JSONSchemaBoolean extends JSONSchema {
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'boolean', clone);
   }
 
   getPrimaryType() { return JSONSchemaBoolean; }
@@ -686,18 +736,18 @@ export class JSONSchemaBoolean extends JSONSchema {
 }
 
 export class JSONSchemaNumber extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, 'number');
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'number', clone);
 
-    this.minimum = typeof schema.minimum === 'number' ? schema.minimum : undefined;
-    this.maximum = typeof schema.maximum === 'number' ? schema.maximum : undefined;
-    this.exclusiveMinimim = schema.exclusiveMinimim === true;
-    this.exclusiveMaximim = schema.exclusiveMaximim === true;
+    this.minimum = getPureNumber(schema.minimum);
+    this.maximum = getPureNumber(schema.maximum);
+    this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim);
+    this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim);
 
-    this.low = typeof schema.low === 'number' ? schema.low : undefined;
-    this.high = typeof schema.high === 'number' ? schema.high : undefined;
-    this.optimum = typeof schema.optimum === 'number' ? schema.optimum : undefined;
-    this.multipleOf = typeof schema.multipleOf === 'number' ? schema.multipleOf : undefined;
+    this.low = getPureNumber(schema.low);
+    this.high = getPureNumber(schema.high);
+    this.optimum = getPureNumber(schema.optimum);
+    this.multipleOf = getPureNumber(schema.multipleOf);
   }
 
   getPrimaryType() { return JSONSchemaNumber; }
@@ -744,29 +794,17 @@ export class JSONSchemaNumber extends JSONSchema {
 }
 
 export class JSONSchemaInteger extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, 'integer');
-    this.minimum = typeof schema.minimum === 'number'
-      ? Math.round(schema.minimum)
-      : undefined;
-    this.maximum = typeof schema.maximum === 'number'
-      ? Math.round(schema.maximum)
-      : undefined;
-    this.exclusiveMinimim = schema.exclusiveMinimim === true;
-    this.exclusiveMaximim = schema.exclusiveMaximim === true;
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'integer', clone);
+    this.minimum = getPureInteger(schema.minimum);
+    this.maximum = getPureInteger(schema.maximum);
+    this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim);
+    this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim);
 
-    this.low = typeof schema.low === 'number'
-      ? Math.round(schema.low)
-      : undefined;
-    this.high = typeof schema.high === 'number'
-      ? Math.round(schema.high)
-      : undefined;
-    this.optimum = typeof schema.optimum === 'number'
-      ? Math.round(schema.optimum)
-      : undefined;
-    this.multipleOf = typeof schema.multipleOf === 'number'
-      ? Math.round(schema.multipleOf)
-      : undefined;
+    this.low = getPureInteger(schema.low);
+    this.high = getPureInteger(schema.high);
+    this.optimum = getPureInteger(schema.optimum);
+    this.multipleOf = getPureInteger(schema.multipleOf);
   }
 
   getPrimaryType() { return JSONSchemaInteger; }
@@ -816,22 +854,17 @@ export class JSONSchemaInteger extends JSONSchema {
   }
 }
 export class JSONSchemaString extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, 'string');
-    this.maxLength = typeof schema.maxLength === 'number'
-      ? Math.round(schema.maxLength)
-      : undefined;
-    this.minLength = typeof schema.minLength === 'number'
-      ? Math.round(schema.minLength)
-      : undefined;
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'string', clone);
+    this.maxLength = getPureInteger(schema.maxLength);
+    this.minLength = getPureInteger(schema.minLength);
     if (schema.pattern != null && schema._pattern == null) {
-      const isvalid = (schema.pattern.constructor === String
-          || schema.pattern.constructor === Array);
-      this.pattern = isvalid ? schema.pattern : undefined;
-      if (isvalid && schema.pattern.constructor === String) {
+      if (isPureString(schema.pattern)) {
+        this.pattern = schema.pattern;
         this._pattern = new RegExp(this.pattern);
       }
-      else if (isvalid) {
+      else if (isPureArray(schema.pattern)) {
+        this.pattern = schema.pattern;
         this._pattern = new RegExp(...this.pattern);
       }
     }
@@ -869,33 +902,22 @@ export class JSONSchemaString extends JSONSchema {
 }
 
 export class JSONSchemaObject extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, 'object');
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'object', clone);
 
-    this.maxProperties = typeof schema.maxProperties === 'number'
-      ? schema.maxProperties
-      : undefined;
-    this.minProperties = typeof schema.minProperties === 'number'
-      ? schema.minProperties
-      : undefined;
+    this.maxProperties = getPureInteger(schema.maxProperties);
+    this.minProperties = getPureInteger(schema.minProperties);
 
-    this.required = schema.required === true
-      || (schema.required != null
-      && schema.required.constructor === Array)
-      ? schema.required
-      : undefined;
-
+    //#region init required
+    this.required = getBoolOrArray(schema.required);
     if (schema.patternRequired && !this._patternRequired) {
-      this.patternRequired = isPureArray(schema.patternRequired)
-        && schema.patternRequired.length > 0
-        ? schema.patternRequired
-        : undefined;
+      this.patternRequired = getPureArrayGTLength(schema.patternRequired, 0);
       if (this.patternRequired) {
         const required = [];
         for (let i = 0; i < this.patternRequired.length; ++i) {
           const pattern = this.patternRequired[i];
           // TODO: Test if valid regexp pattern before adding
-          if (pattern.constructor === String) {
+          if (isPureString(pattern)) {
             const rxp = new RegExp(pattern);
             required.push(rxp);
           }
@@ -915,26 +937,22 @@ export class JSONSchemaObject extends JSONSchema {
       this.patternRequired = undefined;
       this._patternRequired = undefined;
     }
+    //#endregion
 
-    this.properties = isPureObject(schema.properties)
-      ? schema.properties
-      : {};
+    //#region init properties
+    this.properties = getPureObject(schema.properties, {});
+    this.patternProperties = getPureObject(schema.patternProperties);
 
-    if (schema.patternProperties && !this._patternProperties) {
-      this.patternProperties = isPureObject(schema.patternProperties)
-        ? schema.patternProperties
-        : undefined;
-      if (this.patternProperties) {
-        const patterns = this.patternProperties;
-        const props = {};
-        for (const i in patterns) {
-          if (patterns.hasOwnProperty(i)) {
-            const rxp = new RegExp(i);
-            props[i] = rxp;
-          }
+    if (this.patternProperties && !schema._patternProperties) {
+      const patterns = this.patternProperties;
+      const props = {};
+      for (const i in patterns) {
+        if (patterns.hasOwnProperty(i)) {
+          const rxp = new RegExp(i);
+          props[i] = rxp;
         }
-        this._patternProperties = props;
       }
+      this._patternProperties = props;
     }
     else if (schema._patternProperties) {
       this.patternProperties = schema.patternProperties;
@@ -945,19 +963,15 @@ export class JSONSchemaObject extends JSONSchema {
       this._patternProperties = undefined;
     }
 
-    this.additionalProperties = schema.additionalProperties === true;
+    // register properties
+    //#endregion
+
+    this.additionalProperties = getPureBool(schema.additionalProperties);
   }
 
   getPrimaryType() { return JSONSchemaObject; }
 
   canHaveSchemaChildren() { return true; }
-
-  getSchemaChildren() {
-    return {
-      ...this.properties,
-      ...this.patternProperties,
-    };
-  }
 
   isValid(data, err = [], callback) {
     err = this.isValidState('object', data, err);
@@ -1072,21 +1086,13 @@ export class JSONSchemaObject extends JSONSchema {
 }
 
 export class JSONSchemaArray extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, 'array');
-    this.minItems = typeof schema.minItems === 'number'
-      ? Math.round(schema.minItems)
-      : undefined;
-    this.maxItems = typeof schema.maxItems === 'number'
-      ? Math.round(schema.maxItems)
-      : undefined;
-    this.uniqueItems = schema.uniqueItems === true;
-    this.items = isPureObject(schema.items)
-      ? schema.items
-      : undefined;
-    this.contains = isPureObject(schema.contains)
-      ? schema.contains
-      : undefined;
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'array', clone);
+    this.minItems = getPureInteger(schema.minItems);
+    this.maxItems = getPureInteger(schema.maxItems);
+    this.uniqueItems = getPureBool(schema.uniqueItems);
+    this.items = getPureObject(schema.items);
+    this.contains = getPureObject(schema.contains);
   }
 
   getPrimaryType() { return JSONSchemaArray; }
@@ -1140,21 +1146,15 @@ export class JSONSchemaArray extends JSONSchema {
 }
 
 export class JSONSchemaTuple extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, 'tuple');
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'tuple', clone);
 
-    this.items = isPureArray(schema.items) ? schema.items : undefined;
-    this.additionalItems = typeof schema.additionalItems === 'object'
-      ? schema.additionalItems
-      : undefined;
+    this.items = getPureArray(schema.items, []);
+    this.additionalItems = getPureObject(schema.additionalItems);
     if (this.additionalItems) {
-      this.minItems = this.additionalItems && typeof schema.minItems === 'number'
-        ? schema.minItems
-        : undefined;
-      this.maxItems = this.additionalItems && typeof schema.maxItems === 'number'
-        ? schema.maxItems
-        : undefined;
-      this.uniqueItems = this.additionalItems && schema.uniqueItems === true;
+      this.minItems = getPureInteger(schema.minItems);
+      this.maxItems = getPureInteger(schema.maxItems);
+      this.uniqueItems = getPureBool(schema.uniqueItems);
     }
   }
 
@@ -1219,15 +1219,11 @@ export class JSONSchemaTuple extends JSONSchema {
 }
 
 export class JSONSchemaMap extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, 'map');
-    this.minItems = typeof schema.minItems === 'number'
-      ? Math.round(schema.minItems)
-      : undefined;
-    this.maxItems = typeof schema.maxItems === 'number'
-      ? Math.round(schema.maxItems)
-      : undefined;
-    this.items = isPureArray(schema.items) ? schema.items : [];
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'map', clone);
+    this.minItems = getPureInteger(schema.minItems);
+    this.maxItems = getPureInteger(schema.maxItems);
+    this.items = getPureArray(schema.items, []);
   }
 
   getPrimaryType() { return JSONSchemaMap; }
@@ -1272,3 +1268,5 @@ export class JSONSchemaMap extends JSONSchema {
     return err;
   }
 }
+
+//#endregion

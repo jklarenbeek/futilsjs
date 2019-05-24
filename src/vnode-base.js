@@ -1,6 +1,6 @@
 
 
-import { Array_collapseShallow } from './object-Array';
+import { Array_collapseShallow } from './types-Array';
 
 export class VNode {
   constructor(name, attributes, children) {

@@ -1,3 +1,40 @@
+const mathi32_MULTIPLIER = 10000;
+
+const mathi32_abs = Math.abs;
+const mathi32_round = Math.round;
+const mathi32_ceil = Math.ceil;
+const mathi32_floor = Math.floor;
+const mathi32_min = Math.min;
+const mathi32_max = Math.max;
+
+const mathi32_sqrt = Math.sqrt;
+const mathi32_asin = Math.asin;
+const mathi32_atan2 = Math.atan2;
+
+const mathi32_PI = (Math.PI * mathi32_MULTIPLIER)|0;
+const mathi32_PI2 = (mathi32_PI * 2)|0;
+const mathi32_PI1H = (mathi32_PI / 2)|0;
+const mathi32_PI41 = ((4 / Math.PI) * mathi32_MULTIPLIER)|0;
+const mathi32_PI42 = ((4 / (Math.PI * Math.PI)) * mathi32_MULTIPLIER)|0;
+
+var int32Math = {
+  abs: mathi32_abs,
+  round: mathi32_round,
+  floor: mathi32_floor,
+  min: mathi32_min,
+  max: mathi32_max,
+  sqrt: mathi32_sqrt,
+  asin: mathi32_asin,
+  atan2: mathi32_atan2,
+
+  MULTIPLIER: mathi32_MULTIPLIER,
+  PI: mathi32_PI,
+  PI2: mathi32_PI2,
+  PI1H: mathi32_PI1H,
+  PI41: mathi32_PI41,
+  PI42: mathi32_PI42,
+};
+
 function isPrimitiveTypeEx(typeString) {
   return typeString === 'integer'
     || typeString === 'number'
@@ -16,6 +53,14 @@ function sanitizePrimitiveValue(value, nullable, defaultValue = undefined) {
   return isPrimitiveType(value) ? value : defaultValue;
 }
 
+function isPureNumber(obj) {
+  return (Number(obj) || false) !== false;
+}
+
+function isPureString(obj) {
+  return obj != null && obj.constructor === String;
+}
+
 function isPureObject(obj) {
   return (typeof obj === 'object' && obj.constructor !== Array);
 }
@@ -24,7 +69,7 @@ function isPureArray(obj) {
   return (obj != null && obj.constructor === Array);
 }
 
-function isTypedArray(obj) {
+function isPureTypedArray(obj) {
   return (obj != null
     && (obj.constructor === Int8Array
       || obj.constructor === Int16Array
@@ -39,6 +84,54 @@ function isTypedArray(obj) {
     ));
 }
 
+function isBoolOrArray(obj) {
+  return obj != null
+    && (obj === true
+      || obj === false
+      || obj.constructor === Array);
+}
+
+function isStringOrArray(obj) {
+  return obj != null
+    && (obj.constructor === String
+      || obj.constructor === Array);
+}
+
+function getBoolOrArray(obj, def) {
+  return isBoolOrArray(obj) ? obj : def;
+}
+
+function getStringOrArray(obj, def) {
+  return isStringOrArray(obj) ? obj : def;
+}
+
+function getPureObject(obj, def) {
+  return isPureObject(obj) ? obj : def;
+}
+function getPureArray(obj, def) {
+  return isPureArray(obj) ? obj : def;
+}
+
+function getPureArrayGTLength(obj, len, def) {
+  return isPureArray(obj) && obj.length > len ? obj: def;
+}
+
+function getPureString(obj, def) {
+  return (obj != null && obj.constructor === String) ? obj : def;
+}
+
+function getPureNumber(obj, def) {
+  return Number(obj) || def; // TODO: performance check for isNaN and Number!!!
+}
+
+function getPureInteger(obj, def) {
+  return mathi32_round(obj) || def;
+}
+
+function getPureBool(obj, def) {
+  return obj === true || obj === false ? obj : def;
+}
+
 /* eslint-disable prefer-rest-params */
 function getAllObjectKeys(obj) {
   const arr = [];
@@ -48,6 +141,13 @@ function getAllObjectKeys(obj) {
   return arr;
 }
 
+function getAllObjectValues(obj) {
+  const arr = [];
+  for (const i in obj) {
+    if (obj.hasOwnProperty(i)) arr.push(obj[i]);
+  }
+  return arr;
+}
 function getObjectFirstItem(obj) {
   for (const item in obj) {
     if (obj.hasOwnProperty(item)) {
@@ -329,8 +429,29 @@ function deepEquals(a, b, enforce_properties_order, cyclic) {
 
 //#endregion
 
-/* eslint-disable no-extend-native */
+function createRegex(pattern) {
+  try {
+    if (isPureArray(pattern)) {
+      return new RegExp(pattern[0], pattern[1]);
+    }
+    else if (isPureString(pattern)) {
+      const parts = pattern.split('/');
+      let regex = pattern;
+      let options = '';
+      if (parts.length > 1) {
+        regex = parts[1];
+        options = parts[2];
+      }
+      return new RegExp(regex, options);
+    }
+    return null;
+  }
+  catch (e) {
+    return null;
+  }
+}
 
+/* eslint-disable no-extend-native */
 function Array_unique(array) {
   return array.filter((el, index, a) => index === a.indexOf(el));
   // return Array.from(new Set(array));
@@ -371,7 +492,7 @@ function Array_collapseShallow(array) {
   for (ix = 0; ix < lenx; ++ix) {
     itemx = array[ix];
     if (itemx == null) continue;
-    if (isPureArray(itemx)) {
+    if (itemx.constructor === Array) {
       // fill the result array with the
       // items of this next loop. We do
       // not go any deeper.
@@ -459,43 +580,6 @@ class BetterMap extends Map {
     return BetterMap_prototype_setItem.call(this, index | 0, value);
   }
 }
-
-const mathi32_MULTIPLIER = 10000;
-
-const mathi32_abs = Math.abs;
-const mathi32_round = Math.round;
-const mathi32_ceil = Math.ceil;
-const mathi32_floor = Math.floor;
-const mathi32_min = Math.min;
-const mathi32_max = Math.max;
-
-const mathi32_sqrt = Math.sqrt;
-const mathi32_asin = Math.asin;
-const mathi32_atan2 = Math.atan2;
-
-const mathi32_PI = (Math.PI * mathi32_MULTIPLIER)|0;
-const mathi32_PI2 = (mathi32_PI * 2)|0;
-const mathi32_PI1H = (mathi32_PI / 2)|0;
-const mathi32_PI41 = ((4 / Math.PI) * mathi32_MULTIPLIER)|0;
-const mathi32_PI42 = ((4 / (Math.PI * Math.PI)) * mathi32_MULTIPLIER)|0;
-
-var int32Math = {
-  abs: mathi32_abs,
-  round: mathi32_round,
-  floor: mathi32_floor,
-  min: mathi32_min,
-  max: mathi32_max,
-  sqrt: mathi32_sqrt,
-  asin: mathi32_asin,
-  atan2: mathi32_atan2,
-
-  MULTIPLIER: mathi32_MULTIPLIER,
-  PI: mathi32_PI,
-  PI2: mathi32_PI2,
-  PI1H: mathi32_PI1H,
-  PI41: mathi32_PI41,
-  PI42: mathi32_PI42,
-};
 
 const mathf64_abs = Math.abs;
 
@@ -3296,18 +3380,121 @@ function app(state, actions, view, container) {
 const JSONPointer_pathSeparator = '/';
 function JSONPointer_addFolder(path, folder) {
   // TODO: test folder name is valid
-  if (path === JSONPointer_pathSeparator) {
+  path = path.trim();
+  folder = folder.trim();
+  if (path.length === 0) {
+    return JSONPointer_pathSeparator + folder;
+  }
+  else if (path.indexOf(JSONPointer_pathSeparator, path.length - 1) === 0) {
     return path + folder;
   }
+  else {
+    return path + JSONPointer_pathSeparator + folder;
+  }
+}
+const JSONPointer_entrySeparator = ':';
+function JSONPointer_addEntry(path, entry) {
+  // TODO: what the h@%$ll is that name again...
+  return path + JSONPointer_entrySeparator + entry;
 }
 
-/* eslint-disable class-methods-use-this */
+/* eslint-disable dot-notation */
+
+//#region Pure Schema Type Tests
 
 function JSONSchema_isUnknownSchema(schema) {
   return (schema.type == null
     && schema.properties == null
     && schema.items == null);
 }
+
+function JSONSchema_getSelectorName(schema) {
+  const name = schema.allOf ? 'allOf'
+    : schema.anyOf ? 'anyOf'
+      : schema.oneOf ? 'oneOf'
+        : schema.not ? 'not'
+          : undefined;
+  return name;
+}
+
+function JSONSchema_isBoolean(schema) {
+  const isknown = schema.type === 'boolean';
+  const isknowable = isknown || JSONSchema_isUnknownSchema(schema);
+  const isvalid = isknowable
+    && (typeof schema.const === 'boolean'
+      || typeof schema.default === 'boolean');
+  const isenum = isknowable
+      && (isPureArray(schema.enum) && schema.enum.length === 2);
+  return isknown || isvalid || isenum;
+}
+function JSONSchema_isNumber(schema) {
+  const isknown = schema.type === 'number'
+    || schema.type === 'float'
+    || schema.type === 'double';
+  const isformat = schema.format === 'float'
+    || schema.format === 'double';
+  const isvalid = JSONSchema_isUnknownSchema(schema)
+    && (typeof schema.const === 'number'
+      || typeof schema.default === 'number');
+
+  return isknown || isformat || isvalid;
+}
+function JSONSchema_isInteger(schema) {
+  const isknown = schema.type === 'integer'
+    || schema.type === 'int32'
+    || schema.type === 'int64';
+  const isformat = schema.format === 'int32'
+      || schema.format === 'int64';
+  const isvalid = JSONSchema_isUnknownSchema(schema)
+    && (Number.isInteger(schema.const)
+      || Number.isInteger(schema.default));
+  return isknown || isformat || isvalid;
+}
+function JSONSchema_isString(schema) {
+  const isknown = schema.type === 'string';
+  const isvalid = JSONSchema_isUnknownSchema(schema)
+    && (typeof schema.const === 'string'
+      || typeof schema.default === 'string');
+
+  return isknown || isvalid;
+}
+function JSONSchema_isObject(schema) {
+  const isknown = schema.type === 'object';
+  const isprops = isPureObject(schema.properties);
+  const isvalid = schema.type == null
+      && (isPureObject(schema.const) || isPureObject(schema.default));
+  return isknown || isprops || isvalid;
+}
+function JSONSchema_isArray(schema) {
+  const isknown = schema.type === 'array';
+  const isitems = isPureObject(schema.items);
+  const iscontains = isPureObject(schema.contains);
+  const isvalid = schema.type == null
+    && (isPureArray(schema.const) || isPureArray(schema.default));
+  return isknown || isitems || iscontains || isvalid;
+}
+
+function JSONSchema_isTuple(schema) {
+  const isknown = schema.type === 'tuple';
+  const istuple = isPureArray(schema.items);
+  const isadditional = schema.type == null
+    && schema.hasOwnProperty('additionalItems');
+  return isknown || istuple || isadditional;
+}
+
+function JSONSchema_isMap(schema) {
+  const isknown = schema.type === 'map';
+  const isvalid = schema.type == null
+    && isPureArray(schema.items)
+    && schema.items.length === 2;
+  return isknown || isvalid;
+}
+
+//#endregion
+
+//#region Pure Validators
+
+// is think we will get rid of this anytime soon...
 
 function JSONSchema_isValidState(schema, path, type, data, err) {
   if (data == null) {
@@ -3345,16 +3532,6 @@ function JSONSchema_isValidState(schema, path, type, data, err) {
   return err;
 }
 
-function JSONSchema_isBoolean(schema) {
-  const isknown = schema.type === 'boolean';
-  const isknowable = isknown || JSONSchema_isUnknownSchema(schema);
-  const isvalid = isknowable
-    && (typeof schema.const === 'boolean'
-      || typeof schema.default === 'boolean');
-  const isenum = isknowable
-      && (isPureArray(schema.enum) && schema.enum.length === 2);
-  return isknown || isvalid || isenum;
-}
 function JSONSchema_isValidBoolean(schema, path = '/', data, err = []) {
   return JSONSchema_isValidState(schema, path, 'boolean', data, err);
 }
@@ -3382,18 +3559,6 @@ function JSONSchema_isValidNumberConstraint(schema, path, data, err) {
   return err;
 }
 
-function JSONSchema_isNumber(schema) {
-  const isknown = schema.type === 'number'
-    || schema.type === 'float'
-    || schema.type === 'double';
-  const isformat = schema.format === 'float'
-    || schema.format === 'double';
-  const isvalid = JSONSchema_isUnknownSchema(schema)
-    && (typeof schema.const === 'number'
-      || typeof schema.default === 'number');
-
-  return isknown || isformat || isvalid;
-}
 function JSONSchema_isValidNumber(schema, path = '/', data, err = []) {
   err = JSONSchema_isValidState(schema, path, 'number', data, err);
   if (err.length > 0) return err;
@@ -3401,17 +3566,6 @@ function JSONSchema_isValidNumber(schema, path = '/', data, err = []) {
   return JSONSchema_isValidNumberConstraint(schema, path, data, err);
 }
 
-function JSONSchema_isInteger(schema) {
-  const isknown = schema.type === 'integer'
-    || schema.type === 'int32'
-    || schema.type === 'int64';
-  const isformat = schema.format === 'int32'
-      || schema.format === 'int64';
-  const isvalid = JSONSchema_isUnknownSchema(schema)
-    && (Number.isInteger(schema.const)
-      || Number.isInteger(schema.default));
-  return isknown || isformat || isvalid;
-}
 function JSONSchema_isValidInteger(path = '/', schema, data, err = []) {
   err = JSONSchema_isValidState(schema, path, 'number', data, err);
   if (data == null) return err;
@@ -3422,14 +3576,6 @@ function JSONSchema_isValidInteger(path = '/', schema, data, err = []) {
   return JSONSchema_isValidNumberConstraint(schema, path, data, err);
 }
 
-function JSONSchema_isString(schema) {
-  const isknown = schema.type === 'string';
-  const isvalid = JSONSchema_isUnknownSchema(schema)
-    && (typeof schema.const === 'string'
-      || typeof schema.default === 'string');
-
-  return isknown || isvalid;
-}
 function JSONSchema_isValidString(schema, path = '/', data, err = []) {
   err = JSONSchema_isValidState(schema, path, 'string', data, err);
   if (err.length > 0) return err;
@@ -3449,14 +3595,6 @@ function JSONSchema_isValidString(schema, path = '/', data, err = []) {
     const pattern = new RegExp(...schema.pattern);
     if (data.search(pattern) === -1) err.push([path, 'pattern', '[\'' + schema.pattern.join('\', \'') + '\']', data]);
   }
-}
-
-function JSONSchema_isObject(schema) {
-  const isknown = schema.type === 'object';
-  const isprops = isPureObject(schema.properties);
-  const isvalid = schema.type == null
-      && (isPureObject(schema.const) || isPureObject(schema.default));
-  return isknown || isprops || isvalid;
 }
 
 function JSONSchema_isValidObject(schema, path = '/', data, err = [], callback) {
@@ -3561,14 +3699,6 @@ function JSONSchema_isValidObject(schema, path = '/', data, err = [], callback) 
   return err;
 }
 
-function JSONSchema_isArray(schema) {
-  const isknown = schema.type === 'array';
-  const isitems = isPureObject(schema.items);
-  const iscontains = isPureObject(schema.contains);
-  const isvalid = schema.type == null
-    && (isPureArray(schema.const) || isPureArray(schema.default));
-  return isknown || isitems || iscontains || isvalid;
-}
 function JSONSchema_isValidArray(schema, path = '/', data, err = [], callback) {
   err = JSONSchema_isValidState(schema, path, Array, data, err);
   if (err.length > 0) return err;
@@ -3602,14 +3732,6 @@ function JSONSchema_isValidArray(schema, path = '/', data, err = [], callback) {
   }
 
   return err;
-}
-
-function JSONSchema_isTuple(schema) {
-  const isknown = schema.type === 'tuple';
-  const istuple = isPureArray(schema.items);
-  const isadditional = schema.type == null
-    && schema.hasOwnProperty('additionalItems');
-  return isknown || istuple || isadditional;
 }
 
 function JSONSchema_isValidTuple(schema, path = '/', data, err = [], callback) {
@@ -3652,14 +3774,6 @@ function JSONSchema_isValidTuple(schema, path = '/', data, err = [], callback) {
     }
   }
   return err;
-}
-
-function JSONSchema_isMap(schema) {
-  const isknown = schema.type === 'map';
-  const isvalid = schema.type == null
-    && isPureArray(schema.items)
-    && schema.items.length === 2;
-  return isknown || isvalid;
 }
 
 function JSONSchema_isValidMap(schema, path = '/', data, err = [], callback) {
@@ -3727,29 +3841,32 @@ function JSONSchema_getNumberFormatType(schema) {
 
 const JSONSchema_STRING_FORMATS = ['text', 'date', 'datetime', 'datetime-local', 'search', 'url', 'tel', 'email', 'password'];
 
-function getStringFormatType(schema) {
+function JSONSchema_getStringFormatType(schema) {
   if (schema.writeOnly === true) return 'password';
   return JSONSchema_STRING_FORMATS.includes(schema.format)
     ? schema.format
     : JSONSchema_STRING_FORMATS[0];
 }
 
+//#endregion
+
+//#region Schema type classes
+
 class JSONSchemaDocument {
   constructor() {
     this.schema = null;
-    this.schemaHandlers = {};
+    this.handlers = {};
   }
 
   registerSchemaHandler(formatName = 'default', schemaHandler) {
     if (schemaHandler instanceof JSONSchema) {
       const primaryType = schemaHandler.getPrimaryType();
-      // insanity check!
       if (schemaHandler instanceof primaryType) {
         const primaryName = primaryType.name;
-        if (!this.schemaHandlers[primaryName]) {
-          this.schemaHandlers[primaryName] = {};
+        if (!this.handlers[primaryName]) {
+          this.handlers[primaryName] = {};
         }
-        const formats = this.schemaHandlers[primaryName];
+        const formats = this.handlers[primaryName];
         if (formats.hasOwnProperty(formatName) === false) {
           formats[formatName] = schemaHandler.constructor;
           return true;
@@ -3760,7 +3877,8 @@ class JSONSchemaDocument {
   }
 
   registerDefaultSchemaHandlers() {
-    return this.registerSchemaHandler('default', new JSONSchemaBoolean())
+    return this.registerSchemaHandler('default', new JSONSchemaSelector())
+      && this.registerSchemaHandler('default', new JSONSchemaBoolean())
       && this.registerSchemaHandler('default', new JSONSchemaNumber())
       && this.registerSchemaHandler('default', new JSONSchemaInteger())
       && this.registerSchemaHandler('default', new JSONSchemaString())
@@ -3771,10 +3889,14 @@ class JSONSchemaDocument {
   }
 
   getSchemaHandler(schema) {
-    if (isPureObject(schema)) {
+    if (!(isPureArray(schema) || isPureTypedArray(schema))) {
       let name = null;
 
-      if (JSONSchema_isBoolean(schema)) {
+      const selector = JSONSchema_getSelectorName(schema);
+      if (selector) {
+        name = JSONSchemaSelector.name;
+      }
+      else if (JSONSchema_isBoolean(schema)) {
         name = JSONSchemaBoolean.name;
       }
       else if (JSONSchema_isNumber(schema)) {
@@ -3802,8 +3924,8 @@ class JSONSchemaDocument {
         return undefined;
       }
 
-      if (this.schemaHandlers.hasOwnProperty(name)) {
-        const formats = this.schemaHandlers[name];
+      if (this.handlers.hasOwnProperty(name)) {
+        const formats = this.handlers[name];
         const format = typeof schema.format === 'string'
           ? schema.format
           : 'default';
@@ -3813,112 +3935,87 @@ class JSONSchemaDocument {
     }
     return undefined;
   }
-
-  parseSchema(schema) {
-    // we do NOT check for the type of the schema, we reinitialise it.
-    return schema;
-  }
-
-  importSchema(schema) {
-    // we only change the owner and path here!
-    if (schema instanceof JSONSchema) {
-      this.schema = schema;
-      throw new Error('not implemented: schema is instanceof JSONSchema with different owner (and path?).');
-    }
-  }
-}
-
-function JSONSchema_parseDocument(schema, err = []) {
-  const owner = new JSONSchemaDocument();
-  JSONSchema_loadSchema(owner, JSONPointer_pathSeparator, schema, err);
-}
-function JSONSchema_loadSchema(owner, path, schema, err) {
-  if (isPureObject(schema)) {
-    let Handler = null;
-    if (JSONSchema_isBoolean(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else if (JSONSchema_isNumber(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else if (JSONSchema_isInteger(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else if (JSONSchema_isString(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else if (JSONSchema_isObject(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else if (JSONSchema_isArray(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else if (JSONSchema_isTuple(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else if (JSONSchema_isMap(schema)) {
-      Handler = owner.booleanHandler.default;
-    }
-    else {
-      err.push([path, 'schema', 'undefined', schema]);
-      return err;
-    }
-    return new Handler(owner, path, schema);
-  }
-  else {
-    err.push([
-      path,
-      'type',
-      'object',
-      typeof schema === 'object' ? schema.constructor.name : typeof schema,
-    ]);
-    return err;
-  }
 }
 
 const Object_prototype_propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
 
 class JSONSchema {
-  constructor(owner = {}, path, schema = {}, type) {
-    // if (!(owner instanceof JSONSchemaDocument)) throw new TypeError('owner');
-    // if (typeof path !== 'string') throw new TypeError('path');
-    // if (typeof schema !== 'object') throw new TypeError('schema');
-    if (this.constructor === JSONSchema) throw new SyntaxError('JSONSchema is an abstract class');
+  constructor(owner, path, schema, type) {
+    if (this.constructor === JSONSchema)
+      throw new TypeError('JSONSchema is an abstract class');
+    if (owner != null && !(owner instanceof JSONSchemaDocument))
+      throw new TypeError('JSONSchema owner MUST be of type JSONSchemaDocument');
 
     this._owner = owner;
     this._path = path;
 
-    this.type = typeof type === 'string'
-      ? type
-      : (typeof schema.type === 'string')
-        ? schema.type
-        : 'undefined';
-    this.format = (typeof schema.format === 'string')
-      ? schema.format
-      : null;
-    this.required = schema.required === true;
-    this.nullable = schema.nullable === true;
-    this.readOnly = schema.readOnly === true;
-    this.writeOnly = schema.writeOnly === true;
+    this.type = getPureString(type, getPureString(schema.type));
+    this.format = getPureString(schema.format);
+    this.required = getBoolOrArray(schema.required);
+    this.nullable = getBoolOrArray(schema.nullable);
+    this.readOnly = getBoolOrArray(schema.readOnly);
+    this.writeOnly = getBoolOrArray(schema.writeOnly);
 
-    this.title = schema.title;
-    this.$comment = schema.$comment;
-    this.description = schema.description; // MarkDown
-    this.placeholder = schema.placeholder;
-    this.default = schema.default;
-    this.examples = schema.examples;
+    this.title = getPureString(schema.title);
+    this.$comment = getPureString(schema.$comment);
+    this.description = getPureString(schema.description); // MarkDown
+    this.placeholder = getPureString(schema.placeholder);
+    this.default = schema.default !== null ? schema.default : undefined;
+    this.examples = getPureArray(schema.examples);
+    this.const = schema.const !== null ? schema.const : undefined;
   }
 
   getPrimaryType() { throw new Error('Abstract Method'); }
+
+  getDefault() {
+    return this.const || this.default;
+  }
 
   propertyIsEnumerable(prop) {
     return (typeof prop === 'string' || prop.indexOf('_') !== 0)
       && Object_prototype_propertyIsEnumerable.call(this, prop);
   }
 
-  hasSchemaChildren() {
+  canHaveSchemaChildren() {
     return false;
   }
+
+  createSchemaHandler(path, schema, base) {
+    const merge = { ...base, ...schema };
+    const Handler = this._owner.getSchemaHandler(merge);
+    if (Handler) {
+      return new Handler(this._owner, path, merge);
+    }
+    return undefined;
+  }
+
+  constructSchemaObjectChildren(path, obj, base, jpadd = JSONPointer_addFolder) {
+    const out = {};
+    let empty = true;
+    for (const name in obj) {
+      if (obj.hasOwnProperty(name)) {
+        const child = this.createSchemaHandler(jpadd(path, name), obj[name], base);
+        if (child) {
+          out[name] = child;
+          empty = false;
+        }
+      }
+    }
+    return empty ? undefined : out;
+  }
+
+  constructSchemaArrayChildren(path, items, base, jpadd = JSONPointer_addFolder) {
+    const out = [];
+    const len = items.length;
+    for (let i = 0; i < len; ++i) {
+      const child = this.createSchemaHandler(jpadd(path, i), items[i], base);
+      if (child) {
+        out.push(child);
+      }
+    }
+    return out.length > 0 ? out : undefined;
+  }
+
 
   isValidState(type, data, err) {
     if (data === undefined && this.required === true) {
@@ -3956,9 +4053,54 @@ class JSONSchema {
   }
 }
 
-class JSONSchemaBoolean extends JSONSchema {
+class JSONSchemaSelector extends JSONSchema {
   constructor(owner, path, schema) {
-    super(owner, path, schema, 'boolean');
+    super(owner, path, schema, undefined);
+    const name = JSONSchema_getSelectorName(schema);
+    const items = getPureArrayGTLength(schema[name], 0);
+    if (items) {
+      const selectors = [];
+
+      const base = Object.create(schema);
+      delete base.oneOf;
+      delete base.anyOf;
+      delete base.allOf;
+      delete base.not;
+
+      const len = items.length;
+      for (let i = 0; i < len; i++) {
+        const item = cloneObject(base, items[i]);
+        const Handler = owner.getSchemaHandler(item);
+        if (Handler) {
+          const child = new Handler(
+            owner,
+            JSONPointer_addEntry(path, i),
+            item,
+          );
+          selectors.push(child);
+        }
+      }
+
+      if (selectors.length > 0) {
+        this._selectName = name;
+        this._selectItems = selectors;
+        this[name] = selectors;
+      }
+    }
+  }
+
+  getPrimaryType() { return JSONSchemaSelector; }
+
+  canHaveSchemaChildren() { return true; }
+
+  isValid(data, err = [], callback) {
+    throw new Error('not implemented', data, err, callback);
+  }
+}
+
+class JSONSchemaBoolean extends JSONSchema {
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'boolean', clone);
   }
 
   getPrimaryType() { return JSONSchemaBoolean; }
@@ -3969,18 +4111,18 @@ class JSONSchemaBoolean extends JSONSchema {
 }
 
 class JSONSchemaNumber extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, 'number');
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'number', clone);
 
-    this.minimum = typeof schema.minimum === 'number' ? schema.minimum : undefined;
-    this.maximum = typeof schema.maximum === 'number' ? schema.maximum : undefined;
-    this.exclusiveMinimim = schema.exclusiveMinimim === true;
-    this.exclusiveMaximim = schema.exclusiveMaximim === true;
+    this.minimum = getPureNumber(schema.minimum);
+    this.maximum = getPureNumber(schema.maximum);
+    this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim);
+    this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim);
 
-    this.low = typeof schema.low === 'number' ? schema.low : undefined;
-    this.high = typeof schema.high === 'number' ? schema.high : undefined;
-    this.optimum = typeof schema.optimum === 'number' ? schema.optimum : undefined;
-    this.multipleOf = typeof schema.multipleOf === 'number' ? schema.multipleOf : undefined;
+    this.low = getPureNumber(schema.low);
+    this.high = getPureNumber(schema.high);
+    this.optimum = getPureNumber(schema.optimum);
+    this.multipleOf = getPureNumber(schema.multipleOf);
   }
 
   getPrimaryType() { return JSONSchemaNumber; }
@@ -4027,29 +4169,17 @@ class JSONSchemaNumber extends JSONSchema {
 }
 
 class JSONSchemaInteger extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, 'integer');
-    this.minimum = typeof schema.minimum === 'number'
-      ? Math.round(schema.minimum)
-      : undefined;
-    this.maximum = typeof schema.maximum === 'number'
-      ? Math.round(schema.maximum)
-      : undefined;
-    this.exclusiveMinimim = schema.exclusiveMinimim === true;
-    this.exclusiveMaximim = schema.exclusiveMaximim === true;
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'integer', clone);
+    this.minimum = getPureInteger(schema.minimum);
+    this.maximum = getPureInteger(schema.maximum);
+    this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim);
+    this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim);
 
-    this.low = typeof schema.low === 'number'
-      ? Math.round(schema.low)
-      : undefined;
-    this.high = typeof schema.high === 'number'
-      ? Math.round(schema.high)
-      : undefined;
-    this.optimum = typeof schema.optimum === 'number'
-      ? Math.round(schema.optimum)
-      : undefined;
-    this.multipleOf = typeof schema.multipleOf === 'number'
-      ? Math.round(schema.multipleOf)
-      : undefined;
+    this.low = getPureInteger(schema.low);
+    this.high = getPureInteger(schema.high);
+    this.optimum = getPureInteger(schema.optimum);
+    this.multipleOf = getPureInteger(schema.multipleOf);
   }
 
   getPrimaryType() { return JSONSchemaInteger; }
@@ -4099,22 +4229,17 @@ class JSONSchemaInteger extends JSONSchema {
   }
 }
 class JSONSchemaString extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, 'string');
-    this.maxLength = typeof schema.maxLength === 'number'
-      ? Math.round(schema.maxLength)
-      : undefined;
-    this.minLength = typeof schema.minLength === 'number'
-      ? Math.round(schema.minLength)
-      : undefined;
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'string', clone);
+    this.maxLength = getPureInteger(schema.maxLength);
+    this.minLength = getPureInteger(schema.minLength);
     if (schema.pattern != null && schema._pattern == null) {
-      const isvalid = (schema.pattern.constructor === String
-          || schema.pattern.constructor === Array);
-      this.pattern = isvalid ? schema.pattern : undefined;
-      if (isvalid && schema.pattern.constructor === String) {
+      if (isPureString(schema.pattern)) {
+        this.pattern = schema.pattern;
         this._pattern = new RegExp(this.pattern);
       }
-      else if (isvalid) {
+      else if (isPureArray(schema.pattern)) {
+        this.pattern = schema.pattern;
         this._pattern = new RegExp(...this.pattern);
       }
     }
@@ -4152,33 +4277,22 @@ class JSONSchemaString extends JSONSchema {
 }
 
 class JSONSchemaObject extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, 'object');
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'object', clone);
 
-    this.maxProperties = typeof schema.maxProperties === 'number'
-      ? schema.maxProperties
-      : undefined;
-    this.minProperties = typeof schema.minProperties === 'number'
-      ? schema.minProperties
-      : undefined;
+    this.maxProperties = getPureInteger(schema.maxProperties);
+    this.minProperties = getPureInteger(schema.minProperties);
 
-    this.required = schema.required === true
-      || (schema.required != null
-      && schema.required.constructor === Array)
-      ? schema.required
-      : undefined;
-
+    //#region init required
+    this.required = getBoolOrArray(schema.required);
     if (schema.patternRequired && !this._patternRequired) {
-      this.patternRequired = isPureArray(schema.patternRequired)
-        && schema.patternRequired.length > 0
-        ? schema.patternRequired
-        : undefined;
+      this.patternRequired = getPureArrayGTLength(schema.patternRequired, 0);
       if (this.patternRequired) {
         const required = [];
         for (let i = 0; i < this.patternRequired.length; ++i) {
           const pattern = this.patternRequired[i];
           // TODO: Test if valid regexp pattern before adding
-          if (pattern.constructor === String) {
+          if (isPureString(pattern)) {
             const rxp = new RegExp(pattern);
             required.push(rxp);
           }
@@ -4198,26 +4312,22 @@ class JSONSchemaObject extends JSONSchema {
       this.patternRequired = undefined;
       this._patternRequired = undefined;
     }
+    //#endregion
 
-    this.properties = isPureObject(schema.properties)
-      ? schema.properties
-      : {};
+    //#region init properties
+    this.properties = getPureObject(schema.properties, {});
+    this.patternProperties = getPureObject(schema.patternProperties);
 
-    if (schema.patternProperties && !this._patternProperties) {
-      this.patternProperties = isPureObject(schema.patternProperties)
-        ? schema.patternProperties
-        : undefined;
-      if (this.patternProperties) {
-        const patterns = this.patternProperties;
-        const props = {};
-        for (const i in patterns) {
-          if (patterns.hasOwnProperty(i)) {
-            const rxp = new RegExp(i);
-            props[i] = rxp;
-          }
+    if (this.patternProperties && !schema._patternProperties) {
+      const patterns = this.patternProperties;
+      const props = {};
+      for (const i in patterns) {
+        if (patterns.hasOwnProperty(i)) {
+          const rxp = new RegExp(i);
+          props[i] = rxp;
         }
-        this._patternProperties = props;
       }
+      this._patternProperties = props;
     }
     else if (schema._patternProperties) {
       this.patternProperties = schema.patternProperties;
@@ -4228,10 +4338,15 @@ class JSONSchemaObject extends JSONSchema {
       this._patternProperties = undefined;
     }
 
-    this.additionalProperties = schema.additionalProperties === true;
+    // register properties
+    //#endregion
+
+    this.additionalProperties = getPureBool(schema.additionalProperties);
   }
 
   getPrimaryType() { return JSONSchemaObject; }
+
+  canHaveSchemaChildren() { return true; }
 
   isValid(data, err = [], callback) {
     err = this.isValidState('object', data, err);
@@ -4346,24 +4461,25 @@ class JSONSchemaObject extends JSONSchema {
 }
 
 class JSONSchemaArray extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, 'array');
-    this.minItems = typeof schema.minItems === 'number'
-      ? Math.round(schema.minItems)
-      : undefined;
-    this.maxItems = typeof schema.maxItems === 'number'
-      ? Math.round(schema.maxItems)
-      : undefined;
-    this.uniqueItems = schema.uniqueItems === true;
-    this.items = isPureObject(schema.items)
-      ? schema.items
-      : undefined;
-    this.contains = isPureObject(schema.contains)
-      ? schema.contains
-      : undefined;
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'array', clone);
+    this.minItems = getPureInteger(schema.minItems);
+    this.maxItems = getPureInteger(schema.maxItems);
+    this.uniqueItems = getPureBool(schema.uniqueItems);
+    this.items = getPureObject(schema.items);
+    this.contains = getPureObject(schema.contains);
   }
 
   getPrimaryType() { return JSONSchemaArray; }
+
+  canHaveSchemaChildren() { return true; }
+
+  getSchemaChildren() {
+    return {
+      items: this.items,
+      contains: this.contains,
+    };
+  }
 
   isValid(data, err = [], callback) {
     err = this.isValidState(Array, data, err);
@@ -4405,25 +4521,28 @@ class JSONSchemaArray extends JSONSchema {
 }
 
 class JSONSchemaTuple extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, 'tuple');
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'tuple', clone);
 
-    this.items = isPureArray(schema.items) ? schema.items : undefined;
-    this.additionalItems = typeof schema.additionalItems === 'object'
-      ? schema.additionalItems
-      : undefined;
+    this.items = getPureArray(schema.items, []);
+    this.additionalItems = getPureObject(schema.additionalItems);
     if (this.additionalItems) {
-      this.minItems = this.additionalItems && typeof schema.minItems === 'number'
-        ? schema.minItems
-        : undefined;
-      this.maxItems = this.additionalItems && typeof schema.maxItems === 'number'
-        ? schema.maxItems
-        : undefined;
-      this.uniqueItems = this.additionalItems && schema.uniqueItems === true;
+      this.minItems = getPureInteger(schema.minItems);
+      this.maxItems = getPureInteger(schema.maxItems);
+      this.uniqueItems = getPureBool(schema.uniqueItems);
     }
   }
 
   getPrimaryType() { return JSONSchemaTuple; }
+
+  canHaveSchemaChildren() { return true; }
+
+  getSchemaChildren() {
+    return {
+      items: this.items,
+      additionalItems: this.additionalItems,
+    };
+  }
 
   isValid(data, err = [], callback) {
     err = this.isValidState(Array, data, err);
@@ -4475,18 +4594,25 @@ class JSONSchemaTuple extends JSONSchema {
 }
 
 class JSONSchemaMap extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, 'map');
-    this.minItems = typeof schema.minItems === 'number'
-      ? Math.round(schema.minItems)
-      : undefined;
-    this.maxItems = typeof schema.maxItems === 'number'
-      ? Math.round(schema.maxItems)
-      : undefined;
-    this.items = isPureArray(schema.items) ? schema.items : undefined;
+  constructor(owner, path, schema, clone = false) {
+    super(owner, path, schema, 'map', clone);
+    this.minItems = getPureInteger(schema.minItems);
+    this.maxItems = getPureInteger(schema.maxItems);
+    this.items = getPureArray(schema.items, []);
   }
 
   getPrimaryType() { return JSONSchemaMap; }
+
+  canHaveSchemaChildren() {
+    return true;
+  }
+
+  getSchemaChildren() {
+    return {
+      key: this.items[0],
+      value: this.items[1],
+    };
+  }
 
   isValid(data, err = [], callback) {
     err = this.isValidState(Map, data, err);
@@ -4518,5 +4644,7 @@ class JSONSchemaMap extends JSONSchema {
   }
 }
 
-export { Array_collapseShallow, Array_patchPrototype, Array_unique, Array_uniqueMerge, BetterMap, BetterMap_prototype_getItem, BetterMap_prototype_set, BetterMap_prototype_setItem, JSONPointer_addFolder, JSONPointer_pathSeparator, JSONSchema, JSONSchemaArray, JSONSchemaBoolean, JSONSchemaInteger, JSONSchemaMap, JSONSchemaNumber, JSONSchemaObject, JSONSchemaString, JSONSchemaTuple, JSONSchema_NUMBER_FORMATS, JSONSchema_STRING_FORMATS, JSONSchema_getNumberFormatType, JSONSchema_isArray, JSONSchema_isBoolean, JSONSchema_isInteger, JSONSchema_isMap, JSONSchema_isNumber, JSONSchema_isObject, JSONSchema_isString, JSONSchema_isTuple, JSONSchema_isUnknownSchema, JSONSchema_isValid, JSONSchema_isValidArray, JSONSchema_isValidBoolean, JSONSchema_isValidInteger, JSONSchema_isValidMap, JSONSchema_isValidNumber, JSONSchema_isValidObject, JSONSchema_isValidState, JSONSchema_isValidString, JSONSchema_isValidTuple, JSONSchema_loadSchema, JSONSchema_parseDocument, Map_patchPrototype, VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseToString, copyAttributes, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getAllObjectKeys, getObjectCountItems, getObjectFirstItem, getStringFormatType, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureArray, isPureObject, isTypedArray, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, workletState, wrapVN };
+//#endregion
+
+export { Array_collapseShallow, Array_patchPrototype, Array_unique, Array_uniqueMerge, BetterMap, BetterMap_prototype_getItem, BetterMap_prototype_set, BetterMap_prototype_setItem, JSONPointer_addEntry, JSONPointer_addFolder, JSONPointer_entrySeparator, JSONPointer_pathSeparator, JSONSchema, JSONSchemaArray, JSONSchemaBoolean, JSONSchemaInteger, JSONSchemaMap, JSONSchemaNumber, JSONSchemaObject, JSONSchemaSelector, JSONSchemaString, JSONSchemaTuple, JSONSchema_getNumberFormatType, JSONSchema_getSelectorName, JSONSchema_getStringFormatType, JSONSchema_isArray, JSONSchema_isBoolean, JSONSchema_isInteger, JSONSchema_isMap, JSONSchema_isNumber, JSONSchema_isObject, JSONSchema_isString, JSONSchema_isTuple, JSONSchema_isUnknownSchema, JSONSchema_isValid, JSONSchema_isValidArray, JSONSchema_isValidBoolean, JSONSchema_isValidInteger, JSONSchema_isValidMap, JSONSchema_isValidNumber, JSONSchema_isValidObject, JSONSchema_isValidState, JSONSchema_isValidString, JSONSchema_isValidTuple, Map_patchPrototype, VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseToString, copyAttributes, createRegex, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getAllObjectKeys, getAllObjectValues, getBoolOrArray, getObjectCountItems, getObjectFirstItem, getPureArray, getPureArrayGTLength, getPureBool, getPureInteger, getPureNumber, getPureObject, getPureString, getStringOrArray, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isBoolOrArray, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureArray, isPureNumber, isPureObject, isPureString, isPureTypedArray, isStringOrArray, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, workletState, wrapVN };
 //# sourceMappingURL=index.js.map

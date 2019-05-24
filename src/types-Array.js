@@ -1,6 +1,4 @@
 /* eslint-disable no-extend-native */
-import { isPureArray } from './object-base';
-
 export function Array_unique(array) {
   return array.filter((el, index, a) => index === a.indexOf(el));
   // return Array.from(new Set(array));
@@ -41,7 +39,7 @@ export function Array_collapseShallow(array) {
   for (ix = 0; ix < lenx; ++ix) {
     itemx = array[ix];
     if (itemx == null) continue;
-    if (isPureArray(itemx)) {
+    if (itemx.constructor === Array) {
       // fill the result array with the
       // items of this next loop. We do
       // not go any deeper.
