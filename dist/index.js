@@ -3935,6 +3935,13 @@ class JSONSchemaDocument {
     }
     return undefined;
   }
+
+  createSchemaHandler(path, schema) {
+    const Handler = this.getSchemaHandler(schema);
+    return Handler
+      ? new Handler(this, path, schema)
+      : undefined;
+  }
 }
 
 const Object_prototype_propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
@@ -3980,21 +3987,13 @@ class JSONSchema {
     return false;
   }
 
-  createSchemaHandler(path, schema, base) {
-    const merge = { ...base, ...schema };
-    const Handler = this._owner.getSchemaHandler(merge);
-    if (Handler) {
-      return new Handler(this._owner, path, merge);
-    }
-    return undefined;
-  }
-
   constructSchemaObjectChildren(path, obj, base, jpadd = JSONPointer_addFolder) {
     const out = {};
+    const createChild = this._owner.createSchemaHandler;
     let empty = true;
     for (const name in obj) {
       if (obj.hasOwnProperty(name)) {
-        const child = this.createSchemaHandler(jpadd(path, name), obj[name], base);
+        const child = createChild(jpadd(path, name), { ...base, ...obj[name] });
         if (child) {
           out[name] = child;
           empty = false;
@@ -4006,9 +4005,10 @@ class JSONSchema {
 
   constructSchemaArrayChildren(path, items, base, jpadd = JSONPointer_addFolder) {
     const out = [];
+    const createChild = this._owner.createSchemaHandler;
     const len = items.length;
     for (let i = 0; i < len; ++i) {
-      const child = this.createSchemaHandler(jpadd(path, i), items[i], base);
+      const child = createChild(jpadd(path, i), { ...base, ...items[i] });
       if (child) {
         out.push(child);
       }

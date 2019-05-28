@@ -1,16 +1,22 @@
-# ## futilsjs
+# # futilsjs
 
-A collection of javascript helper functions for fast vector math and more, lots more!
+A collection of javascript helper functions for fast vector math and more, lots more! This and all my other projects are under heavy development, so please use or try with caution.
 
-This library is created as a personal merge of some usefull javascript functions, modules and classes that I programmed or used over the years. There are also code snippits that I picked up from forums like stackoverflow and the like. Anyway, stuff that I used, or wanted to use, and some refactored from C or other languages just for that.
+This library is created as a personal merge of some usefull javascript functions, modules and classes that I programmed or used over the years. There are also code snippits that I picked up from forums like stackoverflow and the like. Anyway, stuff that I used, or wanted to use, and some refactored from plain C or other languages. For this reason and because I'm in the middle of this process, don't expect to much.
 
-To make my life even more fun, I forked the hyperapp version 1 sourcecode from github, refactored it and added some usefull stuff to it like css classname array handling. Therefor projects made with futilsjs are not backwards compatible with hyperapp. Don't worry, hyperapp version 2 is very different from its version 1 counterpart. For this reason I fork stuff and change it as I see fit. But not to break other public repositories that use futilsjs; [like aformjs](https://github.com/jklarenbeek/aformjs).
+To make my life even more fun, I forked the hyperapp version 1 sourcecode from github, refactored it and added some usefull stuff to it like vnode attribute flattening. I'm not any garanty at the moment that futilsjs works; but it do only check in when it compiles.
+
+Another interesting collection of function and classes is the JSONSchema validator. In this context I added it to futilsjs in order to separate logic from aformjs, which is under heavy development too :).
+
+Keep in mind that for the time being this repo will change a lot, really fast. So if you want to use it, I suggest you copy the dist file to your project and include it that way.
 
 It is recommended to clone this repository first and then npm-link it into your own project. I do this, to fix bugs in futilsjs when they pop-up (immediatly) or add more functionality (when I get to it). There is more coming in the following months, so follow us. You don't have to clone the repo, because there is a npm package available as well. Follow the steps described below, to get futilsjs up and running.
 
 ## ## npm install futilsjs
 
-As the name suggests, it not more difficult then this. Go to your favorite local project that your working on and type:
+Note: this is not the preferred method! npm futilsjs is out of date and i still want to change versioning back to v0.0.1; that would be the more realistic view of the version I am at.
+
+But as the name suggests, it should be not more difficult then this. Go to your favorite local project that your working on and type:
 
 ```sh
 $~/myprojectjs> npm install --save futilsjs
@@ -24,7 +30,7 @@ const a = isPureObject([]);
 console.log('an array is not a pure object ', a !== true);
 ```
 
-Tadaaa! Have fun using futilsjs!
+Tadaaa! Have fun using futilsjs! (BUT AGAIN, DON'T USE IT THIS WAY!)
 
 ## ## git clone and install futilsjs
 
@@ -65,9 +71,7 @@ $~/futilsjs/dist> cd ~/myprojectjs/
 $~/myprojectjs> npm link futilsjs
 ```
 
-Take note that we use the futilsjs name in the npm link command. This name is defined in the package.json file from the futilsjs repository and has no relation to the location of the cloned futilsjs directory created at the beginning.
-
-From here its the same as using npm install futilsjs.
+Take note that we use the futilsjs name in the npm link command and not any other name that you cloned it to. From here its the same as using npm install futilsjs.
 
 ## ## documentation
 
@@ -88,8 +92,8 @@ or its [here](https://github.com/jklarenbeek/futilsjs/wiki).
 
 ## ## contact
 
-If you find bugs, or want to know what a function is doing, please don't hesitate to ask me by filing an issue. Off topic questions i'd rather not see, but any futilsjs related question is very welcome.
+If you find bugs, or want to know what a function is doing, please don't hesitate to ask me by filing an issue. Off topic questions I'd rather not see, but any futilsjs related question is very welcome.
 
 Please file an issue at [the github futilsjs repository](https://github.com/jklarenbeek/futilsjs/issues). 
 
-Be excellent to yourself, and each other!
+### Be excellent to yourself, and each other!
