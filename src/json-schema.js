@@ -504,11 +504,11 @@ export function JSONSchema_expandSchemaReferences(json, baseUri, callback) {
 }
 
 export class JSONSchemaDocument {
-  constructor() {
-    this.baseUri = null;
+  constructor(baseUri) {
+    this.baseUri = baseUri;
     this.schema = null;
     this.handlers = {};
-    this.baseUriCallback = null;
+    this.baseUriCallback = undefined;
   }
 
 
@@ -553,26 +553,26 @@ export class JSONSchemaDocument {
       else if (JSONSchema_isBoolean(schema)) {
         name = JSONSchemaBoolean.name;
       }
-      else if (JSONSchema_isNumber(schema)) {
-        name = JSONSchemaNumber.name;
-      }
       else if (JSONSchema_isInteger(schema)) {
         name = JSONSchemaInteger.name;
+      }
+      else if (JSONSchema_isNumber(schema)) {
+        name = JSONSchemaNumber.name;
       }
       else if (JSONSchema_isString(schema)) {
         name = JSONSchemaString.name;
       }
       else if (JSONSchema_isObject(schema)) {
-        name = JSONSchemaString.name;
+        name = JSONSchemaObject.name;
       }
       else if (JSONSchema_isArray(schema)) {
-        name = JSONSchemaString.name;
+        name = JSONSchemaArray.name;
       }
       else if (JSONSchema_isTuple(schema)) {
-        name = JSONSchemaString.name;
+        name = JSONSchemaTuple.name;
       }
       else if (JSONSchema_isMap(schema)) {
-        name = JSONSchemaString.name;
+        name = JSONSchemaMap.name;
       }
       else {
         return undefined;
@@ -604,9 +604,9 @@ export class JSONSchemaDocument {
   loadSchema(json, baseUri) {
     const callback = typeof this.baseUriCallback === 'function'
       ? this.baseUriCallback
-      : (function JSONSchemaDocument_loadSchemaCallback() { return json; });
-    JSONSchema_expandSchemaReferences(json, baseUri, callback);
-    const schema = this.createSchemaHandler(json);
+      : (function JSONSchemaDocument_loadSchemaDefaultCallback() { return json; });
+    JSONSchema_expandSchemaReferences(json, baseUri || this.baseUri, callback);
+    const schema = this.createSchemaHandler('/', json);
     this.schema = schema;
   }
 }
@@ -631,12 +631,15 @@ export class JSONSchema {
     this.writeOnly = getBoolOrArray(schema.writeOnly);
 
     this.title = getPureString(schema.title);
+    this.placeholder = getPureString(schema.placeholder);
+
     this.$comment = getPureString(schema.$comment);
     this.description = getPureString(schema.description); // MarkDown
-    this.placeholder = getPureString(schema.placeholder);
+
     this.default = schema.default !== null ? schema.default : undefined;
-    this.examples = getPureArray(schema.examples);
     this.const = schema.const !== null ? schema.const : undefined;
+
+    this.examples = getPureArray(schema.examples);
   }
 
   getPrimaryType() { throw new Error('Abstract Method'); }
