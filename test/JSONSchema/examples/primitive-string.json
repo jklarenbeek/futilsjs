@@ -1,0 +1,6 @@
+{
+  "title": "String",
+  "type": "string",
+  "description": "This is a very simple String Class",
+  "maxLength": 246
+}

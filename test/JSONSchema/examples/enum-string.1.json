@@ -1,0 +1,11 @@
+{
+  "type": "string",
+  "title": "The Good, The Bad and The Ugly",
+  "description": "A simple description about the select editor with an string enumerator.",
+  "enum": ["Good", "Bad", "Ugly"],
+  "options": {
+    "titles": ["Very good", "Mostly bad", "Not that ugly"],
+    "placeholder": "Make a choice here.",
+    "tooltip": "Some extra information about this here"
+  }
+}

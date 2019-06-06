@@ -4,10 +4,12 @@
   "description": "A collection of javascript helper functions for fast vector math and more.",
   "module": "./dist/index.js",
   "files": [
-    "dist"
+    "./dist",
+    "./src"
   ],
   "scripts": {
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "schema": "parcel ./test/JSONSchema/index.html"
   },
   "keywords": [
     "javascript",
@@ -28,9 +30,13 @@
     "type": "git",
     "url": "https://github.com/jklarenbeek/futilsjs.git"
   },
+  "alias": {
+    "__futilsjs": "./src/index.js"
+  },
   "devDependencies": {
     "eslint": "^5.9.0",
     "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-import-resolver-alias": "^1.1.2",
     "eslint-plugin-compat": "^2.6.3",
     "eslint-plugin-html": "^4.0.6",
     "eslint-plugin-import": "^2.14.0",
@@ -69,6 +75,18 @@
       "import",
       "react"
     ],
+    "settings": {
+      "import/resolver": {
+        "alias": {
+          "map": [
+            [
+              "__futilsjs",
+              "./src/index.js"
+            ]
+          ]
+        }
+      }
+    },
     "rules": {
       "operator-assignment": 0,
       "no-use-before-define": 0,

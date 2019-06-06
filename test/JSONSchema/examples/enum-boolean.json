@@ -1,0 +1,10 @@
+{
+  "type": "boolean",
+  "title": "It is",
+  "description": "Take a look outside and determine the half of day",
+  "options": {
+    "inline": true,
+    "titles": ["Night", "Day"],
+    "placeholder": "Choose now..."
+  }
+}

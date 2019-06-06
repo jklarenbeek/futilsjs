@@ -1,25 +1,24 @@
 {
 	"version": "0.2.0",
 	"configurations": [
-	    {
-                "name": "Debug Chrome",
-                "type": "chrome",
-                "request": "launch",
-                "webRoot": "${workspaceRoot}/public",
-                "url": "http://localhost:10001",
-                "port": 9222,
-                "userDataDir": "${workspaceRoot}/.vscode/chrome",
-                "trace": true,
-                "breakOnLoad": true,
-                "smartStep": true,
-                "showAsyncStacks": true,
-                "skipFiles": [
-                    "node_modules/**"
-                ],
-                "sourceMaps": true,
-                "sourceMapPathOverrides": {
-                    "*": "${webRoot}/*"
-                },
-            }
+    {
+      "name": "Debug JSONSchema",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:1234/index.html",
+      "webRoot": "${workspaceFolder}/dist",
+      "trace": true,
+      "breakOnLoad": true,
+      "smartStep": true,
+      "showAsyncStacks": true,
+      "skipFiles": [
+          "node_modules/**"
+      ],
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+          "./src/*": "${webRoot}/*",
+          "./test/JSONSchema/*": "${webRoot}/*"
+      },
+    }
 	]
 }

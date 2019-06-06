@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "properties": {
+    "string": {
+      "$ref": "./primitive-string.json"
+    }
+  }
+}

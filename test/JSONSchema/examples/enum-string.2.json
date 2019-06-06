@@ -1,0 +1,14 @@
+{
+  "type": "string",
+  "title": "Choose your preferred delivery service",
+  "enum": [
+    { "name": "TNT", "price": 6.75, "tax": 19.5, "currency": "euro", "country": "nl" },
+    { "name": "DHL", "price": 4.95, "tax": 15.0, "currency": "gbp", "country": "uk" },
+    { "name": "GLS", "price": 6.20, "tax": 6.2, "currency": "euro", "country": "nl" }
+  ],
+  "expression": "total = price * tax",
+  "template": "Delivery service $name costs $total $currency per shipment in $country.",
+  "options": {
+    "placeholder": "Choose..."
+  }
+}

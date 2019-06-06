@@ -1,0 +1,10 @@
+{
+  "type": "integer",
+  "enum": [2, 3, 5, 8, 13, 21, 34, 55, 89, 144],
+  "description": "Favorite Fibionacci Sequence Number",
+  "template": [ "Two", "Three", "Five", "Eight", "Thirtheen", "Twentyone"],
+  "options": {
+    "inline": true,
+    "placeholder": "Select your favorite number"
+  }
+}

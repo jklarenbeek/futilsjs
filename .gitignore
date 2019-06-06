@@ -82,3 +82,4 @@ typings/
 # vscode chrome userdatadir for debugging
 .vscode/chrome/
 
+dist/

@@ -23,7 +23,7 @@ export function JSONPointer_addFolder(path, folder) {
   return JSONPointer_pathSeparator;
 }
 
-export function JSONPointer_traverseFilterObjectBF(id = '$ref', obj, callback) {
+export function JSONPointer_traverseFilterObjectBF(obj, id = '$ref', callback) {
   const qarr = [];
 
   // traverse tree breath first
@@ -71,7 +71,7 @@ function JSONPointer_createGetFunction(dst, id, next) {
         // TODO: probably doesnt work!
         return function JSONPointer_traverseGetFunction(obj) {
           const qarr = [];
-          JSONPointer_traverseFilterObjectBF(id, obj,
+          JSONPointer_traverseFilterObjectBF(obj, id,
             function JSONPointer_traverseGetFunctionCallback(o) {
               qarr.push(f(o[id]));
             });
@@ -83,7 +83,7 @@ function JSONPointer_createGetFunction(dst, id, next) {
 
   if (dst > 1) return function JSONPointer_defaultTraverseGetFunction(obj) {
     const qarr = [];
-    JSONPointer_traverseFilterObjectBF(id, obj,
+    JSONPointer_traverseFilterObjectBF(obj, id,
       function JSONPointer_defaultTraverseGetFunctionCallback(o) {
         qarr.push(o[id]);
       });

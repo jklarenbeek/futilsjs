@@ -1,0 +1,6 @@
+{
+  "title": "Integer",
+  "type": "integer",
+  "description": "This is a very simple Integer Class",
+  "maxLength": 246
+}

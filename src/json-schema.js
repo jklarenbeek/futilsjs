@@ -1,3 +1,4 @@
+/* eslint-disable eqeqeq */
 /* eslint-disable dot-notation */
 /* eslint-disable class-methods-use-this */
 /* eslint-disable no-labels */
@@ -21,7 +22,7 @@ import {
   cloneObject,
 } from './types-base';
 import {
-  JSONPointer_addFolder,
+  JSONPointer_addFolder, JSONPointer_traverseFilterObjectBF, JSONPointer,
 } from './json-pointer';
 import { String_createRegExp } from './types-String';
 
@@ -478,10 +479,34 @@ export function JSONSchema_getStringFormatType(schema) {
 
 //#region Schema type classes
 
-export default class JSONSchemaDocument {
+export function JSONSchema_expandSchemaReferences(json, baseUri, callback) {
+  // in place merge of object members
+  // TODO: circular reference check.
+  JSONPointer_traverseFilterObjectBF(json, '$ref',
+    function JSONSchema_expandSchemaReferencesCallback(obj) {
+      const ref = obj.$ref;
+      delete obj.$ref;
+      const pointer = new JSONPointer(baseUri, ref);
+      const root = (pointer.baseUri != baseUri)
+        ? ((typeof callback === 'function')
+          ? callback(baseUri)
+          : json)
+        : json;
+      const source = pointer.get(root);
+      const keys = Object.keys(source);
+      for (let i = 0; i < keys.length; ++i) {
+        const key = keys[i];
+        obj[key] = source[key];
+      }
+    });
+}
+
+export class JSONSchemaDocument {
   constructor() {
+    this.baseUri = null;
     this.schema = null;
     this.handlers = {};
+    this.baseUriCallback = null;
   }
 
 
@@ -568,6 +593,19 @@ export default class JSONSchemaDocument {
     return Handler
       ? new Handler(this, path, schema)
       : undefined;
+  }
+
+  registerBaseUriCallBack(callback) {
+    this.baseUriCallback = callback;
+  }
+
+  loadSchema(json, baseUri) {
+    const callback = typeof this.baseUriCallback === 'function'
+      ? this.baseUriCallback
+      : (function JSONSchemaDocument_loadSchemaCallback() { return json; });
+    JSONSchema_expandSchemaReferences(json, baseUri, callback);
+    const schema = this.createSchemaHandler(json);
+    this.schema = schema;
   }
 }
 

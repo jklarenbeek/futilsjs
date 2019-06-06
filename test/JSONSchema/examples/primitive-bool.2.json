@@ -1,0 +1,7 @@
+{
+  "type": "boolean",
+  "format": "radiobox",
+  "title": "RadioBox",
+  "description": "This is a very simple boolean as a RadioBox Class",
+  "maxLength": 246
+}
