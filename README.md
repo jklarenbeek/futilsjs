@@ -81,6 +81,14 @@ I will look up what that means, later...
 
 or its [here](https://github.com/jklarenbeek/futilsjs/wiki).
 
+### ### json pointer
+
+`/foo/$ref`
+
+`//*[./$ref]`
+
+`//$ref:typeof('string')` all $ref
+
 ## ## so frequently asked
 
 ```
@@ -94,6 +102,6 @@ or its [here](https://github.com/jklarenbeek/futilsjs/wiki).
 
 If you find bugs, or want to know what a function is doing, please don't hesitate to ask me by filing an issue. Off topic questions I'd rather not see, but any futilsjs related question is very welcome.
 
-Please file an issue at [the github futilsjs repository](https://github.com/jklarenbeek/futilsjs/issues). 
+Please file an issue at [the github futilsjs repository](https://github.com/jklarenbeek/futilsjs/issues).
 
 ### Be excellent to yourself, and each other!

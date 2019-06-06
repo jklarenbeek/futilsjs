@@ -90,7 +90,7 @@ export function getPureNumber(obj, def) {
 }
 
 export function getPureInteger(obj, def) {
-  return mathi32_round(obj) || def;
+  return (mathi32_round(obj)|0) || def;
 }
 
 export function getPureBool(obj, def) {
@@ -137,15 +137,16 @@ export function isObjectEmpty(obj) {
 }
 
 export function cloneObject(target, source) {
-  const out = {};
+  // const out = {};
 
-  for (const t in target) {
-    if (target.hasOwnProperty(t)) out[t] = target[t];
-  }
-  for (const s in source) {
-    if (source.hasOwnProperty(s)) out[s] = source[s];
-  }
-  return out;
+  // for (const t in target) {
+  //   if (target.hasOwnProperty(t)) out[t] = target[t];
+  // }
+  // for (const s in source) {
+  //   if (source.hasOwnProperty(s)) out[s] = source[s];
+  // }
+  // return out;
+  return { ...target, ...source };
 }
 
 export function cloneDeep(o) {

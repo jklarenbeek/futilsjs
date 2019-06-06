@@ -2,6 +2,8 @@ export * from './types-base';
 export * from './types-String';
 export * from './types-Array';
 export * from './types-Map';
+export * from './types-Queue';
+export * from './types-Tree';
 
 export * from './int32-math';
 export { default as mi32 } from './int32-math';

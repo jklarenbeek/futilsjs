@@ -24,6 +24,7 @@ import {
   JSONPointer_addFolder,
   JSONPointer_addEntry,
 } from './json-pointer';
+import { createRegex } from './types-String';
 
 //#region Pure Schema Type Tests
 
@@ -483,6 +484,7 @@ export default class JSONSchemaDocument {
     this.handlers = {};
   }
 
+
   registerSchemaHandler(formatName = 'default', schemaHandler) {
     if (schemaHandler instanceof JSONSchema) {
       const primaryType = schemaHandler.getPrimaryType();
@@ -514,7 +516,7 @@ export default class JSONSchemaDocument {
   }
 
   getSchemaHandler(schema) {
-    if (!(isPureArray(schema) || isPureTypedArray(schema))) {
+    if (typeof schema === 'object' && !(isPureArray(schema) || isPureTypedArray(schema))) {
       let name = null;
 
       const selector = JSONSchema_getSelectorName(schema);
@@ -612,36 +614,6 @@ export class JSONSchema {
     return false;
   }
 
-  constructSchemaObjectChildren(path, obj, base, jpadd = JSONPointer_addFolder) {
-    const out = {};
-    const createChild = this._owner.createSchemaHandler;
-    let empty = true;
-    for (const name in obj) {
-      if (obj.hasOwnProperty(name)) {
-        const child = createChild(jpadd(path, name), { ...base, ...obj[name] });
-        if (child) {
-          out[name] = child;
-          empty = false;
-        }
-      }
-    }
-    return empty ? undefined : out;
-  }
-
-  constructSchemaArrayChildren(path, items, base, jpadd = JSONPointer_addFolder) {
-    const out = [];
-    const createChild = this._owner.createSchemaHandler;
-    const len = items.length;
-    for (let i = 0; i < len; ++i) {
-      const child = createChild(jpadd(path, i), { ...base, ...items[i] });
-      if (child) {
-        out.push(child);
-      }
-    }
-    return out.length > 0 ? out : undefined;
-  }
-
-
   isValidState(type, data, err) {
     if (data === undefined && this.required === true) {
       err.push([this._path, 'required']);
@@ -675,51 +647,6 @@ export class JSONSchema {
       }
     }
     return err;
-  }
-}
-
-export class JSONSchemaSelector extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, undefined);
-    const name = JSONSchema_getSelectorName(schema);
-    const items = getPureArrayGTLength(schema[name], 0);
-    if (items) {
-      const selectors = [];
-
-      const base = Object.create(schema);
-      delete base.oneOf;
-      delete base.anyOf;
-      delete base.allOf;
-      delete base.not;
-
-      const len = items.length;
-      for (let i = 0; i < len; i++) {
-        const item = cloneObject(base, items[i]);
-        const Handler = owner.getSchemaHandler(item);
-        if (Handler) {
-          const child = new Handler(
-            owner,
-            JSONPointer_addEntry(path, i),
-            item,
-          );
-          selectors.push(child);
-        }
-      }
-
-      if (selectors.length > 0) {
-        this._selectName = name;
-        this._selectItems = selectors;
-        this[name] = selectors;
-      }
-    }
-  }
-
-  getPrimaryType() { return JSONSchemaSelector; }
-
-  canHaveSchemaChildren() { return true; }
-
-  isValid(data, err = [], callback) {
-    throw new Error('not implemented', data, err, callback);
   }
 }
 
@@ -901,73 +828,143 @@ export class JSONSchemaString extends JSONSchema {
   }
 }
 
+export class JSONSchemaSelector extends JSONSchema {
+  constructor(owner, path, schema) {
+    super(owner, path, schema, undefined);
+    this._selectName = JSONSchema_getSelectorName(schema);
+    const selectBase = { ...schema };
+    delete selectBase.oneOf;
+    delete selectBase.anyOf;
+    delete selectBase.allOf;
+    delete selectBase.not;
+    const selectItems = getPureArrayGTLength(schema[name], 0);
+
+    this._selectItems = this.initSelectorItems(selectBase, selectItems);
+
+    this[this._selectName] = this._selectItems;
+
+  }
+
+  initSelectorItems(base, items) {
+    const owner = this._owner;
+    const path = this._path;
+    const base = this._selectBase;
+    if (items) {
+      const selectors = [];
+      const len = items.length;
+      for (let i = 0; i < len; i++) {
+        const item = getPureObject(items[i]);
+        if (item) {
+          const schema = cloneObject(base, item);
+          const child = owner.createSchemaHandler(
+            JSONPointer_addFolder(path, String(i)),
+            schema);
+          selectors.push(child);
+        }
+      }
+      return selector.length > 0 ? selectors : undefined;
+    }
+    return undefined;
+  }
+
+  getPrimaryType() { return JSONSchemaSelector; }
+
+  canHaveSchemaChildren() { return true; }
+
+  isValid(data, err = [], callback) {
+    throw new Error('not implemented', data, err, callback);
+  }
+}
+
 export class JSONSchemaObject extends JSONSchema {
   constructor(owner, path, schema, clone = false) {
     super(owner, path, schema, 'object', clone);
 
-    this.maxProperties = getPureInteger(schema.maxProperties);
-    this.minProperties = getPureInteger(schema.minProperties);
+    this.maxProperties = getPureInteger(schema.maxProperties, 0);
+    this.minProperties = getPureInteger(schema.minProperties, 0);
 
-    //#region init required
-    this.required = getBoolOrArray(schema.required);
-    if (schema.patternRequired && !this._patternRequired) {
-      this.patternRequired = getPureArrayGTLength(schema.patternRequired, 0);
-      if (this.patternRequired) {
-        const required = [];
-        for (let i = 0; i < this.patternRequired.length; ++i) {
-          const pattern = this.patternRequired[i];
-          // TODO: Test if valid regexp pattern before adding
-          if (isPureString(pattern)) {
-            const rxp = new RegExp(pattern);
-            required.push(rxp);
-          }
-          else {
-            const rxp = new RegExp(...pattern);
-            required.push(rxp);
-          }
-        }
-        this._patternRequired = required;
-      }
-    }
-    else if (schema._patternRequired) {
-      this.patternRequired = schema.patternRequired;
-      this._patternRequired = schema._patternRequired;
-    }
-    else {
-      this.patternRequired = undefined;
-      this._patternRequired = undefined;
-    }
-    //#endregion
+    this.required = getBoolOrArray(schema.required, false);
 
-    //#region init properties
-    this.properties = getPureObject(schema.properties, {});
-    this.patternProperties = getPureObject(schema.patternProperties);
+    this.properties = this.initObjectProperties(schema);
 
-    if (this.patternProperties && !schema._patternProperties) {
-      const patterns = this.patternProperties;
-      const props = {};
-      for (const i in patterns) {
-        if (patterns.hasOwnProperty(i)) {
-          const rxp = new RegExp(i);
-          props[i] = rxp;
-        }
-      }
-      this._patternProperties = props;
-    }
-    else if (schema._patternProperties) {
-      this.patternProperties = schema.patternProperties;
-      this._patternProperties = schema._patternProperties;
-    }
-    else {
-      this.patternProperties = undefined;
-      this._patternProperties = undefined;
-    }
+    const patternRequiredCached = schema._patternRequired || this.initObjectPatternRequired(schema.patternRequired);
+    const patternRequired = patternRequiredCached ? schema.this.initObjectPatternRequired(schema.patternRequired);
+    this.patternRequired = patternRequired ? schema.patternRequired : undefined;
+    this._patternRequired = patternRequired;
 
-    // register properties
-    //#endregion
+    const { patternProperties, patternPropertiesCached } = this.initObjectPatternProperties(schema);
+    this.patternProperties = patternProperties;
+    this._patternProperties = patternPropertiesCached;
 
-    this.additionalProperties = getPureBool(schema.additionalProperties);
+    this.additionalProperties = getPureBool(schema.additionalProperties, false);
   }
+
+  //#region init schema
+
+  initObjectPatternRequired(schema) {
+    const patterns = getPureArrayGTLength(schema.patternRequired, 0);
+    if (patterns) {
+      const required = [];
+      for (let i = 0; i < patterns.length; ++i) {
+        const pattern = patterns[i];
+        // TODO: Test if valid regexp pattern before adding
+        const regex = createRegEx(pattern);
+        if (regex) required.push(regex);
+      }
+      if (required.length > 0) return required;
+    }
+    return undefined;
+  }
+
+  initObjectProperties(schema) {
+    const owner = this._owner;
+    const path = this._path;
+    const properties = getPureObject(schema.properties);
+    if (properties) {
+      const obj = {};
+      const keys = Object.keys(properties);
+      for (let i = 0; i < keys.length; ++i) {
+        const key = keys[i];
+        const item = properties[key];
+        const schema = owner.createSchemaHandler(
+          JSONPointer_addFolder(path, key),
+          item);
+        obj[key] = schema;
+      }
+      return obj;
+    }
+    return undefined;
+  }
+
+  initObjectPatternProperties(schema) {
+    const owner = this._owner;
+    const path = this._path;
+    const properties = getPureObject(schema.patternProperties);
+    const cached = getPureObject(schema._patternProperties);
+    if (properties && !cached) {
+      const regex = {};
+      const patterns = {};
+      const keys = Object.keys(properties);
+      for (let i = 0; i < keys.length; ++i) {
+        const key = keys[i];
+
+        const rxp = createRegEx(key);
+        regex[key] = rxp;
+
+        patterns[key] = owner.createSchemaHandler(
+          JSONPointer_addFolder(path, key),
+          properties[key]
+        );
+      }
+      return { patternProperties: patterns, patternPropertiesCached: regex };
+    }
+    else if (cached) {
+      return { patternProperties: schema.patternProperties, patternPropertiesCached: schema._patternProperties };
+    }
+    return { patternProperties: undefined, patternPropertiesCached: undefined };
+  }
+
+  //#endregion
 
   getPrimaryType() { return JSONSchemaObject; }
 
@@ -1088,9 +1085,9 @@ export class JSONSchemaObject extends JSONSchema {
 export class JSONSchemaArray extends JSONSchema {
   constructor(owner, path, schema, clone = false) {
     super(owner, path, schema, 'array', clone);
-    this.minItems = getPureInteger(schema.minItems);
-    this.maxItems = getPureInteger(schema.maxItems);
-    this.uniqueItems = getPureBool(schema.uniqueItems);
+    this.minItems = getPureInteger(schema.minItems, 0);
+    this.maxItems = getPureInteger(schema.maxItems, 0);
+    this.uniqueItems = getPureBool(schema.uniqueItems, false);
     this.items = getPureObject(schema.items);
     this.contains = getPureObject(schema.contains);
   }
