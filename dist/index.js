@@ -125,7 +125,7 @@ function getPureNumber(obj, def) {
 }
 
 function getPureInteger(obj, def) {
-  return mathi32_round(obj) || def;
+  return (mathi32_round(obj)|0) || def;
 }
 
 function getPureBool(obj, def) {
@@ -172,15 +172,16 @@ function isObjectEmpty(obj) {
 }
 
 function cloneObject(target, source) {
-  const out = {};
+  // const out = {};
 
-  for (const t in target) {
-    if (target.hasOwnProperty(t)) out[t] = target[t];
-  }
-  for (const s in source) {
-    if (source.hasOwnProperty(s)) out[s] = source[s];
-  }
-  return out;
+  // for (const t in target) {
+  //   if (target.hasOwnProperty(t)) out[t] = target[t];
+  // }
+  // for (const s in source) {
+  //   if (source.hasOwnProperty(s)) out[s] = source[s];
+  // }
+  // return out;
+  return { ...target, ...source };
 }
 
 function cloneDeep(o) {
@@ -429,50 +430,63 @@ function deepEquals(a, b, enforce_properties_order, cyclic) {
 
 //#endregion
 
-function createRegex(pattern) {
+function String_createRegExp(pattern) {
   try {
-    if (isPureArray(pattern)) {
-      return new RegExp(pattern[0], pattern[1]);
-    }
-    else if (isPureString(pattern)) {
-      const parts = pattern.split('/');
-      let regex = pattern;
-      let options = '';
-      if (parts.length > 1) {
-        regex = parts[1];
-        options = parts[2];
+    if (pattern != null) {
+      if (pattern.constructor === String) {
+        const parts = pattern.split('/');
+        let regex = pattern;
+        let options = '';
+        if (parts.length > 1) {
+          regex = parts[1];
+          options = parts[2];
+        }
+        return new RegExp(regex, options);
       }
-      return new RegExp(regex, options);
+      if (pattern.constructor === Array && pattern.length > 1) {
+        return new RegExp(pattern[0], pattern[1]);
+      }
+      if (pattern.constructor === RegExp) {
+        return pattern; // TODO: no checks here....
+      }
     }
-    return null;
+    return undefined;
   }
   catch (e) {
-    return null;
+    return undefined;
   }
 }
 
+function String_trimLeft(str, c) {
+  let i = 0;
+  while (str[i] === c) i++;
+  return i === 0 ? str : str.substring(i);
+}
+
 /* eslint-disable no-extend-native */
+
 function Array_unique(array) {
   return array.filter((el, index, a) => index === a.indexOf(el));
   // return Array.from(new Set(array));
 }
 
-
 // e3Merge from https://jsperf.com/merge-two-arrays-keeping-only-unique-values/22
-function Array_uniqueMerge(a = [], b = []) {
+function Array_uniqueMerge(target = [], source = []) {
+  target = [...target];
+
   const hash = {};
-  let i = (a = a.slice(0)).length;
 
+  let i = target.length;
   while (i--) {
-    hash[a[i]] = 1;
+    hash[target[i]] = 1;
   }
 
-  for (i = 0; i < b.length; i++) {
-    const e = b[i];
+  for (i = 0; i < source.length; ++i) {
+    const e = source[i];
     // eslint-disable-next-line no-unused-expressions
-    hash[e] || a.push(e);
+    hash[e] || target.push(e);
   }
-  return a;
+  return target;
 }
 
 function Array_collapseShallow(array) {
@@ -578,6 +592,139 @@ class BetterMap extends Map {
 
   setItem(index = 0, value) {
     return BetterMap_prototype_setItem.call(this, index | 0, value);
+  }
+}
+
+class Queue {
+  constructor() {
+    this.data = [];
+  }
+
+  enqueue(element) {
+    this.data.push(element);
+  }
+
+  dequeue() {
+    return this.data.shift();
+  }
+
+  front() {
+    return this.data[0];
+  }
+
+  back() {
+    const data = this.data;
+    return data[data.length - 1];
+  }
+}
+
+function Tree_traverseDF(currentNode, callback) {
+  const children = currentNode.children;
+  const len = children.length;
+  let i = 0;
+  let child = null;
+  for (i = 0; i < len; ++i) {
+    child = children[i];
+    Tree_traverseDF(child, callback);
+  }
+  callback(currentNode);
+}
+
+function Tree_traverseBF(currentNode, callback) {
+  const queue = new Queue();
+  queue.enqueue(currentNode);
+
+  let children = null;
+  let len = 0;
+  let i = 0;
+  let child = null;
+
+  currentNode = queue.dequeue();
+  while (currentNode) {
+    children = currentNode.children;
+    len = children.length;
+    for (i = 0; i < len; i++) {
+      child = children[i];
+      queue.enqueue(child);
+    }
+
+    callback(currentNode);
+    currentNode = queue.dequeue();
+  }
+}
+
+function Tree_findIndex(arr, data) {
+  let index = -1;
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i].data === data) {
+      index = i;
+    }
+  }
+  return index;
+}
+
+class TreeNode {
+  constructor(data) {
+    this.data = data;
+    this.parent = null;
+    this.children = [];
+  }
+}
+
+class Tree {
+  constructor(data) {
+    this.root = new TreeNode(data);
+  }
+
+  contains(callback, traversal = Tree_traverseBF) {
+    traversal(this.root, callback);
+  }
+
+  add(data, toParent, traversal = Tree_traverseBF) {
+    const child = new TreeNode(data);
+    let parent = null;
+    const callback = function Tree_addCallback(node) {
+      if (node.data === toParent) {
+        parent = node;
+      }
+    };
+
+    this.contains(callback, traversal);
+
+    if (parent) {
+      parent.children.push(child);
+      child.parent = parent;
+    } else {
+      throw new Error('Cannot add node to a non-existent parent.');
+    }
+  }
+
+  remove(data, fromParent, traversal) {
+    let parent = null;
+    let childToRemove = null;
+    let index = 0;
+
+    const callback = function Tree_removeCallback(node) {
+      if (node.data === fromParent) {
+        parent = node;
+      }
+    };
+
+    this.contains(callback, traversal);
+
+    if (parent) {
+      index = Tree_findIndex(parent.children, data);
+
+      if (index === -1) {
+        throw new Error('Node to remove does not exist.');
+      } else {
+        childToRemove = parent.children.splice(index, 1);
+      }
+    } else {
+      throw new Error('Parent does not exist.');
+    }
+
+    return childToRemove;
   }
 }
 
@@ -3377,28 +3524,174 @@ function app(state, actions, view, container) {
   }
 }
 
+/* eslint-disable eqeqeq */
+
+
 const JSONPointer_pathSeparator = '/';
+const JSONPointer_fragmentSeparator = '#';
+
 function JSONPointer_addFolder(path, folder) {
   // TODO: test folder name is valid
-  path = path.trim();
-  folder = folder.trim();
-  if (path.length === 0) {
-    return JSONPointer_pathSeparator + folder;
+  if (typeof path === 'string') {
+    path = path.trim();
+    folder = (folder || '').trim();
+    if (path.length === 0) {
+      return JSONPointer_pathSeparator + folder;
+    }
+    else if (path.indexOf(JSONPointer_pathSeparator, path.length - 1) === 0) {
+      return path + folder;
+    }
+    else {
+      return path + JSONPointer_pathSeparator + folder;
+    }
   }
-  else if (path.indexOf(JSONPointer_pathSeparator, path.length - 1) === 0) {
-    return path + folder;
-  }
-  else {
-    return path + JSONPointer_pathSeparator + folder;
+  return JSONPointer_pathSeparator;
+}
+
+function JSONPointer_traverseFilterObjectBF(id = '$ref', obj, callback) {
+  const qarr = [];
+
+  // traverse tree breath first
+  let current = obj;
+  while (typeof current === 'object') {
+    if (current.constructor === Array) {
+      for (let i = 0; i < current.length; ++i) {
+        const child = current[i];
+        if (typeof child === 'object') {
+          qarr.push(child);
+        }
+      }
+    }
+    else {
+      const keys = Object.keys(current);
+      for (let i = 0; i < keys.length; ++i) {
+        const key = keys[i];
+        if (key == id) {
+          callback(current);
+          continue;
+        }
+        const child = obj[key];
+        if (typeof child === 'object') {
+          qarr.push(child);
+        }
+      }
+    }
+    current = qarr.shift();
   }
 }
-const JSONPointer_entrySeparator = ':';
-function JSONPointer_addEntry(path, entry) {
-  // TODO: what the h@%$ll is that name again...
-  return path + JSONPointer_entrySeparator + entry;
+
+function JSONPointer_createGetFunction(dst, id, next) {
+  id = Number(id) || decodeURIComponent(id) || '';
+  if (next) {
+    const f = JSONPointer_compileGetPointer(next);
+    if (f) {
+      if (dst === 0 || dst === 1) { // BUG: dst === 0?
+        return function JSONPointer_resursiveGetFunction(obj) {
+          return typeof obj === 'object'
+            ? f(obj[id])
+            : f(obj);
+        };
+      }
+      else if (dst > 1) { // WARNING
+        // TODO: probably doesnt work!
+        return function JSONPointer_traverseGetFunction(obj) {
+          const qarr = [];
+          JSONPointer_traverseFilterObjectBF(id, obj,
+            function JSONPointer_traverseGetFunctionCallback(o) {
+              qarr.push(f(o[id]));
+            });
+          return qarr;
+        };
+      }
+    }
+  }
+
+  if (dst > 1) return function JSONPointer_defaultTraverseGetFunction(obj) {
+    const qarr = [];
+    JSONPointer_traverseFilterObjectBF(id, obj,
+      function JSONPointer_defaultTraverseGetFunctionCallback(o) {
+        qarr.push(o[id]);
+      });
+    return qarr;
+  };
+  else return function JSONPointer_defaultGetFunction(obj) {
+    return (typeof obj === 'object') ? obj[id] : obj;
+  };
+}
+
+function JSONPointer_compileGetPointer(path) {
+  path = typeof path === 'string' ? path : '';
+  if (path === '') return function JSONPointer_compileGetRootFunction(obj) {
+    return obj;
+  };
+
+  const token = String_trimLeft(path, JSONPointer_pathSeparator);
+  const dist = path.length - token.length;
+  const arr = [];
+  let csr = 0;
+
+  for (let i = 0; i < token.length; ++i) {
+    const c = token[i];
+    if (c === '/' && csr === 0) {
+      const j = arr.length > 0 ? arr[0][0] : i;
+      const ct = token.substring(0, j);
+      const nt = token.substring(i);
+      return JSONPointer_createGetFunction(dist, ct, nt);
+    }
+    else if (c === '[') { // TODO: handle index and conditionals
+      arr[csr] = [i, -1];
+      csr++;
+    }
+    else if (c === ']') {
+      csr--; // TODO: add check < 0
+      arr[csr][1] = i;
+    }
+  }
+
+  const j = arr.length > 0 ? arr[0][0] : token.length;
+  const ct = token.substring(0, j);
+  return JSONPointer_createGetFunction(dist, ct, null);
+}
+
+class JSONPointer {
+  constructor(baseUri, pointer) {
+    if (!pointer) {
+      pointer = baseUri;
+      baseUri = null;
+    }
+
+    pointer = typeof pointer !== 'string'
+      ? ''
+      : pointer;
+
+    // trim whitespace left.
+    pointer = pointer.replace(/^\s+/, '');
+
+    // check if there is a baseUri and fragment in the pointer
+    const baseIdx = pointer.indexOf(JSONPointer_fragmentSeparator);
+    // rewrite baseUri and json pointer if so
+    if (baseIdx > 0) baseUri = pointer.substring(0, baseIdx);
+    if (baseIdx >= 0) pointer = pointer.substring(baseIdx + 1);
+
+    // setup basic flags
+    this.isFragment = baseIdx >= 0;
+    this.isAbsolute = pointer[0] === JSONPointer_pathSeparator;
+
+    // setup pointer
+    this.baseUri = baseUri;
+    this.pointer = pointer;
+    this.get = JSONPointer_compileGetPointer(pointer);
+  }
+
+  toString() {
+    return (this.baseUri || '')
+      + (this.isFragment ? JSONPointer_fragmentSeparator : '')
+      + this.pointer;
+  }
 }
 
 /* eslint-disable dot-notation */
+
 
 //#region Pure Schema Type Tests
 
@@ -3858,6 +4151,7 @@ class JSONSchemaDocument {
     this.handlers = {};
   }
 
+
   registerSchemaHandler(formatName = 'default', schemaHandler) {
     if (schemaHandler instanceof JSONSchema) {
       const primaryType = schemaHandler.getPrimaryType();
@@ -3889,7 +4183,7 @@ class JSONSchemaDocument {
   }
 
   getSchemaHandler(schema) {
-    if (!(isPureArray(schema) || isPureTypedArray(schema))) {
+    if (typeof schema === 'object' && !(isPureArray(schema) || isPureTypedArray(schema))) {
       let name = null;
 
       const selector = JSONSchema_getSelectorName(schema);
@@ -3987,36 +4281,6 @@ class JSONSchema {
     return false;
   }
 
-  constructSchemaObjectChildren(path, obj, base, jpadd = JSONPointer_addFolder) {
-    const out = {};
-    const createChild = this._owner.createSchemaHandler;
-    let empty = true;
-    for (const name in obj) {
-      if (obj.hasOwnProperty(name)) {
-        const child = createChild(jpadd(path, name), { ...base, ...obj[name] });
-        if (child) {
-          out[name] = child;
-          empty = false;
-        }
-      }
-    }
-    return empty ? undefined : out;
-  }
-
-  constructSchemaArrayChildren(path, items, base, jpadd = JSONPointer_addFolder) {
-    const out = [];
-    const createChild = this._owner.createSchemaHandler;
-    const len = items.length;
-    for (let i = 0; i < len; ++i) {
-      const child = createChild(jpadd(path, i), { ...base, ...items[i] });
-      if (child) {
-        out.push(child);
-      }
-    }
-    return out.length > 0 ? out : undefined;
-  }
-
-
   isValidState(type, data, err) {
     if (data === undefined && this.required === true) {
       err.push([this._path, 'required']);
@@ -4050,51 +4314,6 @@ class JSONSchema {
       }
     }
     return err;
-  }
-}
-
-class JSONSchemaSelector extends JSONSchema {
-  constructor(owner, path, schema) {
-    super(owner, path, schema, undefined);
-    const name = JSONSchema_getSelectorName(schema);
-    const items = getPureArrayGTLength(schema[name], 0);
-    if (items) {
-      const selectors = [];
-
-      const base = Object.create(schema);
-      delete base.oneOf;
-      delete base.anyOf;
-      delete base.allOf;
-      delete base.not;
-
-      const len = items.length;
-      for (let i = 0; i < len; i++) {
-        const item = cloneObject(base, items[i]);
-        const Handler = owner.getSchemaHandler(item);
-        if (Handler) {
-          const child = new Handler(
-            owner,
-            JSONPointer_addEntry(path, i),
-            item,
-          );
-          selectors.push(child);
-        }
-      }
-
-      if (selectors.length > 0) {
-        this._selectName = name;
-        this._selectItems = selectors;
-        this[name] = selectors;
-      }
-    }
-  }
-
-  getPrimaryType() { return JSONSchemaSelector; }
-
-  canHaveSchemaChildren() { return true; }
-
-  isValid(data, err = [], callback) {
-    throw new Error('not implemented', data, err, callback);
   }
 }
 
@@ -4276,73 +4495,157 @@ class JSONSchemaString extends JSONSchema {
   }
 }
 
+class JSONSchemaSelector extends JSONSchema {
+  constructor(owner, path, schema) {
+    super(owner, path, schema, undefined);
+    const selectName = JSONSchema_getSelectorName(schema);
+    const selectBase = { ...schema };
+    delete selectBase.oneOf;
+    delete selectBase.anyOf;
+    delete selectBase.allOf;
+    delete selectBase.not;
+    const selectItems = getPureArrayGTLength(schema[selectName], 0);
+
+    this._selectName = selectName;
+    this._selectItems = this.initSelectorItems(selectBase, selectItems);
+
+    this[selectName] = this._selectItems;
+  }
+
+  initSelectorItems(base, items) {
+    const owner = this._owner;
+    const path = this._path;
+    //const base = this._selectBase;
+    if (items) {
+      const selectors = [];
+      const len = items.length;
+      for (let i = 0; i < len; i++) {
+        const item = getPureObject(items[i]);
+        if (item) {
+          const schema = cloneObject(base, item);
+          const child = owner.createSchemaHandler(
+            JSONPointer_addFolder(path, String(i)),
+            schema,
+          );
+          selectors.push(child);
+        }
+      }
+      return selectors.length > 0 ? selectors : undefined;
+    }
+    return undefined;
+  }
+
+  getPrimaryType() { return JSONSchemaSelector; }
+
+  canHaveSchemaChildren() { return true; }
+
+  isValid(data, err = [], callback) {
+    throw new Error('not implemented', data, err, callback);
+  }
+}
+
 class JSONSchemaObject extends JSONSchema {
   constructor(owner, path, schema, clone = false) {
     super(owner, path, schema, 'object', clone);
 
-    this.maxProperties = getPureInteger(schema.maxProperties);
-    this.minProperties = getPureInteger(schema.minProperties);
+    this.maxProperties = getPureInteger(schema.maxProperties, 0);
+    this.minProperties = getPureInteger(schema.minProperties, 0);
 
-    //#region init required
-    this.required = getBoolOrArray(schema.required);
-    if (schema.patternRequired && !this._patternRequired) {
-      this.patternRequired = getPureArrayGTLength(schema.patternRequired, 0);
-      if (this.patternRequired) {
-        const required = [];
-        for (let i = 0; i < this.patternRequired.length; ++i) {
-          const pattern = this.patternRequired[i];
-          // TODO: Test if valid regexp pattern before adding
-          if (isPureString(pattern)) {
-            const rxp = new RegExp(pattern);
-            required.push(rxp);
-          }
-          else {
-            const rxp = new RegExp(...pattern);
-            required.push(rxp);
-          }
-        }
-        this._patternRequired = required;
-      }
-    }
-    else if (schema._patternRequired) {
-      this.patternRequired = schema.patternRequired;
-      this._patternRequired = schema._patternRequired;
-    }
-    else {
-      this.patternRequired = undefined;
-      this._patternRequired = undefined;
-    }
-    //#endregion
+    this.required = getBoolOrArray(schema.required, false);
 
-    //#region init properties
-    this.properties = getPureObject(schema.properties, {});
-    this.patternProperties = getPureObject(schema.patternProperties);
+    this.properties = this.initObjectProperties(schema);
 
-    if (this.patternProperties && !schema._patternProperties) {
-      const patterns = this.patternProperties;
-      const props = {};
-      for (const i in patterns) {
-        if (patterns.hasOwnProperty(i)) {
-          const rxp = new RegExp(i);
-          props[i] = rxp;
-        }
-      }
-      this._patternProperties = props;
-    }
-    else if (schema._patternProperties) {
-      this.patternProperties = schema.patternProperties;
-      this._patternProperties = schema._patternProperties;
-    }
-    else {
-      this.patternProperties = undefined;
-      this._patternProperties = undefined;
-    }
+    const patternRequiredCached = schema._patternRequired
+      || this.initObjectPatternRequired(schema.patternRequired);
 
-    // register properties
-    //#endregion
+    this.patternRequired = patternRequiredCached
+      ? schema.patternRequired
+      : undefined;
+    this._patternRequired = patternRequiredCached;
 
-    this.additionalProperties = getPureBool(schema.additionalProperties);
+    const { patternProperties, patternPropertiesCached } = this.initObjectPatternProperties(schema);
+    this.patternProperties = patternProperties;
+    this._patternProperties = patternPropertiesCached;
+
+    this.additionalProperties = getPureBool(schema.additionalProperties, false);
   }
+
+  //#region init schema
+
+  initObjectPatternRequired(schema) {
+    const patterns = getPureArrayGTLength(schema.patternRequired, 0);
+    if (patterns) {
+      const required = [];
+      for (let i = 0; i < patterns.length; ++i) {
+        const pattern = patterns[i];
+        // TODO: Test if valid regexp pattern before adding
+        const regex = String_createRegExp(pattern);
+        if (regex) required.push(regex);
+      }
+      if (required.length > 0) return required;
+    }
+    return undefined;
+  }
+
+  initObjectProperties(schema) {
+    const owner = this._owner;
+    const path = this._path;
+    const properties = getPureObject(schema.properties);
+    if (properties) {
+      const obj = {};
+      const keys = Object.keys(properties);
+      for (let i = 0; i < keys.length; ++i) {
+        const key = keys[i];
+        const item = properties[key];
+        const handler = owner.createSchemaHandler(
+          JSONPointer_addFolder(path, key),
+          item,
+        );
+        obj[key] = handler;
+      }
+      return obj;
+    }
+    return undefined;
+  }
+
+  initObjectPatternProperties(schema) {
+    const owner = this._owner;
+    const path = this._path;
+    const properties = getPureObject(schema.patternProperties);
+    const cached = getPureObject(schema._patternProperties);
+    if (properties && !cached) {
+      const regex = {};
+      const patterns = {};
+      const keys = Object.keys(properties);
+      for (let i = 0; i < keys.length; ++i) {
+        const key = keys[i];
+
+        const rxp = String_createRegExp(key);
+        regex[key] = rxp;
+
+        patterns[key] = owner.createSchemaHandler(
+          JSONPointer_addFolder(path, key),
+          properties[key],
+        );
+      }
+      return {
+        patternProperties: patterns,
+        patternPropertiesCached: regex,
+      };
+    }
+    else if (cached) {
+      return {
+        patternProperties: schema.patternProperties,
+        patternPropertiesCached: schema._patternProperties,
+      };
+    }
+    return {
+      patternProperties: undefined,
+      patternPropertiesCached: undefined,
+    };
+  }
+
+  //#endregion
 
   getPrimaryType() { return JSONSchemaObject; }
 
@@ -4463,9 +4766,9 @@ class JSONSchemaObject extends JSONSchema {
 class JSONSchemaArray extends JSONSchema {
   constructor(owner, path, schema, clone = false) {
     super(owner, path, schema, 'array', clone);
-    this.minItems = getPureInteger(schema.minItems);
-    this.maxItems = getPureInteger(schema.maxItems);
-    this.uniqueItems = getPureBool(schema.uniqueItems);
+    this.minItems = getPureInteger(schema.minItems, 0);
+    this.maxItems = getPureInteger(schema.maxItems, 0);
+    this.uniqueItems = getPureBool(schema.uniqueItems, false);
     this.items = getPureObject(schema.items);
     this.contains = getPureObject(schema.contains);
   }
@@ -4646,5 +4949,5 @@ class JSONSchemaMap extends JSONSchema {
 
 //#endregion
 
-export { Array_collapseShallow, Array_patchPrototype, Array_unique, Array_uniqueMerge, BetterMap, BetterMap_prototype_getItem, BetterMap_prototype_set, BetterMap_prototype_setItem, JSONPointer_addEntry, JSONPointer_addFolder, JSONPointer_entrySeparator, JSONPointer_pathSeparator, JSONSchema, JSONSchemaArray, JSONSchemaBoolean, JSONSchemaInteger, JSONSchemaMap, JSONSchemaNumber, JSONSchemaObject, JSONSchemaSelector, JSONSchemaString, JSONSchemaTuple, JSONSchema_getNumberFormatType, JSONSchema_getSelectorName, JSONSchema_getStringFormatType, JSONSchema_isArray, JSONSchema_isBoolean, JSONSchema_isInteger, JSONSchema_isMap, JSONSchema_isNumber, JSONSchema_isObject, JSONSchema_isString, JSONSchema_isTuple, JSONSchema_isUnknownSchema, JSONSchema_isValid, JSONSchema_isValidArray, JSONSchema_isValidBoolean, JSONSchema_isValidInteger, JSONSchema_isValidMap, JSONSchema_isValidNumber, JSONSchema_isValidObject, JSONSchema_isValidState, JSONSchema_isValidString, JSONSchema_isValidTuple, Map_patchPrototype, VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseToString, copyAttributes, createRegex, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getAllObjectKeys, getAllObjectValues, getBoolOrArray, getObjectCountItems, getObjectFirstItem, getPureArray, getPureArrayGTLength, getPureBool, getPureInteger, getPureNumber, getPureObject, getPureString, getStringOrArray, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isBoolOrArray, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureArray, isPureNumber, isPureObject, isPureString, isPureTypedArray, isStringOrArray, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, workletState, wrapVN };
+export { Array_collapseShallow, Array_patchPrototype, Array_unique, Array_uniqueMerge, BetterMap, BetterMap_prototype_getItem, BetterMap_prototype_set, BetterMap_prototype_setItem, JSONPointer, JSONPointer_addFolder, JSONPointer_compileGetPointer, JSONPointer_fragmentSeparator, JSONPointer_pathSeparator, JSONPointer_traverseFilterObjectBF, JSONSchema, JSONSchemaArray, JSONSchemaBoolean, JSONSchemaInteger, JSONSchemaMap, JSONSchemaNumber, JSONSchemaObject, JSONSchemaSelector, JSONSchemaString, JSONSchemaTuple, JSONSchema_getNumberFormatType, JSONSchema_getSelectorName, JSONSchema_getStringFormatType, JSONSchema_isArray, JSONSchema_isBoolean, JSONSchema_isInteger, JSONSchema_isMap, JSONSchema_isNumber, JSONSchema_isObject, JSONSchema_isString, JSONSchema_isTuple, JSONSchema_isUnknownSchema, JSONSchema_isValid, JSONSchema_isValidArray, JSONSchema_isValidBoolean, JSONSchema_isValidInteger, JSONSchema_isValidMap, JSONSchema_isValidNumber, JSONSchema_isValidObject, JSONSchema_isValidState, JSONSchema_isValidString, JSONSchema_isValidTuple, Map_patchPrototype, Queue, String_createRegExp, String_trimLeft, Tree, TreeNode, Tree_findIndex, Tree_traverseBF, Tree_traverseDF, VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseToString, copyAttributes, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getAllObjectKeys, getAllObjectValues, getBoolOrArray, getObjectCountItems, getObjectFirstItem, getPureArray, getPureArrayGTLength, getPureBool, getPureInteger, getPureNumber, getPureObject, getPureString, getStringOrArray, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isBoolOrArray, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureArray, isPureNumber, isPureObject, isPureString, isPureTypedArray, isStringOrArray, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, workletState, wrapVN };
 //# sourceMappingURL=index.js.map

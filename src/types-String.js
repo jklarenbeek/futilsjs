@@ -1,6 +1,5 @@
-import { isPureArray, isPureString } from './types-base';
 
-export function createRegex(pattern) {
+export function String_createRegExp(pattern) {
   try {
     if (pattern != null) {
       if (pattern.constructor === String) {

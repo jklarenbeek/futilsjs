@@ -1,4 +1,4 @@
-import { Queue } from './type-Queue.js';
+import { Queue } from './types-Queue';
 
 export function Tree_traverseDF(currentNode, callback) {
   const children = currentNode.children;
@@ -7,7 +7,7 @@ export function Tree_traverseDF(currentNode, callback) {
   let child = null;
   for (i = 0; i < len; ++i) {
     child = children[i];
-    JSONPointer_traverseDF(child, callback);
+    Tree_traverseDF(child, callback);
   }
   callback(currentNode);
 }
@@ -65,7 +65,7 @@ export class Tree {
   add(data, toParent, traversal = Tree_traverseBF) {
     const child = new TreeNode(data);
     let parent = null;
-    const callback = function(node) {
+    const callback = function Tree_addCallback(node) {
       if (node.data === toParent) {
         parent = node;
       }
@@ -82,12 +82,11 @@ export class Tree {
   }
 
   remove(data, fromParent, traversal) {
-    const tree = this;
     let parent = null;
     let childToRemove = null;
     let index = 0;
 
-    const callback = function(node) {
+    const callback = function Tree_removeCallback(node) {
       if (node.data === fromParent) {
         parent = node;
       }

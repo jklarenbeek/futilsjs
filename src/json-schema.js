@@ -22,9 +22,9 @@ import {
 } from './types-base';
 import {
   JSONPointer_addFolder,
-  JSONPointer_addEntry,
 } from './json-pointer';
-import { createRegex } from './types-String';
+import { String_createRegExp } from './types-String';
+
 
 //#region Pure Schema Type Tests
 
@@ -831,24 +831,24 @@ export class JSONSchemaString extends JSONSchema {
 export class JSONSchemaSelector extends JSONSchema {
   constructor(owner, path, schema) {
     super(owner, path, schema, undefined);
-    this._selectName = JSONSchema_getSelectorName(schema);
+    const selectName = JSONSchema_getSelectorName(schema);
     const selectBase = { ...schema };
     delete selectBase.oneOf;
     delete selectBase.anyOf;
     delete selectBase.allOf;
     delete selectBase.not;
-    const selectItems = getPureArrayGTLength(schema[name], 0);
+    const selectItems = getPureArrayGTLength(schema[selectName], 0);
 
+    this._selectName = selectName;
     this._selectItems = this.initSelectorItems(selectBase, selectItems);
 
-    this[this._selectName] = this._selectItems;
-
+    this[selectName] = this._selectItems;
   }
 
   initSelectorItems(base, items) {
     const owner = this._owner;
     const path = this._path;
-    const base = this._selectBase;
+    //const base = this._selectBase;
     if (items) {
       const selectors = [];
       const len = items.length;
@@ -858,11 +858,12 @@ export class JSONSchemaSelector extends JSONSchema {
           const schema = cloneObject(base, item);
           const child = owner.createSchemaHandler(
             JSONPointer_addFolder(path, String(i)),
-            schema);
+            schema,
+          );
           selectors.push(child);
         }
       }
-      return selector.length > 0 ? selectors : undefined;
+      return selectors.length > 0 ? selectors : undefined;
     }
     return undefined;
   }
@@ -887,10 +888,13 @@ export class JSONSchemaObject extends JSONSchema {
 
     this.properties = this.initObjectProperties(schema);
 
-    const patternRequiredCached = schema._patternRequired || this.initObjectPatternRequired(schema.patternRequired);
-    const patternRequired = patternRequiredCached ? schema.this.initObjectPatternRequired(schema.patternRequired);
-    this.patternRequired = patternRequired ? schema.patternRequired : undefined;
-    this._patternRequired = patternRequired;
+    const patternRequiredCached = schema._patternRequired
+      || this.initObjectPatternRequired(schema.patternRequired);
+
+    this.patternRequired = patternRequiredCached
+      ? schema.patternRequired
+      : undefined;
+    this._patternRequired = patternRequiredCached;
 
     const { patternProperties, patternPropertiesCached } = this.initObjectPatternProperties(schema);
     this.patternProperties = patternProperties;
@@ -908,7 +912,7 @@ export class JSONSchemaObject extends JSONSchema {
       for (let i = 0; i < patterns.length; ++i) {
         const pattern = patterns[i];
         // TODO: Test if valid regexp pattern before adding
-        const regex = createRegEx(pattern);
+        const regex = String_createRegExp(pattern);
         if (regex) required.push(regex);
       }
       if (required.length > 0) return required;
@@ -926,10 +930,11 @@ export class JSONSchemaObject extends JSONSchema {
       for (let i = 0; i < keys.length; ++i) {
         const key = keys[i];
         const item = properties[key];
-        const schema = owner.createSchemaHandler(
+        const handler = owner.createSchemaHandler(
           JSONPointer_addFolder(path, key),
-          item);
-        obj[key] = schema;
+          item,
+        );
+        obj[key] = handler;
       }
       return obj;
     }
@@ -948,20 +953,29 @@ export class JSONSchemaObject extends JSONSchema {
       for (let i = 0; i < keys.length; ++i) {
         const key = keys[i];
 
-        const rxp = createRegEx(key);
+        const rxp = String_createRegExp(key);
         regex[key] = rxp;
 
         patterns[key] = owner.createSchemaHandler(
           JSONPointer_addFolder(path, key),
-          properties[key]
+          properties[key],
         );
       }
-      return { patternProperties: patterns, patternPropertiesCached: regex };
+      return {
+        patternProperties: patterns,
+        patternPropertiesCached: regex,
+      };
     }
     else if (cached) {
-      return { patternProperties: schema.patternProperties, patternPropertiesCached: schema._patternProperties };
+      return {
+        patternProperties: schema.patternProperties,
+        patternPropertiesCached: schema._patternProperties,
+      };
     }
-    return { patternProperties: undefined, patternPropertiesCached: undefined };
+    return {
+      patternProperties: undefined,
+      patternPropertiesCached: undefined,
+    };
   }
 
   //#endregion

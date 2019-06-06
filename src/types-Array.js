@@ -16,7 +16,6 @@ export function Array_uniqueMerge(target = [], source = []) {
     hash[target[i]] = 1;
   }
 
-  let e = null;
   for (i = 0; i < source.length; ++i) {
     const e = source[i];
     // eslint-disable-next-line no-unused-expressions

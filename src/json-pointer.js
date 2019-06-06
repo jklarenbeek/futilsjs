@@ -1,4 +1,4 @@
-import { Queue } from './type-Queue';
+/* eslint-disable eqeqeq */
 import { String_trimLeft } from './types-String';
 
 
@@ -65,43 +65,45 @@ function JSONPointer_createGetFunction(dst, id, next) {
           return typeof obj === 'object'
             ? f(obj[id])
             : f(obj);
-        }
+        };
       }
       else if (dst > 1) { // WARNING
         // TODO: probably doesnt work!
         return function JSONPointer_traverseGetFunction(obj) {
           const qarr = [];
-          JSONPointer_traverseFilterObjectBF(id, obj, function (o) {
-            qarr.push(f(o[id]));
-          });
+          JSONPointer_traverseFilterObjectBF(id, obj,
+            function JSONPointer_traverseGetFunctionCallback(o) {
+              qarr.push(f(o[id]));
+            });
           return qarr;
-        }
+        };
       }
     }
   }
 
   if (dst > 1) return function JSONPointer_defaultTraverseGetFunction(obj) {
     const qarr = [];
-    JSONPointer_traverseFilterObjectBF(id, obj, function (o) {
-      qarr.push(o[id]);
-    });
+    JSONPointer_traverseFilterObjectBF(id, obj,
+      function JSONPointer_defaultTraverseGetFunctionCallback(o) {
+        qarr.push(o[id]);
+      });
     return qarr;
-  }
+  };
   else return function JSONPointer_defaultGetFunction(obj) {
     return (typeof obj === 'object') ? obj[id] : obj;
-  }
+  };
 }
 
 export function JSONPointer_compileGetPointer(path) {
   path = typeof path === 'string' ? path : '';
-  if (path === '') return function (obj) {
+  if (path === '') return function JSONPointer_compileGetRootFunction(obj) {
     return obj;
-  }
+  };
 
-  const token = String_trimLeft(path, JSONPointer_pathSeparator)
+  const token = String_trimLeft(path, JSONPointer_pathSeparator);
   const dist = path.length - token.length;
   const arr = [];
-  const csr = 0;
+  let csr = 0;
 
   for (let i = 0; i < token.length; ++i) {
     const c = token[i];
