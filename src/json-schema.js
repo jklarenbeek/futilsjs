@@ -36,11 +36,13 @@ export function JSONSchema_isUnknownSchema(schema) {
 }
 
 export function JSONSchema_getSelectorName(schema) {
-  const name = schema.allOf ? 'allOf'
-    : schema.anyOf ? 'anyOf'
-      : schema.oneOf ? 'oneOf'
-        : schema.not ? 'not'
-          : undefined;
+  const name = typeof schema === 'object'
+    ? schema.allOf ? 'allOf'
+      : schema.anyOf ? 'anyOf'
+        : schema.oneOf ? 'oneOf'
+          : schema.not ? 'not'
+            : undefined
+    : undefined;
   return name;
 }
 
@@ -689,7 +691,7 @@ export class JSONSchema {
 }
 
 export class JSONSchemaBoolean extends JSONSchema {
-  constructor(owner, path, schema, clone = false) {
+  constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'boolean', clone);
   }
 
@@ -701,7 +703,7 @@ export class JSONSchemaBoolean extends JSONSchema {
 }
 
 export class JSONSchemaNumber extends JSONSchema {
-  constructor(owner, path, schema, clone = false) {
+  constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'number', clone);
 
     this.minimum = getPureNumber(schema.minimum);
@@ -759,7 +761,7 @@ export class JSONSchemaNumber extends JSONSchema {
 }
 
 export class JSONSchemaInteger extends JSONSchema {
-  constructor(owner, path, schema, clone = false) {
+  constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'integer', clone);
     this.minimum = getPureInteger(schema.minimum);
     this.maximum = getPureInteger(schema.maximum);
@@ -819,7 +821,7 @@ export class JSONSchemaInteger extends JSONSchema {
   }
 }
 export class JSONSchemaString extends JSONSchema {
-  constructor(owner, path, schema, clone = false) {
+  constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'string', clone);
     this.maxLength = getPureInteger(schema.maxLength);
     this.minLength = getPureInteger(schema.minLength);
@@ -867,7 +869,7 @@ export class JSONSchemaString extends JSONSchema {
 }
 
 export class JSONSchemaSelector extends JSONSchema {
-  constructor(owner, path, schema) {
+  constructor(owner, path, schema = {}) {
     super(owner, path, schema, undefined);
     const selectName = JSONSchema_getSelectorName(schema);
     const selectBase = { ...schema };
@@ -916,7 +918,7 @@ export class JSONSchemaSelector extends JSONSchema {
 }
 
 export class JSONSchemaObject extends JSONSchema {
-  constructor(owner, path, schema, clone = false) {
+  constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'object', clone);
 
     this.maxProperties = getPureInteger(schema.maxProperties, 0);
@@ -927,7 +929,7 @@ export class JSONSchemaObject extends JSONSchema {
     this.properties = this.initObjectProperties(schema);
 
     const patternRequiredCached = schema._patternRequired
-      || this.initObjectPatternRequired(schema.patternRequired);
+      || this.initObjectPatternRequired(schema);
 
     this.patternRequired = patternRequiredCached
       ? schema.patternRequired
@@ -1135,7 +1137,7 @@ export class JSONSchemaObject extends JSONSchema {
 }
 
 export class JSONSchemaArray extends JSONSchema {
-  constructor(owner, path, schema, clone = false) {
+  constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'array', clone);
     this.minItems = getPureInteger(schema.minItems, 0);
     this.maxItems = getPureInteger(schema.maxItems, 0);
@@ -1195,7 +1197,7 @@ export class JSONSchemaArray extends JSONSchema {
 }
 
 export class JSONSchemaTuple extends JSONSchema {
-  constructor(owner, path, schema, clone = false) {
+  constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'tuple', clone);
 
     this.items = getPureArray(schema.items, []);
@@ -1268,7 +1270,7 @@ export class JSONSchemaTuple extends JSONSchema {
 }
 
 export class JSONSchemaMap extends JSONSchema {
-  constructor(owner, path, schema, clone = false) {
+  constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'map', clone);
     this.minItems = getPureInteger(schema.minItems);
     this.maxItems = getPureInteger(schema.maxItems);
