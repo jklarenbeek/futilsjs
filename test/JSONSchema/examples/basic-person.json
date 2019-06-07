@@ -17,6 +17,17 @@
     "gender": {
       "type": "string",
       "enum": ["female", "male"]
+    },
+    "fullname": {
+      "title": "tuple",
+      "items": [
+        {
+          "placeholder": "Joham"
+        },
+        {
+          "placeholder": "Doe"
+        }
+      ]
     }
   }
 }

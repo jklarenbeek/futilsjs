@@ -6,21 +6,24 @@ export const JSONPointer_pathSeparator = '/';
 export const JSONPointer_fragmentSeparator = '#';
 
 export function JSONPointer_addFolder(path, folder) {
-  // TODO: test folder name is valid
-  if (typeof path === 'string') {
-    path = path.trim();
-    folder = (folder || '').trim();
-    if (path.length === 0) {
-      return JSONPointer_pathSeparator + folder;
-    }
-    else if (path.indexOf(JSONPointer_pathSeparator, path.length - 1) === 0) {
-      return path + folder;
-    }
-    else {
-      return path + JSONPointer_pathSeparator + folder;
-    }
+  path = (typeof path === 'string')
+    ? path.trimStart()
+    : '';
+  folder = (typeof folder === 'number')
+    ? String(folder)
+    : typeof folder === 'string'
+      ? folder
+      : '';
+
+  if (path.length === 0) {
+    return JSONPointer_pathSeparator + folder;
   }
-  return JSONPointer_pathSeparator;
+  else if (path[path.length - 1] === JSONPointer_pathSeparator) {
+    return path + folder;
+  }
+  else {
+    return path + JSONPointer_pathSeparator + folder;
+  }
 }
 
 export function JSONPointer_traverseFilterObjectBF(obj, id = '$ref', callback) {

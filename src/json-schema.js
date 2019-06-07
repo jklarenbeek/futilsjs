@@ -508,6 +508,7 @@ export class JSONSchemaDocument {
     this.baseUri = baseUri;
     this.schema = null;
     this.handlers = {};
+    this.defaultHandler = null;
     this.baseUriCallback = undefined;
   }
 
@@ -531,6 +532,7 @@ export class JSONSchemaDocument {
   }
 
   registerDefaultSchemaHandlers() {
+    this.defaultHandler = JSONSchemaString;
     return this.registerSchemaHandler('default', new JSONSchemaSelector())
       && this.registerSchemaHandler('default', new JSONSchemaBoolean())
       && this.registerSchemaHandler('default', new JSONSchemaNumber())
@@ -538,48 +540,45 @@ export class JSONSchemaDocument {
       && this.registerSchemaHandler('default', new JSONSchemaString())
       && this.registerSchemaHandler('default', new JSONSchemaObject())
       && this.registerSchemaHandler('default', new JSONSchemaArray())
-      && this.registerSchemaHandler('default', new JSONSchemaTuple())
-      && this.registerSchemaHandler('default', new JSONSchemaMap());
+      && this.registerSchemaHandler('default', new JSONSchemaTuple());
   }
 
-  getSchemaHandler(schema) {
+  getSchemaHandler(schema, force = true) {
     if (typeof schema === 'object' && !(isPureArray(schema) || isPureTypedArray(schema))) {
-      let name = null;
+      let typeName = null;
 
       const selector = JSONSchema_getSelectorName(schema);
       if (selector) {
-        name = JSONSchemaSelector.name;
+        typeName = JSONSchemaSelector.name;
       }
       else if (JSONSchema_isBoolean(schema)) {
-        name = JSONSchemaBoolean.name;
+        typeName = JSONSchemaBoolean.name;
       }
       else if (JSONSchema_isInteger(schema)) {
-        name = JSONSchemaInteger.name;
+        typeName = JSONSchemaInteger.name;
       }
       else if (JSONSchema_isNumber(schema)) {
-        name = JSONSchemaNumber.name;
+        typeName = JSONSchemaNumber.name;
       }
       else if (JSONSchema_isString(schema)) {
-        name = JSONSchemaString.name;
+        typeName = JSONSchemaString.name;
       }
       else if (JSONSchema_isObject(schema)) {
-        name = JSONSchemaObject.name;
+        typeName = JSONSchemaObject.name;
       }
       else if (JSONSchema_isArray(schema)) {
-        name = JSONSchemaArray.name;
+        typeName = JSONSchemaArray.name;
       }
       else if (JSONSchema_isTuple(schema)) {
-        name = JSONSchemaTuple.name;
-      }
-      else if (JSONSchema_isMap(schema)) {
-        name = JSONSchemaMap.name;
+        typeName = JSONSchemaTuple.name;
       }
       else {
-        return undefined;
+        if (force === false) return undefined;
+        typeName = this.defaultHandler.name;
       }
 
-      if (this.handlers.hasOwnProperty(name)) {
-        const formats = this.handlers[name];
+      if (this.handlers.hasOwnProperty(typeName)) {
+        const formats = this.handlers[typeName];
         const format = typeof schema.format === 'string'
           ? schema.format
           : 'default';
@@ -606,6 +605,7 @@ export class JSONSchemaDocument {
       ? this.baseUriCallback
       : (function JSONSchemaDocument_loadSchemaDefaultCallback() { return json; });
     JSONSchema_expandSchemaReferences(json, baseUri || this.baseUri, callback);
+    this.baseUri = typeof baseUri === 'string' ? baseUri : this.baseUri; // TODO: parse baseUri from JSONPointer_compile?
     const schema = this.createSchemaHandler('/', json);
     this.schema = schema;
   }
@@ -965,7 +965,7 @@ export class JSONSchemaObject extends JSONSchema {
 
   initObjectProperties(schema) {
     const owner = this._owner;
-    const path = this._path;
+    const path = JSONPointer_addFolder(this._path, 'properties');
     const properties = getPureObject(schema.properties);
     if (properties) {
       const obj = {};
@@ -986,7 +986,7 @@ export class JSONSchemaObject extends JSONSchema {
 
   initObjectPatternProperties(schema) {
     const owner = this._owner;
-    const path = this._path;
+    const path = JSONPointer_addFolder(this._path, 'patternProperties');
     const properties = getPureObject(schema.patternProperties);
     const cached = getPureObject(schema._patternProperties);
     if (properties && !cached) {
@@ -1145,8 +1145,22 @@ export class JSONSchemaArray extends JSONSchema {
     this.minItems = getPureInteger(schema.minItems, 0);
     this.maxItems = getPureInteger(schema.maxItems, 0);
     this.uniqueItems = getPureBool(schema.uniqueItems, false);
-    this.items = getPureObject(schema.items);
-    this.contains = getPureObject(schema.contains);
+    this.items = this.initArrayItems(schema);
+    this.contains = this.initArrayContains(schema);
+  }
+
+  initArrayItems(schema) {
+    const owner = this._owner;
+    const path = JSONPointer_addFolder(this._path, 'items');
+    const item = getPureObject(schema.items);
+    return item ? owner.createSchemaHandler(path, item) : undefined;
+  }
+
+  initArrayContains(schema) {
+    const owner = this._owner;
+    const path = JSONPointer_addFolder(this._path, 'contains');
+    const item = getPureObject(schema.contains);
+    return item ? owner.createSchemaHandler(path, item) : undefined;
   }
 
   getPrimaryType() { return JSONSchemaArray; }
@@ -1203,13 +1217,46 @@ export class JSONSchemaTuple extends JSONSchema {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'tuple', clone);
 
-    this.items = getPureArray(schema.items, []);
-    this.additionalItems = getPureObject(schema.additionalItems);
+    this.items = this.initTupleItems(schema);
+    this.additionalItems = this.initTupleAdditionalItems(schema);
     if (this.additionalItems) {
       this.minItems = getPureInteger(schema.minItems);
       this.maxItems = getPureInteger(schema.maxItems);
       this.uniqueItems = getPureBool(schema.uniqueItems);
     }
+  }
+
+  initTupleItems(schema) {
+    const owner = this._owner;
+    const path = JSONPointer_addFolder(this._path, 'items');
+    const items = getPureArray(schema.items);
+    if (items) {
+      const result = new Array(items.length);
+      for (let i = 0; i < items.length; ++i) {
+        const item = items[i];
+        const handler = owner.createSchemaHandler(
+          JSONPointer_addFolder(path, i),
+          item,
+        );
+        result[i] = handler;
+      }
+      return result.length > 0 ? result : undefined;
+    }
+    return undefined;
+  }
+
+  initTupleAdditionalItems(schema) {
+    const owner = this._owner;
+    const path = JSONPointer_addFolder(this._path, 'additionalItems');
+    const item = getPureObject(schema.additionalItems);
+    if (item) {
+      const handler = owner.createSchemaHandler(
+        path,
+        item,
+      );
+      return handler;
+    }
+    return undefined;
   }
 
   getPrimaryType() { return JSONSchemaTuple; }
@@ -1266,57 +1313,6 @@ export class JSONSchemaTuple extends JSONSchema {
           const p = JSONPointer_addFolder(this._path, i);
           callback(s, p, d, err);
         }
-      }
-    }
-    return err;
-  }
-}
-
-export class JSONSchemaMap extends JSONSchema {
-  constructor(owner, path, schema = {}, clone = false) {
-    super(owner, path, schema, 'map', clone);
-    this.minItems = getPureInteger(schema.minItems);
-    this.maxItems = getPureInteger(schema.maxItems);
-    this.items = getPureArray(schema.items, []);
-  }
-
-  getPrimaryType() { return JSONSchemaMap; }
-
-  canHaveSchemaChildren() {
-    return true;
-  }
-
-  getSchemaChildren() {
-    return {
-      key: this.items[0],
-      value: this.items[1],
-    };
-  }
-
-  isValid(data, err = [], callback) {
-    err = this.isValidState(Map, data, err);
-    if (err.length > 0) return err;
-    if (data == null) return err;
-
-    const size = data.size;
-    if (this.minItems) {
-      if (size < this.minItems) {
-        err.push([this._path, 'minItems', this.minItems, size]);
-      }
-    }
-    if (this.maxItems) {
-      if (size > this.maxItems) {
-        err.push([this._path, 'maxItems', this.maxItems, size]);
-      }
-    }
-
-    if (callback) {
-      const ks = this.items[0];
-      const vs = this.items[1];
-      for (const [key, value] of data) {
-        const p = JSONPointer_addFolder(this._path, key);
-        callback(ks, p, key, err);
-        callback(vs, p, value, err);
       }
     }
     return err;
