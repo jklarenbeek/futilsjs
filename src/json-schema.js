@@ -883,15 +883,14 @@ export class JSONSchemaSelector extends JSONSchema {
     const selectItems = getPureArrayGTLength(schema[selectName], 0);
 
     this._selectName = selectName;
-    this._selectItems = this.initSelectorItems(selectBase, selectItems);
+    this._selectItems = this.initSelectorItems(selectName, selectBase, selectItems);
 
     this[selectName] = this._selectItems;
   }
 
-  initSelectorItems(base, items) {
+  initSelectorItems(name, base, items) {
     const owner = this._owner;
-    const path = this._path;
-    //const base = this._selectBase;
+    const path = JSONPointer_addFolder(this._path, name);
     if (items) {
       const selectors = [];
       const len = items.length;

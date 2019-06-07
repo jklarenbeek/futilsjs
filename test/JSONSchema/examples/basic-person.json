@@ -28,6 +28,19 @@
           "placeholder": "Doe"
         }
       ]
+    },
+    "tags": {
+      "items": {}
+    },
+    "select": {
+      "oneOf": [
+        {
+          "const": "Katinka"
+        },
+        {
+          "const": "Dorinthe"
+        }
+      ]
     }
   }
 }
