@@ -612,6 +612,16 @@ export class JSONSchemaDocument {
   }
 }
 
+export class JSONSchemaXMLObject {
+  constructor(schema) {
+    const xml = getPureObject(schema.xml, {});
+    this.name = getPureString(xml.name);
+    this.namespace = getPureString(xml.namespace);
+    this.prefix = getPureString(xml.prefix);
+    this.attribute = getPureBool(xml.attribute, false);
+    this.wrapped = getPureBool(xml.wrappd, false);
+  }
+}
 const Object_prototype_propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
 
 export class JSONSchemaObject {
@@ -710,15 +720,15 @@ export class JSONSchemaNumberType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'number', clone);
 
-    this.minimum = getPureNumber(schema.minimum);
-    this.maximum = getPureNumber(schema.maximum);
-    this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim);
-    this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim);
+    this.minimum = getPureNumber(schema.minimum, +0.0);
+    this.maximum = getPureNumber(schema.maximum, +0.0);
+    this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim, false);
+    this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim, false);
 
-    this.low = getPureNumber(schema.low);
-    this.high = getPureNumber(schema.high);
-    this.optimum = getPureNumber(schema.optimum);
-    this.multipleOf = getPureNumber(schema.multipleOf);
+    this.low = getPureNumber(schema.low, +0.0);
+    this.high = getPureNumber(schema.high, +0.0);
+    this.optimum = getPureNumber(schema.optimum, +0.0);
+    this.multipleOf = getPureNumber(schema.multipleOf, +0.0);
   }
 
   getPrimaryType() { return JSONSchemaNumberType; }
@@ -767,15 +777,15 @@ export class JSONSchemaNumberType extends JSONSchemaObject {
 export class JSONSchemaIntegerType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'integer', clone);
-    this.minimum = getPureInteger(schema.minimum);
-    this.maximum = getPureInteger(schema.maximum);
-    this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim);
-    this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim);
+    this.minimum = getPureInteger(schema.minimum, 0);
+    this.maximum = getPureInteger(schema.maximum, 0);
+    this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim, false);
+    this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim, false);
 
-    this.low = getPureInteger(schema.low);
-    this.high = getPureInteger(schema.high);
-    this.optimum = getPureInteger(schema.optimum);
-    this.multipleOf = getPureInteger(schema.multipleOf);
+    this.low = getPureInteger(schema.low, 0);
+    this.high = getPureInteger(schema.high, 0);
+    this.optimum = getPureInteger(schema.optimum, 0);
+    this.multipleOf = getPureInteger(schema.multipleOf, 1);
   }
 
   getPrimaryType() { return JSONSchemaIntegerType; }
@@ -827,8 +837,12 @@ export class JSONSchemaIntegerType extends JSONSchemaObject {
 export class JSONSchemaStringType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'string', clone);
-    this.maxLength = getPureInteger(schema.maxLength);
-    this.minLength = getPureInteger(schema.minLength);
+
+    this.maxLength = getPureInteger(schema.maxLength, 0);
+    this.minLength = getPureInteger(schema.minLength, 0);
+
+    this.pattern = undefined;
+    this._pattern = undefined;
     if (schema.pattern != null && schema._pattern == null) {
       if (isPureString(schema.pattern)) {
         this.pattern = schema.pattern;
@@ -943,7 +957,7 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
     this.patternProperties = patternProperties;
     this._patternProperties = patternPropertiesCached;
 
-    this.additionalProperties = getBoolOrObject(schema.additionalProperties, true);
+    this.additionalProperties = this.initObjectAdditionalProperties(schema);
   }
 
   //#region init schema
@@ -1019,6 +1033,15 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
       patternProperties: undefined,
       patternPropertiesCached: undefined,
     };
+  }
+
+  initObjectAdditionalProperties(schema) {
+    const additionalProperties = getBoolOrObject(schema.additionalProperties, true);
+    if (additionalProperties.constructor === Boolean) return additionalProperties;
+
+    const owner = this._owner;
+    const path = JSONPointer_addFolder(this._path, 'additionalProperties');
+    return owner.createSchemaHandler(path, additionalProperties);
   }
 
   //#endregion

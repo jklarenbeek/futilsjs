@@ -4206,7 +4206,7 @@ class JSONSchemaDocument {
 
 
   registerSchemaHandler(formatName = 'default', schemaHandler) {
-    if (schemaHandler instanceof JSONSchema) {
+    if (schemaHandler instanceof JSONSchemaObject) {
       const primaryType = schemaHandler.getPrimaryType();
       if (schemaHandler instanceof primaryType) {
         const primaryName = primaryType.name;
@@ -4224,15 +4224,15 @@ class JSONSchemaDocument {
   }
 
   registerDefaultSchemaHandlers() {
-    this.defaultHandler = JSONSchemaString;
-    return this.registerSchemaHandler('default', new JSONSchemaSelector())
-      && this.registerSchemaHandler('default', new JSONSchemaBoolean())
-      && this.registerSchemaHandler('default', new JSONSchemaNumber())
-      && this.registerSchemaHandler('default', new JSONSchemaInteger())
-      && this.registerSchemaHandler('default', new JSONSchemaString())
-      && this.registerSchemaHandler('default', new JSONSchemaObject())
-      && this.registerSchemaHandler('default', new JSONSchemaArray())
-      && this.registerSchemaHandler('default', new JSONSchemaTuple());
+    this.defaultHandler = JSONSchemaStringType;
+    return this.registerSchemaHandler('default', new JSONSchemaSelectorType())
+      && this.registerSchemaHandler('default', new JSONSchemaBooleanType())
+      && this.registerSchemaHandler('default', new JSONSchemaNumberType())
+      && this.registerSchemaHandler('default', new JSONSchemaIntegerType())
+      && this.registerSchemaHandler('default', new JSONSchemaStringType())
+      && this.registerSchemaHandler('default', new JSONSchemaObjectType())
+      && this.registerSchemaHandler('default', new JSONSchemaArrayType())
+      && this.registerSchemaHandler('default', new JSONSchemaTupleType());
   }
 
   getSchemaHandler(schema, force = true) {
@@ -4241,28 +4241,28 @@ class JSONSchemaDocument {
 
       const selector = JSONSchema_getSelectorName(schema);
       if (selector) {
-        typeName = JSONSchemaSelector.name;
+        typeName = JSONSchemaSelectorType.name;
       }
       else if (JSONSchema_isBoolean(schema)) {
-        typeName = JSONSchemaBoolean.name;
+        typeName = JSONSchemaBooleanType.name;
       }
       else if (JSONSchema_isInteger(schema)) {
-        typeName = JSONSchemaInteger.name;
+        typeName = JSONSchemaIntegerType.name;
       }
       else if (JSONSchema_isNumber(schema)) {
-        typeName = JSONSchemaNumber.name;
+        typeName = JSONSchemaNumberType.name;
       }
       else if (JSONSchema_isString(schema)) {
-        typeName = JSONSchemaString.name;
+        typeName = JSONSchemaStringType.name;
       }
       else if (JSONSchema_isObject(schema)) {
-        typeName = JSONSchemaObject.name;
+        typeName = JSONSchemaObjectType.name;
       }
       else if (JSONSchema_isArray(schema)) {
-        typeName = JSONSchemaArray.name;
+        typeName = JSONSchemaArrayType.name;
       }
       else if (JSONSchema_isTuple(schema)) {
-        typeName = JSONSchemaTuple.name;
+        typeName = JSONSchemaTupleType.name;
       }
       else {
         if (force === false) return undefined;
@@ -4303,14 +4303,24 @@ class JSONSchemaDocument {
   }
 }
 
+class JSONSchemaXMLObject {
+  constructor(schema) {
+    const xml = getPureObject(schema.xml, {});
+    this.name = getPureString(xml.name);
+    this.namespace = getPureString(xml.namespace);
+    this.prefix = getPureString(xml.prefix);
+    this.attribute = getPureBool(xml.attribute, false);
+    this.wrapped = getPureBool(xml.wrappd, false);
+  }
+}
 const Object_prototype_propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
 
-class JSONSchema {
+class JSONSchemaObject {
   constructor(owner, path, schema, type) {
-    if (this.constructor === JSONSchema)
-      throw new TypeError('JSONSchema is an abstract class');
+    if (this.constructor === JSONSchemaObject)
+      throw new TypeError('JSONSchemaObject is an abstract class');
     if (owner != null && !(owner instanceof JSONSchemaDocument))
-      throw new TypeError('JSONSchema owner MUST be of type JSONSchemaDocument');
+      throw new TypeError('JSONSchemaObject owner MUST be of type JSONSchemaDocument');
 
     this._owner = owner;
     this._path = path;
@@ -4385,34 +4395,34 @@ class JSONSchema {
   }
 }
 
-class JSONSchemaBoolean extends JSONSchema {
+class JSONSchemaBooleanType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'boolean', clone);
   }
 
-  getPrimaryType() { return JSONSchemaBoolean; }
+  getPrimaryType() { return JSONSchemaBooleanType; }
 
   isValid(data, err = []) {
     return this.isValidState('boolean', data, err);
   }
 }
 
-class JSONSchemaNumber extends JSONSchema {
+class JSONSchemaNumberType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'number', clone);
 
-    this.minimum = getPureNumber(schema.minimum);
-    this.maximum = getPureNumber(schema.maximum);
-    this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim);
-    this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim);
+    this.minimum = getPureNumber(schema.minimum, +0.0);
+    this.maximum = getPureNumber(schema.maximum, +0.0);
+    this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim, false);
+    this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim, false);
 
-    this.low = getPureNumber(schema.low);
-    this.high = getPureNumber(schema.high);
-    this.optimum = getPureNumber(schema.optimum);
-    this.multipleOf = getPureNumber(schema.multipleOf);
+    this.low = getPureNumber(schema.low, +0.0);
+    this.high = getPureNumber(schema.high, +0.0);
+    this.optimum = getPureNumber(schema.optimum, +0.0);
+    this.multipleOf = getPureNumber(schema.multipleOf, +0.0);
   }
 
-  getPrimaryType() { return JSONSchemaNumber; }
+  getPrimaryType() { return JSONSchemaNumberType; }
 
   isValidNumberConstraint(data, err) {
     if (this.minimum) {
@@ -4455,21 +4465,21 @@ class JSONSchemaNumber extends JSONSchema {
   }
 }
 
-class JSONSchemaInteger extends JSONSchema {
+class JSONSchemaIntegerType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'integer', clone);
-    this.minimum = getPureInteger(schema.minimum);
-    this.maximum = getPureInteger(schema.maximum);
-    this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim);
-    this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim);
+    this.minimum = getPureInteger(schema.minimum, 0);
+    this.maximum = getPureInteger(schema.maximum, 0);
+    this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim, false);
+    this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim, false);
 
-    this.low = getPureInteger(schema.low);
-    this.high = getPureInteger(schema.high);
-    this.optimum = getPureInteger(schema.optimum);
-    this.multipleOf = getPureInteger(schema.multipleOf);
+    this.low = getPureInteger(schema.low, 0);
+    this.high = getPureInteger(schema.high, 0);
+    this.optimum = getPureInteger(schema.optimum, 0);
+    this.multipleOf = getPureInteger(schema.multipleOf, 1);
   }
 
-  getPrimaryType() { return JSONSchemaInteger; }
+  getPrimaryType() { return JSONSchemaIntegerType; }
 
   isValidNumberConstraint(data, err) {
     if (this.minimum) {
@@ -4515,11 +4525,15 @@ class JSONSchemaInteger extends JSONSchema {
     return this.isValidNumberConstraint(data, err);
   }
 }
-class JSONSchemaString extends JSONSchema {
+class JSONSchemaStringType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'string', clone);
-    this.maxLength = getPureInteger(schema.maxLength);
-    this.minLength = getPureInteger(schema.minLength);
+
+    this.maxLength = getPureInteger(schema.maxLength, 0);
+    this.minLength = getPureInteger(schema.minLength, 0);
+
+    this.pattern = undefined;
+    this._pattern = undefined;
     if (schema.pattern != null && schema._pattern == null) {
       if (isPureString(schema.pattern)) {
         this.pattern = schema.pattern;
@@ -4536,7 +4550,7 @@ class JSONSchemaString extends JSONSchema {
     }
   }
 
-  getPrimaryType() { return JSONSchemaString; }
+  getPrimaryType() { return JSONSchemaStringType; }
 
   isValid(data, err = []) {
     err = this.isValidState('string', data, err);
@@ -4563,7 +4577,7 @@ class JSONSchemaString extends JSONSchema {
   }
 }
 
-class JSONSchemaSelector extends JSONSchema {
+class JSONSchemaSelectorType extends JSONSchemaObject {
   constructor(owner, path, schema = {}) {
     super(owner, path, schema, undefined);
     const selectName = JSONSchema_getSelectorName(schema);
@@ -4602,7 +4616,7 @@ class JSONSchemaSelector extends JSONSchema {
     return undefined;
   }
 
-  getPrimaryType() { return JSONSchemaSelector; }
+  getPrimaryType() { return JSONSchemaSelectorType; }
 
   canHaveSchemaChildren() { return true; }
 
@@ -4611,7 +4625,7 @@ class JSONSchemaSelector extends JSONSchema {
   }
 }
 
-class JSONSchemaObject extends JSONSchema {
+class JSONSchemaObjectType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'object', clone);
 
@@ -4634,7 +4648,7 @@ class JSONSchemaObject extends JSONSchema {
     this.patternProperties = patternProperties;
     this._patternProperties = patternPropertiesCached;
 
-    this.additionalProperties = getBoolOrObject(schema.additionalProperties, true);
+    this.additionalProperties = this.initObjectAdditionalProperties(schema);
   }
 
   //#region init schema
@@ -4712,9 +4726,18 @@ class JSONSchemaObject extends JSONSchema {
     };
   }
 
+  initObjectAdditionalProperties(schema) {
+    const additionalProperties = getBoolOrObject(schema.additionalProperties, true);
+    if (additionalProperties.constructor === Boolean) return additionalProperties;
+
+    const owner = this._owner;
+    const path = JSONPointer_addFolder(this._path, 'additionalProperties');
+    return owner.createSchemaHandler(path, additionalProperties);
+  }
+
   //#endregion
 
-  getPrimaryType() { return JSONSchemaObject; }
+  getPrimaryType() { return JSONSchemaObjectType; }
 
   canHaveSchemaChildren() { return true; }
 
@@ -4830,7 +4853,7 @@ class JSONSchemaObject extends JSONSchema {
   }
 }
 
-class JSONSchemaArray extends JSONSchema {
+class JSONSchemaArrayType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'array', clone);
     this.minItems = getPureInteger(schema.minItems, 0);
@@ -4854,7 +4877,7 @@ class JSONSchemaArray extends JSONSchema {
     return item ? owner.createSchemaHandler(path, item) : undefined;
   }
 
-  getPrimaryType() { return JSONSchemaArray; }
+  getPrimaryType() { return JSONSchemaArrayType; }
 
   canHaveSchemaChildren() { return true; }
 
@@ -4904,7 +4927,7 @@ class JSONSchemaArray extends JSONSchema {
   }
 }
 
-class JSONSchemaTuple extends JSONSchema {
+class JSONSchemaTupleType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'tuple', clone);
 
@@ -4950,7 +4973,7 @@ class JSONSchemaTuple extends JSONSchema {
     return undefined;
   }
 
-  getPrimaryType() { return JSONSchemaTuple; }
+  getPrimaryType() { return JSONSchemaTupleType; }
 
   canHaveSchemaChildren() { return true; }
 
@@ -5012,5 +5035,5 @@ class JSONSchemaTuple extends JSONSchema {
 
 //#endregion
 
-export { Array_collapseShallow, Array_patchPrototype, Array_unique, Array_uniqueMerge, BetterMap, BetterMap_prototype_getItem, BetterMap_prototype_set, BetterMap_prototype_setItem, JSONPointer, JSONPointer_addFolder, JSONPointer_compileGetPointer, JSONPointer_fragmentSeparator, JSONPointer_pathSeparator, JSONPointer_traverseFilterObjectBF, JSONSchema, JSONSchemaArray, JSONSchemaBoolean, JSONSchemaDocument, JSONSchemaInteger, JSONSchemaNumber, JSONSchemaObject, JSONSchemaSelector, JSONSchemaString, JSONSchemaTuple, JSONSchema_expandSchemaReferences, JSONSchema_getNumberFormatType, JSONSchema_getSelectorName, JSONSchema_getStringFormatType, JSONSchema_isArray, JSONSchema_isBoolean, JSONSchema_isInteger, JSONSchema_isMap, JSONSchema_isNumber, JSONSchema_isObject, JSONSchema_isString, JSONSchema_isTuple, JSONSchema_isUnknownSchema, JSONSchema_isValid, JSONSchema_isValidArray, JSONSchema_isValidBoolean, JSONSchema_isValidInteger, JSONSchema_isValidMap, JSONSchema_isValidNumber, JSONSchema_isValidObject, JSONSchema_isValidState, JSONSchema_isValidString, JSONSchema_isValidTuple, Map_patchPrototype, Queue, String_createRegExp, String_decodeURI, String_encodeURI, String_trimLeft, Tree, TreeNode, Tree_findIndex, Tree_traverseBF, Tree_traverseDF, VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseToString, copyAttributes, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getAllObjectKeys, getAllObjectValues, getBoolOrArray, getBoolOrObject, getObjectCountItems, getObjectFirstItem, getPureArray, getPureArrayGTLength, getPureBool, getPureInteger, getPureNumber, getPureObject, getPureString, getStringOrArray, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isBoolOrArray, isBoolOrObject, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureArray, isPureNumber, isPureObject, isPureString, isPureTypedArray, isStringOrArray, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, workletState, wrapVN };
+export { Array_collapseShallow, Array_patchPrototype, Array_unique, Array_uniqueMerge, BetterMap, BetterMap_prototype_getItem, BetterMap_prototype_set, BetterMap_prototype_setItem, JSONPointer, JSONPointer_addFolder, JSONPointer_compileGetPointer, JSONPointer_fragmentSeparator, JSONPointer_pathSeparator, JSONPointer_traverseFilterObjectBF, JSONSchemaArrayType, JSONSchemaBooleanType, JSONSchemaDocument, JSONSchemaIntegerType, JSONSchemaNumberType, JSONSchemaObject, JSONSchemaObjectType, JSONSchemaSelectorType, JSONSchemaStringType, JSONSchemaTupleType, JSONSchemaXMLObject, JSONSchema_expandSchemaReferences, JSONSchema_getNumberFormatType, JSONSchema_getSelectorName, JSONSchema_getStringFormatType, JSONSchema_isArray, JSONSchema_isBoolean, JSONSchema_isInteger, JSONSchema_isMap, JSONSchema_isNumber, JSONSchema_isObject, JSONSchema_isString, JSONSchema_isTuple, JSONSchema_isUnknownSchema, JSONSchema_isValid, JSONSchema_isValidArray, JSONSchema_isValidBoolean, JSONSchema_isValidInteger, JSONSchema_isValidMap, JSONSchema_isValidNumber, JSONSchema_isValidObject, JSONSchema_isValidState, JSONSchema_isValidString, JSONSchema_isValidTuple, Map_patchPrototype, Queue, String_createRegExp, String_decodeURI, String_encodeURI, String_trimLeft, Tree, TreeNode, Tree_findIndex, Tree_traverseBF, Tree_traverseDF, VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseToString, copyAttributes, deepEquals, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getAllObjectKeys, getAllObjectValues, getBoolOrArray, getBoolOrObject, getObjectCountItems, getObjectFirstItem, getPureArray, getPureArrayGTLength, getPureBool, getPureInteger, getPureNumber, getPureObject, getPureString, getStringOrArray, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isBoolOrArray, isBoolOrObject, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureArray, isPureNumber, isPureObject, isPureString, isPureTypedArray, isStringOrArray, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_idiv, vec3f64_idivs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_new, vec3f64_unit, workletState, wrapVN };
 //# sourceMappingURL=index.js.map
