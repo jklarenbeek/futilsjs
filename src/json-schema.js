@@ -620,8 +620,10 @@ export class JSONSchemaXMLObject {
     this.prefix = getPureString(xml.prefix);
     this.attribute = getPureBool(xml.attribute, false);
     this.wrapped = getPureBool(xml.wrapped, false);
+    this.attributes = getPureObject(xml.attributes);
   }
 }
+
 const Object_prototype_propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
 
 export class JSONSchemaObject {
@@ -674,7 +676,7 @@ export class JSONSchemaObject {
       err.push([this._schemaPath, 'nullable', this.nullable]);
     }
     else if (data != null) {
-      const srcType = typeof data === 'object'
+      const dataType = typeof data === 'object'
         ? data.constructor.name
         : typeof data;
       if (typeof type === 'function') {
@@ -683,17 +685,17 @@ export class JSONSchemaObject {
             this.path,
             'type',
             type.name,
-            srcType,
+            dataType,
           ]);
         }
       }
       else {
-        if (srcType !== type) {
+        if (dataType !== type) {
           err.push([
             this.path,
             'type',
             type,
-            srcType,
+            dataType,
           ]);
         }
       }
