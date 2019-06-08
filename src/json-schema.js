@@ -515,7 +515,7 @@ export class JSONSchemaDocument {
 
 
   registerSchemaHandler(formatName = 'default', schemaHandler) {
-    if (schemaHandler instanceof JSONSchema) {
+    if (schemaHandler instanceof JSONSchemaObject) {
       const primaryType = schemaHandler.getPrimaryType();
       if (schemaHandler instanceof primaryType) {
         const primaryName = primaryType.name;
@@ -533,15 +533,15 @@ export class JSONSchemaDocument {
   }
 
   registerDefaultSchemaHandlers() {
-    this.defaultHandler = JSONSchemaString;
-    return this.registerSchemaHandler('default', new JSONSchemaSelector())
-      && this.registerSchemaHandler('default', new JSONSchemaBoolean())
-      && this.registerSchemaHandler('default', new JSONSchemaNumber())
-      && this.registerSchemaHandler('default', new JSONSchemaInteger())
-      && this.registerSchemaHandler('default', new JSONSchemaString())
-      && this.registerSchemaHandler('default', new JSONSchemaObject())
-      && this.registerSchemaHandler('default', new JSONSchemaArray())
-      && this.registerSchemaHandler('default', new JSONSchemaTuple());
+    this.defaultHandler = JSONSchemaStringType;
+    return this.registerSchemaHandler('default', new JSONSchemaSelectorType())
+      && this.registerSchemaHandler('default', new JSONSchemaBooleanType())
+      && this.registerSchemaHandler('default', new JSONSchemaNumberType())
+      && this.registerSchemaHandler('default', new JSONSchemaIntegerType())
+      && this.registerSchemaHandler('default', new JSONSchemaStringType())
+      && this.registerSchemaHandler('default', new JSONSchemaObjectType())
+      && this.registerSchemaHandler('default', new JSONSchemaArrayType())
+      && this.registerSchemaHandler('default', new JSONSchemaTupleType());
   }
 
   getSchemaHandler(schema, force = true) {
@@ -550,28 +550,28 @@ export class JSONSchemaDocument {
 
       const selector = JSONSchema_getSelectorName(schema);
       if (selector) {
-        typeName = JSONSchemaSelector.name;
+        typeName = JSONSchemaSelectorType.name;
       }
       else if (JSONSchema_isBoolean(schema)) {
-        typeName = JSONSchemaBoolean.name;
+        typeName = JSONSchemaBooleanType.name;
       }
       else if (JSONSchema_isInteger(schema)) {
-        typeName = JSONSchemaInteger.name;
+        typeName = JSONSchemaIntegerType.name;
       }
       else if (JSONSchema_isNumber(schema)) {
-        typeName = JSONSchemaNumber.name;
+        typeName = JSONSchemaNumberType.name;
       }
       else if (JSONSchema_isString(schema)) {
-        typeName = JSONSchemaString.name;
+        typeName = JSONSchemaStringType.name;
       }
       else if (JSONSchema_isObject(schema)) {
-        typeName = JSONSchemaObject.name;
+        typeName = JSONSchemaObjectType.name;
       }
       else if (JSONSchema_isArray(schema)) {
-        typeName = JSONSchemaArray.name;
+        typeName = JSONSchemaArrayType.name;
       }
       else if (JSONSchema_isTuple(schema)) {
-        typeName = JSONSchemaTuple.name;
+        typeName = JSONSchemaTupleType.name;
       }
       else {
         if (force === false) return undefined;
@@ -614,12 +614,12 @@ export class JSONSchemaDocument {
 
 const Object_prototype_propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
 
-export class JSONSchema {
+export class JSONSchemaObject {
   constructor(owner, path, schema, type) {
-    if (this.constructor === JSONSchema)
-      throw new TypeError('JSONSchema is an abstract class');
+    if (this.constructor === JSONSchemaObject)
+      throw new TypeError('JSONSchemaObject is an abstract class');
     if (owner != null && !(owner instanceof JSONSchemaDocument))
-      throw new TypeError('JSONSchema owner MUST be of type JSONSchemaDocument');
+      throw new TypeError('JSONSchemaObject owner MUST be of type JSONSchemaDocument');
 
     this._owner = owner;
     this._path = path;
@@ -694,19 +694,19 @@ export class JSONSchema {
   }
 }
 
-export class JSONSchemaBoolean extends JSONSchema {
+export class JSONSchemaBooleanType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'boolean', clone);
   }
 
-  getPrimaryType() { return JSONSchemaBoolean; }
+  getPrimaryType() { return JSONSchemaBooleanType; }
 
   isValid(data, err = []) {
     return this.isValidState('boolean', data, err);
   }
 }
 
-export class JSONSchemaNumber extends JSONSchema {
+export class JSONSchemaNumberType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'number', clone);
 
@@ -721,7 +721,7 @@ export class JSONSchemaNumber extends JSONSchema {
     this.multipleOf = getPureNumber(schema.multipleOf);
   }
 
-  getPrimaryType() { return JSONSchemaNumber; }
+  getPrimaryType() { return JSONSchemaNumberType; }
 
   isValidNumberConstraint(data, err) {
     if (this.minimum) {
@@ -764,7 +764,7 @@ export class JSONSchemaNumber extends JSONSchema {
   }
 }
 
-export class JSONSchemaInteger extends JSONSchema {
+export class JSONSchemaIntegerType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'integer', clone);
     this.minimum = getPureInteger(schema.minimum);
@@ -778,7 +778,7 @@ export class JSONSchemaInteger extends JSONSchema {
     this.multipleOf = getPureInteger(schema.multipleOf);
   }
 
-  getPrimaryType() { return JSONSchemaInteger; }
+  getPrimaryType() { return JSONSchemaIntegerType; }
 
   isValidNumberConstraint(data, err) {
     if (this.minimum) {
@@ -824,7 +824,7 @@ export class JSONSchemaInteger extends JSONSchema {
     return this.isValidNumberConstraint(data, err);
   }
 }
-export class JSONSchemaString extends JSONSchema {
+export class JSONSchemaStringType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'string', clone);
     this.maxLength = getPureInteger(schema.maxLength);
@@ -845,7 +845,7 @@ export class JSONSchemaString extends JSONSchema {
     }
   }
 
-  getPrimaryType() { return JSONSchemaString; }
+  getPrimaryType() { return JSONSchemaStringType; }
 
   isValid(data, err = []) {
     err = this.isValidState('string', data, err);
@@ -872,7 +872,7 @@ export class JSONSchemaString extends JSONSchema {
   }
 }
 
-export class JSONSchemaSelector extends JSONSchema {
+export class JSONSchemaSelectorType extends JSONSchemaObject {
   constructor(owner, path, schema = {}) {
     super(owner, path, schema, undefined);
     const selectName = JSONSchema_getSelectorName(schema);
@@ -911,7 +911,7 @@ export class JSONSchemaSelector extends JSONSchema {
     return undefined;
   }
 
-  getPrimaryType() { return JSONSchemaSelector; }
+  getPrimaryType() { return JSONSchemaSelectorType; }
 
   canHaveSchemaChildren() { return true; }
 
@@ -920,7 +920,7 @@ export class JSONSchemaSelector extends JSONSchema {
   }
 }
 
-export class JSONSchemaObject extends JSONSchema {
+export class JSONSchemaObjectType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'object', clone);
 
@@ -1023,7 +1023,7 @@ export class JSONSchemaObject extends JSONSchema {
 
   //#endregion
 
-  getPrimaryType() { return JSONSchemaObject; }
+  getPrimaryType() { return JSONSchemaObjectType; }
 
   canHaveSchemaChildren() { return true; }
 
@@ -1139,7 +1139,7 @@ export class JSONSchemaObject extends JSONSchema {
   }
 }
 
-export class JSONSchemaArray extends JSONSchema {
+export class JSONSchemaArrayType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'array', clone);
     this.minItems = getPureInteger(schema.minItems, 0);
@@ -1163,7 +1163,7 @@ export class JSONSchemaArray extends JSONSchema {
     return item ? owner.createSchemaHandler(path, item) : undefined;
   }
 
-  getPrimaryType() { return JSONSchemaArray; }
+  getPrimaryType() { return JSONSchemaArrayType; }
 
   canHaveSchemaChildren() { return true; }
 
@@ -1213,7 +1213,7 @@ export class JSONSchemaArray extends JSONSchema {
   }
 }
 
-export class JSONSchemaTuple extends JSONSchema {
+export class JSONSchemaTupleType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'tuple', clone);
 
@@ -1259,7 +1259,7 @@ export class JSONSchemaTuple extends JSONSchema {
     return undefined;
   }
 
-  getPrimaryType() { return JSONSchemaTuple; }
+  getPrimaryType() { return JSONSchemaTupleType; }
 
   canHaveSchemaChildren() { return true; }
 

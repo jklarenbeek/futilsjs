@@ -6,7 +6,7 @@ This library is created as a personal merge of some usefull javascript functions
 
 To make my life even more fun, I forked the hyperapp version 1 sourcecode from github, refactored it and added some usefull stuff to it like vnode attribute flattening. I'm not any garanty at the moment that futilsjs works; but it do only check in when it compiles.
 
-Another interesting collection of function and classes is the JSONSchema validator. In this context I added it to futilsjs in order to separate logic from aformjs, which is under heavy development too :).
+Another interesting collection of function and classes is the JSONSchemaObject validator. In this context I added it to futilsjs in order to separate logic from aformjs, which is under heavy development too :).
 
 Keep in mind that for the time being this repo will change a lot, really fast. So if you want to use it, I suggest you copy the dist file to your project and include it that way.
 
