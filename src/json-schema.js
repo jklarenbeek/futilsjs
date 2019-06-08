@@ -632,7 +632,7 @@ export class JSONSchemaObject {
       throw new TypeError('JSONSchemaObject owner MUST be of type JSONSchemaDocument');
 
     this._owner = owner;
-    this._path = path;
+    this._schemaPath = path;
 
     this.type = getPureString(type, getPureString(schema.type));
     this.format = getPureString(schema.format);
@@ -668,10 +668,10 @@ export class JSONSchemaObject {
 
   isValidState(type, data, err) {
     if (data === undefined && this.required === true) {
-      err.push([this._path, 'required']);
+      err.push([this._schemaPath, 'required']);
     }
     else if (data === null && this.nullable === false) {
-      err.push([this._path, 'nullable', this.nullable]);
+      err.push([this._schemaPath, 'nullable', this.nullable]);
     }
     else if (data != null) {
       const srcType = typeof data === 'object'
@@ -735,24 +735,24 @@ export class JSONSchemaNumberType extends JSONSchemaObject {
     if (this.minimum) {
       if (this.exclusiveMinimum === true) {
         if (data < this.minimum) {
-          err.push([this._path, 'exclusiveMinumum', this.minimum, data]);
+          err.push([this._schemaPath, 'exclusiveMinumum', this.minimum, data]);
         }
       }
       else {
         if (data <= this.minimum) {
-          err.push([this._path, 'minimum', this.minimum, data]);
+          err.push([this._schemaPath, 'minimum', this.minimum, data]);
         }
       }
     }
     if (this.maximum) {
       if (this.exclusiveMaximum === true) {
         if (data > this.maximum) {
-          err.push([this._path, 'exclusiveMaximum', this.maximum, data]);
+          err.push([this._schemaPath, 'exclusiveMaximum', this.maximum, data]);
         }
       }
       else {
         if (data >= this.maximum) {
-          err.push([this._path, 'maximum', this.maximum, data]);
+          err.push([this._schemaPath, 'maximum', this.maximum, data]);
         }
       }
     }
@@ -792,24 +792,24 @@ export class JSONSchemaIntegerType extends JSONSchemaObject {
     if (this.minimum) {
       if (this.exclusiveMinimum === true) {
         if (data < this.minimum) {
-          err.push([this._path, 'exclusiveMinumum', this.minimum, data]);
+          err.push([this._schemaPath, 'exclusiveMinumum', this.minimum, data]);
         }
       }
       else {
         if (data <= this.minimum) {
-          err.push([this._path, 'minimum', this.minimum, data]);
+          err.push([this._schemaPath, 'minimum', this.minimum, data]);
         }
       }
     }
     if (this.maximum) {
       if (this.exclusiveMaximum === true) {
         if (data > this.maximum) {
-          err.push([this._path, 'exclusiveMaximum', this.maximum, data]);
+          err.push([this._schemaPath, 'exclusiveMaximum', this.maximum, data]);
         }
       }
       else {
         if (data >= this.maximum) {
-          err.push([this._path, 'maximum', this.maximum, data]);
+          err.push([this._schemaPath, 'maximum', this.maximum, data]);
         }
       }
     }
@@ -867,17 +867,17 @@ export class JSONSchemaStringType extends JSONSchemaObject {
     const length = data.length;
     if (this.maxLength) {
       if (length > this.maxLength) {
-        err.push([this._path, 'maxLength', this.maxLength, data.length]);
+        err.push([this._schemaPath, 'maxLength', this.maxLength, data.length]);
       }
     }
     if (this.minLength) {
       if (length < this.minLength) {
-        err.push([this._path, 'maxLength', this.maxLength, data.length]);
+        err.push([this._schemaPath, 'maxLength', this.maxLength, data.length]);
       }
     }
     if (this._pattern) {
       if (this._pattern.search(data) === -1) {
-        err.push([this._path, 'pattern', this.pattern, data]);
+        err.push([this._schemaPath, 'pattern', this.pattern, data]);
       }
     }
     return err;
@@ -903,7 +903,7 @@ export class JSONSchemaSelectorType extends JSONSchemaObject {
 
   initSelectorItems(name, base, items) {
     const owner = this._owner;
-    const path = JSONPointer_addFolder(this._path, name);
+    const path = JSONPointer_addFolder(this._schemaPath, name);
     if (items) {
       const selectors = [];
       const len = items.length;
@@ -979,7 +979,7 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
 
   initObjectProperties(schema) {
     const owner = this._owner;
-    const path = JSONPointer_addFolder(this._path, 'properties');
+    const path = JSONPointer_addFolder(this._schemaPath, 'properties');
     const properties = getPureObject(schema.properties);
     if (properties) {
       const obj = {};
@@ -1000,7 +1000,7 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
 
   initObjectPatternProperties(schema) {
     const owner = this._owner;
-    const path = JSONPointer_addFolder(this._path, 'patternProperties');
+    const path = JSONPointer_addFolder(this._schemaPath, 'patternProperties');
     const properties = getPureObject(schema.patternProperties);
     const cached = getPureObject(schema._patternProperties);
     if (properties && !cached) {
@@ -1040,7 +1040,7 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
     if (additionalProperties.constructor === Boolean) return additionalProperties;
 
     const owner = this._owner;
-    const path = JSONPointer_addFolder(this._path, 'additionalProperties');
+    const path = JSONPointer_addFolder(this._schemaPath, 'additionalProperties');
     return owner.createSchemaHandler(path, additionalProperties);
   }
 
@@ -1056,19 +1056,19 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
     err = this.isValidState('object', data, err);
     if (data == null) return err;
     if (data.constructor === Array) {
-      err.push([this._path, 'type', 'object', 'Array']);
+      err.push([this._schemaPath, 'type', 'object', 'Array']);
     }
     if (err.length > 0) return err;
 
     const count = getObjectCountItems(data)|0;
     if (this.maxProperties) {
       if (count > this.maxProperties) {
-        err.push([this._path, 'maxProperties', this.maxProperties, count]);
+        err.push([this._schemaPath, 'maxProperties', this.maxProperties, count]);
       }
     }
     if (this.minProperties) {
       if (count < this.minProperties) {
-        err.push([this._path, 'minProperties', this.minProperties, count]);
+        err.push([this._schemaPath, 'minProperties', this.minProperties, count]);
       }
     }
 
@@ -1081,7 +1081,7 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
         for (let i = 0; i < required.length; ++i) {
           const prop = required[i];
           if (!data.hasOwnProperty(prop)) {
-            err.push([this._path, 'required', prop]);
+            err.push([this._schemaPath, 'required', prop]);
           }
         }
       }
@@ -1089,7 +1089,7 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
         for (const prop in required) {
           if (required.hasOwnProperty(prop)) {
             if (!data.hasOwnProperty(prop)) {
-              err.push([this._path, 'required', prop]);
+              err.push([this._schemaPath, 'required', prop]);
             }
           }
         }
@@ -1107,7 +1107,7 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
               if (rgx.exec(item) != null) continue loop;
             }
           }
-          err.push([this._path, 'patternRequired', rgx]);
+          err.push([this._schemaPath, 'patternRequired', rgx]);
         }
       }
     }
@@ -1127,7 +1127,7 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
           if (callback) {
             const s = properties[prop];
             const d = data[prop];
-            const p = JSONPointer_addFolder(this._path, prop);
+            const p = JSONPointer_addFolder(this._schemaPath, prop);
             callback(s, p, d, err);
           }
           continue;
@@ -1141,7 +1141,7 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
                 if (callback) {
                   const s = this.patternProperties[pattern];
                   const d = data[prop];
-                  const p = JSONPointer_addFolder(this._path, prop);
+                  const p = JSONPointer_addFolder(this._schemaPath, prop);
                   callback(s, p, d, err);
                 }
                 continue next;
@@ -1149,13 +1149,13 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
             }
           }
           if (this.additionalProperties === false) {
-            err.push([this._path, 'patternProperties', prop]);
+            err.push([this._schemaPath, 'patternProperties', prop]);
           }
           continue;
         }
         else {
           if (this.additionalProperties === false) {
-            err.push([this._path, 'properties', prop]);
+            err.push([this._schemaPath, 'properties', prop]);
           }
         }
       }
@@ -1176,14 +1176,14 @@ export class JSONSchemaArrayType extends JSONSchemaObject {
 
   initArrayItems(schema) {
     const owner = this._owner;
-    const path = JSONPointer_addFolder(this._path, 'items');
+    const path = JSONPointer_addFolder(this._schemaPath, 'items');
     const item = getPureObject(schema.items);
     return item ? owner.createSchemaHandler(path, item) : undefined;
   }
 
   initArrayContains(schema) {
     const owner = this._owner;
-    const path = JSONPointer_addFolder(this._path, 'contains');
+    const path = JSONPointer_addFolder(this._schemaPath, 'contains');
     const item = getPureObject(schema.contains);
     return item ? owner.createSchemaHandler(path, item) : undefined;
   }
@@ -1202,17 +1202,17 @@ export class JSONSchemaArrayType extends JSONSchemaObject {
     const length = data.length;
     if (this.minItems) {
       if (length < this.minItems) {
-        err.push([this._path, 'minItems', this.minItems, length]);
+        err.push([this._schemaPath, 'minItems', this.minItems, length]);
       }
     }
     if (this.maxItems) {
       if (length > this.maxItems) {
-        err.push([this._path, 'maxItems', this.maxItems, length]);
+        err.push([this._schemaPath, 'maxItems', this.maxItems, length]);
       }
     }
     if (this.uniqueItems === true) {
       // TODO: implementation.uniqueItems
-      err.push([this._path, 'implementation', 'uniqueItems']);
+      err.push([this._schemaPath, 'implementation', 'uniqueItems']);
     }
 
     if (callback) {
@@ -1220,7 +1220,7 @@ export class JSONSchemaArrayType extends JSONSchemaObject {
       const c = this.contains;
       for (let i = 0; i < length; ++i) {
         const d = data[i];
-        const p = JSONPointer_addFolder(this._path, i);
+        const p = JSONPointer_addFolder(this._schemaPath, i);
         if (c) {
           if (callback(c, p, d).length === 0) break;
         }
@@ -1248,7 +1248,7 @@ export class JSONSchemaTupleType extends JSONSchemaObject {
 
   initTupleItems(schema) {
     const owner = this._owner;
-    const path = JSONPointer_addFolder(this._path, 'items');
+    const path = JSONPointer_addFolder(this._schemaPath, 'items');
     const items = getPureArray(schema.items);
     if (items) {
       const result = new Array(items.length);
@@ -1267,7 +1267,7 @@ export class JSONSchemaTupleType extends JSONSchemaObject {
 
   initTupleAdditionalItems(schema) {
     const owner = this._owner;
-    const path = JSONPointer_addFolder(this._path, 'additionalItems');
+    const path = JSONPointer_addFolder(this._schemaPath, 'additionalItems');
     const item = getPureObject(schema.additionalItems);
     if (item) {
       const handler = owner.createSchemaHandler(
@@ -1293,14 +1293,14 @@ export class JSONSchemaTupleType extends JSONSchemaObject {
     const length = data.length;
     const size = this.items.length;
     if (length !== size) {
-      err.push([this._path, 'items', size, length]);
+      err.push([this._schemaPath, 'items', size, length]);
     }
 
     if (callback) {
       for (let i = 0; i < size; ++i) {
         const s = this.items[i];
         const d = i < data.length ? data[i] : undefined;
-        const p = JSONPointer_addFolder(this._path, i);
+        const p = JSONPointer_addFolder(this._schemaPath, i);
         callback(s, p, d, err);
       }
     }
@@ -1310,22 +1310,22 @@ export class JSONSchemaTupleType extends JSONSchemaObject {
       const maxitems = mathi32_max(this.maxItems > 0 ? this.maxItems : size, size);
 
       if (length < minitems) {
-        err.push([this._path, 'minItems', minitems, length]);
+        err.push([this._schemaPath, 'minItems', minitems, length]);
       }
       if (length > maxitems) {
-        err.push([this._path, 'maxItems', maxitems, length]);
+        err.push([this._schemaPath, 'maxItems', maxitems, length]);
       }
 
       if (this.uniqueItems === true) {
         // TODO: implementation.uniqueItems
-        err.push([this._path, 'implementation', 'uniqueItems']);
+        err.push([this._schemaPath, 'implementation', 'uniqueItems']);
       }
 
       if (callback) {
         const s = this.additionalItems;
         for (let i = size; i < data.length; ++i) {
           const d = data[i];
-          const p = JSONPointer_addFolder(this._path, i);
+          const p = JSONPointer_addFolder(this._schemaPath, i);
           callback(s, p, d, err);
         }
       }
