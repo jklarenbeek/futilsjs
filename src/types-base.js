@@ -56,6 +56,14 @@ export function isBoolOrArray(obj) {
       || obj.constructor === Array);
 }
 
+export function isBoolOrObject(obj) {
+  return obj != null
+    && (obj === true
+      || obj === false
+      || (typeof obj === 'object'
+        && obj.constructor !== Array));
+}
+
 export function isStringOrArray(obj) {
   return obj != null
     && (obj.constructor === String
@@ -64,6 +72,10 @@ export function isStringOrArray(obj) {
 
 export function getBoolOrArray(obj, def) {
   return isBoolOrArray(obj) ? obj : def;
+}
+
+export function getBoolOrObject(obj, def) {
+  return isBoolOrObject(obj) ? obj : def;
 }
 
 export function getStringOrArray(obj, def) {
@@ -150,29 +162,25 @@ export function cloneObject(target, source) {
 }
 
 export function cloneDeep(o) {
-  if (typeof o !== 'object') {
-    return o;
-  }
-  if (!o) {
+  if (o == null || typeof o !== 'object') {
     return o;
   }
 
   if (o.constructor === Array) {
-    const newO = [];
-    for (let i = 0; i < o.length; i += 1) {
-      newO[i] = cloneDeep(o[i]);
+    const arr = [];
+    for (let i = 0; i < o.length; ++i) {
+      arr[i] = cloneDeep(o[i]);
     }
-    return newO;
+    return arr;
   }
   else {
-    const newO = {};
-    const keys = Reflect.ownKeys(o); // TODO: SLOW!!! OMG SLOW!!!
-    for (const i in keys) {
-      if (keys.hasOwnProperty(i)) {
-        newO[i] = cloneDeep(o[i]);
-      }
+    const obj = {};
+    const keys = Object.keys(o);
+    for (let i = 0; i < keys.length; ++i) {
+      const key = keys[i];
+      obj[i] = cloneDeep(o[key]);
     }
-    return newO;
+    return obj;
   }
 }
 

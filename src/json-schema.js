@@ -13,6 +13,7 @@ import {
   isPureTypedArray,
   getPureObject,
   getBoolOrArray,
+  getBoolOrObject,
   getPureArray,
   getPureArrayGTLength,
   getPureString,
@@ -942,7 +943,7 @@ export class JSONSchemaObject extends JSONSchema {
     this.patternProperties = patternProperties;
     this._patternProperties = patternPropertiesCached;
 
-    this.additionalProperties = getPureBool(schema.additionalProperties, false);
+    this.additionalProperties = getBoolOrObject(schema.additionalProperties, true);
   }
 
   //#region init schema
