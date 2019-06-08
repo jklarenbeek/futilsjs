@@ -516,13 +516,13 @@ export class JSONSchemaDocument {
 
   registerSchemaHandler(formatName = 'default', schemaHandler) {
     if (schemaHandler instanceof JSONSchemaObject) {
-      const primaryType = schemaHandler.getPrimaryType();
-      if (schemaHandler instanceof primaryType) {
-        const primaryName = primaryType.name;
-        if (!this.handlers[primaryName]) {
-          this.handlers[primaryName] = {};
+      const schemaType = schemaHandler.getSchemaType();
+      if (schemaHandler instanceof schemaType) {
+        const schemaName = schemaType.name;
+        if (!this.handlers[schemaName]) {
+          this.handlers[schemaName] = {};
         }
-        const formats = this.handlers[primaryName];
+        const formats = this.handlers[schemaName];
         if (formats.hasOwnProperty(formatName) === false) {
           formats[formatName] = schemaHandler.constructor;
           return true;
@@ -619,7 +619,7 @@ export class JSONSchemaXMLObject {
     this.namespace = getPureString(xml.namespace);
     this.prefix = getPureString(xml.prefix);
     this.attribute = getPureBool(xml.attribute, false);
-    this.wrapped = getPureBool(xml.wrappd, false);
+    this.wrapped = getPureBool(xml.wrapped, false);
   }
 }
 const Object_prototype_propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
@@ -636,10 +636,10 @@ export class JSONSchemaObject {
 
     this.type = getPureString(type, getPureString(schema.type));
     this.format = getPureString(schema.format);
-    this.required = getBoolOrArray(schema.required);
-    this.nullable = getBoolOrArray(schema.nullable);
-    this.readOnly = getBoolOrArray(schema.readOnly);
-    this.writeOnly = getBoolOrArray(schema.writeOnly);
+    this.required = getBoolOrArray(schema.required, false);
+    this.nullable = getBoolOrArray(schema.nullable, true);
+    this.readOnly = getBoolOrArray(schema.readOnly, false);
+    this.writeOnly = getBoolOrArray(schema.writeOnly, false);
 
     this.title = getPureString(schema.title);
     this.placeholder = getPureString(schema.placeholder);
@@ -653,19 +653,17 @@ export class JSONSchemaObject {
     this.examples = getPureArray(schema.examples);
   }
 
-  getPrimaryType() { throw new Error('Abstract Method'); }
+  getSchemaType() { throw new Error('Abstract Method'); }
 
-  getDefault() {
-    return this.const || this.default;
-  }
+  isPrimitiveSchemaType() { return true; }
+
+  hasSchemaChildren() { return false; }
+
+  getDefault() { return this.const || this.default; }
 
   propertyIsEnumerable(prop) {
     return (typeof prop === 'string' || prop.indexOf('_') !== 0)
       && Object_prototype_propertyIsEnumerable.call(this, prop);
-  }
-
-  canHaveSchemaChildren() {
-    return false;
   }
 
   isValidState(type, data, err) {
@@ -709,7 +707,7 @@ export class JSONSchemaBooleanType extends JSONSchemaObject {
     super(owner, path, schema, 'boolean', clone);
   }
 
-  getPrimaryType() { return JSONSchemaBooleanType; }
+  getSchemaType() { return JSONSchemaBooleanType; }
 
   isValid(data, err = []) {
     return this.isValidState('boolean', data, err);
@@ -731,7 +729,7 @@ export class JSONSchemaNumberType extends JSONSchemaObject {
     this.multipleOf = getPureNumber(schema.multipleOf, +0.0);
   }
 
-  getPrimaryType() { return JSONSchemaNumberType; }
+  getSchemaType() { return JSONSchemaNumberType; }
 
   isValidNumberConstraint(data, err) {
     if (this.minimum) {
@@ -788,7 +786,7 @@ export class JSONSchemaIntegerType extends JSONSchemaObject {
     this.multipleOf = getPureInteger(schema.multipleOf, 1);
   }
 
-  getPrimaryType() { return JSONSchemaIntegerType; }
+  getSchemaType() { return JSONSchemaIntegerType; }
 
   isValidNumberConstraint(data, err) {
     if (this.minimum) {
@@ -859,7 +857,7 @@ export class JSONSchemaStringType extends JSONSchemaObject {
     }
   }
 
-  getPrimaryType() { return JSONSchemaStringType; }
+  getSchemaType() { return JSONSchemaStringType; }
 
   isValid(data, err = []) {
     err = this.isValidState('string', data, err);
@@ -925,9 +923,11 @@ export class JSONSchemaSelectorType extends JSONSchemaObject {
     return undefined;
   }
 
-  getPrimaryType() { return JSONSchemaSelectorType; }
+  getSchemaType() { return JSONSchemaSelectorType; }
 
-  canHaveSchemaChildren() { return true; }
+  isPrimitiveSchemaType() { return false; }
+
+  hasSchemaChildren() { return false; }
 
   isValid(data, err = [], callback) {
     throw new Error('not implemented', data, err, callback);
@@ -1046,9 +1046,11 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
 
   //#endregion
 
-  getPrimaryType() { return JSONSchemaObjectType; }
+  getSchemaType() { return JSONSchemaObjectType; }
 
-  canHaveSchemaChildren() { return true; }
+  isPrimitiveSchemaType() { return false; }
+
+  hasSchemaChildren() { return true; }
 
   isValid(data, err = [], callback) {
     err = this.isValidState('object', data, err);
@@ -1186,16 +1188,11 @@ export class JSONSchemaArrayType extends JSONSchemaObject {
     return item ? owner.createSchemaHandler(path, item) : undefined;
   }
 
-  getPrimaryType() { return JSONSchemaArrayType; }
+  getSchemaType() { return JSONSchemaArrayType; }
 
-  canHaveSchemaChildren() { return true; }
+  isPrimitiveSchemaType() { return false; }
 
-  getSchemaChildren() {
-    return {
-      items: this.items,
-      contains: this.contains,
-    };
-  }
+  hasSchemaChildren() { return true; }
 
   isValid(data, err = [], callback) {
     err = this.isValidState(Array, data, err);
@@ -1282,16 +1279,11 @@ export class JSONSchemaTupleType extends JSONSchemaObject {
     return undefined;
   }
 
-  getPrimaryType() { return JSONSchemaTupleType; }
+  getSchemaType() { return JSONSchemaTupleType; }
 
-  canHaveSchemaChildren() { return true; }
+  isPrimitiveSchemaType() { return false; }
 
-  getSchemaChildren() {
-    return {
-      items: this.items,
-      additionalItems: this.additionalItems,
-    };
-  }
+  hasSchemaChildren() { return true; }
 
   isValid(data, err = [], callback) {
     err = this.isValidState(Array, data, err);
