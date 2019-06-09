@@ -6,7 +6,6 @@
 import { mathi32_max } from './int32-math';
 import {
   getObjectCountItems,
-  getAllObjectKeys,
   isPureString,
   isPureObject,
   isPureArray,
@@ -14,6 +13,8 @@ import {
   getPureObject,
   getBoolOrArray,
   getBoolOrObject,
+  getStringOrObject,
+  getStringOrArray,
   getPureArray,
   getPureArrayGTLength,
   getPureString,
@@ -95,6 +96,11 @@ export function JSONSchema_isObject(schema) {
       && (isPureObject(schema.const) || isPureObject(schema.default));
   return isknown || isprops || isvalid;
 }
+export function JSONSchema_isMap(schema) {
+  const isknown = schema.type === 'map';
+  const ismap = isPureArray(schema.properties);
+  return isknown || ismap;
+}
 export function JSONSchema_isArray(schema) {
   const isknown = schema.type === 'array';
   const isitems = isPureObject(schema.items);
@@ -110,14 +116,6 @@ export function JSONSchema_isTuple(schema) {
   const isadditional = schema.type == null
     && schema.hasOwnProperty('additionalItems');
   return isknown || istuple || isadditional;
-}
-
-export function JSONSchema_isMap(schema) {
-  const isknown = schema.type === 'map';
-  const isvalid = schema.type == null
-    && isPureArray(schema.items)
-    && schema.items.length === 2;
-  return isknown || isvalid;
 }
 
 //#endregion
@@ -682,7 +680,7 @@ export class JSONSchemaObject {
       if (typeof type === 'function') {
         if (!(data instanceof type)) {
           err.push([
-            this.path,
+            this._schemaPath,
             'type',
             type.name,
             dataType,
@@ -692,7 +690,7 @@ export class JSONSchemaObject {
       else {
         if (dataType !== type) {
           err.push([
-            this.path,
+            this._schemaPath,
             'type',
             type,
             dataType,
@@ -720,21 +718,24 @@ export class JSONSchemaNumberType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'number', clone);
 
-    this.minimum = getPureNumber(schema.minimum, +0.0);
-    this.maximum = getPureNumber(schema.maximum, +0.0);
+    this.minimum = getPureNumber(schema.minimum);
+    this.maximum = getPureNumber(schema.maximum);
     this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim, false);
     this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim, false);
 
-    this.low = getPureNumber(schema.low, +0.0);
-    this.high = getPureNumber(schema.high, +0.0);
-    this.optimum = getPureNumber(schema.optimum, +0.0);
-    this.multipleOf = getPureNumber(schema.multipleOf, +0.0);
+    this.low = getPureNumber(schema.low);
+    this.high = getPureNumber(schema.high);
+    this.optimum = getPureNumber(schema.optimum);
+    this.multipleOf = getPureNumber(schema.multipleOf);
+
+    this.expression = getStringOrArray(schema.expression);
   }
 
   getSchemaType() { return JSONSchemaNumberType; }
 
   isValidNumberConstraint(data, err) {
     if (this.minimum) {
+      this.minimum = +this.minimum;
       if (this.exclusiveMinimum === true) {
         if (data < this.minimum) {
           err.push([this._schemaPath, 'exclusiveMinumum', this.minimum, data]);
@@ -747,6 +748,7 @@ export class JSONSchemaNumberType extends JSONSchemaObject {
       }
     }
     if (this.maximum) {
+      this.maximum = +this.maximum;
       if (this.exclusiveMaximum === true) {
         if (data > this.maximum) {
           err.push([this._schemaPath, 'exclusiveMaximum', this.maximum, data]);
@@ -759,8 +761,9 @@ export class JSONSchemaNumberType extends JSONSchemaObject {
       }
     }
     if (this.multipleOf) {
+      this.multipleOf = +this.multipleOf;
       if (data === 0 || ((data % this.multipleOf) !== 0)) {
-        err.push([this.path, 'multipleOf', this.multipleOf, data]);
+        err.push([this._schemaPath, 'multipleOf', this.multipleOf, data]);
       }
     }
     return err;
@@ -777,8 +780,8 @@ export class JSONSchemaNumberType extends JSONSchemaObject {
 export class JSONSchemaIntegerType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
     super(owner, path, schema, 'integer', clone);
-    this.minimum = getPureInteger(schema.minimum, 0);
-    this.maximum = getPureInteger(schema.maximum, 0);
+    this.minimum = getPureInteger(schema.minimum);
+    this.maximum = getPureInteger(schema.maximum);
     this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim, false);
     this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim, false);
 
@@ -792,6 +795,7 @@ export class JSONSchemaIntegerType extends JSONSchemaObject {
 
   isValidNumberConstraint(data, err) {
     if (this.minimum) {
+      this.minimum = this.minimum | 0;
       if (this.exclusiveMinimum === true) {
         if (data < this.minimum) {
           err.push([this._schemaPath, 'exclusiveMinumum', this.minimum, data]);
@@ -804,6 +808,7 @@ export class JSONSchemaIntegerType extends JSONSchemaObject {
       }
     }
     if (this.maximum) {
+      this.maximum = this.maximum | 0;
       if (this.exclusiveMaximum === true) {
         if (data > this.maximum) {
           err.push([this._schemaPath, 'exclusiveMaximum', this.maximum, data]);
@@ -816,8 +821,9 @@ export class JSONSchemaIntegerType extends JSONSchemaObject {
       }
     }
     if (this.multipleOf) {
+      this.multipleOf = this.multipleOf | 0;
       if (data === 0 || ((data % this.multipleOf) !== 0)) {
-        err.push([this.path, 'multipleOf', this.multipleOf, data]);
+        err.push([this._schemaPath, 'multipleOf', this.multipleOf, data]);
       }
     }
     return err;
@@ -828,7 +834,7 @@ export class JSONSchemaIntegerType extends JSONSchemaObject {
     err = this.isValidState('number', data, err);
     if (data == null) return err;
     if (!Number.isInteger(data)) {
-      err.push([this.path, 'type', 'integer', typeof data]);
+      err.push([this._schemaPath, 'type', 'integer', typeof data]);
     }
     if (err.length > 0) return err;
     return this.isValidNumberConstraint(data, err);
@@ -857,6 +863,9 @@ export class JSONSchemaStringType extends JSONSchemaObject {
       this.pattern = schema.pattern;
       this._pattern = schema._pattern;
     }
+
+    this.template = getStringOrObject(schema.template);
+    this.expression = getStringOrArray(schema.template);
   }
 
   getSchemaType() { return JSONSchemaStringType; }
@@ -1062,37 +1071,31 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
     }
     if (err.length > 0) return err;
 
-    const count = getObjectCountItems(data)|0;
+    const dataKeys = Object.keys(data);
+    const properties = this.properties;
+    const propertyKeys = Object.keys(properties);
+
     if (this.maxProperties) {
-      if (count > this.maxProperties) {
-        err.push([this._schemaPath, 'maxProperties', this.maxProperties, count]);
+      if (dataKeys.length > this.maxProperties) {
+        err.push([this._schemaPath, 'maxProperties', this.maxProperties, dataKeys.length]);
       }
     }
     if (this.minProperties) {
-      if (count < this.minProperties) {
-        err.push([this._schemaPath, 'minProperties', this.minProperties, count]);
+      if (dataKeys.length < this.minProperties) {
+        err.push([this._schemaPath, 'minProperties', this.minProperties, dataKeys.length]);
       }
     }
 
     if (this.required) {
       const required = this.required !== true
         ? this.required
-        : getAllObjectKeys(this.properties);
+        : propertyKeys;
 
       if (required.constructor === Array) {
         for (let i = 0; i < required.length; ++i) {
           const prop = required[i];
-          if (!data.hasOwnProperty(prop)) {
+          if (dataKeys.includes(prop) === false) {
             err.push([this._schemaPath, 'required', prop]);
-          }
-        }
-      }
-      else {
-        for (const prop in required) {
-          if (required.hasOwnProperty(prop)) {
-            if (!data.hasOwnProperty(prop)) {
-              err.push([this._schemaPath, 'required', prop]);
-            }
           }
         }
       }
@@ -1104,10 +1107,9 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
         loop:
         for (let i = 0; i < required.length; ++i) {
           const rgx = required[i];
-          for (const item in data) {
-            if (data.hasOwnProperty(item)) {
-              if (rgx.exec(item) != null) continue loop;
-            }
+          for (let j = 0; j < dataKeys.length; ++j) {
+            const key = dataKeys[j];
+            if (rgx.test(key)) continue loop;
           }
           err.push([this._schemaPath, 'patternRequired', rgx]);
         }
@@ -1115,53 +1117,53 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
     }
     if (err.length > 0) return err;
 
-    const properties = this.properties;
     const patterns = this._patternProperties;
+    const patternKeys = Object.keys(patterns);
 
     next:
-    for (const prop in data) {
-      if (data.hasOwnProperty(prop)) {
-        // test whether all properties of data are
-        // within limits of properties and patternProperties
-        // defined in schema.
+    for (let i = 0; i < dataKeys.length; ++i) {
+      const key = dataKeys[i];
+      // test whether all properties of data are
+      // within limits of properties and patternProperties
+      // defined in schema.
 
-        if (properties.hasOwnProperty(prop) === true) {
-          if (callback) {
-            const s = properties[prop];
-            const d = data[prop];
-            const p = JSONPointer_addFolder(this._schemaPath, prop);
-            callback(s, p, d, err);
-          }
-          continue;
+      if (propertyKeys.includes(key)) {
+        if (callback) {
+          const s = properties[key];
+          const d = data[key];
+          const p = JSONPointer_addFolder(this._schemaPath, key);
+          callback(s, p, d, err);
         }
+        continue;
+      }
 
-        if (patterns) {
-          for (const pattern in patterns) {
-            if (patterns.hasOwnProperty(pattern)) {
-              const rgx = patterns[pattern];
-              if (rgx && rgx.exec(prop) != null) {
-                if (callback) {
-                  const s = this.patternProperties[pattern];
-                  const d = data[prop];
-                  const p = JSONPointer_addFolder(this._schemaPath, prop);
-                  callback(s, p, d, err);
-                }
-                continue next;
-              }
+      if (patterns) {
+        for (let j = 0; j < patternKeys.length; ++j) {
+          const pattern = patternKeys[j];
+          const rgx = patterns[pattern];
+          if (rgx.test(key)) {
+            if (callback) {
+              const s = this.patternProperties[pattern];
+              const d = data[key];
+              const p = JSONPointer_addFolder(this._schemaPath, key);
+              callback(s, p, d, err);
             }
+            continue next;
           }
-          if (this.additionalProperties === false) {
-            err.push([this._schemaPath, 'patternProperties', prop]);
-          }
-          continue;
         }
-        else {
-          if (this.additionalProperties === false) {
-            err.push([this._schemaPath, 'properties', prop]);
-          }
+
+        if (this.additionalProperties === false) {
+          err.push([this._schemaPath, 'patternProperties', key]);
+        }
+        continue;
+      }
+      else {
+        if (this.additionalProperties === false) {
+          err.push([this._schemaPath, 'properties', key]);
         }
       }
     }
+
     return err;
   }
 }

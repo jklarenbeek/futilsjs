@@ -70,12 +70,22 @@ export function isStringOrArray(obj) {
       || obj.constructor === Array);
 }
 
+export function isStringOrObject(obj) {
+  return obj != null
+    && (obj.constructor === String
+      || (obj.constructor !== Array && typeof obj === 'object'));
+}
+
 export function getBoolOrArray(obj, def) {
   return isBoolOrArray(obj) ? obj : def;
 }
 
 export function getBoolOrObject(obj, def) {
   return isBoolOrObject(obj) ? obj : def;
+}
+
+export function getStringOrObject(obj, def) {
+  return isStringOrObject(obj) ? obj : def;
 }
 
 export function getStringOrArray(obj, def) {
