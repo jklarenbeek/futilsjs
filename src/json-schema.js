@@ -628,10 +628,19 @@ export class JSONSchemaObject {
   constructor(owner, path, schema, type) {
     if (this.constructor === JSONSchemaObject)
       throw new TypeError('JSONSchemaObject is an abstract class');
-    if (owner != null && !(owner instanceof JSONSchemaDocument))
-      throw new TypeError('JSONSchemaObject owner MUST be of type JSONSchemaDocument');
+
+    let parent = null;
+    if (owner != null) {
+      if (owner instanceof JSONSchemaObject) {
+        parent = owner;
+        owner = owner._parent;
+      }
+      if (!(owner instanceof JSONSchemaDocument))
+        throw new TypeError('JSONSchemaObject owner MUST be of type JSONSchemaDocument');
+    }
 
     this._owner = owner;
+    this._parent = parent;
     this._schemaPath = path;
 
     this.type = getPureString(type, getPureString(schema.type));
