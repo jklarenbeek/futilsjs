@@ -1,20 +1,18 @@
+/* eslint-disable quote-props */
 /* eslint-disable eqeqeq */
 /* eslint-disable dot-notation */
 /* eslint-disable class-methods-use-this */
 /* eslint-disable no-labels */
 /* eslint-disable no-lonely-if */
+
 import { mathi32_max } from './int32-math';
 import {
-  getObjectCountItems,
-  isPureString,
-  isPureObject,
   isPureArray,
   isPureTypedArray,
   getPureObject,
+  getBoolOrNumber,
   getBoolOrArray,
   getBoolOrObject,
-  getStringOrObject,
-  getStringOrArray,
   getPureArray,
   getPureArrayGTLength,
   getPureString,
@@ -23,462 +21,412 @@ import {
   getPureInteger,
   cloneObject,
 } from './types-base';
+
+import { String_createRegExp } from './types-String';
+
+import {
+  getSchemaSelectorName,
+  isIntegerSchema,
+  isBigIntSchema,
+  isNumberSchema,
+  isStringSchema,
+  isObjectSchema,
+  isArraySchema,
+  isTupleSchema,
+  isPrimitiveSchema,
+} from './json-schema-types';
+
 import {
   JSONPointer_addFolder, JSONPointer_traverseFilterObjectBF, JSONPointer,
 } from './json-pointer';
-import { String_createRegExp } from './types-String';
 
-
-//#region Pure Schema Type Tests
-
-export function JSONSchema_isUnknownSchema(schema) {
-  return (schema.type == null
-    && schema.properties == null
-    && schema.items == null);
-}
-
-export function JSONSchema_getSelectorName(schema) {
-  const name = typeof schema === 'object'
-    ? schema.allOf ? 'allOf'
-      : schema.anyOf ? 'anyOf'
-        : schema.oneOf ? 'oneOf'
-          : schema.not ? 'not'
-            : undefined
-    : undefined;
-  return name;
-}
-
-export function JSONSchema_isBoolean(schema) {
-  const isknown = schema.type === 'boolean';
-  const isknowable = isknown || JSONSchema_isUnknownSchema(schema);
-  const isvalid = isknowable
-    && (typeof schema.const === 'boolean'
-      || typeof schema.default === 'boolean');
-  const isenum = isknowable
-      && (isPureArray(schema.enum) && schema.enum.length === 2);
-  return isknown || isvalid || isenum;
-}
-export function JSONSchema_isNumber(schema) {
-  const isknown = schema.type === 'number'
-    || schema.type === 'float'
-    || schema.type === 'double';
-  const isformat = schema.format === 'float'
-    || schema.format === 'double';
-  const isvalid = JSONSchema_isUnknownSchema(schema)
-    && (typeof schema.const === 'number'
-      || typeof schema.default === 'number');
-
-  return isknown || isformat || isvalid;
-}
-export function JSONSchema_isInteger(schema) {
-  const isknown = schema.type === 'integer'
-    || schema.type === 'int32'
-    || schema.type === 'int64';
-  const isformat = schema.format === 'int32'
-      || schema.format === 'int64';
-  const isvalid = JSONSchema_isUnknownSchema(schema)
-    && (Number.isInteger(schema.const)
-      || Number.isInteger(schema.default));
-  return isknown || isformat || isvalid;
-}
-export function JSONSchema_isString(schema) {
-  const isknown = schema.type === 'string';
-  const isvalid = JSONSchema_isUnknownSchema(schema)
-    && (typeof schema.const === 'string'
-      || typeof schema.default === 'string');
-
-  return isknown || isvalid;
-}
-export function JSONSchema_isObject(schema) {
-  const isknown = schema.type === 'object';
-  const isprops = isPureObject(schema.properties);
-  const isvalid = schema.type == null
-      && (isPureObject(schema.const) || isPureObject(schema.default));
-  return isknown || isprops || isvalid;
-}
-export function JSONSchema_isMap(schema) {
-  const isknown = schema.type === 'map';
-  const ismap = isPureArray(schema.properties);
-  return isknown || ismap;
-}
-export function JSONSchema_isArray(schema) {
-  const isknown = schema.type === 'array';
-  const isitems = isPureObject(schema.items);
-  const iscontains = isPureObject(schema.contains);
-  const isvalid = schema.type == null
-    && (isPureArray(schema.const) || isPureArray(schema.default));
-  return isknown || isitems || iscontains || isvalid;
-}
-
-export function JSONSchema_isTuple(schema) {
-  const isknown = schema.type === 'tuple';
-  const istuple = isPureArray(schema.items);
-  const isadditional = schema.type == null
-    && schema.hasOwnProperty('additionalItems');
-  return isknown || istuple || isadditional;
-}
-
-//#endregion
-
-//#region Pure Validators
-
-// is think we will get rid of this anytime soon...
-
-export function JSONSchema_isValidState(schema, path, type, data, err) {
-  if (data == null) {
-    if (data === undefined
-      && schema.required != null
-      && schema.required !== false) err.push([path, 'required']);
-    if (data === null
-      && schema.nullable !== true) err.push([path, 'nullable', schema.nullable]);
-  }
-  else {
-    const srcType = typeof data === 'object'
-      ? data.constructor.name
-      : typeof data;
-    if (typeof type === 'function') {
-      if (!(srcType === 'object' && (data instanceof type))) {
-        err.push([
-          path,
-          'type',
-          type.name,
-          srcType,
-        ]);
-      }
-    }
-    else {
-      if (srcType !== type) {
-        err.push([
-          path,
-          'type',
-          type,
-          srcType,
-        ]);
-      }
-    }
-  }
-  return err;
-}
-
-export function JSONSchema_isValidBoolean(schema, path = '/', data, err = []) {
-  return JSONSchema_isValidState(schema, path, 'boolean', data, err);
-}
-
-function JSONSchema_isValidNumberConstraint(schema, path, data, err) {
-  if (typeof schema.minimum === 'number') {
-    if (schema.exclusiveMinimum === true) {
-      if (data < schema.minimum) err.push([path, 'exclusiveMinumum', schema.minimum, data]);
-    }
-    else {
-      if (data <= schema.minimum) err.push([path, 'minimum', schema.minimum, data]);
-    }
-  }
-  if (typeof schema.maximum === 'number') {
-    if (schema.exclusiveMaximum === true) {
-      if (data > schema.maximum) err.push([path, 'exclusiveMaximum', schema.maximum, data]);
-    }
-    else {
-      if (data >= schema.maximum) err.push([path, 'maximum', schema.maximum, data]);
-    }
-  }
-  if (typeof schema.multipleOf === 'number') {
-    if (data === 0 || ((data % schema.multipleOf) !== 0)) err.push([path, 'multipleOf', schema.multipleOf, data]);
-  }
-  return err;
-}
-
-export function JSONSchema_isValidNumber(schema, path = '/', data, err = []) {
-  err = JSONSchema_isValidState(schema, path, 'number', data, err);
-  if (err.length > 0) return err;
-  if (data == null) return err;
-  return JSONSchema_isValidNumberConstraint(schema, path, data, err);
-}
-
-export function JSONSchema_isValidInteger(path = '/', schema, data, err = []) {
-  err = JSONSchema_isValidState(schema, path, 'number', data, err);
-  if (data == null) return err;
-  if (!Number.isInteger(data)) {
-    err.push([path, 'type', 'integer', typeof data]);
-  }
-  if (err.length > 0) return err;
-  return JSONSchema_isValidNumberConstraint(schema, path, data, err);
-}
-
-export function JSONSchema_isValidString(schema, path = '/', data, err = []) {
-  err = JSONSchema_isValidState(schema, path, 'string', data, err);
-  if (err.length > 0) return err;
-  if (data == null) return err;
-
-  if (typeof schema.maxLength === 'number') {
-    if (data.length > schema.maxLength) err.push([path, 'maxLength', schema.maxLength, data.length]);
-  }
-  if (typeof schema.minLength === 'number') {
-    if (data.length < schema.minLength) err.push([path, 'maxLength', schema.maxLength, data.length]);
-  }
-  if (typeof schema.pattern === 'string') {
-    const pattern = new RegExp(schema.pattern);
-    if (data.search(pattern) === -1) err.push([path, 'pattern', schema.pattern, data]);
-  }
-  if (isPureArray(schema.pattern)) {
-    const pattern = new RegExp(...schema.pattern);
-    if (data.search(pattern) === -1) err.push([path, 'pattern', '[\'' + schema.pattern.join('\', \'') + '\']', data]);
-  }
-}
-
-export function JSONSchema_isValidObject(schema, path = '/', data, err = [], callback) {
-  err = JSONSchema_isValidState(schema, path, 'object', data, err);
-  if (data == null) return err;
-  if (data.constructor === Array) err.push([path, 'type', 'object', 'array']);
-  if (err.length > 0) return err;
-
-  const count = getObjectCountItems(data)|0;
-  if (typeof schema.maxProperties === 'number') {
-    if (count > schema.maxProperties) err.push([path, 'maxProperties', schema.maxProperties, count]);
-  }
-  if (typeof schema.minProperties === 'number') {
-    if (count < schema.minProperties) err.push([path, 'minProperties', schema.minProperties, count]);
+//#region schema validation compiler
+export class JSONSchemaValidationCompiler {
+  constructor(schemaPath, dataPath) {
+    this.schemaPath = schemaPath;
+    this.dataPath = dataPath;
+    this.errors = [];
+    this.members = [];
+    Object.freeze(this);
   }
 
-  if (typeof schema.required === 'object') {
-    const required = schema.required;
-    if (required.constructor === Array) {
-      for (let i = 0; i < required.length; ++i) {
-        const prop = required[i];
-        if (!data.hasOwnProperty(prop)) err.push([path, 'required', prop]);
-      }
-    }
-    else {
-      for (const prop in required) {
-        if (required.hasOwnProperty(prop)) {
-          if (!data.hasOwnProperty(prop)) err.push([path, 'required', prop]);
-        }
-      }
-    }
+  __addError(key = 'unknown', expected, value) {
+    this.errors.push([this.schemaPath, key, expected, this.dataPath, value]);
   }
 
-  if (typeof schema.patternRequired === 'object') {
-    const required = schema.patternRequired;
-    if (required.constructor === Array) {
-      loop:
-      for (let i = 0; i < required.length; ++i) {
-        const rgx = required[i];
-        if (typeof rgx === 'string') {
-          const pattern = new RegExp(rgx);
-          for (const item in data) {
-            if (data.hasOwnProperty(item)) {
-              if (pattern.exec(item) != null) continue loop;
-            }
+  compileType(schema, members = [], addError) {
+    const schemaRequired = getPureBool(
+      schema.required,
+      (getPureArray(schema.required).length > 0),
+    );
+
+    let schemaNullable = getPureBool(schema.nullable);
+
+    function compileRequired() {
+      if (schemaRequired === true) {
+        members.push('required');
+        return function required(data) {
+          if (data === undefined) {
+            addError('required', schemaRequired, data);
+            return true;
           }
-          err.push([path, 'patternRequired', rgx]);
-        }
+          return false;
+        };
       }
+      else return function isUndefined(data) {
+        return (data === undefined);
+      };
     }
-  }
-  if (err.length > 0) return err;
 
-  const properties = schema.properties;
-  const patterns = schema.patternProperties;
-
-  const hasproperties = isPureObject(properties);
-  const haspatterns = isPureObject(patterns);
-
-  next:
-  for (const prop in data) {
-    if (data.hasOwnProperty(prop)) {
-      // test whether all properties of data are
-      // within limits of properties and patternProperties
-      // defined in schema.
-
-      if (hasproperties) {
-        if (properties.hasOwnProperty(prop) === true) {
-          if (callback) {
-            const s = properties[prop];
-            const d = data[prop];
-            const p = JSONPointer_addFolder(path, prop);
-            callback(s, p, d, err);
+    function compileNullable() {
+      if (schemaNullable === false) {
+        members.push('nullable');
+        return function nullable(data) {
+          if (data === null) {
+            addError('nullable', schemaNullable, data);
+            return true;
           }
-          continue;
-        }
+          return false;
+        };
       }
+      else return function isNull(data) {
+        return data === null;
+      };
+    }
 
-      if (haspatterns) {
-        for (const pattern in patterns) {
-          if (patterns.hasOwnProperty(pattern)) {
-            const rgx = new RegExp(pattern);
-            if (rgx.search(prop) !== -1) {
-              if (callback) {
-                const s = patterns[prop];
-                const d = data[prop];
-                const p = JSONPointer_addFolder(path, prop);
-                callback(s, p, d, err);
+    let schemaType = getPureString(
+      schema.type,
+      getPureArrayGTLength(schema.type, 0),
+    );
+
+    if (schemaType != null) {
+      // JSONSchema allows checks for multiple types
+      if (schemaType.constructor === Array) {
+        schemaNullable = schemaNullable === true; // NOTE: nullable default false
+        const handlers = [];
+        for (let i = 0; i < schemaType.length; ++i) {
+          const type = schemaType[i];
+          if (type === 'null') {
+            schemaNullable = true;
+          }
+          else {
+            const handler = JSONSchema_dataTypes[type];
+            if (handler) handlers.push(handler);
+          }
+        }
+
+        // if we found some valid handlers compile validator callback
+        if (handlers.length > 1) {
+          const isrequired = compileRequired();
+          const isnullable = compileNullable();
+          members.push('type');
+
+          // create multiple type validator callback
+          return function typeArray(data) {
+            if (isrequired(data)) return !schemaRequired;
+            if (isnullable(data)) return schemaNullable !== false;
+            let i = 0;
+            for (; i < handlers.length; ++i) {
+              const isDataType = handlers[i];
+              const valid = isDataType(data);
+              if (valid) {
+                return true;
               }
-              continue next;
+            }
+            addError('type', handlers, data && data.constructor.name);
+            return false;
+          };
+        }
+        // if we only found one handler, use the single type validator callback.
+        else if (handlers.length === 1) {
+          schemaType = handlers[0].typeName;
+        }
+      }
+
+      if (schemaType.constructor === String) {
+        const isDataType = JSONSchema_getCallbackIsDataType(schemaType);
+        if (isDataType) {
+          const isrequired = compileRequired();
+          const isnullable = compileNullable();
+          members.push('type');
+
+          // create single type validator callback
+          return function type(data, err = []) {
+            if (isrequired(data, err)) return !schemaRequired;
+            if (isnullable(data, err)) return schemaNullable !== false;
+            const valid = isDataType(data);
+            if (!valid) {
+              addError('type', type, data);
+            }
+            return valid;
+          };
+        }
+      }
+    }
+
+    if (schemaRequired === true || schemaNullable === true) {
+      const isrequired = compileRequired();
+      const isnullable = compileNullable();
+      return function important(data, err = []) {
+        if (isrequired(data, err)) return !schemaRequired;
+        if (isnullable(data, err)) return schemaNullable !== false;
+        return true;
+      };
+    }
+    return undefined;
+  }
+
+  compileFormat(schema, members = [], addError) {
+    const schemaFormat = getPureString(schema.format);
+    const formatCompiler = JSONSchemaObject.getCallback_formatCompiler(schemaFormat);
+    return formatCompiler ? formatCompiler(schemaPath, dataPath, schema) : undefined;
+  }
+
+  compileNumberRange(schema, members = [], addError) {
+    const min = Number(schema.minimum) || undefined;
+    const emin = schema.exclusiveMinimum === true
+      ? min
+      : Number(schema.exclusiveMinimum) || undefined;
+
+    const max = Number(schema.maximum) || undefined;
+    const emax = schema.exclusiveMaximum === true
+      ? max
+      : Number(schema.exclusiveMaximum) || undefined;
+
+    const isDataType = isBigIntSchema(schema)
+      // eslint-disable-next-line valid-typeof
+      ? function compileNumberRange_isBigIntType(data) { return typeof data === 'bigint'; }
+      : function compileNumberRange_isNumberType(data) { return typeof data === 'number'; };
+
+    if (emin && emax) {
+      members.push('exclusiveMinimum', 'exclusiveMaximum');
+      return function betweenExclusive(data) {
+        if (isDataType(data)) {
+          const valid = data > emin && data < emax;
+          if (!valid) addError(['exclusiveMinimum', 'exclusiveMaximum'], [emin, emax], data);
+          return valid;
+        }
+        return true;
+      };
+    }
+    else if (emin && max) {
+      members.push('exclusiveMinimum', 'maximum');
+      return function betweenexclusiveMinimum(data) {
+        if (isDataType(data)) {
+          const valid = data > emin && data <= max;
+          if (!valid) addError(['exclusiveMinimum', 'maximum'], [emin, max], data);
+          return valid;
+        }
+        return true;
+      };
+    }
+    else if (emax && min) {
+      members.push('minimum', 'exclusiveMaximum');
+      return function betweenexclusiveMaximum(data) {
+        if (isDataType(data)) {
+          const valid = data > emin && data <= max;
+          if (!valid) addError(['minimum', 'exclusiveMaximum'], [min, emax], data);
+          return valid;
+        }
+        return true;
+      };
+    }
+    else if (min && max) {
+      members.push('minimum', 'maximum');
+      return function between(data) {
+        if (isDataType(data)) {
+          const valid = data > emin && data <= max;
+          if (!valid) addError(['minimum', 'maximum'], [min, max], data);
+          return valid;
+        }
+        return true;
+      };
+    }
+    else if (emax) {
+      members.push('exclusiveMaximum');
+      if (max) members.push('maximum');
+
+      return function exclusiveMaximum(data) {
+        if (isDataType(data)) {
+          const valid = data < emax;
+          if (!valid) addError('exclusiveMaximum', emax, data);
+          return valid;
+        }
+        return true;
+      };
+    }
+    else if (max) {
+      members.push('maximum');
+
+      return function maximum(data) {
+        if (isDataType(data)) {
+          const valid = data <= max;
+          if (!valid) addError('maximum', max, data);
+          return valid;
+        }
+        return true;
+      };
+    }
+    else if (emin) {
+      members.push('exclusiveMinimum');
+      if (min) members.push('minimum');
+
+      return function exclusiveMinimum(data) {
+        if (isDataType(data)) {
+          const valid = data > emin;
+          if (!valid) addError('exclusiveMinimum', emin, data);
+          return valid;
+        }
+        return true;
+      };
+    }
+    else if (min) {
+      members.push('minimum');
+
+      return function minimum(data) {
+        if (isDataType(data)) {
+          const valid = data >= min;
+          if (!valid) addError('minimum', min, data);
+          return valid;
+        }
+        return true;
+      };
+    }
+    return undefined;
+  }
+
+  compileNumberMultipleOf(schema, members = [], addError) {
+    const mulOf = getPureNumber(schema.multipleOf);
+    if (mulOf && mulOf != 0) {
+      members.push('multipleOf');
+      if (isIntegerSchema(schema)) {
+        return function multipleOfInteger(data) {
+          if (Number.isInteger(data)) {
+            const valid = (data % mulOf) === 0;
+            if (!valid) addError('multipleOf', mulOf, data);
+            return valid;
+          }
+          return true;
+        };
+      }
+      if (isBigIntSchema(schema)) {
+        const mf = BigInt(mulOf);
+        return function multipleOfBigInt(data) {
+          // eslint-disable-next-line valid-typeof
+          if (typeof data === 'bigint') {
+            const valid = (data % mf) == 0;
+            if (!valid) addError('multipleOf', mf, data);
+            return valid;
+          }
+          return true;
+        };
+      }
+      else {
+        return function multipleOf(data) {
+          if (typeof data === 'number') {
+            const valid = Number.isInteger(Number(data) / mulOf);
+            if (!valid) addError('multipleOf', mulOf, data);
+            return valid;
+          }
+          return true;
+        };
+      }
+    }
+    return undefined;
+  }
+
+  compileStringLength(schema, members = [], addError) {
+    const min = getPureInteger(schema.minLength, 0);
+    const max = getPureInteger(schema.maxLength, 0);
+    if (min > 0 && max > 0) {
+      members.push('minLength', 'maxLength');
+
+      return function betweenLength(data) {
+        if (typeof data === 'string') {
+          const len = data.length;
+          const valid = len >= min && len <= max;
+          if (!valid) addError(['minLength', 'maxLength'], [min, max], len);
+          return valid;
+        }
+        return true;
+      };
+    }
+
+    if (min > 0) {
+      members.push('minLength');
+
+      return function minLength(data) {
+        if (typeof data === 'string') {
+          const len = data.length;
+          const valid = len >= min;
+          if (!valid) addError('minLength', min, len);
+          return valid;
+        }
+        return true;
+      };
+    }
+
+    if (max > 0) {
+      members.push('maxLength');
+
+      return function maxLength(data) {
+        if (typeof data === 'string') {
+          const len = data.length;
+          const valid = len <= max;
+          if (!valid) addError('maxLength', max, len);
+          return valid;
+        }
+        return true;
+      };
+    }
+
+    return undefined;
+  }
+
+  compileStringPattern(schema, members = [], addError) {
+    const ptrn = schema.pattern;
+    const re = String_createRegExp(ptrn);
+    if (re) {
+      members.push('pattern');
+
+      return function pattern(data) {
+        if (typeof data === 'string') {
+          const valid = re.test(data);
+          if (!valid) addError('pattern', ptrn, data);
+          return valid;
+        }
+        return true;
+      };
+    }
+    return undefined;
+  }
+
+  compileEnum(schema, members = [], addError) {
+    const enums = getPureArrayGTLength(schema.enum, 0);
+    if (enums) {
+      if (isPrimitiveSchema(schema)) {
+        members.push('enum');
+        return function enumString(data) {
+          if (typeof data === 'string') {
+            if (!enums.includes(data)) {
+              addError('enum', enums, data);
+              return false;
             }
           }
-        }
-        if (schema.additionalProperties === false) err.push([path, 'patternProperties', prop]);
-        continue;
+          return true;
+        };
       }
       else {
-        if (schema.additionalProperties === false) err.push([path, 'properties', prop]);
+        throw new Error('deepEquals enum object and array not implemented'); // TODO:
       }
     }
+    return undefined;
   }
-  return err;
-}
-
-export function JSONSchema_isValidArray(schema, path = '/', data, err = [], callback) {
-  err = JSONSchema_isValidState(schema, path, Array, data, err);
-  if (err.length > 0) return err;
-  if (data == null) return err;
-
-  const length = data.length;
-  if (typeof schema.minItems === 'number') {
-    if (length < schema.minItems) err.push([path, 'minItems', schema.minItems, length]);
-  }
-  if (typeof schema.maxItems === 'number') {
-    if (length > schema.maxItems) err.push([path, 'maxItems', schema.maxItems, length]);
-  }
-  if (schema.uniqueItems === true) {
-    // TODO: implementation.uniqueItems
-    err.push([path, 'implementation', 'uniqueItems']);
-  }
-
-  if (callback) {
-    const s = schema.items;
-    const c = schema.contains;
-    for (let i = 0; i < length; ++i) {
-      const d = data[i];
-      const p = JSONPointer_addFolder(path, i);
-      if (c) {
-        if (callback(c, p, d).length === 0) break;
-      }
-      else {
-        callback(s, p, d, err);
-      }
-    }
-  }
-
-  return err;
-}
-
-export function JSONSchema_isValidTuple(schema, path = '/', data, err = [], callback) {
-  err = JSONSchema_isValidState(schema, path, Array, data, err);
-  if (err.length > 0) return err;
-  if (data == null) return err;
-
-  const length = data.length;
-  const size = schema.items.length;
-  if (length !== size) err.push([path, 'items', size, length]);
-
-  if (callback) {
-    for (let i = 0; i < size; ++i) {
-      const s = schema.items[i];
-      const d = i < data.length ? data[i] : undefined;
-      const p = JSONPointer_addFolder(path, i);
-      callback(s, p, d, err);
-    }
-  }
-
-  if (schema.additionalItems) {
-    const minitems = mathi32_max(schema.minItems > 0 ? schema.minItems : size, size);
-    const maxitems = mathi32_max(schema.maxItems > 0 ? schema.maxItems : size, size);
-
-    if (length < minitems) err.push([path, 'minItems', minitems, length]);
-    if (length > maxitems) err.push([path, 'maxItems', maxitems, length]);
-
-    if (schema.uniqueItems === true) {
-      // TODO: implementation.uniqueItems
-      err.push([path, 'implementation', 'uniqueItems']);
-    }
-
-    if (callback) {
-      for (let i = size; i < data.length; ++i) {
-        const s = schema.additionalItems;
-        const d = data[i];
-        const p = JSONPointer_addFolder(path, i);
-        callback(s, p, d, err);
-      }
-    }
-  }
-  return err;
-}
-
-export function JSONSchema_isValidMap(schema, path = '/', data, err = [], callback) {
-  err = JSONSchema_isValidState(schema, path, Map, data, err);
-  if (err.length > 0) return err;
-  if (data == null) return err;
-
-  const size = data.size;
-  if (typeof schema.minItems === 'number') {
-    if (size < schema.minItems) err.push([path, 'minItems', schema.minItems, size]);
-  }
-  if (typeof schema.maxItems === 'number') {
-    if (size > schema.maxItems) err.push([path, 'maxItems', schema.maxItems, size]);
-  }
-
-  if (callback) {
-    const ks = schema.items[0];
-    const vs = schema.items[1];
-    for (const [key, value] of data) {
-      const p = JSONPointer_addFolder(path, key);
-      callback(ks, p, key, err);
-      callback(vs, p, value, err);
-    }
-  }
-  return err;
-}
-
-export function JSONSchema_isValid(schema, path = '/', data, err = [], callback) {
-  if (JSONSchema_isBoolean(schema)) {
-    return JSONSchema_isValidBoolean(schema, path, data, err);
-  }
-  if (JSONSchema_isNumber(schema)) {
-    return JSONSchema_isValidNumber(schema, path, data, err);
-  }
-  if (JSONSchema_isInteger(schema)) {
-    return JSONSchema_isValidInteger(schema, path, data, err);
-  }
-  if (JSONSchema_isString(schema)) {
-    return JSONSchema_isValidString(schema, path, data, err);
-  }
-  if (JSONSchema_isObject(schema)) {
-    return JSONSchema_isValidObject(schema, path, data, err, callback || JSONSchema_isValid);
-  }
-  if (JSONSchema_isArray(schema)) {
-    return JSONSchema_isValidArray(schema, path, data, err, callback || JSONSchema_isValid);
-  }
-  if (JSONSchema_isTuple(schema)) {
-    return JSONSchema_isValidTuple(schema, path, data, err, callback || JSONSchema_isValid);
-  }
-  if (JSONSchema_isMap(schema)) {
-    return JSONSchema_isValidMap(schema, path, data, err, callback || JSONSchema_isValid);
-  }
-
-  err.push([path, 'error', schema, data]);
-  return err;
-}
-
-const JSONSchema_NUMBER_FORMATS = ['number', 'range', 'date', 'month', 'time', 'week', 'int32', 'int64'];
-
-export function JSONSchema_getNumberFormatType(schema) {
-  return JSONSchema_NUMBER_FORMATS.includes(schema.format)
-    ? schema.format
-    : JSONSchema_NUMBER_FORMATS[0];
-}
-
-const JSONSchema_STRING_FORMATS = ['text', 'date', 'datetime', 'datetime-local', 'search', 'url', 'tel', 'email', 'password'];
-
-export function JSONSchema_getStringFormatType(schema) {
-  if (schema.writeOnly === true) return 'password';
-  return JSONSchema_STRING_FORMATS.includes(schema.format)
-    ? schema.format
-    : JSONSchema_STRING_FORMATS[0];
 }
 
 //#endregion
 
-//#region Schema type classes
+//#region schema type classes
 
 export function JSONSchema_expandSchemaReferences(json, baseUri, callback) {
   // in place merge of object members
@@ -546,29 +494,29 @@ export class JSONSchemaDocument {
     if (typeof schema === 'object' && !(isPureArray(schema) || isPureTypedArray(schema))) {
       let typeName = null;
 
-      const selector = JSONSchema_getSelectorName(schema);
+      const selector = getSchemaSelectorName(schema);
       if (selector) {
         typeName = JSONSchemaSelectorType.name;
       }
-      else if (JSONSchema_isBoolean(schema)) {
+      else if (isBooleanSchema(schema)) {
         typeName = JSONSchemaBooleanType.name;
       }
-      else if (JSONSchema_isInteger(schema)) {
+      else if (isIntegerSchema(schema)) {
         typeName = JSONSchemaIntegerType.name;
       }
-      else if (JSONSchema_isNumber(schema)) {
+      else if (isNumberSchema(schema)) {
         typeName = JSONSchemaNumberType.name;
       }
-      else if (JSONSchema_isString(schema)) {
+      else if (isStringSchema(schema)) {
         typeName = JSONSchemaStringType.name;
       }
-      else if (JSONSchema_isObject(schema)) {
+      else if (isObjectSchema(schema)) {
         typeName = JSONSchemaObjectType.name;
       }
-      else if (JSONSchema_isArray(schema)) {
+      else if (isArraySchema(schema)) {
         typeName = JSONSchemaArrayType.name;
       }
-      else if (JSONSchema_isTuple(schema)) {
+      else if (isTupleSchema(schema)) {
         typeName = JSONSchemaTupleType.name;
       }
       else {
@@ -624,8 +572,15 @@ export class JSONSchemaXMLObject {
 
 const Object_prototype_propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
 
+export const JSONSchema_keywords = {
+  '': ['type', 'required', 'format', 'formatMaximum', 'formatMinimum', 'formatExclusiveMaximum', 'formatExclusiveMinimum'],
+  'number': ['minimum', 'maximum', 'exclusiveMaximum', 'minimum', 'exclusiveMinimum', 'multipleOf'],
+  'string': ['maxLength', 'minLength', 'pattern'],
+  'array': [],
+};
+
 export class JSONSchemaObject {
-  constructor(owner, path, schema, type) {
+  constructor(owner, schemaPath, dataPath, schema, type) {
     if (this.constructor === JSONSchemaObject)
       throw new TypeError('JSONSchemaObject is an abstract class');
 
@@ -641,12 +596,15 @@ export class JSONSchemaObject {
 
     this._owner = owner;
     this._parent = parent;
-    this._schemaPath = path;
+    this._schemaPath = schemaPath && new JSONPointer(owner.baseUri, schemaPath);
+    this._dataPath = new JSONPointer(owner.baseUri, dataPath);
 
     this.type = getPureString(type, getPureString(schema.type));
-    this.format = getPureString(schema.format);
     this.required = getBoolOrArray(schema.required, false);
     this.nullable = getBoolOrArray(schema.nullable, true);
+
+    this.format = getPureString(schema.format);
+
     this.readOnly = getBoolOrArray(schema.readOnly, false);
     this.writeOnly = getBoolOrArray(schema.writeOnly, false);
 
@@ -674,46 +632,18 @@ export class JSONSchemaObject {
     return (typeof prop === 'string' || prop.indexOf('_') !== 0)
       && Object_prototype_propertyIsEnumerable.call(this, prop);
   }
+}
 
-  isValidState(type, data, err) {
-    if (data === undefined && this.required === true) {
-      err.push([this._schemaPath, 'required']);
-    }
-    else if (data === null && this.nullable === false) {
-      err.push([this._schemaPath, 'nullable', this.nullable]);
-    }
-    else if (data != null) {
-      const dataType = typeof data === 'object'
-        ? data.constructor.name
-        : typeof data;
-      if (typeof type === 'function') {
-        if (!(data instanceof type)) {
-          err.push([
-            this._schemaPath,
-            'type',
-            type.name,
-            dataType,
-          ]);
-        }
-      }
-      else {
-        if (dataType !== type) {
-          err.push([
-            this._schemaPath,
-            'type',
-            type,
-            dataType,
-          ]);
-        }
-      }
-    }
-    return err;
+export class JSONSchemaEmptyType extends JSONSchemaObject {
+  constructor(owner, path, schema = {}, clone = false) {
+    super(owner, path, schema, undefined, clone);
   }
 }
 
 export class JSONSchemaBooleanType extends JSONSchemaObject {
-  constructor(owner, path, schema = {}, clone = false) {
-    super(owner, path, schema, 'boolean', clone);
+  constructor(owner, schemaPath, dataPath, schema = {}, clone = false) {
+    super(owner, schemaPath, schema, 'boolean', clone);
+    this.validateEx = JSONSchemaObject.compileValidateSchemaType(schemaPath, dataPath, schema);
   }
 
   getSchemaType() { return JSONSchemaBooleanType; }
@@ -729,61 +659,16 @@ export class JSONSchemaNumberType extends JSONSchemaObject {
 
     this.minimum = getPureNumber(schema.minimum);
     this.maximum = getPureNumber(schema.maximum);
-    this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim, false);
-    this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim, false);
+    this.exclusiveMinimum = getBoolOrNumber(schema.exclusiveMinimum);
+    this.exclusiveMaximum = getBoolOrNumber(schema.exclusiveMaximum);
+    this.multipleOf = getPureNumber(schema.multipleOf);
 
     this.low = getPureNumber(schema.low);
     this.high = getPureNumber(schema.high);
     this.optimum = getPureNumber(schema.optimum);
-    this.multipleOf = getPureNumber(schema.multipleOf);
-
-    this.expression = getStringOrArray(schema.expression);
   }
 
   getSchemaType() { return JSONSchemaNumberType; }
-
-  isValidNumberConstraint(data, err) {
-    if (this.minimum) {
-      this.minimum = +this.minimum;
-      if (this.exclusiveMinimum === true) {
-        if (data < this.minimum) {
-          err.push([this._schemaPath, 'exclusiveMinumum', this.minimum, data]);
-        }
-      }
-      else {
-        if (data <= this.minimum) {
-          err.push([this._schemaPath, 'minimum', this.minimum, data]);
-        }
-      }
-    }
-    if (this.maximum) {
-      this.maximum = +this.maximum;
-      if (this.exclusiveMaximum === true) {
-        if (data > this.maximum) {
-          err.push([this._schemaPath, 'exclusiveMaximum', this.maximum, data]);
-        }
-      }
-      else {
-        if (data >= this.maximum) {
-          err.push([this._schemaPath, 'maximum', this.maximum, data]);
-        }
-      }
-    }
-    if (this.multipleOf) {
-      this.multipleOf = +this.multipleOf;
-      if (data === 0 || ((data % this.multipleOf) !== 0)) {
-        err.push([this._schemaPath, 'multipleOf', this.multipleOf, data]);
-      }
-    }
-    return err;
-  }
-
-  isValid(data, err = []) {
-    err = this.isValidState('number', data, err);
-    if (err.length > 0) return err;
-    if (data == null) return err;
-    return this.isValidNumberConstraint(data, err);
-  }
 }
 
 export class JSONSchemaIntegerType extends JSONSchemaObject {
@@ -791,63 +676,16 @@ export class JSONSchemaIntegerType extends JSONSchemaObject {
     super(owner, path, schema, 'integer', clone);
     this.minimum = getPureInteger(schema.minimum);
     this.maximum = getPureInteger(schema.maximum);
-    this.exclusiveMinimim = getPureBool(schema.exclusiveMinimim, false);
-    this.exclusiveMaximim = getPureBool(schema.exclusiveMaximim, false);
+    this.exclusiveMinimum = getPureBool(schema.exclusiveMinimum, false);
+    this.exclusiveMaximum = getPureBool(schema.exclusiveMaximum, false);
+    this.multipleOf = getPureInteger(schema.multipleOf, 1);
 
     this.low = getPureInteger(schema.low, 0);
     this.high = getPureInteger(schema.high, 0);
     this.optimum = getPureInteger(schema.optimum, 0);
-    this.multipleOf = getPureInteger(schema.multipleOf, 1);
   }
 
   getSchemaType() { return JSONSchemaIntegerType; }
-
-  isValidNumberConstraint(data, err) {
-    if (this.minimum) {
-      this.minimum = this.minimum | 0;
-      if (this.exclusiveMinimum === true) {
-        if (data < this.minimum) {
-          err.push([this._schemaPath, 'exclusiveMinumum', this.minimum, data]);
-        }
-      }
-      else {
-        if (data <= this.minimum) {
-          err.push([this._schemaPath, 'minimum', this.minimum, data]);
-        }
-      }
-    }
-    if (this.maximum) {
-      this.maximum = this.maximum | 0;
-      if (this.exclusiveMaximum === true) {
-        if (data > this.maximum) {
-          err.push([this._schemaPath, 'exclusiveMaximum', this.maximum, data]);
-        }
-      }
-      else {
-        if (data >= this.maximum) {
-          err.push([this._schemaPath, 'maximum', this.maximum, data]);
-        }
-      }
-    }
-    if (this.multipleOf) {
-      this.multipleOf = this.multipleOf | 0;
-      if (data === 0 || ((data % this.multipleOf) !== 0)) {
-        err.push([this._schemaPath, 'multipleOf', this.multipleOf, data]);
-      }
-    }
-    return err;
-  }
-
-
-  isValid(data, err = []) {
-    err = this.isValidState('number', data, err);
-    if (data == null) return err;
-    if (!Number.isInteger(data)) {
-      err.push([this._schemaPath, 'type', 'integer', typeof data]);
-    }
-    if (err.length > 0) return err;
-    return this.isValidNumberConstraint(data, err);
-  }
 }
 export class JSONSchemaStringType extends JSONSchemaObject {
   constructor(owner, path, schema = {}, clone = false) {
@@ -856,58 +694,16 @@ export class JSONSchemaStringType extends JSONSchemaObject {
     this.maxLength = getPureInteger(schema.maxLength, 0);
     this.minLength = getPureInteger(schema.minLength, 0);
 
-    this.pattern = undefined;
-    this._pattern = undefined;
-    if (schema.pattern != null && schema._pattern == null) {
-      if (isPureString(schema.pattern)) {
-        this.pattern = schema.pattern;
-        this._pattern = new RegExp(this.pattern);
-      }
-      else if (isPureArray(schema.pattern)) {
-        this.pattern = schema.pattern;
-        this._pattern = new RegExp(...this.pattern);
-      }
-    }
-    else if (schema._pattern != null) {
-      this.pattern = schema.pattern;
-      this._pattern = schema._pattern;
-    }
-
-    this.template = getStringOrObject(schema.template);
-    this.expression = getStringOrArray(schema.template);
+    this.pattern = String_createRegExp(schema.pattern);
   }
 
   getSchemaType() { return JSONSchemaStringType; }
-
-  isValid(data, err = []) {
-    err = this.isValidState('string', data, err);
-    if (err.length > 0) return err;
-    if (data == null) return err;
-
-    const length = data.length;
-    if (this.maxLength) {
-      if (length > this.maxLength) {
-        err.push([this._schemaPath, 'maxLength', this.maxLength, data.length]);
-      }
-    }
-    if (this.minLength) {
-      if (length < this.minLength) {
-        err.push([this._schemaPath, 'maxLength', this.maxLength, data.length]);
-      }
-    }
-    if (this._pattern) {
-      if (this._pattern.search(data) === -1) {
-        err.push([this._schemaPath, 'pattern', this.pattern, data]);
-      }
-    }
-    return err;
-  }
 }
 
 export class JSONSchemaSelectorType extends JSONSchemaObject {
   constructor(owner, path, schema = {}) {
     super(owner, path, schema, undefined);
-    const selectName = JSONSchema_getSelectorName(schema);
+    const selectName = getSchemaSelectorName(schema);
     const selectBase = { ...schema };
     delete selectBase.oneOf;
     delete selectBase.anyOf;

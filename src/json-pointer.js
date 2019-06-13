@@ -5,25 +5,54 @@ import { String_trimLeft } from './types-String';
 export const JSONPointer_pathSeparator = '/';
 export const JSONPointer_fragmentSeparator = '#';
 
-export function JSONPointer_addFolder(path, folder) {
-  path = (typeof path === 'string')
-    ? path.trimStart()
-    : '';
-  folder = (typeof folder === 'number')
-    ? String(folder)
-    : typeof folder === 'string'
-      ? folder
-      : '';
+export function JSONPointer_addFolder(pointer, folder) {
+  const isvalid = typeof pointer === 'string'
+    && (typeof folder === 'number'
+      || typeof folder === 'string');
 
-  if (path.length === 0) {
-    return JSONPointer_pathSeparator + folder;
+  if (isvalid) {
+
+    folder = String(folder);
+    if (folder.charAt(0) === '/') {
+      folder = folder.substring(1);
+    }
+    return pointer + JSONPointer_pathSeparator + folder;
   }
-  else if (path[path.length - 1] === JSONPointer_pathSeparator) {
-    return path + folder;
+}
+
+export function JSONPointer_addRelativePointer(pointer, relative) {
+  const isvalid = typeof pointer === 'string'
+    && (typeof relative === 'number'
+      || typeof relative === 'string');
+
+  if (isvalid) {
+    if (pointer.charAt(0) === '/') {
+      if (typeof relative === 'string') {
+        const idx = String_indexOfEndInteger(0, relative);
+        if (idx > 0) {
+          const tokens = pointer.split('/');
+          tokens.shift();
+
+          const depth = tokens.length - Number(relative.substring(0, idx));
+          if (depth > 0) {
+            const parent = '/' + tokens.splice(0, depth).join('/');
+            const rest = relative.substring(idx);
+            return parent + JSONPointer_pathSeparator + rest;
+          }
+        }
+        else if (relative.charAt(0) === '/') {
+          return pointer + relative;
+        }
+        else {
+          return pointer + JSONPointer_pathSeparator + relative;
+        }
+      }
+      else { // typeof relative === 'number'
+        return pointer + JSONPointer_pathSeparator + String(relative);
+      }
+    }
   }
-  else {
-    return path + JSONPointer_pathSeparator + folder;
-  }
+  return undefined;
 }
 
 export function JSONPointer_traverseFilterObjectBF(obj, id = '$ref', callback) {
@@ -97,6 +126,37 @@ function JSONPointer_createGetFunction(dst, id, next) {
   };
 }
 
+export function String_isEmptyOrWhiteSpaceAt(str, i = 0) {
+  if (str == null) return true;
+
+  const c = str.chatAt(i);
+  return c == ' '
+    || c == '\f'
+    || c == '\n'
+    || c == '\t'
+    || c == '\v'
+    || c == '\u00A0'
+    || c == '\u1680​'
+    || c == '\u180e'
+    || c == '\u2000'
+    || c == '​\u2001'
+    || c == '\u2002'
+    || c == '​\u2003'
+    || c == '\u2004​'
+    || c == '\u2005'
+    || c == '\u2006'
+    || c == '\u2008'
+    || c == '​\u2009'
+    || c == '\u200a'
+    || c == '​\u2028'
+    || c == '\u2029'
+    || c == '​\u2028'
+    || c == '\u2029'
+    || c == '​\u202f'
+    || c == '\u205f'
+    || c == '​\u3000';
+}
+
 export function JSONPointer_compileGetPointer(path) {
   path = typeof path === 'string' ? path : '';
   if (path === '') return function JSONPointer_compileGetRootFunction(obj) {
@@ -131,34 +191,82 @@ export function JSONPointer_compileGetPointer(path) {
   return JSONPointer_createGetFunction(dist, ct, null);
 }
 
+export function String_indexOfEndInteger(start = 0, search) {
+  if (typeof start === 'string') {
+    search = start;
+    start = 0;
+  }
+
+  if (typeof search === 'string') {
+    let i = start;
+    for (; i < search.length; ++i) {
+      if ((Number(search[i]) || false) === false) {
+        if ((i - start) > 0) {
+          return i;
+        }
+        else {
+          return -1;
+        }
+      }
+    }
+    if (i > 0) return i;
+  }
+  return -1;
+}
+
+export function JSONPointer_resolveRelative(pointer, relative) {
+  const idx = String_indexOfEndInteger(0, relative);
+  if (idx >= 0) {
+    const depth = relative.substring(0, idx);
+    const rest = relative.substring(idx);
+    const parent = JSONPointer_resolveParent(pointer, Number(depth));
+    return JSONPointer_addFolder(parent, rest);
+  }
+  return pointer;
+}
+
 export class JSONPointer {
-  constructor(baseUri, pointer) {
-    if (!pointer) {
-      pointer = baseUri;
+  constructor(baseUri, basePointer, relative) {
+    if (!basePointer) {
+      basePointer = baseUri;
       baseUri = null;
     }
+    if (baseUri && !relative) {
+      if (Number(basePointer[0]) || false) {
+        relative = basePointer;
+        basePointer = baseUri;
+        baseUri = null;
+      }
+    }
 
-    pointer = typeof pointer !== 'string'
+    basePointer = typeof pointer !== 'string'
       ? ''
-      : pointer;
+      : basePointer;
 
     // trim whitespace left.
-    pointer = pointer.replace(/^\s+/, '');
+    basePointer = basePointer.replace(/^\s+/, '');
 
     // check if there is a baseUri and fragment in the pointer
-    const baseIdx = pointer.indexOf(JSONPointer_fragmentSeparator);
+    const baseIdx = basePointer.indexOf(JSONPointer_fragmentSeparator);
     // rewrite baseUri and json pointer if so
-    if (baseIdx > 0) baseUri = pointer.substring(0, baseIdx);
-    if (baseIdx >= 0) pointer = pointer.substring(baseIdx + 1);
+    if (baseIdx > 0) baseUri = basePointer.substring(0, baseIdx);
+    if (baseIdx >= 0) basePointer = basePointer.substring(baseIdx + 1);
 
+    if (!relative) {
+
+    }
     // setup basic flags
     this.isFragment = baseIdx >= 0;
-    this.isAbsolute = pointer[0] === JSONPointer_pathSeparator;
+    this.isAbsolute = basePointer[0] === JSONPointer_pathSeparator;
 
     // setup pointer
     this.baseUri = baseUri;
+    this.basePointer = basePointer;
+
     this.pointer = pointer;
-    this.get = JSONPointer_compileGetPointer(pointer);
+    this.relative = relative;
+    this.absolute = absolute;
+    this.get = JSONPointer_compileGetPointer(basePointer);
   }
 
   toString() {

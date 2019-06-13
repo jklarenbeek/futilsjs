@@ -49,6 +49,12 @@ export function isPureTypedArray(obj) {
     ));
 }
 
+export function isBoolOrNumber(obj) {
+  return obj != null && (obj === true
+    || obj === false
+    || obj.constructor === Number);
+}
+
 export function isBoolOrArray(obj) {
   return obj != null
     && (obj === true
@@ -74,6 +80,10 @@ export function isStringOrObject(obj) {
   return obj != null
     && (obj.constructor === String
       || (obj.constructor !== Array && typeof obj === 'object'));
+}
+
+export function getBoolOrNumber(obj, def) {
+  return isBoolOrNumber(obj) ? obj : def;
 }
 
 export function getBoolOrArray(obj, def) {
