@@ -4,6 +4,7 @@ export function isPrimitiveTypeEx(typeString) {
   return typeString === 'integer'
     || typeString === 'number'
     || typeString === 'string'
+    || typeString === 'bigint'
     || typeString === 'boolean';
 }
 
@@ -129,43 +130,33 @@ export function getPureBool(obj, def) {
   return obj === true || obj === false ? obj : def;
 }
 
-/* eslint-disable prefer-rest-params */
-export function getAllObjectKeys(obj) {
+export function getAllObjectValues(obj) {
   const arr = [];
-  for (const i in obj) {
-    if (obj.hasOwnProperty(i)) arr.push(i);
+  if (typeof obj === 'object' && obj !== null) {
+    const keys = Object.keys(obj);
+    for (let i = 0; i < keys.length; ++i) {
+      arr.push(obj[i]);
+    }
   }
   return arr;
 }
 
-export function getAllObjectValues(obj) {
-  const arr = [];
-  for (const i in obj) {
-    if (obj.hasOwnProperty(i)) arr.push(obj[i]);
-  }
-  return arr;
-}
-export function getObjectFirstItem(obj) {
-  for (const item in obj) {
-    if (obj.hasOwnProperty(item)) {
-      return item;
-    }
+export function getObjectFirstKey(obj) {
+  if (typeof obj === 'object' && obj !== null) {
+    return Object.keys(obj)[0];
   }
   return undefined;
 }
 
 export function getObjectCountItems(obj) {
-  let count = 0;
-  for (const item in obj) {
-    if (obj.hasOwnProperty(item)) {
-      ++count;
-    }
+  if (typeof obj === 'object' && obj !== null) {
+    return Object.keys(obj).length;
   }
-  return count;
+  return 0;
 }
 
 export function isObjectEmpty(obj) {
-  return getObjectFirstItem(obj) === undefined;
+  return getObjectFirstKey(obj) === undefined;
 }
 
 export function cloneObject(target, source) {

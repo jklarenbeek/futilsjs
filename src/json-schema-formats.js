@@ -52,7 +52,8 @@ export const integerFormats = Object.freeze({
   },
   int64: {
     type: 'integer',
-    bits: 64,
+    bits: 53,
+    packed: 64,
     signed: true,
     minimum: Number.MIN_SAFE_INTEGER,
     maximum: Number.MAX_SAFE_INTEGER,
@@ -155,12 +156,10 @@ export const stringFormats = Object.freeze({
         if (date === false) {
           addError('format', 'date', data);
         }
-
-        if (emin) {
-          return
-        }
+        return false; // TODO;
       }
-    }
+      return false;
+    };
   },
 
   time: function compileTime(schema) {

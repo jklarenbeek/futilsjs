@@ -148,7 +148,7 @@ export function isBigIntType(data) {
   return typeof data === 'bigint';
 }
 export function isNumberType(data) {
-  return (Number(data) || false) !== false;
+  return (Number(data) || false) && !Number.isInteger(data);
 }
 export function isStringType(data) {
   return data != null && data.constructor === String;
@@ -157,14 +157,8 @@ export function isObjectType(data) {
   return data != null
     && !(data.constructor === Array || data.constructor === Map || data.constructor === Set);
 }
-export function isMapType(data) {
-  return data != null && data.constructor === Map;
-}
 export function isArrayType(data) {
   return data != null && data.constructor === Array;
-}
-export function isSetType(data) {
-  return data != null && data.constructor === Set;
 }
 
 isBooleanType.typeName = 'boolean';
@@ -172,18 +166,16 @@ isIntegerType.typeName = 'integer';
 isNumberType.typeName = 'number';
 isStringType.typeName = 'string';
 isObjectType.typeName = 'object';
-isMapType.typeName = 'map';
 isArrayType.typeName = 'array';
-isSetType.typeName = 'set';
 
-export const dataTypes = {
-  boolean: isBooleanType,
-  integer: isIntegerType,
-  bigint: isBigIntType,
-  number: isNumberType,
-  string: isStringType,
-  object: isObjectType,
-  array: isArrayType,
-  map: isMapType,
-  set: isSetType,
-};
+export function getCallBackIsDataType(dataType) {
+  return ({
+    boolean: isBooleanType,
+    integer: isIntegerType,
+    bigint: isBigIntType,
+    number: isNumberType,
+    string: isStringType,
+    object: isObjectType,
+    array: isArrayType,
+  })[dataType];
+}
