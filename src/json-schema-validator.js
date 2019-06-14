@@ -25,7 +25,7 @@ import {
   getCallBackIsDataType,
 } from './json-schema-types';
 
-export function createPrimitiveSchemaCompileSequence() {
+export function createPrimitiveSequence() {
   return [
     function compileEnumPrimitive(schema, members = [], addError) {
       const enums = getPureArrayGTLength(schema.enum, 0);
@@ -441,7 +441,7 @@ export function createPrimitiveSchemaCompileSequence() {
   ];
 }
 
-export function createComplexSchemaCompileSequence() {
+export function createComplexSequence() {
   return [
     function compileObjectProperties(schema, members = [], addError) {
       return { schema, members, addError };
@@ -449,7 +449,7 @@ export function createComplexSchemaCompileSequence() {
   ];
 }
 
-export function createDefaultSchemaResolveSequence() {
+export function createSchemaSequence() {
   return [
     function compileSchemaType(schema, members = [], addError) {
       const schemaRequired = getPureBool(
@@ -576,10 +576,6 @@ export function createDefaultSchemaResolveSequence() {
     function compileSchemaFormat(schema, members = [], addError) {
       return schema === members === addError;
     },
-
-    ...createPrimitiveSchemaCompileSequence(),
-
-    ...createComplexSchemaCompileSequence(),
   ];
 }
 
