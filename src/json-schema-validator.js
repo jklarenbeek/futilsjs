@@ -27,7 +27,7 @@ import {
 
 export function createPrimitiveSequence() {
   return [
-    function compileEnumPrimitive(schema, members = [], addError) {
+    function compileEnumPrimitive(owner, schema, members = [], addError) {
       const enums = getPureArrayGTLength(schema.enum, 0);
       if (enums) {
         if (isPrimitiveSchema(schema)) {
@@ -46,7 +46,7 @@ export function createPrimitiveSequence() {
       return undefined;
     },
 
-    function compileNumberRange(schema, members = [], addError) {
+    function compileNumberRange(owner, schema, members = [], addError) {
       const min = Number(schema.minimum) || undefined;
       const emin = schema.exclusiveMinimum === true
         ? min
@@ -159,7 +159,7 @@ export function createPrimitiveSequence() {
       return undefined;
     },
 
-    function compileNumberMultipleOf(schema, members = [], addError) {
+    function compileNumberMultipleOf(owner, schema, members = [], addError) {
       const mulOf = getPureNumber(schema.multipleOf);
       // we compare against bigint too! javascript is awesome!
       // eslint-disable-next-line eqeqeq
@@ -215,7 +215,7 @@ export function createPrimitiveSequence() {
       return undefined;
     },
 
-    function compileStringLength(schema, members = [], addError) {
+    function compileStringLength(owner, schema, members = [], addError) {
       const min = getPureInteger(schema.minLength, 0);
       const max = getPureInteger(schema.maxLength, 0);
       if (min > 0 && max > 0) {
@@ -263,7 +263,7 @@ export function createPrimitiveSequence() {
       return undefined;
     },
 
-    function compileStringPattern(schema, members = [], addError) {
+    function compileStringPattern(owner, schema, members = [], addError) {
       const ptrn = schema.pattern;
       const re = String_createRegExp(ptrn);
       if (re) {
@@ -281,7 +281,7 @@ export function createPrimitiveSequence() {
       return undefined;
     },
 
-    function compileBasicObject(schema, members = [], addError) {
+    function compileBasicObject(owner, schema, members = [], addError) {
       let keys = getPureArray(schema.required);
       if (keys == null) return undefined;
 
@@ -401,7 +401,7 @@ export function createPrimitiveSequence() {
       return undefined;
     },
 
-    function compileBasicArray(schema, members = [], addError) {
+    function compileBasicArray(owner, schema, members = [], addError) {
       const min = getPureInteger(schema.minItems);
       const max = getPureInteger(schema.maxItem);
 
@@ -443,7 +443,7 @@ export function createPrimitiveSequence() {
 
 export function createComplexSequence() {
   return [
-    function compileObjectProperties(schema, members = [], addError) {
+    function compileObjectProperties(owner, schema, members = [], addError) {
       return { schema, members, addError };
     },
   ];
@@ -451,7 +451,7 @@ export function createComplexSequence() {
 
 export function createSchemaSequence() {
   return [
-    function compileSchemaType(schema, members = [], addError) {
+    function compileSchemaType(owner, schema, members = [], addError) {
       const schemaRequired = getPureBool(
         schema.required,
         (getPureArray(schema.required, false) !== false),
@@ -499,8 +499,8 @@ export function createSchemaSequence() {
       if (schemaType != null) {
         // check if we are object or array
         const format = getPureString(schema.format);
-        const isarr = createArrayFormats()[format];
-        const isobj = createObjectFormats()[format];
+        const isarr = owner.getArrayFormatter(format);
+        const isobj = owner.getObjectFormatter(format);
         
         // JSONSchema allows checks for multiple types
         if (schemaType.constructor === Array) {
@@ -512,7 +512,7 @@ export function createSchemaSequence() {
               schemaNullable = true;
             }
             else {
-              const dataHandler = getCallBackIsDataType[type];
+              const dataHandler = owner.getIsDataTypeCallback(type);
               if (dataHandler) handlers.push(dataHandler);
             }
           }
@@ -578,7 +578,7 @@ export function createSchemaSequence() {
       return undefined;
     },
 
-    function compileSchemaFormat(schema, members = [], addError) {
+    function compileSchemaFormat(owner, schema, members = [], addError) {
       return schema === members === addError;
     },
   ];

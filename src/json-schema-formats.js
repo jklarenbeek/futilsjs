@@ -202,5 +202,3 @@ export function createObjectFormats() {
     'map': 'Map', //
   };
 }
-
-// export const JSONSchema_STRING_FORMATS = ['text', 'date', 'datetime', 'datetime-local', 'search', 'url', 'tel', 'email', 'password'];
