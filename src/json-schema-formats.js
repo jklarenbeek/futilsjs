@@ -1,3 +1,4 @@
+/* eslint-disable quote-props */
 
 export function createIntegerFormats() {
   return {
@@ -181,28 +182,25 @@ export function createStringFormats() {
   };
 }
 
-export const arrayFormats = Object.freeze({
-  Int8Array: 'int8', // array type maps for item format
-  Uint8Array: 'uint8',
-  Uint8ClampedArray: 'uint8c',
-  Int16Array: 'int16',
-  Uint16Array: 'uint16',
-  Int32Array: 'int32',
-  Uint32Array: 'uint32',
-  BigInt64Array: 'big64',
-  BigUint64Array: 'ubig64',
-  Set: true,
-});
+export function createArrayFormats() {
+  return {
+    'int8': 'Int8Array', // array type maps for item format
+    'uint8': 'Uint8Array',
+    'uint8c': 'Uint8ClampedArray',
+    'int16': 'Int16Array',
+    'uint16': 'Uint16Array',
+    'int32': 'Int32Array',
+    'uint32': 'Uint32Array',
+    'big64': 'BigInt64Array',
+    'ubig64': 'BigUint64Array',
+    'set': 'Set',
+  };
+}
 
-export const objectFormats = Object.freeze({
-  Map: 'map', //
-});
+export function createObjectFormats() {
+  return {
+    'map': 'Map', //
+  };
+}
 
-export default {
-  ...numberFormats,
-  ...stringFormats,
-  ...arrayFormats,
-  ...objectFormats,
-};
-
-export const JSONSchema_STRING_FORMATS = ['text', 'date', 'datetime', 'datetime-local', 'search', 'url', 'tel', 'email', 'password'];
+// export const JSONSchema_STRING_FORMATS = ['text', 'date', 'datetime', 'datetime-local', 'search', 'url', 'tel', 'email', 'password'];

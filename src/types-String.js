@@ -1,4 +1,27 @@
 
+export function String_byteCount(str) {
+  /**
+   * console.info(
+   *   new Blob(['😂']).size,                             // 4
+   *   new Blob(['👍']).size,                             // 4
+   *   new Blob(['😂👍']).size,                           // 8
+   *   new Blob(['👍😂']).size,                           // 8
+   *   new Blob(['I\'m a string']).size,                  // 12
+   *
+   *   // from Premasagar correction of Lauri's answer for
+   *   // strings containing lone characters in the surrogate pair range:
+   *   // https://stackoverflow.com/a/39488643/6225838
+   *   new Blob([String.fromCharCode(55555)]).size,       // 3
+   *   new Blob([String.fromCharCode(55555, 57000)]).size // 4 (not 6)
+   * );
+   *
+   * nodejs => return Buffer.byteLength(string, 'utf8');
+   */
+  
+  // return encodeURI(str).split(/%..|./).length - 1;
+  return encodeURI(str).split(/%(?:u[0-9A-F]{2})?[0-9A-F]{2}|./).length - 1;
+}
+
 export function String_createRegExp(pattern) {
   try {
     if (pattern != null) {

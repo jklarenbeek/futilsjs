@@ -12,3 +12,8 @@ doc.registerDefaultSchemaHandlers();
 doc.loadSchema(data);
 
 console.log(doc, new JSONSchemaBooleanType());
+
+function nextToken(str, idx) {
+  const c = str[idx];
+  switch()
+}

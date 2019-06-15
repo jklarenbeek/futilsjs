@@ -497,6 +497,11 @@ export function createSchemaSequence() {
       );
 
       if (schemaType != null) {
+        // check if we are object or array
+        const format = getPureString(schema.format);
+        const isarr = createArrayFormats()[format];
+        const isobj = createObjectFormats()[format];
+        
         // JSONSchema allows checks for multiple types
         if (schemaType.constructor === Array) {
           schemaNullable = schemaNullable === true; // NOTE: nullable default false
