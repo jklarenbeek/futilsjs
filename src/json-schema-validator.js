@@ -1,7 +1,7 @@
 
 import {
   getPureArray,
-  getPureArrayGTLength,
+  getPureArrayMinItems,
   getPureObject,
   getPureString,
   getPureBool,
@@ -29,7 +29,7 @@ import {
 export function createPrimitiveSequence() {
   return [
     function compileEnumPrimitive(owner, schema, members = [], addError) {
-      const enums = getPureArrayGTLength(schema.enum, 0);
+      const enums = getPureArrayMinItems(schema.enum, 1);
       if (enums) {
         if (isPrimitiveSchema(schema)) {
           members.push('enum');
@@ -288,7 +288,7 @@ export function createPrimitiveSequence() {
 
       if (keys.length === 0) {
         const os = getPureObject(schema.properties);
-        const ms = getPureArrayGTLength(schema.properties, 0);
+        const ms = getPureArrayMinItems(schema.properties, 1);
         const ok = os && Object.keys(os);
         const mk = ms && Array.from(new Map(ms).keys());
         keys = ok || mk;
@@ -494,7 +494,7 @@ export function createSchemaSequence() {
 
       let schemaType = getPureString(
         schema.type,
-        getPureArrayGTLength(schema.type, 0),
+        getPureArrayMinItems(schema.type, 1),
       );
 
       if (schemaType != null) {

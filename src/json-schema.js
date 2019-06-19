@@ -14,7 +14,7 @@ import {
   getBoolOrArray,
   getBoolOrObject,
   getPureArray,
-  getPureArrayGTLength,
+  getPureArrayMinItems,
   getPureString,
   getPureBool,
   getPureNumber,
@@ -377,7 +377,7 @@ export class JSONSchemaSelectorType extends JSONSchemaObject {
     delete selectBase.anyOf;
     delete selectBase.allOf;
     delete selectBase.not;
-    const selectItems = getPureArrayGTLength(schema[selectName], 0);
+    const selectItems = getPureArrayMinItems(schema[selectName], 1);
 
     this._selectName = selectName;
     this._selectItems = this.initSelectorItems(selectName, selectBase, selectItems);
@@ -447,7 +447,7 @@ export class JSONSchemaObjectType extends JSONSchemaObject {
   //#region init schema
 
   initObjectPatternRequired(schema) {
-    const patterns = getPureArrayGTLength(schema.patternRequired, 0);
+    const patterns = getPureArrayMinItems(schema.patternRequired, 1);
     if (patterns) {
       const required = [];
       for (let i = 0; i < patterns.length; ++i) {

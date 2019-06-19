@@ -110,7 +110,7 @@ export function getPureArray(obj, def) {
   return isPureArray(obj) ? obj : def;
 }
 
-export function getPureArrayGTLength(obj, len, def) {
+export function getPureArrayMinItems(obj, len, def) {
   return isPureArray(obj) && obj.length > len ? obj: def;
 }
 
