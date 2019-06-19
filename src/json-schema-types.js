@@ -1,8 +1,8 @@
 import {
-//integerFormats,
-//bigintFormats,
-//numberFormats,
-//floatFormats,
+  integerFormats,
+  bigIntFormats,
+  //numberFormats,
+  floatFormats,
 //stringFormats,
 //arrayFormats,
 //objectFormats,
@@ -68,7 +68,7 @@ export function isIntegerSchema(schema) {
 export function isBigIntSchema(schema) {
   const isknown = schema.type === 'bigint' || schema.type === 'biginteger';
   const isformat = typeof schema.format === 'string'
-    && bigintFormats[schema.format] != null;
+    && bigIntFormats[schema.format] != null;
 
   const isvalid = isUnkownSchema(schema)
     // eslint-disable-next-line valid-typeof
@@ -137,45 +137,106 @@ export const schemaTypes = {
 
 // DATA TYPES
 
-export function isBooleanType(data) {
+export function isStrictBooleanType(data) {
   return typeof data === 'boolean';
 }
-export function isIntegerType(data) {
+isStrictBooleanType.typeName = 'boolean';
+export function isBooleanishType(data) {
+  return data === true
+    || data === false
+    || data === 'true'
+    || data === 'false';
+  // || data === 0
+  // || data === 1;
+}
+isBooleanishType.typeName = 'boolean';
+export function isStrictIntegerType(data) {
+  return Number.isInteger(data);
+}
+isStrictIntegerType.typeName = 'integer';
+export function isIntegerishType(data) {
   return Number.isInteger(Number(data));
 }
-export function isBigIntType(data) {
+isIntegerishType.typeName = 'integer';
+export function isStrictBigIntType(data) {
   // eslint-disable-next-line valid-typeof
   return typeof data === 'bigint';
 }
-export function isNumberType(data) {
-  return (Number(data) || false) && !Number.isInteger(data);
+isStrictBigIntType.typeName = 'bigint';
+export function isStrictNumberType(data) {
+  return typeof data === 'number';
 }
-export function isStringType(data) {
-  return data != null && data.constructor === String;
+isStrictNumberType.typeName = 'number';
+export function isNumberishType(data) {
+  return (Number(data) || false) !== false;
 }
-export function isObjectType(data) {
-  return data != null
-    && !(data.constructor === Array || data.constructor === Map || data.constructor === Set);
+isNumberishType.typeName = 'number';
+export function isStrictStringType(data) {
+  return typeof data === 'string';
 }
-export function isArrayType(data) {
+isStrictStringType.typeName = 'string';
+export function isStrictObjectOfType(data, fn) {
+  return data != null && data.constructor === fn;
+}
+isStrictObjectOfType.typeName = 'object';
+export function isStrictArrayType(data) {
   return data != null && data.constructor === Array;
 }
+isStrictArrayType.typeName = 'array';
+export function isArrayishType(data) {
+  return data != null
+    && data instanceof Array
+    && data.constructor === Int8Array
+    && data.constructor === Uint8Array
+    && data.constructor === Uint8ClampedArray
+    && data.constructor === Int16Array
+    && data.constructor === Uint16Array
+    && data.constructor === Int32Array
+    && data.constructor === Uint32Array
+    // eslint-disable-next-line no-undef
+    && data.constructor === BigInt64Array
+    // eslint-disable-next-line no-undef
+    && data.constructor === BigUint64Array;
+}
+isArrayishType.typeName = 'array';
 
-isBooleanType.typeName = 'boolean';
-isIntegerType.typeName = 'integer';
-isNumberType.typeName = 'number';
-isStringType.typeName = 'string';
-isObjectType.typeName = 'object';
-isArrayType.typeName = 'array';
+export const TypedArrays = {
 
-export function getCallBackIsDataType(dataType) {
-  return ({
-    boolean: isBooleanType,
-    integer: isIntegerType,
-    bigint: isBigIntType,
-    number: isNumberType,
-    string: isStringType,
-    object: isObjectType,
-    array: isArrayType,
-  })[dataType];
+};
+
+export function createIsStrictObjectOfType(fn) {
+  // eslint-disable-next-line no-undef-init
+  let usefull = undefined;
+  if (typeof fn === 'function') {
+    usefull = function isStrictObjectOfTypeFn(data) {
+      return isStrictObjectOfType(data, fn);
+    };
+  }
+  else if (fn instanceof Array) {
+    const types = [];
+    for (let i = 0; i < fn.length; ++i) {
+      const type = fn[i];
+      if (typeof type === 'string') {
+        types.push('data.constructor===' + type);
+      }
+      else if (typeof type === 'function') {
+        types.push('data.constructor===' + type.name);
+      }
+    }
+    if (types > 0) {
+      // eslint-disable-next-line no-new-func
+      usefull = new Function(
+        'data',
+        'return data!=null && (' + types.join('||') + ')',
+      );
+    }
+  }
+  else if (typeof fn === 'string') {
+    // eslint-disable-next-line no-new-func
+    usefull = new Function(
+      'data',
+      'return data!=null && data.constructor===' + fn,
+    );
+  }
+  return usefull;
 }

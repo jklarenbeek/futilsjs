@@ -1,3 +1,4 @@
+
 import {
   getPureArray,
   getPureArrayGTLength,
@@ -498,10 +499,30 @@ export function createSchemaSequence() {
 
       if (schemaType != null) {
         // check if we are object or array
-        const format = getPureString(schema.format);
+        const schemaFormat = getPureString(schema.format);
         const isarr = owner.getArrayFormatter(format);
         const isobj = owner.getObjectFormatter(format);
         
+        if (schemaType.constructor === String) {
+          const isDataType = owner.getIsDataTypeCallback(schemaType, schemaFormat);
+          if (isDataType) {
+            const isrequired = compileRequired();
+            const isnullable = compileNullable();
+            members.push('type');
+
+            // create single type validator callback
+            return function type(data, err = []) {
+              if (isrequired(data, err)) return !schemaRequired;
+              if (isnullable(data, err)) return schemaNullable !== false;
+              const valid = isDataType(data);
+              if (!valid) {
+                addError('type', type, data);
+              }
+              return valid;
+            };
+          }
+        }
+
         // JSONSchema allows checks for multiple types
         if (schemaType.constructor === Array) {
           schemaNullable = schemaNullable === true; // NOTE: nullable default false
@@ -512,7 +533,7 @@ export function createSchemaSequence() {
               schemaNullable = true;
             }
             else {
-              const dataHandler = owner.getIsDataTypeCallback(type);
+              const dataHandler = owner.getIsDataTypeCallback(type, schemaFormat);
               if (dataHandler) handlers.push(dataHandler);
             }
           }
@@ -545,25 +566,6 @@ export function createSchemaSequence() {
           }
         }
 
-        if (schemaType.constructor === String) {
-          const isDataType = getCallBackIsDataType(schemaType);
-          if (isDataType) {
-            const isrequired = compileRequired();
-            const isnullable = compileNullable();
-            members.push('type');
-
-            // create single type validator callback
-            return function type(data, err = []) {
-              if (isrequired(data, err)) return !schemaRequired;
-              if (isnullable(data, err)) return schemaNullable !== false;
-              const valid = isDataType(data);
-              if (!valid) {
-                addError('type', type, data);
-              }
-              return valid;
-            };
-          }
-        }
       }
 
       if (schemaRequired === true || schemaNullable === true) {
@@ -612,5 +614,6 @@ export class JSONSchemaValidationCompiler {
         value,
       ),
     );
+    return false;
   }
 }

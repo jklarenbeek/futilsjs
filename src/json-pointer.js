@@ -126,37 +126,6 @@ function JSONPointer_createGetFunction(dst, id, next) {
   };
 }
 
-export function String_isEmptyOrWhiteSpaceAt(str, i = 0) {
-  if (str == null) return true;
-
-  const c = str.chatAt(i);
-  return c == ' '
-    || c == '\f'
-    || c == '\n'
-    || c == '\t'
-    || c == '\v'
-    || c == '\u00A0'
-    || c == '\u1680​'
-    || c == '\u180e'
-    || c == '\u2000'
-    || c == '​\u2001'
-    || c == '\u2002'
-    || c == '​\u2003'
-    || c == '\u2004​'
-    || c == '\u2005'
-    || c == '\u2006'
-    || c == '\u2008'
-    || c == '​\u2009'
-    || c == '\u200a'
-    || c == '​\u2028'
-    || c == '\u2029'
-    || c == '​\u2028'
-    || c == '\u2029'
-    || c == '​\u202f'
-    || c == '\u205f'
-    || c == '​\u3000';
-}
-
 export function JSONPointer_compileGetPointer(path) {
   path = typeof path === 'string' ? path : '';
   if (path === '') return function JSONPointer_compileGetRootFunction(obj) {

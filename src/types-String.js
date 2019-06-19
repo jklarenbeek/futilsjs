@@ -1,3 +1,4 @@
+/* eslint-disable eqeqeq */
 
 export function String_byteCount(str) {
   /**
@@ -52,7 +53,7 @@ export function String_createRegExp(pattern) {
 
 export function String_trimLeft(str, c) {
   let i = 0;
-  while (str[i] === c) i++;
+  while (str[i] === c) ++i;
   return i === 0 ? str : str.substring(i);
 }
 
@@ -68,4 +69,105 @@ export function String_decodeURI(str) {
     return String.fromCharCode(parseInt(h, 16));
   });
   return decodeURIComponent(str);
+}
+
+export function String_fromSnakeToCamel(str) {
+  throw new Error('not implemented', str);
+}
+
+export function String_fromCamelToSnake(str) {
+  throw new Error('not implemented', str);
+}
+
+
+export function Letter_isEmptyOrWhiteSpace(str, i = 0) {
+  if (str == null) return true;
+
+  const c = str[i]; //.chatAt(i);
+  return c == ' '
+    || c == '\f'
+    || c == '\n'
+    || c == '\t'
+    || c == '\v'
+    || c == '\u00A0'
+    || c == '\u1680​'
+    || c == '\u180e'
+    || c == '\u2000'
+    || c == '​\u2001'
+    || c == '\u2002'
+    || c == '​\u2003'
+    || c == '\u2004​'
+    || c == '\u2005'
+    || c == '\u2006'
+    || c == '\u2008'
+    || c == '​\u2009'
+    || c == '\u200a'
+    || c == '​\u2028'
+    || c == '\u2029'
+    || c == '​\u2028'
+    || c == '\u2029'
+    || c == '​\u202f'
+    || c == '\u205f'
+    || c == '​\u3000';
+}
+
+export function Letter_isSymbol(str, i = 0) {
+  if (str == null) return false;
+  const c = str[i];
+  return c === '_'
+    || c === '~'
+    || c === '!'
+    || c === '?'
+    || c === '@'
+    || c === '#'
+    || c === '$'
+    || c === '='
+    || c === '%'
+    || c === '^'
+    || c === '&'
+    || c === '|'
+    || c === '+'
+    || c === '-'
+    || c === '*'
+    || c === '/'
+    || c === '('
+    || c === ')'
+    || c === '['
+    || c === ']'
+    || c === '{'
+    || c === '}'
+    || c === '<'
+    || c === '>'
+    || c === '.'
+    || c === ','
+    || c === ':'
+    || c === ';'
+    || c === '\"'
+    || c === '\''
+    || c === '\`'
+    || c === '\\';
+}
+
+export function Letter_isUpperCase(str, i = 0) {
+  throw new Error('not implemented', i);
+}
+
+export function Letter_isLowerCase(str, i = 0) {
+  throw new Error('not implemented', i);
+}
+
+export function Letter_isTileCase(str, i = 0) {
+  throw new Error('not implemented', i);
+}
+
+export function Letter_isModifierLetter(str, i = 0) {
+  throw new Error('not implemented', i);
+}
+
+export function Letter_isOtherLetter(str, i = 0) {
+  throw new Error('not implemented', i);
+}
+
+export function Letter_isNumberLetter(str, i = 0) {
+  throw new Error('not implemented', i);
 }

@@ -40,6 +40,7 @@ import {
 import {
   JSONPointer_addFolder, JSONPointer_traverseFilterObjectBF, JSONPointer,
 } from './json-pointer';
+import { createPrimitiveSequence } from './json-schema-validator';
 
 //#region schema type classes
 
@@ -69,6 +70,7 @@ export class JSONSchemaDocument {
   constructor(baseUri) {
     this.baseUri = baseUri;
     this.schema = null;
+    this.formatters = {};
     this.handlers = {};
     this.defaultHandler = null;
     this.baseUriCallback = undefined;
@@ -158,6 +160,64 @@ export class JSONSchemaDocument {
       : undefined;
   }
 
+  registerFormatter(name, schema) {
+    if (this.formatters[name] != null) {
+      const r = typeof schema;
+      if (r === 'function') {
+        this.formatters[name] = schema;
+      }
+      else if (r === 'object') {
+        if (r.type === 'integer') {
+
+        }
+        else if (r.type === 'bigint') {
+
+        }
+        else if (r.type === 'number') {
+
+        }
+      }
+    }
+  }
+
+  registerDefaultFormatters() {
+    const handlers = {};
+    function register(name, fn) {
+      if (typeof fn === 'function') {
+        if (!handlers[name]) {
+          handlers[name] = fn;
+        }
+      }
+      else {
+        const keys = Object.keys(fn);
+        if (keys.length > 0) {
+          const compilers = createPrimitiveSequence();
+          for (let i = 0; i < compilers.length; ++i) {
+            const compiler = compilers[i];
+            const compiled = compiler(this, value, )
+          }
+          this.compileSchema(schema)
+        }
+      }
+    }
+  }
+
+  export function createIsStrictDataTypeCallback() {
+    return {
+      boolean: isStrictBooleanType,
+      integer: isIntegerishType,
+      bigint: isStrictBigIntType,
+      number: isStrictNumberType,
+      string: isStrictStringType,
+      object: isObjectType,
+      array: isStrictArrayType,
+    };
+  }
+  
+  registerIntegerFormatter(formatName = '')
+  getIsDataTypeCallback(type, format) {
+
+  }
   registerBaseUriCallBack(callback) {
     this.baseUriCallback = callback;
   }
@@ -186,13 +246,6 @@ export class JSONSchemaXMLObject {
 }
 
 const Object_prototype_propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
-
-export const JSONSchema_keywords = {
-  '': ['type', 'required', 'format', 'formatMaximum', 'formatMinimum', 'formatExclusiveMaximum', 'formatExclusiveMinimum'],
-  'number': ['minimum', 'maximum', 'exclusiveMaximum', 'minimum', 'exclusiveMinimum', 'multipleOf'],
-  'string': ['maxLength', 'minLength', 'pattern'],
-  'array': [],
-};
 
 export class JSONSchemaObject {
   constructor(owner, schemaPath, dataPath, schema, type) {
