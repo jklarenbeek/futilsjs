@@ -12,9 +12,13 @@ Keep in mind that for the time being this repo will change a lot, really fast. S
 
 It is recommended to clone this repository first and then npm-link it into your own project. I do this, to fix bugs in futilsjs when they pop-up (immediatly) or add more functionality (when I get to it). There is more coming in the following months, so follow us. You don't have to clone the repo, because there is a npm package available as well. Follow the steps described below, to get futilsjs up and running.
 
-## ## npm install futilsjs
+---
+## ## installation
+---
 
-Note: this is not the preferred method! npm futilsjs is out of date and i still want to change versioning back to v0.0.1; that would be the more realistic view of the version I am at.
+### ### npm install futilsjs
+
+Note: this is not recommended! The npm package is out of date untill the project reaches alpha state. I also want to change versioning back to v0.0.1; that would be the more realistic view of the version I am at.
 
 But as the name suggests, it should be not more difficult then this. Go to your favorite local project that your working on and type:
 
@@ -32,7 +36,7 @@ console.log('an array is not a pure object ', a !== true);
 
 Tadaaa! Have fun using futilsjs! (BUT AGAIN, DON'T USE IT THIS WAY!)
 
-## ## git clone and install futilsjs
+### ### git clone and install futilsjs
 
 In order to make futilsjs available to your projects we use npm-link. First clone the repository. You can use any target name as the last parameter of the git clone command. For this demonstration we use the futilsjs/ directory name and we enter it.
 
@@ -73,23 +77,41 @@ $~/myprojectjs> npm link futilsjs
 
 Take note that we use the futilsjs name in the npm link command and not any other name that you cloned it to. From here its the same as using npm install futilsjs.
 
+---
 ## ## documentation
+---
 
 Procastrination
 
 I will look up what that means, later...
 
-or its [here](https://github.com/jklarenbeek/futilsjs/wiki).
+### ### *Math and Vector classes*
 
-### ### json pointer
+There are 4 extensive math classes defined in futilsjs; int32, float64, vec2i32, vec2f64 and vec3f64. The Matrix class is not yet supported. futilsjs tries to encapsulate and group math functionality as much as possible. This with the idea to help the Javascript Runtime compiler determine what we are looking at. Each class has two types of operator groups; pure and impure. As the name suggests, pure operators are immutable and return a new structure, impure operators operate on the structure itself.
 
-`/foo/$ref`
+The int32 and float32 classes are mere functions to help speed up your inner loops as some [benchmarks](https://jsperf.com/math-hypot-vs-math-sqrt/7) suggest. However, these benchmarks are highly [speculative](https://mrale.ph/blog/2014/02/23/the-black-cat-of-microbenchmarks.html) and the results differ greatly between browser versions. I still implemented them for two reasons; 1) sometimes I like to be explicit. 2) sometimes it helps me to remember how stuff works. The int32 class also implements some complex operators like sin, cos and others too.
 
-`//*[./$ref]`
+The vector classes vec2i32, vec2f64 and vec3f64 contain enough functionality to quickly do about any operation you want. The primitive pure operators (add, sub, mul, div) and impure operators (iadd, isub, imul, idiv) are supported for the vec2i32, vec2f64 and vec2f64 classes. They also contain product operators (mag2 - magnitude square, mag - magnitude, dot, crossABAB) and other more complex vector operators (unit, iunit).
 
-`//$ref:typeof('string')` all $ref
+### ### *Javascript Type Extensions*
 
-## ## so frequently asked
+Eventhough es2017 is becoming pretty cool, futils includes an extensive set of additional extensions to common types. We have added functionality for String and Date classes including a set of test and getters related to the javascript type system.
+
+For object types futils has special functions to manipulate array and objects alike including types like Map.
+
+We also added some additional classes to queue or traverse tree like data structures.
+
+### ### *Browser Type Extensions*
+
+Another important part of futilsjs are the browser extensions to manipulate the DOM, load or render images from svg or html, manipulate CSS classes and or use worklets.
+
+### ### *JSONSchemaDocument*
+
+The JSONSchemaDocument set of classes can help you build and validate JSON data structures quickly. The JSONSchemaDocument class is capable of compiling most of [jsonschema](https://ajv.js.org/keywords.html) draft-7 keywords and render JSX nodes (VNode) along the openapi 3 spec from [swagger](https://swagger.io/specification/#xmlObject). Through a JSONSchemaDocument instance you can use the JSONPointer class to query for any schema or data point within the document.
+
+---
+## ## frequently asked questions
+---
 
 ```
   So frequently asked
@@ -98,7 +120,9 @@ or its [here](https://github.com/jklarenbeek/futilsjs/wiki).
   what hath thou awoken
 ```
 
+---
 ## ## contact
+---
 
 If you find bugs, or want to know what a function is doing, please don't hesitate to ask me by filing an issue. Off topic questions I'd rather not see, but any futilsjs related question is very welcome.
 
