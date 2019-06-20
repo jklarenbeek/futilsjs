@@ -44,10 +44,9 @@ import {
 } from './json-schema-types';
 
 import {
-  integerFormats,
-  bigIntFormats,
   numberFormats,
   stringFormats,
+  dateTimeFormats,
   createSchemaNumberFormatCompiler,
 } from './json-schema-formats';
 
@@ -180,7 +179,7 @@ export class JSONSchemaDocument {
 
   //#region Formatters
 
-  registerFormatter(name, schema) {
+  registerFormatCompiler(name, schema) {
     if (this.formatters[name] == null) {
       const r = typeof schema;
       if (r === 'function') {
@@ -198,11 +197,10 @@ export class JSONSchemaDocument {
     return false;
   }
 
-  registerDefaultFormatters() {
+  registerDefaultFormatCompilers() {
     const all = {
-      ...integerFormats,
-      ...bigIntFormats,
       ...numberFormats,
+      ...dateTimeFormats,
       ...stringFormats,
     };
 
@@ -210,7 +208,7 @@ export class JSONSchemaDocument {
     for (let i = 0; i < keys.length; ++i) {
       const key = keys[i];
       const item = all[key];
-      this.registerFormatter(key, item);
+      this.registerFormatCompiler(key, item);
     }
   }
   //#endregion
@@ -249,13 +247,29 @@ export class JSONSchemaDocument {
     this.baseUriCallback = callback;
   }
 
+  compileValidator(json, baseUri) {
+    const types = create
+  }
+
   loadSchema(json, baseUri) {
     const callback = typeof this.baseUriCallback === 'function'
       ? this.baseUriCallback
       : (function JSONSchemaDocument_loadSchemaDefaultCallback() { return json; });
-    JSONSchema_expandSchemaReferences(json, baseUri || this.baseUri, callback);
-    this.baseUri = typeof baseUri === 'string' ? baseUri : this.baseUri; // TODO: parse baseUri from JSONPointer_compile?
-    const schema = this.createSchemaHandler('/', json);
+
+    JSONSchema_expandSchemaReferences(
+      json,
+      baseUri || this.baseUri,
+      callback,
+    );
+
+
+    this.baseUri = typeof baseUri === 'string'
+      ? baseUri
+      : this.baseUri; // TODO: parse baseUri from JSONPointer_compile?
+    const schema = this.createSchemaHandler(
+      '/',
+      json,
+    );
     this.schema = schema;
   }
 }

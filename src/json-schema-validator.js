@@ -14,16 +14,9 @@ import {
 } from './types-String';
 
 import {
-  getSchemaSelectorName,
   isIntegerSchema,
   isBigIntSchema,
-  isNumberSchema,
-  isStringSchema,
-  isObjectSchema,
-  isArraySchema,
-  isTupleSchema,
   isPrimitiveSchema,
-  getCallBackIsDataType,
 } from './json-schema-types';
 
 export function createSchemaSequence() {
@@ -453,7 +446,8 @@ export function createComplexSequence() {
         }
         if (regs.length === 0) regs = undefined;
       }
-
+      // TODO: this is gonna give problems 
+      // when there are only patternRequired props implemented
       if (keys.length > 0) {
         members.push('_required_properties_');
 
@@ -612,18 +606,23 @@ export class JSONSchemaValidationCompiler {
     this.schemaPath = schemaPath;
     this.dataPath = dataPath;
     this.errors = [];
+    const self = this;
+    this.addError = function addError(key = 'unknown', expected, value) {
+      self.errors.push(
+        new JSONSchemaValidationError(
+          self.schemaPath,
+          key, expected,
+          self.dataPath,
+          value,
+        ),
+      );
+      return false;
+    };
     Object.freeze(this);
   }
 
-  __addError(key = 'unknown', expected, value) {
-    this.errors.push(
-      new JSONSchemaValidationError(
-        this.schemaPath,
-        key, expected,
-        this.dataPath,
-        value,
-      ),
-    );
-    return false;
+  // eslint-disable-next-line class-methods-use-this
+  addError(key = 'unknown', expected, value) {
+    throw new Error('abstract method', key, expected, value);
   }
 }
