@@ -152,7 +152,7 @@ export const dateTimeFormats = {
   },
 };
 
-export function createJSONSchemaNumberFormatCompiler(name, obj) {
+export function createSchemaNumberFormatCompiler(name, obj) {
   if (obj === 'object') {
     if (['integer', 'bigint', 'number'].includes(obj.type)) {
       //const rbts = getPureNumber(r.bits);

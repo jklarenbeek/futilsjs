@@ -48,7 +48,7 @@ import {
   bigIntFormats,
   numberFormats,
   stringFormats,
-  createJSONSchemaNumberFormatCompiler,
+  createSchemaNumberFormatCompiler,
 } from './json-schema-formats';
 
 import {
@@ -188,7 +188,7 @@ export class JSONSchemaDocument {
         return true;
       }
       else {
-        const fn = createJSONSchemaNumberFormatCompiler(name, schema);
+        const fn = createSchemaNumberFormatCompiler(name, schema);
         if (fn) {
           this.formatters[name] = fn;
           return true;
