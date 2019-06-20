@@ -222,11 +222,13 @@ export function createIsStrictObjectOfType(fn) {
       'return data!=null && data.constructor===' + fn,
     );
   }
+  usefull.typeName = 'object';
   return usefull;
 }
 
 export function isStrictObjectType(data) {
   return data != null
+    && typeof data === 'object'
     && !(data.constructor === Map
       || data.constructor === Set
       || data instanceof Array
@@ -243,13 +245,16 @@ export function isStrictObjectType(data) {
       || data.constructor === BigUint64Array
     );
 }
+isStrictObjectOfType.typeName = 'object';
 
 export function isObjectishType(data) {
   return data != null
-    && (data.constructor === Array
+    && typeof data === 'object'
+    && !(data.constructor === Array
       || data.constructor === Map
       || data.constructor === Set);
 }
+isObjectishType.typeName = 'object';
 
 export function isStrictArrayType(data) {
   return isStrictObjectOfType(data, Array);
@@ -287,3 +292,4 @@ export function isStrictTypedArray(data) {
     // eslint-disable-next-line no-undef
     || data.constructor === BigUint64Array);
 }
+isStrictTypedArray.typeName = 'array';
