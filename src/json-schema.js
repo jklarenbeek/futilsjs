@@ -214,7 +214,7 @@ export class JSONSchemaDocument {
     }
   }
   //#endregion
-  
+
   getIsDataTypeCallback(type, format) {
     const types = {
       boolean: isStrictBooleanType,
@@ -230,7 +230,7 @@ export class JSONSchemaDocument {
       return types[type];
     }
   }
-  
+
   registerBaseUriCallBack(callback) {
     this.baseUriCallback = callback;
   }

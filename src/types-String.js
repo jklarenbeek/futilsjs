@@ -18,7 +18,7 @@ export function String_byteCount(str) {
    *
    * nodejs => return Buffer.byteLength(string, 'utf8');
    */
-  
+
   // return encodeURI(str).split(/%..|./).length - 1;
   return encodeURI(str).split(/%(?:u[0-9A-F]{2})?[0-9A-F]{2}|./).length - 1;
 }

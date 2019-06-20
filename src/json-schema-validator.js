@@ -76,7 +76,7 @@ export function createSchemaSequence() {
       if (schemaType != null) {
         // check if we are object or array
         const schemaFormat = getPureString(schema.format);
-        
+
         if (schemaType.constructor === String) {
           const isDataType = owner.getIsDataTypeCallback(schemaType, schemaFormat);
           if (isDataType) {

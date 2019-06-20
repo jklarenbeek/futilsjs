@@ -11,7 +11,6 @@ export function JSONPointer_addFolder(pointer, folder) {
       || typeof folder === 'string');
 
   if (isvalid) {
-
     folder = String(folder);
     if (folder.charAt(0) === '/') {
       folder = folder.substring(1);
@@ -188,7 +187,7 @@ export function JSONPointer_resolveRelative(pointer, relative) {
   if (idx >= 0) {
     const depth = relative.substring(0, idx);
     const rest = relative.substring(idx);
-    const parent = JSONPointer_resolveParent(pointer, Number(depth));
+    const parent = JSONPointer_resolveRelative(pointer, Number(depth));
     return JSONPointer_addFolder(parent, rest);
   }
   return pointer;
