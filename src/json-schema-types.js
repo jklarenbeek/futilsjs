@@ -200,9 +200,6 @@ export function isArrayishType(data) {
 }
 isArrayishType.typeName = 'array';
 
-export const TypedArrays = {
-
-};
 
 export function createIsStrictObjectOfType(fn) {
   // eslint-disable-next-line no-undef-init

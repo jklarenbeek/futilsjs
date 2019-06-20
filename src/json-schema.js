@@ -35,7 +35,17 @@ import {
   isArraySchema,
   isTupleSchema,
   isPrimitiveSchema,
+  isStrictIntegerType,
+  isStrictNumberType,
 } from './json-schema-types';
+
+import {
+  integerFormats,
+  bigIntFormats,
+  numberFormats,
+  stringFormats,
+  createNumberFormatCompiler,
+} from './json-schema-formats';
 
 import {
   JSONPointer_addFolder, JSONPointer_traverseFilterObjectBF, JSONPointer,
@@ -76,6 +86,7 @@ export class JSONSchemaDocument {
     this.baseUriCallback = undefined;
   }
 
+  //#region Schema Handlers
 
   registerSchemaHandler(formatName = 'default', schemaHandler) {
     if (schemaHandler instanceof JSONSchemaObject) {
@@ -160,50 +171,52 @@ export class JSONSchemaDocument {
       : undefined;
   }
 
+  //#endregion
+
+  //#region Formatters
+
   registerFormatter(name, schema) {
-    if (this.formatters[name] != null) {
+    if (this.formatters[name] == null) {
       const r = typeof schema;
       if (r === 'function') {
         this.formatters[name] = schema;
       }
-      else if (r === 'object') {
-        if (r.type === 'integer') {
-
-        }
-        else if (r.type === 'bigint') {
-
-        }
-        else if (r.type === 'number') {
-
-        }
+      else {
+        const fn = createNumberFormatCompiler(name, schema);
+        this.formatters[name] = fn;
       }
+      return true;
     }
+    return false;
   }
 
   registerDefaultFormatters() {
-    const handlers = {};
-    function register(name, fn) {
-      if (typeof fn === 'function') {
-        if (!handlers[name]) {
-          handlers[name] = fn;
-        }
+    const all = {
+      ...integerFormats,
+      ...bigIntFormats,
+      ...numberFormats,
+      ...stringFormats
+    };
+
+    const keys = Object.keys(all);
+    for (let i = 0; i < keys.length; ++i) {
+      const key = keys[i];
+      const item = all[key];
+      if (typeof item === 'function') {
+        this.registerFormatter(key, item);
       }
       else {
-        const keys = Object.keys(fn);
-        if (keys.length > 0) {
-          const compilers = createPrimitiveSequence();
-          for (let i = 0; i < compilers.length; ++i) {
-            const compiler = compilers[i];
-            const compiled = compiler(this, value, )
-          }
-          this.compileSchema(schema)
+        const compiler = createNumberFormatCompiler(key, item);
+        if (compiler) {
+          this.registerFormatter(key, compiler);
         }
       }
     }
   }
-
-  export function createIsStrictDataTypeCallback() {
-    return {
+  //#endregion
+  
+  getIsDataTypeCallback(type, format) {
+    const types = {
       boolean: isStrictBooleanType,
       integer: isIntegerishType,
       bigint: isStrictBigIntType,
@@ -212,12 +225,12 @@ export class JSONSchemaDocument {
       object: isObjectType,
       array: isStrictArrayType,
     };
+
+    if (typeof type === 'string') {
+      return types[type];
+    }
   }
   
-  registerIntegerFormatter(formatName = '')
-  getIsDataTypeCallback(type, format) {
-
-  }
   registerBaseUriCallBack(callback) {
     this.baseUriCallback = callback;
   }

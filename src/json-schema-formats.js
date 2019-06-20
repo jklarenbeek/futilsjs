@@ -106,7 +106,7 @@ export const numberFormats = {
   year: {
     type: 'integer',
     minimum: 1970,
-    maximum: 2030,
+    maximum: 2378,
   },
   month: {
     type: 'integer',
@@ -135,8 +135,112 @@ export const numberFormats = {
   },
 };
 
+export function createNumberFormatCompiler(name, obj) {
+  if (obj === 'object') {
+    if (['integer', 'bigint', 'number'].includes(obj.type)) {
+      //const rbts = getPureNumber(r.bits);
+      //const rsgn = getPureBool(r.signed);
+      const rix = Number(obj.minimum) || false;
+      const rax = Number(obj.maximum) || false;
+      return function compileFormatNumber(owner, schema, members, addError) {
+        const fix = Math.max(Number(schema.formatMinimum) || rix, rix);
+        const fax = Math.min(Number(schema.formatMaximum) || rax, rax);
+        const fie = schema.formatExclusiveMinimum === true
+          ? fix
+          : Number(schema.formatExclusiveMinimum) || false;
+        const fae = schema.formatExclusiveMaximum === true
+          ? fax
+          : Number(schema.formatExclusiveMaximum) || false;
+
+        function isInt(data) { return Number.isInteger(data); }
+        // eslint-disable-next-line valid-typeof
+        function isBigInt(data) { return typeof data === 'bigint'; }
+        function isNumber(data) { return typeof data === 'number'; }
+
+        const isDataType = obj.type === 'integer'
+          ? isInt
+          : obj.type === 'bigint'
+            ? isBigInt
+            : isNumber;
+
+        return function formatNumber(data) {
+          let valid = true;
+          if (isDataType(data)) {
+            if (fie && fae) {
+              valid = data > fie && data < fae;
+              if (!valid) addError(
+                ['formatExclusiveMinimum', 'formatExclusiveMaximum'],
+                [fie, fae],
+                data,
+              );
+            }
+            else if (fie && fax) {
+              valid = data > fie && data <= fax;
+              if (!valid) addError(
+                ['formatExclusiveMinimum', 'formatMaximum'],
+                [fie, fax],
+                data,
+              );
+            }
+            else if (fae && fix) {
+              valid = data >= fix && data < fae;
+              if (!valid) addError(
+                ['formatMinimum', 'formatExclusiveMaximum'],
+                [fix, fae],
+                data,
+              );
+            }
+            else if (fix && fax) {
+              valid = data >= fix && data <= fax;
+              if (!valid) addError(
+                ['formatMinimum', 'formatMaximum'],
+                [fix, fax],
+                data,
+              );
+            }
+            else if (fie) {
+              valid = data > fie;
+              if (!valid) addError(
+                'formatExclusiveMinimum',
+                fie,
+                data,
+              );
+            }
+            else if (fae) {
+              valid = data > fae;
+              if (!valid) addError(
+                'formatExclusiveMaximum',
+                fae,
+                data,
+              );
+            }
+            else if (fax) {
+              valid = data <= fax;
+              if (!valid) addError(
+                'formatMaximum',
+                fax,
+                data,
+              );
+            }
+            else if (fix) {
+              valid = data <= fix;
+              if (!valid) addError(
+                'formatMinimum',
+                fix,
+                data,
+              );
+            }
+          }
+          return valid;
+        };
+      };
+    }
+  }
+  return undefined;
+}
+
 export const stringFormats = {
-  'date-time': function compileDate(schema, members, addError) {
+  'date-time': function compileDate(owner, schema, members, addError) {
     if (schema.format === 'date-time') {
       const fmin = schema.formatMinimum;
       const femin = schema.formatExclusiveMinimum;
