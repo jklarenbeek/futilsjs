@@ -273,3 +273,17 @@ export function isArrayishType(data) {
 }
 isArrayishType.typeName = 'array';
 
+export function isStrictTypedArray(data) {
+  return data != null
+    && (data.constructor === Int8Array
+    || data.constructor === Uint8Array
+    || data.constructor === Uint8ClampedArray
+    || data.constructor === Int16Array
+    || data.constructor === Uint16Array
+    || data.constructor === Int32Array
+    || data.constructor === Uint32Array
+    // eslint-disable-next-line no-undef
+    || data.constructor === BigInt64Array
+    // eslint-disable-next-line no-undef
+    || data.constructor === BigUint64Array);
+}
