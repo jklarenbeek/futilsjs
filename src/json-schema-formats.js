@@ -3,6 +3,7 @@
 export const integerFormats = {
   int8: {
     type: 'integer',
+    arrayType: Int8Array,
     bits: 8,
     signed: true,
     minimum: -128,
@@ -10,6 +11,7 @@ export const integerFormats = {
   },
   uint8: {
     type: 'integer',
+    arrayType: Uint8Array,
     bits: 8,
     signed: false,
     minimum: -128,
@@ -17,6 +19,7 @@ export const integerFormats = {
   },
   uint8c: {
     type: 'integer',
+    arrayType: Uint8ClampedArray,
     bits: 8,
     signed: false,
     minimum: -128,
@@ -25,6 +28,7 @@ export const integerFormats = {
   },
   int16: {
     type: 'integer',
+    arrayType: Int16Array,
     bits: 16,
     signed: true,
     minimum: -32768,
@@ -32,6 +36,7 @@ export const integerFormats = {
   },
   uint16: {
     type: 'integer',
+    arrayType: Uint16Array,
     bits: 16,
     signed: false,
     minimum: 0,
@@ -39,6 +44,7 @@ export const integerFormats = {
   },
   int32: {
     type: 'integer',
+    arrayType: Int32Array,
     bits: 32,
     signed: true,
     minimum: -(2 ** 31),
@@ -46,6 +52,7 @@ export const integerFormats = {
   },
   uint32: {
     type: 'integer',
+    arrayType: Uint32Array,
     bits: 32,
     signed: false,
     minimum: 0,
@@ -71,6 +78,8 @@ export const integerFormats = {
 export const bigIntFormats = {
   big64: {
     type: 'bigint',
+    // eslint-disable-next-line no-undef
+    arrayType: BigInt64Array,
     bits: 64,
     signed: true,
     minimum: -(2 ** 63),
@@ -78,6 +87,8 @@ export const bigIntFormats = {
   },
   ubig64: {
     type: 'bigint',
+    // eslint-disable-next-line no-undef
+    arrayType: BigUint64Array,
     bits: 64,
     signed: true,
     minimum: 0,
@@ -103,6 +114,12 @@ export const floatFormats = {
 };
 
 export const numberFormats = {
+  ...integerFormats,
+  ...bigIntFormats,
+  ...floatFormats,
+};
+
+export const dateTimeFormats = {
   year: {
     type: 'integer',
     minimum: 1970,
@@ -135,7 +152,7 @@ export const numberFormats = {
   },
 };
 
-export function createNumberFormatCompiler(name, obj) {
+export function createJSONSchemaNumberFormatCompiler(name, obj) {
   if (obj === 'object') {
     if (['integer', 'bigint', 'number'].includes(obj.type)) {
       //const rbts = getPureNumber(r.bits);
@@ -145,12 +162,18 @@ export function createNumberFormatCompiler(name, obj) {
       return function compileFormatNumber(owner, schema, members, addError) {
         const fix = Math.max(Number(schema.formatMinimum) || rix, rix);
         const fax = Math.min(Number(schema.formatMaximum) || rax, rax);
-        const fie = schema.formatExclusiveMinimum === true
+        const _fie = schema.formatExclusiveMinimum === true
           ? fix
           : Number(schema.formatExclusiveMinimum) || false;
-        const fae = schema.formatExclusiveMaximum === true
+        const _fae = schema.formatExclusiveMaximum === true
           ? fax
           : Number(schema.formatExclusiveMaximum) || false;
+        const fie = fix !== false && _fie !== false
+          ? Math.max(fix, _fie)
+          : _fie;
+        const fae = fax !== false && _fae !== false
+          ? Math.max(fax, _fae)
+          : _fae;
 
         function isInt(data) { return Number.isInteger(data); }
         // eslint-disable-next-line valid-typeof
@@ -304,18 +327,6 @@ export const stringFormats = {
     }
     return undefined;
   },
-};
-
-export const arrayFormats = {
-  'int8': 'Int8Array', // array type maps for item format
-  'uint8': 'Uint8Array',
-  'uint8c': 'Uint8ClampedArray',
-  'int16': 'Int16Array',
-  'uint16': 'Uint16Array',
-  'int32': 'Int32Array',
-  'uint32': 'Uint32Array',
-  'big64': 'BigInt64Array',
-  'ubig64': 'BigUint64Array',
 };
 
 export const objectFormats = {

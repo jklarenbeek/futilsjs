@@ -28,15 +28,19 @@ import {
   getSchemaSelectorName,
   isBooleanSchema,
   isIntegerSchema,
-  isBigIntSchema,
   isNumberSchema,
   isStringSchema,
   isObjectSchema,
   isArraySchema,
   isTupleSchema,
-  isPrimitiveSchema,
+  isStrictBooleanType,
   isStrictIntegerType,
+  isStrictBigIntType,
   isStrictNumberType,
+  isStrictStringType,
+  createIsStrictObjectOfType,
+  isStrictObjectType,
+  isObjectishType,
 } from './json-schema-types';
 
 import {
@@ -44,13 +48,14 @@ import {
   bigIntFormats,
   numberFormats,
   stringFormats,
-  createNumberFormatCompiler,
+  createJSONSchemaNumberFormatCompiler,
 } from './json-schema-formats';
 
 import {
-  JSONPointer_addFolder, JSONPointer_traverseFilterObjectBF, JSONPointer,
+  JSONPointer_addFolder,
+  JSONPointer_traverseFilterObjectBF,
+  JSONPointer,
 } from './json-pointer';
-import { createPrimitiveSequence } from './json-schema-validator';
 
 //#region schema type classes
 
@@ -180,12 +185,15 @@ export class JSONSchemaDocument {
       const r = typeof schema;
       if (r === 'function') {
         this.formatters[name] = schema;
+        return true;
       }
       else {
-        const fn = createNumberFormatCompiler(name, schema);
-        this.formatters[name] = fn;
+        const fn = createJSONSchemaNumberFormatCompiler(name, schema);
+        if (fn) {
+          this.formatters[name] = fn;
+          return true;
+        }
       }
-      return true;
     }
     return false;
   }
@@ -195,40 +203,46 @@ export class JSONSchemaDocument {
       ...integerFormats,
       ...bigIntFormats,
       ...numberFormats,
-      ...stringFormats
+      ...stringFormats,
     };
 
     const keys = Object.keys(all);
     for (let i = 0; i < keys.length; ++i) {
       const key = keys[i];
       const item = all[key];
-      if (typeof item === 'function') {
-        this.registerFormatter(key, item);
-      }
-      else {
-        const compiler = createNumberFormatCompiler(key, item);
-        if (compiler) {
-          this.registerFormatter(key, compiler);
-        }
-      }
+      this.registerFormatter(key, item);
     }
   }
   //#endregion
 
-  getIsDataTypeCallback(type, format) {
-    const types = {
-      boolean: isStrictBooleanType,
-      integer: isIntegerishType,
-      bigint: isStrictBigIntType,
-      number: isStrictNumberType,
-      string: isStrictStringType,
-      object: isObjectType,
-      array: isStrictArrayType,
-    };
-
-    if (typeof type === 'string') {
-      return types[type];
+  getIsDataTypeCallback(type, format, isstrict = false) {
+    if (type === 'object') {
+      if (isstrict) {
+        return isStrictObjectType;
+      }
+      return isObjectishType;
     }
+    else if (type === 'array') {
+      if (isStrictStringType(format)) {
+        const at = numberFormats[format]
+          ? numberFormats[format].arrayType
+          : undefined;
+        if (at) {
+          return createIsStrictObjectOfType(at);
+        }
+      }
+    }
+    else {
+      switch (type) {
+        case 'boolean': return isStrictBooleanType;
+        case 'integer': return isStrictIntegerType;
+        case 'bigint': return isStrictBigIntType;
+        case 'number': return isStrictNumberType;
+        case 'string': return isStrictStringType;
+        default: break;
+      }
+    }
+    return undefined;
   }
 
   registerBaseUriCallBack(callback) {
