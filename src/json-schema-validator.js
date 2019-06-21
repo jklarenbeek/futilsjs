@@ -446,7 +446,7 @@ export function createComplexSequence() {
         }
         if (regs.length === 0) regs = undefined;
       }
-      // TODO: this is gonna give problems 
+      // TODO: this is gonna give problems
       // when there are only patternRequired props implemented
       if (keys.length > 0) {
         members.push('_required_properties_');
