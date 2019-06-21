@@ -1,8 +1,8 @@
 import {
   integerFormats,
   bigIntFormats,
-  //numberFormats,
   floatFormats,
+  numberFormats,
 //stringFormats,
 //arrayFormats,
 //objectFormats,
@@ -12,6 +12,8 @@ import {
   isPureObject,
   isPureArray,
 } from './types-base';
+
+//#region Schema Types
 
 export function isUnkownSchema(schema) {
   return (schema.type == null
@@ -135,7 +137,9 @@ export const schemaTypes = {
   tuple: isTupleSchema,
 };
 
-// DATA TYPES
+//#endregion
+
+//#region Data Types
 
 export function isStrictBooleanType(data) {
   return data === false || data === true;
@@ -293,3 +297,39 @@ export function isStrictTypedArray(data) {
     || data.constructor === BigUint64Array);
 }
 isStrictTypedArray.typeName = 'array';
+
+export function getCallbackIsStrictDataType(type, format, isstrict = false) {
+  if (type === 'object') {
+    if (isstrict) {
+      return isStrictObjectType;
+    }
+    return isObjectishType;
+  }
+  else if (type === 'array') {
+    if (isStrictStringType(format)) {
+      const at = numberFormats[format]
+        ? numberFormats[format].arrayType
+        : undefined;
+      if (at) {
+        return createIsStrictObjectOfType(at);
+      }
+    }
+  }
+  else if (type === 'map') {
+    throw new Error('not implemented, yet!');
+  }
+  else if (type === 'tuple') {
+    throw new Error('not implemented, yet!');
+  }
+  else {
+    switch (type) {
+      case 'boolean': return isStrictBooleanType;
+      case 'integer': return isStrictIntegerType;
+      case 'bigint': return isStrictBigIntType;
+      case 'number': return isStrictNumberType;
+      case 'string': return isStrictStringType;
+      default: break;
+    }
+  }
+  return undefined;
+}

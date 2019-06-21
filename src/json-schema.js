@@ -6,6 +6,7 @@
 /* eslint-disable no-lonely-if */
 
 import { mathi32_max } from './int32-math';
+
 import {
   isPureArray,
   isPureTypedArray,
@@ -44,10 +45,13 @@ import {
 } from './json-schema-types';
 
 import {
+  createNumberFormatCompiler,
+} from './json-schema-validator';
+
+import {
   numberFormats,
   stringFormats,
   dateTimeFormats,
-  createSchemaNumberFormatCompiler,
 } from './json-schema-formats';
 
 import {
@@ -187,7 +191,7 @@ export class JSONSchemaDocument {
         return true;
       }
       else {
-        const fn = createSchemaNumberFormatCompiler(name, schema);
+        const fn = createNumberFormatCompiler(name, schema);
         if (fn) {
           this.formatters[name] = fn;
           return true;
@@ -195,6 +199,10 @@ export class JSONSchemaDocument {
       }
     }
     return false;
+  }
+
+  getFormatCompiler(name) {
+    return this.formatters[name];
   }
 
   registerDefaultFormatCompilers() {
@@ -212,36 +220,6 @@ export class JSONSchemaDocument {
     }
   }
   //#endregion
-
-  getIsDataTypeCallback(type, format, isstrict = false) {
-    if (type === 'object') {
-      if (isstrict) {
-        return isStrictObjectType;
-      }
-      return isObjectishType;
-    }
-    else if (type === 'array') {
-      if (isStrictStringType(format)) {
-        const at = numberFormats[format]
-          ? numberFormats[format].arrayType
-          : undefined;
-        if (at) {
-          return createIsStrictObjectOfType(at);
-        }
-      }
-    }
-    else {
-      switch (type) {
-        case 'boolean': return isStrictBooleanType;
-        case 'integer': return isStrictIntegerType;
-        case 'bigint': return isStrictBigIntType;
-        case 'number': return isStrictNumberType;
-        case 'string': return isStrictStringType;
-        default: break;
-      }
-    }
-    return undefined;
-  }
 
   registerBaseUriCallBack(callback) {
     this.baseUriCallback = callback;
