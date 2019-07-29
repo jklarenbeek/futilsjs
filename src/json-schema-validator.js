@@ -433,7 +433,7 @@ function compileStringPattern(owner, schema, members, addError) {
   return undefined;
 }
 
-function compileBasicObject(owner, schema, members, addError) {
+function compileObjectBasic(owner, schema, members, addError) {
   let keys = getPureArray(schema.required);
   if (keys == null) return undefined;
 
@@ -581,7 +581,7 @@ function compileBasicObject(owner, schema, members, addError) {
   return undefined;
 }
 
-function compileBasicArray(owner, schema, members, addError) {
+function compileArrayBasic(owner, schema, members, addError) {
   const min = getPureInteger(schema.minItems);
   const max = getPureInteger(schema.maxItem);
 
@@ -785,11 +785,11 @@ export function compileSchemaObjectValidator(owner, schema, schemaPath, dataPath
   const fnStringPattern = fallback(
     compileStringPattern(owner, schema, members, addError),
   );
-  const fnBasicObject = fallback(
-    compileBasicObject(owner, schema, members, addError),
+  const fnObjectBasic = fallback(
+    compileObjectBasic(owner, schema, members, addError),
   );
-  const fnBasicArray = fallback(
-    compileBasicArray(owner, schema, members, addError),
+  const fnArrayBasic = fallback(
+    compileArrayBasic(owner, schema, members, addError),
   );
 
   return function validateSchemaObject(data, dataRoot) {
@@ -800,8 +800,8 @@ export function compileSchemaObjectValidator(owner, schema, schemaPath, dataPath
       && fnNumberMultipleOf(data, dataRoot)
       && fnStringLength(data, dataRoot)
       && fnStringPattern(data, dataRoot)
-      && fnBasicObject(data, dataRoot)
-      && fnBasicArray(data, dataRoot);
+      && fnObjectBasic(data, dataRoot)
+      && fnArrayBasic(data, dataRoot);
   };
 }
 

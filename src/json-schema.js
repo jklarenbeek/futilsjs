@@ -60,8 +60,6 @@ import {
   JSONPointer,
 } from './json-pointer';
 
-//#region schema type classes
-
 export function JSONSchema_expandSchemaReferences(json, baseUri, callback) {
   // in place merge of object members
   // TODO: circular reference check.
@@ -84,17 +82,24 @@ export function JSONSchema_expandSchemaReferences(json, baseUri, callback) {
     });
 }
 
-export class JSONSchemaDocument {
+export class JSONDocument {
   constructor(baseUri) {
+    if (this.constructor === JSONDocument) {
+      throw new Error('JSONDocument is an abstract class');
+    }
     this.baseUri = baseUri;
+  }
+}
+
+export class JSONSchemaDocument extends JSONDocument {
+  constructor(baseUri) {
+    super(baseUri);
     this.schema = null;
     this.formatters = {};
     this.handlers = {};
     this.defaultHandler = null;
     this.baseUriCallback = undefined;
   }
-
-  //#region Schema Handlers
 
   registerSchemaHandler(formatName = 'default', schemaHandler) {
     if (schemaHandler instanceof JSONSchemaObject) {
@@ -179,10 +184,6 @@ export class JSONSchemaDocument {
       : undefined;
   }
 
-  //#endregion
-
-  //#region Formatters
-
   registerFormatCompiler(name, schema) {
     if (this.formatters[name] == null) {
       const r = typeof schema;
@@ -219,7 +220,6 @@ export class JSONSchemaDocument {
       this.registerFormatCompiler(key, item);
     }
   }
-  //#endregion
 
   registerBaseUriCallBack(callback) {
     this.baseUriCallback = callback;
@@ -829,5 +829,3 @@ export class JSONSchemaTupleType extends JSONSchemaObject {
     return err;
   }
 }
-
-//#endregion
