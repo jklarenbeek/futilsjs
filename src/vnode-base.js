@@ -4,10 +4,10 @@ import { Array_collapseShallow } from './types-Array';
 
 export class VNode {
   constructor(name, attributes, children) {
-    this.key = attributes.key;
-    this.attributes = attributes;
     if (name.constructor !== String) throw new Error('ERROR: new VNode without a nodeName');
     this.nodeName = name;
+    this.key = attributes.key;
+    this.attributes = attributes;
     this.children = children;
   }
 }

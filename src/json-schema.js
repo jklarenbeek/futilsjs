@@ -34,14 +34,6 @@ import {
   isObjectSchema,
   isArraySchema,
   isTupleSchema,
-  isStrictBooleanType,
-  isStrictIntegerType,
-  isStrictBigIntType,
-  isStrictNumberType,
-  isStrictStringType,
-  createIsStrictObjectOfType,
-  isStrictObjectType,
-  isObjectishType,
 } from './json-schema-types';
 
 import {

@@ -24,8 +24,29 @@
 // DEALINGS IN THE SOFTWARE.
 //
 import { collapseCssClass } from './css';
-import { cloneObject as clone } from './types-base';
+import { cloneObject } from './types-base';
 import { VNode } from './vnode-base';
+
+function Path_getValue(path, source) {
+  let i = 0;
+  const l = path.length;
+  while (i < l) {
+    source = source[path[i++]];
+  }
+  return source;
+}
+
+function Path_setValue(path, value, source) {
+  const target = {};
+  if (path.length) {
+    target[path[0]] = path.length > 1
+      ? Path_setValue(path.slice(1), value, source[path[0]])
+      : value;
+    return cloneObject(source, target);
+  }
+  return value;
+}
+
 
 export function app(state, actions, view, container) {
   const map = [].map;
@@ -34,8 +55,8 @@ export function app(state, actions, view, container) {
   const lifecycle = [];
   let skipRender = false;
   let isRecycling = true;
-  let globalState = clone(state);
-  const wiredActions = wireStateToActions([], globalState, clone(actions));
+  let globalState = cloneObject(state);
+  const wiredActions = wireStateToActions([], globalState, cloneObject(actions));
 
   scheduleRender();
 
@@ -83,30 +104,10 @@ export function app(state, actions, view, container) {
     }
   }
 
-  function set(path, value, source) {
-    const target = {};
-    if (path.length) {
-      target[path[0]] = path.length > 1
-        ? set(path.slice(1), value, source[path[0]])
-        : value;
-      return clone(source, target);
-    }
-    return value;
-  }
-
-  function get(path, source) {
-    let i = 0;
-    const l = path.length;
-    while (i < l) {
-      source = source[path[i++]];
-    }
-    return source;
-  }
-
   function wireStateToActions(path, myState, myActions) {
     function createActionProxy(key, action) {
       myActions[key] = function actionProxy(data) {
-        const slice = get(path, globalState);
+        const slice = Path_getValue(path, globalState);
 
         let result = action(data);
         if (typeof result === 'function') {
@@ -114,7 +115,7 @@ export function app(state, actions, view, container) {
         }
 
         if (result && result !== slice && !result.then) {
-          globalState = set(path, clone(slice, result), globalState);
+          globalState = Path_setValue(path, cloneObject(slice, result), globalState);
           scheduleRender(globalState);
         }
 
@@ -130,8 +131,8 @@ export function app(state, actions, view, container) {
         // wire slice/namespace of state to actions
         wireStateToActions(
           path.concat(key),
-          (myState[key] = clone(myState[key])),
-          (myActions[key] = clone(myActions[key])),
+          (myState[key] = cloneObject(myState[key])),
+          (myActions[key] = cloneObject(myActions[key])),
         );
       }
     }
@@ -156,7 +157,7 @@ export function app(state, actions, view, container) {
         if (typeof oldValue === 'string') {
           oldValue = element.style.cssText = '';
         }
-        const lval = clone(oldValue, value);
+        const lval = cloneObject(oldValue, value);
         for (const i in lval) {
           if (lval.hasOwnProperty(i)) {
             const style = (value == null || value[i] == null) ? '' : value[i];
@@ -251,7 +252,7 @@ export function app(state, actions, view, container) {
   }
 
   function updateElement(element, oldAttributes, attributes, isSvg) {
-    for (const name in clone(oldAttributes, attributes)) {
+    for (const name in cloneObject(oldAttributes, attributes)) {
       // eslint-disable-next-line operator-linebreak
       if (attributes[name] !==
         (name === 'value' || name === 'checked'
