@@ -20,10 +20,15 @@ import {
   getPureBool,
   getPureNumber,
   getPureInteger,
-  cloneObject,
 } from './types-base';
 
-import { String_createRegExp } from './types-String';
+import {
+  cloneObject,
+} from './types-Object';
+
+import {
+  String_createRegExp,
+} from './types-String';
 
 import {
   getSchemaSelectorName,
