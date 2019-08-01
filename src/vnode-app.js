@@ -24,7 +24,7 @@
 // DEALINGS IN THE SOFTWARE.
 //
 import { collapseCssClass } from './css';
-import { cloneObject } from './types-base';
+import { cloneObject } from './types-Object';
 import { VNode } from './vnode-base';
 
 function Path_getValue(path, source) {

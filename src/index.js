@@ -1,4 +1,5 @@
 export * from './types-base';
+export * from './types-Object';
 export * from './types-String';
 export * from './types-Array';
 export * from './types-Map';
