@@ -9,6 +9,7 @@ import data from './examples/basic-person.json';
 
 const doc = new JSONSchemaDocument();
 doc.registerDefaultSchemaHandlers();
+doc.registerDefaultFormatCompilers();
 doc.loadSchema(data);
 
 console.log(doc, new JSONSchemaBooleanType());
