@@ -12,4 +12,5 @@ doc.registerDefaultSchemaHandlers();
 doc.registerDefaultFormatCompilers();
 doc.loadSchema(data);
 
+console.log('what the h*ll am I doing..');
 console.log(doc, new JSONSchemaBooleanType());
