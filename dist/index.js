@@ -36,6 +36,8 @@ var int32Math = {
 };
 
 function isPrimitiveTypeEx(typeString) {
+  // primitives: boolean = 1, integer = 32, float = 64, bigint = 0, letter = 16
+  // complex: struct, array, string, map
   return typeString === 'integer'
     || typeString === 'number'
     || typeString === 'string'
@@ -54,9 +56,103 @@ function sanitizePrimitiveValue(value, nullable, defaultValue = undefined) {
   return isPrimitiveType(value) ? value : defaultValue;
 }
 
-function isPureNumber(obj) {
+// region isPureNumber
+function isPureNumber_asNaN(obj) {
+  // eslint-disable-next-line no-restricted-globals
+  return isNaN(obj) === false;
+}
+
+function isPureNumber_asNumber(obj) {
   return (Number(obj) || false) !== false;
 }
+
+function isPureNumber_asParseInt(obj) {
+  // eslint-disable-next-line radix
+  const n = parseInt(obj);
+  // eslint-disable-next-line no-self-compare
+  return n === n;
+}
+
+function isPureNumber_asParseFloat(obj) {
+  // eslint-disable-next-line radix
+  const n = parseFloat(obj);
+  // eslint-disable-next-line no-self-compare
+  return n === n; // we equal NaN with NaN here.
+}
+
+function isPureNumber_asMathRound(obj) {
+  const n = Math.round(obj);
+  // eslint-disable-next-line no-self-compare
+  return n === n; // we equal NaN with NaN here.
+}
+
+function isPureNumber_asCastFloat(obj) {
+  // eslint-disable-next-line no-self-compare
+  return +obj === +obj; // we equal NaN with NaN here.
+}
+
+// endregion
+
+/**
+ * @example
+ *  const fns_all = [ isPureNumber_asNumber, isPureNumber_asParseFloat ];
+ *  const test_stringi = ['12345', '54321', '12358', '85321'];
+ *  const test_stringf = ['12.345', '54.321', '12.358', '85.321'];
+ *  const test_nan = ['abcde', 'edcba', 'abceh', 'hecba'];
+ *  const test_number = [13.234, 21.123, 34.456, 55.223];
+ *  const test_integer = [13, 21, 34, 55];
+ *  const pref_idx = performanceIndexOfUnaryBool(fns_all, [ test_number, test_integer ]);
+ *  const pref_fn = pref_idx >= 0 ? fns_all[pref_idx] : undefined;
+ *
+ * @param {*} functionList
+ * @param {*} testList
+ */
+function performanceIndexOfUnaryBool(functionList, testList) {
+  let index = -1;
+  let start = 0.0;
+  let end = 0.0;
+  let delta = 0.0;
+  // eslint-disable-next-line no-unused-vars
+  let tmp = false;
+
+  // eslint-disable-next-line func-names
+  let fn = function () { };
+
+  for (let i = 0; i < functionList.length; ++i) {
+    fn = functionList[i];
+    end = 0.0;
+    for (let j = 0; j < testList.length; ++j) {
+      const test = testList[j];
+      start = performance.now();
+      for (let k = 0; k < 1000; ++k) {
+        tmp |= fn(test % k);
+      }
+      end += performance.now() - start;
+    }
+    end /= testList.length;
+
+    if (delta > end) {
+      delta = end;
+      index = i;
+    }
+  }
+  return index;
+}
+
+const isPureNumber = (function calibrate(doit = false) {
+  if (!doit) return isPureNumber_asNumber;
+  const floats = [Math.PI, 13.234, 21.123, 34.456, 55.223];
+  const integers = [13, 21, 34, 55, 108];
+  const fns = [
+    isPureNumber_asNaN,
+    isPureNumber_asNumber,
+    isPureNumber_asParseInt,
+    isPureNumber_asParseFloat,
+    isPureNumber_asMathRound,
+    isPureNumber_asCastFloat,
+  ];
+  return fns[performanceIndexOfUnaryBool(fns, [floats, integers])];
+})(false);
 
 function isPureString(obj) {
   return obj != null && obj.constructor === String;
@@ -64,6 +160,32 @@ function isPureString(obj) {
 
 function isPureObject(obj) {
   return (typeof obj === 'object' && obj.constructor !== Array);
+}
+
+function isPureObjectReally(obj) {
+  return (typeof obj === 'object'
+    && !(obj.constructor === Array
+      || obj.constructor === Map
+      || obj.constructor === Set
+      || obj.constructor === WeakMap
+      || obj.constructor === WeakSet
+      || obj.constructor === Int8Array
+      || obj.constructor === Int16Array
+      || obj.constructor === Int32Array
+      // eslint-disable-next-line no-undef
+      || obj.constructor === BigInt64Array
+      // eslint-disable-next-line no-undef
+      || obj.constructor === UInt8Array
+      || obj.constructor === Uint8ClampedArray
+      // eslint-disable-next-line no-undef
+      || obj.constructor === UInt32Array
+      // eslint-disable-next-line no-undef
+      || obj.constructor === UInt16Array
+      // eslint-disable-next-line no-undef
+      || obj.constructor === UInt32Array
+      // eslint-disable-next-line no-undef
+      || obj.constructor === BigUint64Array
+    ));
 }
 
 function isPureArray(obj) {
@@ -75,13 +197,19 @@ function isPureTypedArray(obj) {
     && (obj.constructor === Int8Array
       || obj.constructor === Int16Array
       || obj.constructor === Int32Array
-      //|| obj.constructor === BigInt64Array
-      //|| obj.constructor === UInt8Array
+      // eslint-disable-next-line no-undef
+      || obj.constructor === BigInt64Array
+      // eslint-disable-next-line no-undef
+      || obj.constructor === UInt8Array
       || obj.constructor === Uint8ClampedArray
-      //|| obj.constructor === UInt32Array
-      //|| obj.constructor === UInt16Array
-      //|| obj.constructor === UInt32Array
-      //|| obj.constructor === BigUint64Array
+      // eslint-disable-next-line no-undef
+      || obj.constructor === UInt32Array
+      // eslint-disable-next-line no-undef
+      || obj.constructor === UInt16Array
+      // eslint-disable-next-line no-undef
+      || obj.constructor === UInt32Array
+      // eslint-disable-next-line no-undef
+      || obj.constructor === BigUint64Array
     ));
 }
 
@@ -118,7 +246,7 @@ function isStringOrObject(obj) {
       || (obj.constructor !== Array && typeof obj === 'object'));
 }
 
-function getBoolOrNumber(obj, def) {
+function getBoolOrNumber(obj, def = undefined) {
   return isBoolOrNumber(obj) ? obj : def;
 }
 
@@ -158,7 +286,7 @@ function getPureNumber(obj, def) {
 }
 
 function getPureInteger(obj, def) {
-  return (mathi32_round(obj)|0) || def;
+  return mathi32_round(obj) || def;
 }
 
 function getPureBool(obj, def) {
@@ -5062,5 +5190,5 @@ class JSONSchemaTupleType extends JSONSchemaObject {
   }
 }
 
-export { Array_collapseShallow, Array_patchPrototype, Array_unique, Array_uniqueMerge, BetterMap, BetterMap_prototype_getItem, BetterMap_prototype_set, BetterMap_prototype_setItem, JSONDocument, JSONPointer, JSONPointer_addFolder, JSONPointer_addRelativePointer, JSONPointer_compileGetPointer, JSONPointer_fragmentSeparator, JSONPointer_pathSeparator, JSONPointer_resolveRelative, JSONPointer_traverseFilterObjectBF, JSONSchemaArrayType, JSONSchemaBooleanType, JSONSchemaDocument, JSONSchemaEmptyType, JSONSchemaIntegerType, JSONSchemaNumberType, JSONSchemaObject, JSONSchemaObjectType, JSONSchemaSelectorType, JSONSchemaStringType, JSONSchemaTupleType, JSONSchemaXMLObject, JSONSchema_expandSchemaReferences, Letter_isEmptyOrWhiteSpace, Letter_isLowerCase, Letter_isModifierLetter, Letter_isNumberLetter, Letter_isOtherLetter, Letter_isSymbol, Letter_isTileCase, Letter_isUpperCase, Map_patchPrototype, Queue, String_byteCount, String_createRegExp, String_decodeURI, String_encodeURI, String_fromCamelToSnake, String_fromSnakeToCamel, String_indexOfEndInteger, String_trimLeft, Tree, TreeNode, Tree_findIndex, Tree_traverseBF, Tree_traverseDF, VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseToString, copyAttributes, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getBoolOrArray, getBoolOrNumber, getBoolOrObject, getObjectAllKeys, getObjectAllValues, getObjectCountItems, getObjectFirstItem, getObjectFirstKey, getPureArray, getPureArrayMinItems, getPureBool, getPureInteger, getPureNumber, getPureObject, getPureString, getStringOrArray, getStringOrObject, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isBoolOrArray, isBoolOrNumber, isBoolOrObject, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureArray, isPureNumber, isPureObject, isPureString, isPureTypedArray, isStringOrArray, isStringOrObject, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_add, vec3f64_adds, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_dot, vec3f64_iadd, vec3f64_iadds, vec3f64_idiv, vec3f64_idivs, vec3f64_imul, vec3f64_imuls, vec3f64_isub, vec3f64_isubs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_mul, vec3f64_muls, vec3f64_new, vec3f64_sub, vec3f64_subs, vec3f64_unit, workletState, wrapVN };
+export { Array_collapseShallow, Array_patchPrototype, Array_unique, Array_uniqueMerge, BetterMap, BetterMap_prototype_getItem, BetterMap_prototype_set, BetterMap_prototype_setItem, JSONDocument, JSONPointer, JSONPointer_addFolder, JSONPointer_addRelativePointer, JSONPointer_compileGetPointer, JSONPointer_fragmentSeparator, JSONPointer_pathSeparator, JSONPointer_resolveRelative, JSONPointer_traverseFilterObjectBF, JSONSchemaArrayType, JSONSchemaBooleanType, JSONSchemaDocument, JSONSchemaEmptyType, JSONSchemaIntegerType, JSONSchemaNumberType, JSONSchemaObject, JSONSchemaObjectType, JSONSchemaSelectorType, JSONSchemaStringType, JSONSchemaTupleType, JSONSchemaXMLObject, JSONSchema_expandSchemaReferences, Letter_isEmptyOrWhiteSpace, Letter_isLowerCase, Letter_isModifierLetter, Letter_isNumberLetter, Letter_isOtherLetter, Letter_isSymbol, Letter_isTileCase, Letter_isUpperCase, Map_patchPrototype, Queue, String_byteCount, String_createRegExp, String_decodeURI, String_encodeURI, String_fromCamelToSnake, String_fromSnakeToCamel, String_indexOfEndInteger, String_trimLeft, Tree, TreeNode, Tree_findIndex, Tree_traverseBF, Tree_traverseDF, VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseToString, copyAttributes, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getBoolOrArray, getBoolOrNumber, getBoolOrObject, getObjectAllKeys, getObjectAllValues, getObjectCountItems, getObjectFirstItem, getObjectFirstKey, getPureArray, getPureArrayMinItems, getPureBool, getPureInteger, getPureNumber, getPureObject, getPureString, getStringOrArray, getStringOrObject, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isBoolOrArray, isBoolOrNumber, isBoolOrObject, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureArray, isPureNumber, isPureObject, isPureObjectReally, isPureString, isPureTypedArray, isStringOrArray, isStringOrObject, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, performanceIndexOfUnaryBool, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_add, vec3f64_adds, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_dot, vec3f64_iadd, vec3f64_iadds, vec3f64_idiv, vec3f64_idivs, vec3f64_imul, vec3f64_imuls, vec3f64_isub, vec3f64_isubs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_mul, vec3f64_muls, vec3f64_new, vec3f64_sub, vec3f64_subs, vec3f64_unit, workletState, wrapVN };
 //# sourceMappingURL=index.js.map
