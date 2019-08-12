@@ -66,7 +66,7 @@ export function JSONSchema_expandSchemaReferences(json, baseUri, callback) {
       delete obj.$ref;
       const pointer = new JSONPointer(baseUri, ref);
       const root = (pointer.baseUri != baseUri)
-        ? ((typeof callback === 'function')
+        ? (isFn(callback)
           ? callback(baseUri)
           : json)
         : json;
@@ -227,7 +227,7 @@ export class JSONSchemaDocument extends JSONDocument {
   }
 
   loadSchema(json, baseUri) {
-    const callback = typeof this.baseUriCallback === 'function'
+    const callback = isFn(this.baseUriCallback);
       ? this.baseUriCallback
       : (function JSONSchemaDocument_loadSchemaDefaultCallback() { return json; });
 

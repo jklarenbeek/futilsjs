@@ -1,6 +1,7 @@
 
 
 import { Array_collapseShallow } from './types-Array';
+import { isFn } from './types-base';
 
 export class VNode {
   constructor(name, attributes, children) {
@@ -15,7 +16,7 @@ export class VNode {
 export function VN(name, attributes, ...rest) {
   attributes = attributes || {};
   const children = Array_collapseShallow(rest);
-  return typeof name === 'function'
+  return isFn(name)
     ? name(attributes, children)
     : new VNode(name, attributes, children);
 }

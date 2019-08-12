@@ -15,6 +15,14 @@ export function isPrimitiveType(obj) {
   return isPrimitiveTypeEx(tp);
 }
 
+export function isFnEx(typeString) {
+  return typeString === 'function';
+}
+
+export function isFn(obj) {
+  return typeof obj === 'function';
+}
+
 export function sanitizePrimitiveValue(value, nullable, defaultValue = undefined) {
   if (nullable && value == null) return value;
   if (value == null) return defaultValue;

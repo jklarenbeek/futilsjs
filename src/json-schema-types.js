@@ -11,6 +11,8 @@ import {
 import {
   isPureObject,
   isPureArray,
+  isFn,
+  isFnEx,
 } from './types-base';
 
 //#region Schema Types
@@ -195,7 +197,7 @@ isStrictObjectOfType.typeName = 'object';
 export function createIsStrictObjectOfType(fn) {
   // eslint-disable-next-line no-undef-init
   let usefull = undefined;
-  if (typeof fn === 'function') {
+  if (isFn(fn)) {
     usefull = function isStrictObjectOfTypeFn(data) {
       return isStrictObjectOfType(data, fn);
     };
@@ -204,10 +206,11 @@ export function createIsStrictObjectOfType(fn) {
     const types = [];
     for (let i = 0; i < fn.length; ++i) {
       const type = fn[i];
-      if (typeof type === 'string') {
+      const tn = typeof type;
+      if (tn === 'string') {
         types.push('data.constructor===' + type);
       }
-      else if (typeof type === 'function') {
+      else if (tn === 'function') {
         types.push('data.constructor===' + type.name);
       }
     }

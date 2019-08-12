@@ -26,6 +26,7 @@
 import { collapseCssClass } from './css';
 import { cloneObject } from './types-Object';
 import { VNode } from './vnode-base';
+import { isFn } from './types-base';
 
 function Path_getValue(path, source) {
   let i = 0;
@@ -75,7 +76,7 @@ export function app(state, actions, view, container) {
   }
 
   function resolveNode(node) {
-    if (typeof node === 'function')
+    if (isFn(node))
       return resolveNode(node(globalState, wiredActions));
     else
       return node || '';
@@ -110,7 +111,7 @@ export function app(state, actions, view, container) {
         const slice = Path_getValue(path, globalState);
 
         let result = action(data);
-        if (typeof result === 'function') {
+        if (isFn(result)) {
           result = result(slice, myActions);
         }
 
@@ -124,7 +125,7 @@ export function app(state, actions, view, container) {
     }
 
     for (const key in myActions) {
-      if (typeof myActions[key] === 'function') {
+      if (isFn(myActions[key])) {
         createActionProxy(key, myActions[key]);
       }
       else {

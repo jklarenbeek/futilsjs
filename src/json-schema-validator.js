@@ -10,6 +10,7 @@ import {
   getPureInteger,
   isBoolOrNumber,
   getBoolOrArray,
+  isFn,
 } from './types-base';
 
 import {
@@ -757,7 +758,7 @@ export function compileSchemaObjectValidator(owner, schema, schemaPath, dataPath
   }
 
   function fallback(compiled) {
-    if (typeof compiled === 'function') return compiled;
+    if (isFn(compiled)) return compiled;
     // eslint-disable-next-line no-unused-vars
     return function trueThat(whatever) {
       return true;
@@ -822,7 +823,7 @@ export function compileSchemaChildrenValidator(owner, schema, schemaPath, dataPa
   }
 
   function fallback(compiled) {
-    if (typeof compiled === 'function') return compiled;
+    if (isFn(compiled)) return compiled;
     // eslint-disable-next-line no-unused-vars
     return function trueThat(whatever) {
       return true;
