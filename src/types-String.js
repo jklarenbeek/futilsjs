@@ -57,6 +57,12 @@ export function String_trimLeft(str, c) {
   return i === 0 ? str : str.substring(i);
 }
 
+export function String_trimRight(str, c) {
+  let l = str.length;
+  while (c === str[--l]);
+  return str.slice(0, l + 1);
+}
+
 export function String_encodeURI(str) {
   str = encodeURIComponent(str);
   return str.replace(/[!'()*]/g, function String_encodeURICallback(c) {
