@@ -1,3 +1,5 @@
+import { isFn } from "./types-base";
+
 /* eslint-disable quote-props */
 
 export const integerFormats = {
@@ -14,15 +16,15 @@ export const integerFormats = {
     arrayType: Uint8Array,
     bits: 8,
     signed: false,
-    minimum: -128,
-    maximum: 127,
+    minimum: 0,
+    maximum: 255,
   },
   uint8c: {
     type: 'integer',
     arrayType: Uint8ClampedArray,
     bits: 8,
     signed: false,
-    minimum: -128,
+    minimum: 0,
     maximum: 255,
     clamped: true,
   },
@@ -152,69 +154,98 @@ export const dateTimeFormats = {
   },
 };
 
-export const stringFormats = {
-  'date-time': function compileDate(owner, schema, members, addError) {
-    if (schema.format === 'date-time') {
-      const fmin = schema.formatMinimum;
-      const femin = schema.formatExclusiveMinimum;
-      const min = Date.parse(fmin) || undefined;
-      const emin = femin === true ? min
-        : Date.parse(femin) || undefined;
+function compileDateFormat(owner, schema, addMember) {
+  if (schema.format === 'date-time') {
+    const fmin = schema.formatMinimum;
+    const femin = schema.formatExclusiveMinimum;
+    const min = Date.parse(fmin) || undefined;
+    const emin = femin === true ? min
+      : Date.parse(femin) || undefined;
 
-      const fmax = schema.formatMaximum;
-      const femax = schema.formatExclusiveMaximum;
-      const max = Date.parse(fmax);
-      const emax = femax === true ? max
-        : Date.parse(femax) || undefined;
+    const fmax = schema.formatMaximum;
+    const femax = schema.formatExclusiveMaximum;
+    const max = Date.parse(fmax);
+    const emax = femax === true ? max
+      : Date.parse(femax) || undefined;
 
-      if (emin) members.push('formatExclusiveMinimum');
-      else if (min) members.push('formatMinimum');
-      if (emax) members.push('formatExclusiveMaximum');
-      else if (max) members.push('formatMaximum');
+    // eslint-disable-next-line no-inner-declarations
+    function isStringOrDate(data) {
+      return (data != null && (data.constructor === String || data.constructor === Date));
+    }
 
-      return function formatDate(data) {
-        let valid = true;
-        if (data != null && (data.constructor === String || data.constructor === Date)) {
+    // eslint-disable-next-line no-inner-declarations
+    function fallback(fn) { return isFn(fn) ? fn : function allgood() { return true; }; }
+
+    // eslint-disable-next-line no-inner-declarations
+    function compileMinimum() {
+      if (emin) {
+        const addError = addMember('formatExclusiveMinimum', emin, compileDateFormat);
+        return function formatExclusiveMinimum(date) {
+          if (!(date > emin)) return addError(date);
+          return true;
+        };
+      }
+      else if (min) {
+        const addError = addMember('formatMinimum', min, compileDateFormat);
+        return function formatMinimum(date) {
+          if (!(date >= min)) return addError(date);
+          return true;
+        };
+      }
+      return undefined;
+    }
+
+    // eslint-disable-next-line no-inner-declarations
+    function compileMaximum() {
+      if (emax) {
+        const addError = addMember('formatExclusiveMaximum', emax, compileDateFormat);
+        return function formatExclusiveMaximum(date) {
+          if (!(date < emax)) return addError(date);
+          return true;
+        };
+      }
+      else if (max) {
+        const addError = addMember('formatMaximum', max, compileDateFormat);
+        return function formatMaximum(date) {
+          if (!(date <= max)) return addError(date);
+          return true;
+        };
+      }
+      return undefined;
+    }
+
+    // eslint-disable-next-line no-inner-declarations
+    function compileDateType() {
+      const addError = addMember('format', 'date', compileDateFormat);
+      return function parseDate(data) {
+        if (isStringOrDate(data)) {
           const date = Date.parse(data) || false;
           if (date === false) return addError(
             'format',
             'date',
             data,
           );
-
-          if (emin) {
-            if (!(date > emin)) valid = addError(
-              'formatExclusiveMinimum',
-              femin === true ? fmin : femin,
-              data,
-            );
-          }
-          else if (min) {
-            if (!(date >= min)) valid = addError(
-              'formatMinimum',
-              fmin,
-              data,
-            );
-          }
-
-          if (emax) {
-            if (!(date < emax)) valid = addError(
-              'formatExclusiveMaximum',
-              femax === true ? fmax : femax,
-              data,
-            );
-          }
-          else if (max) {
-            if (!(date <= emax)) valid = addError(
-              'formatMaximum',
-              fmax,
-              data,
-            );
-          }
+          return date;
         }
-        return valid;
+        return true;
       };
     }
-    return undefined;
-  },
+
+    const parseDate = compileDateType();
+
+    const isMinimum = fallback(compileMinimum());
+    const isMaximum = fallback(compileMaximum());
+
+    return function formatDate(data) {
+      const date = parseDate(data);
+      if (date === false) return false;
+      if (date === true) return true;
+      return isMinimum(date) && isMaximum(date);
+    };
+  }
+  return undefined;
+}
+
+export const stringFormats = {
+  'date-time': compileDateFormat,
 };

@@ -13,6 +13,10 @@ export class VNode {
   }
 }
 
+export function getVNodeKey(node) {
+  return node ? node.key : null;
+}
+
 export function VN(name, attributes, ...rest) {
   attributes = attributes || {};
   const children = Array_collapseShallow(rest);

@@ -40,17 +40,17 @@ export class SchemaValidationError {
 }
 
 
-function compileSchemaType(owner, schema, members, addError) {
+function compileSchemaType(owner, schema, addMember) {
   const schemaRequired = getBoolOrArray(schema.required, false) && true;
 
   let schemaNullable = getPureBool(schema.nullable);
 
   function compileRequired() {
     if (schemaRequired === true) {
-      members.push('required');
+      const addError = addMember('required', schemaRequired, compileSchemaType);
       return function required(data) {
         if (data === undefined) {
-          addError('required', schemaRequired, data);
+          addError(data);
           return true;
         }
         return false;
@@ -63,10 +63,10 @@ function compileSchemaType(owner, schema, members, addError) {
 
   function compileNullable() {
     if (schemaNullable === false) {
-      members.push('nullable');
+      const addError = addMember('nullable', schemaNullable, compileSchemaType);
       return function nullable(data) {
         if (data === null) {
-          addError('nullable', schemaNullable, data);
+          addError(data);
           return true;
         }
         return false;
@@ -91,7 +91,7 @@ function compileSchemaType(owner, schema, members, addError) {
       if (isDataType) {
         const isrequired = compileRequired();
         const isnullable = compileNullable();
-        members.push('type');
+        const addError = addMember('type', isDataType.name, compileSchemaType, 'string');
 
         // create single type validator callback
         return function type(data, err = []) {
@@ -99,7 +99,7 @@ function compileSchemaType(owner, schema, members, addError) {
           if (isnullable(data, err)) return schemaNullable !== false;
           const valid = isDataType(data);
           if (!valid) {
-            addError('type', type, data);
+            addError(data);
           }
           return valid;
         };
@@ -125,7 +125,7 @@ function compileSchemaType(owner, schema, members, addError) {
       if (handlers.length > 1) {
         const isrequired = compileRequired();
         const isnullable = compileNullable();
-        members.push('type');
+        const addError = addMember('type', handlers, compileSchemaType, 'array');
 
         // create multiple type validator callback
         return function typeArray(data) {
@@ -139,7 +139,7 @@ function compileSchemaType(owner, schema, members, addError) {
               return true;
             }
           }
-          addError('type', handlers, data && data.constructor.name);
+          addError(data && data.constructor.name);
           return false;
         };
       }
@@ -153,34 +153,34 @@ function compileSchemaType(owner, schema, members, addError) {
   if (schemaRequired === true || schemaNullable === true) {
     const isrequired = compileRequired();
     const isnullable = compileNullable();
-    return function important(data, err = []) {
-      if (isrequired(data, err)) return !schemaRequired;
-      if (isnullable(data, err)) return schemaNullable !== false;
+    return function important(data) {
+      if (isrequired(data)) return !schemaRequired;
+      if (isnullable(data)) return schemaNullable !== false;
       return true;
     };
   }
   return undefined;
 }
 
-function compileSchemaFormat(owner, schema, members, addError) {
+function compileSchemaFormat(owner, schema, addMember) {
   if (isStrictStringType(schema.format)) {
     const format = owner.getFormatCompiler(schema.format);
     if (format) {
-      return format(owner, schema, members, addError);
+      return format(owner, schema, addMember);
     }
   }
   return undefined;
 }
 
-function compileEnumPrimitive(owner, schema, members, addError) {
+function compileEnumPrimitive(owner, schema, addMember) {
   const enums = getPureArrayMinItems(schema.enum, 1);
   if (enums) {
     if (isPrimitiveSchema(schema)) {
-      members.push('enum');
+      const addError = addMember('enum', enums, compileEnumPrimitive);
       return function enumPrimitive(data) {
         if (data != null && typeof data !== 'object') {
           if (!enums.includes(data)) {
-            addError('enum', enums, data);
+            addError(data);
             return false;
           }
         }
@@ -191,7 +191,7 @@ function compileEnumPrimitive(owner, schema, members, addError) {
   return undefined;
 }
 
-function compileNumberRange(owner, schema, members, addError) {
+function compileNumberRange(owner, schema, addMember) {
   const min = Number(schema.minimum) || undefined;
   const emin = schema.exclusiveMinimum === true
     ? min
@@ -216,94 +216,88 @@ function compileNumberRange(owner, schema, members, addError) {
       };
 
   if (emin && emax) {
-    members.push('exclusiveMinimum', 'exclusiveMaximum');
+    const addError = addMember(['exclusiveMinimum', 'exclusiveMaximum'], [emin, emax], compileNumberRange);
     return function betweenExclusive(data) {
       if (isDataType(data)) {
         const valid = data > emin && data < emax;
-        if (!valid) addError(['exclusiveMinimum', 'exclusiveMaximum'], [emin, emax], data);
+        if (!valid) addError(data);
         return valid;
       }
       return true;
     };
   }
   else if (emin && max) {
-    members.push('exclusiveMinimum', 'maximum');
+    const addError = addMember(['exclusiveMinimum', 'maximum'], [emin, max], compileNumberRange);
     return function betweenexclusiveMinimum(data) {
       if (isDataType(data)) {
         const valid = data > emin && data <= max;
-        if (!valid) addError(['exclusiveMinimum', 'maximum'], [emin, max], data);
+        if (!valid) addError(data);
         return valid;
       }
       return true;
     };
   }
   else if (emax && min) {
-    members.push('minimum', 'exclusiveMaximum');
+    const addError = addMember(['minimum', 'exclusiveMaximum'], [min, emax], compileNumberRange);
     return function betweenexclusiveMaximum(data) {
       if (isDataType(data)) {
-        const valid = data > emin && data <= max;
-        if (!valid) addError(['minimum', 'exclusiveMaximum'], [min, emax], data);
+        const valid = data >= min && data < emax;
+        if (!valid) addError(data);
         return valid;
       }
       return true;
     };
   }
   else if (min && max) {
-    members.push('minimum', 'maximum');
+    const addError = addMember(['minimum', 'maximum'], [min, max], compileNumberRange);
     return function between(data) {
       if (isDataType(data)) {
-        const valid = data > emin && data <= max;
-        if (!valid) addError(['minimum', 'maximum'], [min, max], data);
+        const valid = data >= min && data <= max;
+        if (!valid) addError(data);
         return valid;
       }
       return true;
     };
   }
   else if (emax) {
-    members.push('exclusiveMaximum');
-    if (max) members.push('maximum');
-
+    const addError = addMember('exclusiveMaximum', emax, compileNumberRange);
     return function exclusiveMaximum(data) {
       if (isDataType(data)) {
         const valid = data < emax;
-        if (!valid) addError('exclusiveMaximum', emax, data);
+        if (!valid) addError(data);
         return valid;
       }
       return true;
     };
   }
   else if (max) {
-    members.push('maximum');
-
+    const addError = addMember('maximum', max, compileNumberRange);
     return function maximum(data) {
       if (isDataType(data)) {
         const valid = data <= max;
-        if (!valid) addError('maximum', max, data);
+        if (!valid) addError(data);
         return valid;
       }
       return true;
     };
   }
   else if (emin) {
-    members.push('exclusiveMinimum');
-    if (min) members.push('minimum');
-
+    const addError = addMember('exclusiveMinimum', emin, compileNumberRange);
     return function exclusiveMinimum(data) {
       if (isDataType(data)) {
         const valid = data > emin;
-        if (!valid) addError('exclusiveMinimum', emin, data);
+        if (!valid) addError(data);
         return valid;
       }
       return true;
     };
   }
   else if (min) {
-    members.push('minimum');
-
+    const addError = addMember('minimum', min, compileNumberRange);
     return function minimum(data) {
       if (isDataType(data)) {
         const valid = data >= min;
-        if (!valid) addError('minimum', min, data);
+        if (!valid) addError(data);
         return valid;
       }
       return true;
@@ -312,18 +306,18 @@ function compileNumberRange(owner, schema, members, addError) {
   return undefined;
 }
 
-function compileNumberMultipleOf(owner, schema, members, addError) {
+function compileNumberMultipleOf(owner, schema, addMember) {
   const mulOf = getPureNumber(schema.multipleOf);
   // we compare against bigint too! javascript is awesome!
   // eslint-disable-next-line eqeqeq
   if (mulOf && mulOf != 0) {
-    members.push('multipleOf');
     if (Number.isInteger(mulOf)) {
+      const addError = addMember('multipleOf', mulOf, compileNumberMultipleOf, 'integer');
       if (isIntegerSchema(schema)) {
         return function multipleOfInteger(data) {
           if (Number.isInteger(data)) {
             const valid = (data % mulOf) === 0;
-            if (!valid) addError('multipleOf', mulOf, data);
+            if (!valid) addError(data);
             return valid;
           }
           return true;
@@ -333,7 +327,7 @@ function compileNumberMultipleOf(owner, schema, members, addError) {
         return function multipleOfIntAsNumber(data) {
           if (typeof data === 'number') {
             const valid = Number.isInteger(Number(data) / mulOf);
-            if (!valid) addError('multipleOf', mulOf, data);
+            if (!valid) addError(data);
             return valid;
           }
           return true;
@@ -342,23 +336,25 @@ function compileNumberMultipleOf(owner, schema, members, addError) {
     }
     if (isBigIntSchema(schema)) {
       const mf = BigInt(mulOf);
+      const addError = addMember('multipleOf', mf, compileNumberMultipleOf, 'bigint');
       return function multipleOfBigInt(data) {
         // eslint-disable-next-line valid-typeof
         if (typeof data === 'bigint') {
           // we compare against bigint too! javascript is awesome!
           // eslint-disable-next-line eqeqeq
           const valid = (data % mf) == 0;
-          if (!valid) addError('multipleOf', mf, data);
+          if (!valid) addError(data);
           return valid;
         }
         return true;
       };
     }
     else {
+      const addError = addMember('multipleOf', mulOf, compileNumberMultipleOf, 'number');
       return function multipleOf(data) {
         if (typeof data === 'number') {
           const valid = Number.isInteger(Number(data) / mulOf);
-          if (!valid) addError('multipleOf', mulOf, data);
+          if (!valid) addError(data);
           return valid;
         }
         return true;
@@ -368,17 +364,16 @@ function compileNumberMultipleOf(owner, schema, members, addError) {
   return undefined;
 }
 
-function compileStringLength(owner, schema, members, addError) {
+function compileStringLength(owner, schema, addMember) {
   const min = getPureInteger(schema.minLength, 0);
   const max = getPureInteger(schema.maxLength, 0);
   if (min > 0 && max > 0) {
-    members.push('minLength', 'maxLength');
-
+    const addError = addMember(['minLength', 'maxLength'], [min, max], compileStringLength);
     return function betweenLength(data) {
       if (typeof data === 'string') {
         const len = data.length;
         const valid = len >= min && len <= max;
-        if (!valid) addError(['minLength', 'maxLength'], [min, max], len);
+        if (!valid) addError(len);
         return valid;
       }
       return true;
@@ -386,13 +381,12 @@ function compileStringLength(owner, schema, members, addError) {
   }
 
   if (min > 0) {
-    members.push('minLength');
-
+    const addError = addMember('minLength', min, compileStringLength);
     return function minLength(data) {
       if (typeof data === 'string') {
         const len = data.length;
         const valid = len >= min;
-        if (!valid) addError('minLength', min, len);
+        if (!valid) addError(len);
         return valid;
       }
       return true;
@@ -400,13 +394,12 @@ function compileStringLength(owner, schema, members, addError) {
   }
 
   if (max > 0) {
-    members.push('maxLength');
-
+    const addError = addMember('maxLength', max, compileStringLength);
     return function maxLength(data) {
       if (typeof data === 'string') {
         const len = data.length;
         const valid = len <= max;
-        if (!valid) addError('maxLength', max, len);
+        if (!valid) addError(len);
         return valid;
       }
       return true;
@@ -416,16 +409,15 @@ function compileStringLength(owner, schema, members, addError) {
   return undefined;
 }
 
-function compileStringPattern(owner, schema, members, addError) {
+function compileStringPattern(owner, schema, addMember) {
   const ptrn = schema.pattern;
   const re = String_createRegExp(ptrn);
   if (re) {
-    members.push('pattern');
-
+    const addError = addMember('pattern', ptrn, compileStringPattern);
     return function pattern(data) {
       if (typeof data === 'string') {
         const valid = re.test(data);
-        if (!valid) addError('pattern', ptrn, data);
+        if (!valid) addError(data);
         return valid;
       }
       return true;
@@ -434,198 +426,231 @@ function compileStringPattern(owner, schema, members, addError) {
   return undefined;
 }
 
-function compileObjectBasic(owner, schema, members, addError) {
-  let keys = getPureArray(schema.required);
-  if (keys == null) return undefined;
-
-  // when the array is present but empty,
-  // REQUIRE all of the properties
-  if (keys.length === 0) {
-    const os = getPureObject(schema.properties);
-    const ms = getPureArrayMinItems(schema.properties, 1);
-    const ok = os && Object.keys(os);
-    const mk = ms && Array.from(new Map(ms).keys());
-    keys = ok || mk;
-  }
-  // are there properties required?
-  if (keys.length > 0) members.push('required');
-
-  // produce an array of regexp objects to validate members.
-  const regs = [];
-  const patterns = getPureArray(schema.patternRequired);
-  if (patterns && patterns.length > 0) {
-    for (let i = 0; i < patterns.length; ++i) {
-      const pattern = String_createRegExp(patterns[i]);
-      if (pattern) {
-        regs.push(pattern);
-      }
-    }
-    if (regs.length > 0) members.push('patternRequired');
-  }
-
+function compileObjectBasic(owner, schema, addMember) {
   // get the defined lower and upper bounds of an array.
   const minprops = getPureInteger(schema.minProperties);
-  if (minprops > 0) members.push('minProperties');
   const maxprops = getPureInteger(schema.maxProperties);
-  if (maxprops > 0) members.push('maxProperties');
 
-  // when there are required or pattern properties
-  if (keys.length > 0 || regs.length > 0) {
+  function compilePropertyBounds() {
+    if (minprops && maxprops) {
+      const addError = addMember(['minProperties', 'maxProperties'], [minprops, maxprops], compileObjectBasic);
+      return function minmaxProperties(length) {
+        const valid = length >= minprops && length <= maxprops;
+        if (!valid) addError(length);
+        return valid;
+      };
+    }
+    else if (maxprops > 0) {
+      const addError = addMember('maxProperties', maxprops, compileObjectBasic);
+      return function maxProperties(length) {
+        const valid = length <= maxprops;
+        if (!valid) addError(length);
+        return valid;
+      };
+    }
+    else if (minprops > 0) {
+      const addError = addMember('minProperties', minprops, compileObjectBasic);
+      return function minProperties(length) {
+        const valid = length >= minprops;
+        if (!valid) addError(length);
+        return valid;
+      };
+    }
+    return undefined;
+  }
+  const checkBounds = compilePropertyBounds();
+
+  // find all required properties
+  const required = getPureArray(schema.required);
+
+  function compileRequiredProperties() {
+    if (required == null) {
+      if (checkBounds == null) {
+        return undefined;
+      }
+
+      return function propertyBounds(data) {
+        if (data == null) return true;
+        if (typeof data !== 'object') return true;
+        if (data.constructor === Map) {
+          return checkBounds(data.size);
+        }
+        else {
+          return checkBounds(Object.keys(data).length);
+        }
+      };
+    }
+
+    // when the array is present but empty,
+    // REQUIRE all of the properties
+    let keys = required;
+    const ms = getPureArray(schema.properties);
+    let ismap = ms != null;
+    if (keys.length === 0) {
+      const os = getPureObject(schema.properties);
+      const ok = os && Object.keys(os);
+      const mk = ms > 0 && Array.from(new Map(ms).keys());
+      ismap = ms != null;
+      keys = ok || mk || keys;
+    }
+
+    if (keys.length > 0) {
+      if (ismap === true) {
+        const addError = addMember('required', keys, compileRequiredProperties, 'ismap');
+        return function requiredMapKeys(data) {
+          let valid = true;
+          if (data.constructor === Map) {
+            for (let i = 0; i < keys.length; ++i) {
+              const key = keys[i];
+              if (data.has(key) === false) {
+                addError(key, data);
+                valid = false;
+              }
+            }
+            const length = data.size;
+            valid = checkBounds(length) && valid;
+          }
+          return valid;
+        };
+      }
+      else {
+        const addError = addMember('required', keys, compileRequiredProperties, 'isobject');
+        return function requiredProperties(data) {
+          let valid = true;
+          const dataKeys = Object.keys(data);
+          for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            if (dataKeys.includes(key) === false) {
+              addError(key, data);
+              valid = false;
+            }
+          }
+          const length = dataKeys.length;
+          valid = checkBounds(length) && valid;
+          return valid;
+        };
+      }
+    }
+
+    return undefined;
+  }
+
+  const patterns = getPureArray(schema.patternRequired);
+
+  function compileRequiredPatterns() {
+    if (patterns && patterns.length > 0) {
+      // produce an array of regexp objects to validate members.
+      const regs = [];
+      for (let i = 0; i < patterns.length; ++i) {
+        const pattern = String_createRegExp(patterns[i]);
+        if (pattern) {
+          regs.push(pattern);
+        }
+      }
+
+      const ismap = (getPureArray(schema.properties) != null);
+      if (regs.length > 0) {
+        const addError = addMember('patternRequired', regs, compileRequiredPatterns, ismap ? 'ismap' : 'isobject');
+        return function patternRequiredMap(data) {
+          if (data == null) return true;
+          if (typeof data !== 'object') return true;
+
+          let valid = true;
+          const dataKeys = data.constructor === Map
+            ? Array.from(data.keys())
+            : Object.keys(data);
+
+          for (let i = 0; i < regs.length; ++i) {
+            const reg = regs[i];
+            let found = false;
+            for (let j = 0; j < dataKeys.length; ++j) {
+              if (reg.test(dataKeys)) {
+                found = true;
+                continue;
+              }
+            }
+            if (!found) {
+              addError(reg, data);
+              valid = false;
+            }
+          }
+          return valid;
+        };
+      }
+    }
+
+    return undefined;
+  }
+
+  const valProps = compileRequiredProperties();
+  const valPatts = compileRequiredPatterns();
+
+  if (valProps && valPatts) {
     return function objectBasic(data) {
-      if (typeof data !== 'object' || data === null) return true;
-      if (data.constructor === Array) return true;
-
-      let valid = true;
-      let length = 0;
-      if (data.constructor === Map) {
-        length = data.size;
-
-        for (let i = 0; i < keys.length; i++) {
-          const key = keys[i];
-          if (data.has(key) === false) {
-            addError('required', key, data);
-            valid = false;
-          }
-        }
-        if (!valid) return valid;
-
-        if (regs) {
-          const dataKeys = Array.from(data.keys());
-          for (let i = 0; i < regs.length; ++i) {
-            const reg = regs[i];
-            let found = false;
-            for (let j = 0; j < dataKeys.length; ++j) {
-              if (reg.test(dataKeys)) {
-                found = true;
-                continue;
-              }
-            }
-            if (!found) {
-              addError('patternRequired', reg, data);
-              valid = false;
-            }
-          }
-          if (!valid) return valid;
-        }
-      }
-      else { // normal object type
-        const dataKeys = Object.keys(data);
-        length = dataKeys.length;
-        for (let i = 0; i < keys.length; i++) {
-          const key = keys[i];
-          if (dataKeys.includes(key) === false) {
-            addError('required', key, data);
-            valid = false;
-          }
-        }
-        if (valid === false) return valid;
-
-        if (regs) {
-          for (let i = 0; i < regs.length; ++i) {
-            const reg = regs[i];
-            let found = false;
-            for (let j = 0; j < dataKeys.length; ++j) {
-              if (reg.test(dataKeys)) {
-                found = true;
-                continue;
-              }
-            }
-            if (!found) {
-              addError('requiredPattern', reg, data);
-              valid = false;
-            }
-          }
-          if (!valid) return valid;
-        }
-      }
-
-      if (minprops && maxprops) {
-        valid = length >= minprops && length <= maxprops;
-        if (!valid) addError(['minProperties', 'maxProperties'], [minprops, maxprops], length);
-      }
-      else if (maxprops) {
-        valid = length <= maxprops;
-        if (!valid) addError('maxProperties', maxprops, length);
-      }
-      else if (minprops > 0) {
-        valid = length >= minprops;
-        if (!valid) addError('minProperties', minprops, length);
-      }
-      return valid;
+      return valProps(data) && valPatts(data);
     };
   }
-  else if (minprops || maxprops) {
-    return function objectSize(data) {
-      if (typeof data !== 'object' || data === null) return true;
-      if (data.constructor === Array) return true;
-
-      const length = data.constructor === Map
-        ? data.size()
-        : Object.keys(data).length;
-
-      let valid = true;
-      if (minprops && maxprops) {
-        valid = length >= minprops && length <= maxprops;
-        if (!valid) addError(['minProperties', 'maxProperties'], [minprops, maxprops], length);
-      }
-      else if (maxprops) {
-        valid = length <= maxprops;
-        if (!valid) addError('maxProperties', maxprops, length);
-      }
-      else if (minprops > 0) {
-        valid = length >= minprops;
-        if (!valid) addError('minProperties', minprops, length);
-      }
-      return valid;
-    };
+  else if (valProps) {
+    return valProps;
   }
+  else if (valPatts) {
+    return valPatts;
+  }
+
   return undefined;
 }
 
-function compileArrayBasic(owner, schema, members, addError) {
+function compileArraySize(owner, schema, addMember) {
   const min = getPureInteger(schema.minItems);
   const max = getPureInteger(schema.maxItem);
 
+  function isArrayOrSet(data) {
+    return (data != null && (data.constructor === Array || data.constructor === Set));
+  }
+  function getLength(data) {
+    return data.constructor === Set ? data.size : data.length;
+  }
+
   if (min && max) {
-    members.push('minItems', 'maxItems');
+    const addError = addMember(['minItems', 'maxItems'], [min, max], compileArraySize);
     return function itemsBetween(data) {
-      if (data == null || data.constructor !== Array) return true;
-      const len = data.length;
+      if (!isArrayOrSet(data)) { return true; }
+      const len = getLength(data);
       const valid = len >= min && len <= max;
-      if (!valid) addError(['minItems', 'maxItems'], [min, max], data);
+      if (!valid) addError(data);
       return valid;
     };
   }
   else if (max) {
-    members.push('maxItems');
+    const addError = addMember('maxItems', max, compileArraySize);
     return function maxItems(data) {
-      if (data == null || data.constructor !== Array) return true;
-      const len = data.length;
+      if (!isArrayOrSet(data)) { return true; }
+      const len = getLength(data);
       const valid = len <= max;
-      if (!valid) addError('maxItems', max, data);
+      if (!valid) addError(data);
       return valid;
     };
   }
   else if (min > 0) {
-    members.push('minItems');
+    const addError = addMember('minItems', min, compileArraySize);
     return function minItems(data) {
-      if (data == null || data.constructor !== Array) return true;
-      const len = data.length;
+      if (!isArrayOrSet(data)) { return true; }
+      const len = getLength(data);
       const valid = len >= min;
-      if (!valid) addError('minItems', max, data);
+      if (!valid) addError(data);
       return valid;
     };
   }
   return undefined;
 }
 
-function compileObjectProperties(owner, schema, members, addError) {
+function compileObjectProperties(owner, schema, addMember) {
   return { schema, members, addError };
 }
 
 
 export function createNumberFormatCompiler(name, format) {
-  if (format === 'object') {
+  if (format != null && format === 'object') {
     if (['integer', 'bigint', 'number'].includes(format.type)) {
       //const rbts = getPureNumber(r.bits);
       //const rsgn = getPureBool(r.signed);
@@ -642,7 +667,7 @@ export function createNumberFormatCompiler(name, format) {
             : undefined;
 
       if (isDataType) {
-        return function compileFormatNumber(owner, schema, members, addError) {
+        return function compileFormatNumber(owner, schema, addMember) {
           const fix = Math.max(Number(schema.formatMinimum) || rix, rix);
           const fax = Math.min(Number(schema.formatMaximum) || rax, rax);
           const _fie = schema.formatExclusiveMinimum === true
@@ -743,11 +768,11 @@ export function createNumberFormatCompiler(name, format) {
 
 export function compileSchemaObjectValidator(owner, schema, schemaPath, dataPath) {
   const members = [];
-  const errors = [];
 
   function addError(key = 'unknown', expected, value) {
-    errors.push(
+    owner.pushError(
       new SchemaValidationError(
+        schema,
         schemaPath,
         key, expected,
         dataPath,
@@ -789,8 +814,8 @@ export function compileSchemaObjectValidator(owner, schema, schemaPath, dataPath
   const fnObjectBasic = fallback(
     compileObjectBasic(owner, schema, members, addError),
   );
-  const fnArrayBasic = fallback(
-    compileArrayBasic(owner, schema, members, addError),
+  const fnArraySize = fallback(
+    compileArraySize(owner, schema, members, addError),
   );
 
   return function validateSchemaObject(data, dataRoot) {
@@ -802,17 +827,16 @@ export function compileSchemaObjectValidator(owner, schema, schemaPath, dataPath
       && fnStringLength(data, dataRoot)
       && fnStringPattern(data, dataRoot)
       && fnObjectBasic(data, dataRoot)
-      && fnArrayBasic(data, dataRoot);
+      && fnArraySize(data, dataRoot);
   };
 }
 
 export function compileSchemaChildrenValidator(owner, schema, schemaPath, dataPath) {
-  const members = [];
-  const errors = [];
 
   function addError(key = 'unknown', expected, value) {
-    errors.push(
+    owner.pushError(
       new SchemaValidationError(
+        schema,
         schemaPath,
         key, expected,
         dataPath,

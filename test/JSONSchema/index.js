@@ -3,6 +3,7 @@
 import {
   JSONSchemaDocument,
   JSONSchemaBooleanType,
+// eslint-disable-next-line import/no-unresolved
 } from '__futilsjs';
 
 import data from './examples/basic-person.json';
@@ -12,5 +13,13 @@ doc.registerDefaultSchemaHandlers();
 doc.registerDefaultFormatCompilers();
 doc.loadSchema(data);
 
-console.log('what the h*ll am I doing..');
 console.log(doc, new JSONSchemaBooleanType());
+
+const schemadoc = loadJSONSchema('http://localhost/contact.json');
+const ContactForm = schemadoc.createComponent({ default: 'data' });
+
+export default function () {
+  return (<ContactForm />);
+}
+
+const docCache = new Map();

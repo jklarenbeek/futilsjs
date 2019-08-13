@@ -143,6 +143,10 @@ export const schemaTypes = {
 
 //#region Data Types
 
+export function isStrictFnType(data) {
+  return typeof data === 'function';
+}
+
 export function isStrictBooleanType(data) {
   return data === false || data === true;
 }
@@ -336,3 +340,5 @@ export function getCallbackIsStrictDataType(type, format, isstrict = false) {
   }
   return undefined;
 }
+
+//#endregion

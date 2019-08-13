@@ -25,7 +25,7 @@
 //
 import { collapseCssClass } from './css';
 import { cloneObject } from './types-Object';
-import { VNode } from './vnode-base';
+import { VNode, getVNodeKey } from './vnode-base';
 import { isFn } from './types-base';
 
 function Path_getValue(path, source) {
@@ -106,8 +106,9 @@ export function app(state, actions, view, container) {
   }
 
   function wireStateToActions(path, myState, myActions) {
-    function createActionProxy(key, action) {
-      myActions[key] = function actionProxy(data) {
+    // action proxy for each action in myActions.
+    function createActionProxy(action) {
+      return function actionProxy(data) {
         const slice = Path_getValue(path, globalState);
 
         let result = action(data);
@@ -116,7 +117,11 @@ export function app(state, actions, view, container) {
         }
 
         if (result && result !== slice && !result.then) {
-          globalState = Path_setValue(path, cloneObject(slice, result), globalState);
+          globalState = Path_setValue(
+            path,
+            cloneObject(slice, result),
+            globalState,
+          );
           scheduleRender(globalState);
         }
 
@@ -124,9 +129,11 @@ export function app(state, actions, view, container) {
       };
     }
 
+    // eslint-disable-next-line guard-for-in
     for (const key in myActions) {
-      if (isFn(myActions[key])) {
-        createActionProxy(key, myActions[key]);
+      const act = myActions[key];
+      if (isFn(act)) {
+        myActions[key] = createActionProxy(act);
       }
       else {
         // wire slice/namespace of state to actions
@@ -139,10 +146,6 @@ export function app(state, actions, view, container) {
     }
 
     return myActions;
-  }
-
-  function getKey(node) {
-    return node ? node.key : null;
   }
 
   function eventListener(event) {
@@ -337,7 +340,7 @@ export function app(state, actions, view, container) {
         for (let i = 0; i < oldChildren.length; i++) {
           oldElements[i] = element.childNodes[i];
 
-          const oldKey = getKey(oldChildren[i]);
+          const oldKey = getVNodeKey(oldChildren[i]);
           if (oldKey != null) {
             oldKeyed[oldKey] = [oldElements[i], oldChildren[i]];
           }
@@ -347,8 +350,8 @@ export function app(state, actions, view, container) {
         let k = 0;
         const l = children.length;
         while (k < l) {
-          const oldKey = getKey(oldChildren[i]);
-          const newKey = getKey((children[k] = resolveNode(children[k])));
+          const oldKey = getVNodeKey(oldChildren[i]);
+          const newKey = getVNodeKey((children[k] = resolveNode(children[k])));
 
           if (newKeyed[oldKey]) {
             i++;
@@ -388,7 +391,7 @@ export function app(state, actions, view, container) {
         }
 
         while (i < oldChildren.length) {
-          if (getKey(oldChildren[i]) == null) {
+          if (getVNodeKey(oldChildren[i]) == null) {
             removeElement(element, oldElements[i], oldChildren[i]);
           }
           i++;

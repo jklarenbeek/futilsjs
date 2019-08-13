@@ -8,6 +8,7 @@
 import { mathi32_max } from './int32-math';
 
 import {
+  isFn,
   isPureArray,
   isPureTypedArray,
   getPureObject,
@@ -227,7 +228,7 @@ export class JSONSchemaDocument extends JSONDocument {
   }
 
   loadSchema(json, baseUri) {
-    const callback = isFn(this.baseUriCallback);
+    const callback = isFn(this.baseUriCallback)
       ? this.baseUriCallback
       : (function JSONSchemaDocument_loadSchemaDefaultCallback() { return json; });
 
@@ -251,6 +252,7 @@ export class JSONSchemaDocument extends JSONDocument {
 
 export class JSONSchemaXMLObject {
   constructor(schema) {
+    this.schema = schema;
     const xml = getPureObject(schema.xml, {});
     this.name = getPureString(xml.name);
     this.namespace = getPureString(xml.namespace);
