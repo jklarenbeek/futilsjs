@@ -305,8 +305,11 @@ export function isStrictTypedArray(data) {
 }
 isStrictTypedArray.typeName = 'array';
 
-export function getCallbackIsStrictDataType(type, format, isstrict = false) {
-  if (type === 'object') {
+export function createIsStrictDataType(type, format, isstrict = false) {
+  if (isFn(type)) {
+    return createIsStrictObjectOfType(type);
+  }
+  else if (type === 'object') {
     if (isstrict) {
       return isStrictObjectType;
     }
@@ -321,12 +324,16 @@ export function getCallbackIsStrictDataType(type, format, isstrict = false) {
         return createIsStrictObjectOfType(at);
       }
     }
+    else return isStrictArrayType;
+  }
+  else if (type === 'set') {
+    return createIsStrictObjectOfType(Set);
   }
   else if (type === 'map') {
-    throw new Error('not implemented, yet!');
+    return createIsStrictObjectOfType(Map);
   }
   else if (type === 'tuple') {
-    throw new Error('not implemented, yet!');
+    return isStrictArrayType;
   }
   else {
     switch (type) {

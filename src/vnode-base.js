@@ -17,6 +17,14 @@ export function getVNodeKey(node) {
   return node ? node.key : null;
 }
 
+export function getVNodeName(node) {
+  return node ? node.nodeName : null;
+}
+
+export function getVNodeAttr(node) {
+  return node ? node.attributes : null;
+}
+
 export function VN(name, attributes, ...rest) {
   attributes = attributes || {};
   const children = Array_collapseShallow(rest);

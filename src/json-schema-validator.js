@@ -8,12 +8,13 @@ import {
   getPureBool,
   getPureNumber,
   getPureInteger,
-  isBoolOrNumber,
+  getBoolOrObject,
   getBoolOrArray,
   isFn,
   fallbackFn,
   isPureObjectReally,
   trueThat,
+  undefThat,
 } from './types-base';
 
 import {
@@ -28,8 +29,9 @@ import {
   isStrictIntegerType,
   isStrictBigIntType,
   isStrictNumberType,
-  getCallbackIsStrictDataType,
+  createIsStrictDataType,
   isObjectishType,
+  isStrictArrayType,
 } from './json-schema-types';
 
 export class SchemaValidationMember {
@@ -101,7 +103,7 @@ function compileSchemaType(owner, schema, addMember) {
           schemaNullable = true;
         }
         else {
-          const dataHandler = getCallbackIsStrictDataType(type, schemaFormat);
+          const dataHandler = createIsStrictDataType(type, schemaFormat);
           if (dataHandler) handlers.push(dataHandler);
         }
       }
@@ -136,7 +138,7 @@ function compileSchemaType(owner, schema, addMember) {
 
     // check only for one type if schemaType is a string
     if (schemaType.constructor === String) {
-      const isDataType = getCallbackIsStrictDataType(schemaType, schemaFormat);
+      const isDataType = createIsStrictDataType(schemaType, schemaFormat);
       if (isDataType) {
         const isrequired = compileRequired();
         const isnullable = compileNullable();
@@ -814,15 +816,25 @@ function compileSchemaFormat(owner, schema, addMember) {
 //#region schemaobjects with children
 
 function compileObjectChildren(owner, schema, addMember, addChildSchema) {
-
   const properties = getPureObject(schema.properties);
   const patterns = getPureObject(schema.patternProperties);
   const additional = getBoolOrObject(schema.additionalProperties, true);
 
-  if (properties == null && patterns == null) return undefined;
-
-  function isUndefined() {
+  if (properties == null && patterns == null && additional === true)
     return undefined;
+
+  if (additional !== true && additional !== false) {
+    if (properties == null && patterns == null) {
+      let isobj = true;
+      if (isStrictArrayType(schema.type)) {
+        isobj = !schema.type.includes('map');
+        isobj = isobj && schema.type.includes('object');
+      }
+      else if (isStrictStringType(schema.type)) {
+        isobj = schema.type === 'object';
+      }
+      if (isobj === false) return undefined;
+    }
   }
 
   function compileProperties() {
@@ -830,21 +842,19 @@ function compileObjectChildren(owner, schema, addMember, addChildSchema) {
     const props = {};
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
-      const nsc = properties[key];
-      if (isObjectishType(nsc)) {
-        const cb = addChildSchema(schema, ['properties', key], nsc);
+      const prop = properties[key];
+      if (isObjectishType(prop)) {
+        const cb = addChildSchema(['properties', key], prop, compileObjectChildren);
         if (cb != null) props[key] = cb;
       }
     }
 
-    const propKeys = Object.keys(props);
-    if (propKeys.length > 0) {
+    if (Object.keys(props).length > 0) {
       return function validateProperty(key, data, dataRoot) {
-        if (propKeys.includes(key)) {
-          const cb = props[key];
-          return cb(data[key], dataRoot);
-        }
-        return undefined;
+        const cb = props[key];
+        return isFn(cb)
+          ? cb(data[key], dataRoot)
+          : undefined;
       };
     }
 
@@ -853,7 +863,19 @@ function compileObjectChildren(owner, schema, addMember, addChildSchema) {
 
   function compilePatterns() {
     const keys = Object.keys(patterns);
-
+    const regs = {};
+    const props = {};
+    for (let i = 0; i < keys.length; ++i) {
+      const key = keys[i];
+      const rxp = String_createRegExp(key);
+      if (rxp != null) {
+        const patt = patterns[key];
+        const cb = addChildSchema(['properties', key], patt, compileObjectChildren);
+        if (cb != null) {
+          regs[key] = rxp;
+          props[key] = cb;
+        }        
+    }
 
   }
 
@@ -865,13 +887,21 @@ function compileObjectChildren(owner, schema, addMember, addChildSchema) {
         return addError(dataKey, data);
       };
     }
+    if (additional !== true) {
+      const cb = addChildSchema('additionalProperties', additional, compileObjectChildren);
+      if (isFn(cb)) {
+        return function validateAdditional(key, data, dataRoot) {
+          return cb(data[key], dataRoot);
+        };
+      }
+    }
 
     return undefined;
   }
 
-  const validateProperty = fallbackFn(compileProperties(), isUndefined);
-  const validatePattern = fallbackFn(compilePatterns(), isUndefined);
-  const validateAdditional = fallbackFn(compileAdditional, isUndefined);
+  const validateProperty = fallbackFn(compileProperties(), undefThat);
+  const validatePattern = fallbackFn(compilePatterns(), undefThat);
+  const validateAdditional = fallbackFn(compileAdditional(), undefThat);
 
   return function validateObjectChildren(data, dataRoot) {
     let valid = true;
@@ -881,20 +911,20 @@ function compileObjectChildren(owner, schema, addMember, addChildSchema) {
         const dataKey = dataKeys[i];
         let found = validateProperty(dataKey, data, dataRoot);
         if (found != null) {
-          dataKeys[i] = null;
+          dataKeys[i] = found;
           valid = valid && found;
           continue;
         }
         found = validatePattern(dataKey, data, dataRoot);
         if (found != null) {
-          dataKeys[i] = null;
+          dataKeys[i] = found;
           valid = valid && found;
           continue;
         }
         found = validateAdditional(dataKey, data, dataRoot);
-        if (additional === false) {
-          addError(dataKey, data);
-          continue;
+        if (found != null) {
+          dataKeys[i] = found;
+          valid = valid && found;
         }
       }
     }

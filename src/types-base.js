@@ -28,6 +28,10 @@ export function trueThat(whatever = true) {
   return whatever === true || that;
 }
 
+export function undefThat(whatever = undefined) {
+  return undefined;
+}
+
 export function fallbackFn(compiled, fallback = trueThat) {
   if (isFn(compiled)) return compiled;
   // eslint-disable-next-line no-unused-vars
