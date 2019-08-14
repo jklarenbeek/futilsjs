@@ -11,7 +11,9 @@ import {
   isBoolOrNumber,
   getBoolOrArray,
   isFn,
+  fallbackFn,
   isPureObjectReally,
+  trueThat,
 } from './types-base';
 
 import {
@@ -27,6 +29,7 @@ import {
   isStrictBigIntType,
   isStrictNumberType,
   getCallbackIsStrictDataType,
+  isObjectishType,
 } from './json-schema-types';
 
 export class SchemaValidationMember {
@@ -81,34 +84,12 @@ function compileSchemaType(owner, schema, addMember) {
     };
   }
 
-  let schemaType = getPureString(
-    schema.type,
-    getPureArrayMinItems(schema.type, 1),
-  );
+  let schemaType = getPureString(schema.type)
+    || getPureArrayMinItems(schema.type, 1);
 
   if (schemaType != null) {
     // check if we are object or array
     const schemaFormat = getPureString(schema.format);
-
-    if (schemaType.constructor === String) {
-      const isDataType = getCallbackIsStrictDataType(schemaType, schemaFormat);
-      if (isDataType) {
-        const isrequired = compileRequired();
-        const isnullable = compileNullable();
-        const addError = addMember('type', isDataType.name, compileSchemaType, 'string');
-
-        // create single type validator callback
-        return function type(data, err = []) {
-          if (isrequired(data, err)) return !schemaRequired;
-          if (isnullable(data, err)) return schemaNullable !== false;
-          const valid = isDataType(data);
-          if (!valid) {
-            addError(data);
-          }
-          return valid;
-        };
-      }
-    }
 
     // JSONSchema allows checks for multiple types
     if (schemaType.constructor === Array) {
@@ -152,6 +133,27 @@ function compileSchemaType(owner, schema, addMember) {
         schemaType = handlers[0].typeName;
       }
     }
+
+    // check only for one type if schemaType is a string
+    if (schemaType.constructor === String) {
+      const isDataType = getCallbackIsStrictDataType(schemaType, schemaFormat);
+      if (isDataType) {
+        const isrequired = compileRequired();
+        const isnullable = compileNullable();
+        const addError = addMember('type', isDataType.name, compileSchemaType, 'string');
+
+        // create single type validator callback
+        return function typeString(data) {
+          if (isrequired(data)) return !schemaRequired;
+          if (isnullable(data)) return schemaNullable !== false;
+          const valid = isDataType(data);
+          if (!valid) {
+            addError(data);
+          }
+          return valid;
+        };
+      }
+    }
   }
 
   if (schemaRequired === true || schemaNullable === true) {
@@ -163,6 +165,7 @@ function compileSchemaType(owner, schema, addMember) {
       return true;
     };
   }
+
   return undefined;
 }
 
@@ -773,7 +776,7 @@ function createNumberFormatCompiler(name, format) {
 }
 
 const registeredSchemaFormatters = {};
-export function registerSchemaFormat(name, schema) {
+export function registerSchemaFormatCompiler(name, schema) {
   if (registeredSchemaFormatters[name] == null) {
     const r = typeof schema;
     if (r === 'function') {
@@ -791,16 +794,17 @@ export function registerSchemaFormat(name, schema) {
   return false;
 }
 
-function getFormatCompiler(name) {
-  return registeredSchemaFormatters[name];
+function getSchemaFormatCompiler(name) {
+  if (isStrictStringType(name))
+    return registeredSchemaFormatters[name];
+  else
+    return undefined;
 }
 
 function compileSchemaFormat(owner, schema, addMember) {
-  if (isStrictStringType(schema.format)) {
-    const format = getFormatCompiler(schema.format);
-    if (format) {
-      return format(owner, schema, addMember);
-    }
+  const compiler = getSchemaFormatCompiler(schema.format);
+  if (compiler) {
+    return compiler(owner, schema, addMember);
   }
   return undefined;
 }
@@ -809,46 +813,139 @@ function compileSchemaFormat(owner, schema, addMember) {
 
 //#region schemaobjects with children
 
-function compileObjectProperties(owner, schema, addChild) {
-  return { owner, schema, addChild };
+function compileObjectChildren(owner, schema, addMember, addChildSchema) {
+
+  const properties = getPureObject(schema.properties);
+  const patterns = getPureObject(schema.patternProperties);
+  const additional = getBoolOrObject(schema.additionalProperties, true);
+
+  if (properties == null && patterns == null) return undefined;
+
+  function isUndefined() {
+    return undefined;
+  }
+
+  function compileProperties() {
+    const keys = Object.keys(properties);
+    const props = {};
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const nsc = properties[key];
+      if (isObjectishType(nsc)) {
+        const cb = addChildSchema(schema, ['properties', key], nsc);
+        if (cb != null) props[key] = cb;
+      }
+    }
+
+    const propKeys = Object.keys(props);
+    if (propKeys.length > 0) {
+      return function validateProperty(key, data, dataRoot) {
+        if (propKeys.includes(key)) {
+          const cb = props[key];
+          return cb(data[key], dataRoot);
+        }
+        return undefined;
+      };
+    }
+
+    return undefined;
+  }
+
+  function compilePatterns() {
+    const keys = Object.keys(patterns);
+
+
+  }
+
+  function compileAdditional() {
+    if (additional === false) {
+      const addError = addMember('additionalProperties', false, compileObjectChildren);
+      // eslint-disable-next-line no-unused-vars
+      return function noAdditionalProperties(dataKey, data, dataRoot) {
+        return addError(dataKey, data);
+      };
+    }
+
+    return undefined;
+  }
+
+  const validateProperty = fallbackFn(compileProperties(), isUndefined);
+  const validatePattern = fallbackFn(compilePatterns(), isUndefined);
+  const validateAdditional = fallbackFn(compileAdditional, isUndefined);
+
+  return function validateObjectChildren(data, dataRoot) {
+    let valid = true;
+    if (isObjectishType(data)) {
+      const dataKeys = Object.keys(data);
+      for (let i = 0; i < dataKeys.length; ++i) {
+        const dataKey = dataKeys[i];
+        let found = validateProperty(dataKey, data, dataRoot);
+        if (found != null) {
+          dataKeys[i] = null;
+          valid = valid && found;
+          continue;
+        }
+        found = validatePattern(dataKey, data, dataRoot);
+        if (found != null) {
+          dataKeys[i] = null;
+          valid = valid && found;
+          continue;
+        }
+        found = validateAdditional(dataKey, data, dataRoot);
+        if (additional === false) {
+          addError(dataKey, data);
+          continue;
+        }
+      }
+    }
+    return valid;
+  };
+}
+
+function compileMapChildren(owner, schema, addMember, addChildSchema) {
+  return { owner, schema, addMember, addChildSchema };
+}
+
+function compileArrayChildren(owner, schema, addMember, addChildSchema) {
+  return { owner, schema, addMember, addChildSchema };
+}
+
+function compileSetChildren(owner, schema, addMember, addChildSchema) {
+  return { owner, schema, addMember, addChildSchema };
+}
+
+function compileTupleChildren(owner, schema, addMember, addChildSchema) {
+  return { owner, schema, addMember, addChildSchema };
 }
 
 //#endregion
 
 function compileValidatorSchemaObject(owner, schema, addMember) {
-  function fallback(compiled) {
-    if (isFn(compiled)) return compiled;
-    // eslint-disable-next-line no-unused-vars
-    return function trueThat(whatever) {
-      return true;
-    };
-  }
-
-  const fnType = fallback(
+  const fnType = fallbackFn(
     compileSchemaType(owner, schema, addMember),
   );
-  const fnFormat = fallback(
+  const fnFormat = fallbackFn(
     compileSchemaFormat(owner, schema, addMember),
   );
-  const fnEnumPrimitive = fallback(
+  const fnEnumPrimitive = fallbackFn(
     compileEnumPrimitive(owner, schema, addMember),
   );
-  const fnNumberRange = fallback(
+  const fnNumberRange = fallbackFn(
     compileNumberRange(owner, schema, addMember),
   );
-  const fnNumberMultipleOf = fallback(
+  const fnNumberMultipleOf = fallbackFn(
     compileNumberMultipleOf(owner, schema, addMember),
   );
-  const fnStringLength = fallback(
+  const fnStringLength = fallbackFn(
     compileStringLength(owner, schema, addMember),
   );
-  const fnStringPattern = fallback(
+  const fnStringPattern = fallbackFn(
     compileStringPattern(owner, schema, addMember),
   );
-  const fnObjectBasic = fallback(
+  const fnObjectBasic = fallbackFn(
     compileObjectBasic(owner, schema, addMember),
   );
-  const fnArraySize = fallback(
+  const fnArraySize = fallbackFn(
     compileArraySize(owner, schema, addMember),
   );
 
@@ -865,36 +962,35 @@ function compileValidatorSchemaObject(owner, schema, addMember) {
   };
 }
 
-function compileValidatorSchemaChildren(owner, schema, addChild) {
-  function addError(key = 'unknown', expected, value) {
-    owner.pushError(
-      new SchemaValidationMember(
-        schema,
-        schemaPath,
-        key, expected,
-        dataPath,
-        value,
-      ),
-    );
-    return false;
-  }
+function compileValidatorSchemaChildren(owner, schema, addMember, addChildSchema) {
+  const fnObject = fallbackFn(
+    compileObjectChildren(owner, schema, addMember, addChildSchema),
+  );
+  const fnMap = fallbackFn(
+    compileMapChildren(owner, schema, addMember, addChildSchema),
+  );
+  const fnArray = fallbackFn(
+    compileArrayChildren(owner, schema, addMember, addChildSchema),
+  );
+  const fnSet = fallbackFn(
+    compileSetChildren(owner, schema, addMember, addChildSchema),
+  );
+  const fnTuple = fallbackFn(
+    compileTupleChildren(owner, schema, addMember, addChildSchema),
+  );
 
-  function fallback(compiled) {
-    if (isFn(compiled)) return compiled;
-    // eslint-disable-next-line no-unused-vars
-    return function trueThat(whatever) {
-      return true;
-    };
-  }
-
-
+  return function validateSchemaChildren(data, dataRoot) {
+    return fnObject(data, dataRoot)
+      && fnMap(data, dataRoot)
+      && fnArray(data, dataRoot)
+      && fnSet(data, dataRoot)
+      && fnTuple(data, dataRoot);
+  };
 }
 
 function compileJSONSchemaRecursive(owner, schema, schemaPath, dataPath, regfn, errfn) {
   if (!isPureObjectReally(schema)) {
-    return function whatever(that = true) {
-      return that === true || true;
-    };
+    return trueThat;
   }
 
   const addMember = function addMember(key, expected, fn, ...grp) {
@@ -920,7 +1016,7 @@ function compileJSONSchemaRecursive(owner, schema, schemaPath, dataPath, regfn, 
     schema,
     addMember);
 
-  const addChild = function addChild(_schema, _schemaPath, _dataPath) {
+  const addChild = function addChildSchema(_schema, _schemaPath, _dataPath) {
     return compileJSONSchemaRecursive(owner, _schema, _schemaPath, _dataPath, regfn, errfn);
   };
 

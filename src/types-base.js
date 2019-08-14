@@ -23,6 +23,19 @@ export function isFn(obj) {
   return typeof obj === 'function';
 }
 
+export function trueThat(whatever = true) {
+  const that = true;
+  return whatever === true || that;
+}
+
+export function fallbackFn(compiled, fallback = trueThat) {
+  if (isFn(compiled)) return compiled;
+  // eslint-disable-next-line no-unused-vars
+  return isFn(fallback)
+    ? fallback
+    : trueThat;
+}
+
 export function sanitizePrimitiveValue(value, nullable, defaultValue = undefined) {
   if (nullable && value == null) return value;
   if (value == null) return defaultValue;

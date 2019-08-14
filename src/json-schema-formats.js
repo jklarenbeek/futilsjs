@@ -1,4 +1,5 @@
 import { isFn } from "./types-base";
+import { registerSchemaFormatCompiler } from "./json-schema-validator";
 
 /* eslint-disable quote-props */
 
@@ -250,7 +251,7 @@ export const stringFormats = {
   'date-time': compileDateFormat,
 };
 
-export function registerFormatCompilers(regCallback) {
+export function registerDefaultFormatCompilers() {
   const all = {
     ...numberFormats,
     ...dateTimeFormats,
@@ -261,6 +262,6 @@ export function registerFormatCompilers(regCallback) {
   for (let i = 0; i < keys.length; ++i) {
     const key = keys[i];
     const item = all[key];
-    regCallback(key, item);
+    registerSchemaFormatCompiler(key, item);
   }
 }
