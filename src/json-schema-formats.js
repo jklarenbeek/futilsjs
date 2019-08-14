@@ -249,3 +249,18 @@ function compileDateFormat(owner, schema, addMember) {
 export const stringFormats = {
   'date-time': compileDateFormat,
 };
+
+export function registerFormatCompilers(regCallback) {
+  const all = {
+    ...numberFormats,
+    ...dateTimeFormats,
+    ...stringFormats,
+  };
+
+  const keys = Object.keys(all);
+  for (let i = 0; i < keys.length; ++i) {
+    const key = keys[i];
+    const item = all[key];
+    regCallback(key, item);
+  }
+}

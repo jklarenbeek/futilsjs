@@ -11,6 +11,7 @@ import {
   isBoolOrNumber,
   getBoolOrArray,
   isFn,
+  isPureObjectReally,
 } from './types-base';
 
 import {
@@ -28,18 +29,21 @@ import {
   getCallbackIsStrictDataType,
 } from './json-schema-types';
 
-export class SchemaValidationError {
-  constructor(schemaPath, schemaKey, expectedValue, dataPath, dataValue) {
+export class SchemaValidationMember {
+  constructor(owner, schema, schemaPath, dataPath, schemaKey, expectedValue, fnOccured, fnOptions) {
+    this.owner = owner;
+    this.schema = schema;
     this.schemaPath = schemaPath;
+    this.dataPath = dataPath;
     this.schemaKey = schemaKey;
     this.expectedValue = expectedValue;
-    this.dataPath = dataPath;
-    this.dataValue = dataValue;
-    Object.freeze(this);
+    this.fnOccured = fnOccured;
+    this.fnOptions = fnOptions;
+    this.error = '';
   }
 }
 
-
+//#region basic schema compilers
 function compileSchemaType(owner, schema, addMember) {
   const schemaRequired = getBoolOrArray(schema.required, false) && true;
 
@@ -158,16 +162,6 @@ function compileSchemaType(owner, schema, addMember) {
       if (isnullable(data)) return schemaNullable !== false;
       return true;
     };
-  }
-  return undefined;
-}
-
-function compileSchemaFormat(owner, schema, addMember) {
-  if (isStrictStringType(schema.format)) {
-    const format = owner.getFormatCompiler(schema.format);
-    if (format) {
-      return format(owner, schema, addMember);
-    }
   }
   return undefined;
 }
@@ -644,12 +638,10 @@ function compileArraySize(owner, schema, addMember) {
   return undefined;
 }
 
-function compileObjectProperties(owner, schema, addMember) {
-  return { schema, members, addError };
-}
+//#endregion
 
-
-export function createNumberFormatCompiler(name, format) {
+//#region schema formatters
+function createNumberFormatCompiler(name, format) {
   if (format != null && format === 'object') {
     if (['integer', 'bigint', 'number'].includes(format.type)) {
       //const rbts = getPureNumber(r.bits);
@@ -669,96 +661,110 @@ export function createNumberFormatCompiler(name, format) {
       if (isDataType) {
         return function compileFormatNumber(owner, schema, addMember) {
           const fix = Math.max(Number(schema.formatMinimum) || rix, rix);
-          const fax = Math.min(Number(schema.formatMaximum) || rax, rax);
           const _fie = schema.formatExclusiveMinimum === true
             ? fix
             : Number(schema.formatExclusiveMinimum) || false;
-          const _fae = schema.formatExclusiveMaximum === true
-            ? fax
-            : Number(schema.formatExclusiveMaximum) || false;
           const fie = fix !== false && _fie !== false
             ? Math.max(fix, _fie)
             : _fie;
+
+          const fax = Math.min(Number(schema.formatMaximum) || rax, rax);
+          const _fae = schema.formatExclusiveMaximum === true
+            ? fax
+            : Number(schema.formatExclusiveMaximum) || false;
           const fae = fax !== false && _fae !== false
             ? Math.max(fax, _fae)
             : _fae;
 
-          members.push('format');
-          if (Number(schema.formatMinimum)) members.push('formatMinimum');
-          if (Number(schema.formatMaximum)) members.push('formatMaximum');
-          if (isBoolOrNumber(schema.formatExclusiveMinimum)) members.push('formatExclusiveMinimum');
-          if (isBoolOrNumber(schema.formatExclusiveMaximum)) members.push('formatExclusiveMaximum');
-
-          return function formatNumber(data) {
-            let valid = true;
-            if (isDataType(data)) {
-              if (fie && fae) {
-                valid = data > fie && data < fae;
-                if (!valid) addError(
-                  ['formatExclusiveMinimum', 'formatExclusiveMaximum'],
-                  [fie, fae],
-                  data,
-                );
-              }
-              else if (fie && fax) {
-                valid = data > fie && data <= fax;
-                if (!valid) addError(
-                  ['formatExclusiveMinimum', 'formatMaximum'],
-                  [fie, fax],
-                  data,
-                );
-              }
-              else if (fae && fix) {
-                valid = data >= fix && data < fae;
-                if (!valid) addError(
-                  ['formatMinimum', 'formatExclusiveMaximum'],
-                  [fix, fae],
-                  data,
-                );
-              }
-              else if (fix && fax) {
-                valid = data >= fix && data <= fax;
-                if (!valid) addError(
-                  ['formatMinimum', 'formatMaximum'],
-                  [fix, fax],
-                  data,
-                );
-              }
-              else if (fie) {
-                valid = data > fie;
-                if (!valid) addError(
-                  'formatExclusiveMinimum',
-                  fie,
-                  data,
-                );
-              }
-              else if (fae) {
-                valid = data > fae;
-                if (!valid) addError(
-                  'formatExclusiveMaximum',
-                  fae,
-                  data,
-                );
-              }
-              else if (fax) {
-                valid = data <= fax;
-                if (!valid) addError(
-                  'formatMaximum',
-                  fax,
-                  data,
-                );
-              }
-              else if (fix) {
-                valid = data <= fix;
-                if (!valid) addError(
-                  'formatMinimum',
-                  fix,
-                  data,
-                );
-              }
-            }
-            return valid;
-          };
+          if (fie && fae) {
+            const addError = addMember(
+              ['formatExclusiveMinimum', 'formatExclusiveMaximum'],
+              [fie, fae],
+              compileFormatNumber);
+            return function betweenExclusive(data) {
+              if (!isDataType(data)) return true;
+              if (data > fie && data < fae) return true;
+              return addError(data);
+            };
+          }
+          else if (fie && fax) {
+            const addError = addMember(
+              ['formatExclusiveMinimum', 'formatMaximum'],
+              [fie, fax],
+              compileFormatNumber);
+            return function betweenExclusiveMinimum(data) {
+              if (!isDataType(data)) return true;
+              if (data > fie && data <= fax) return true;
+              return addError(data);
+            };
+          }
+          else if (fae && fix) {
+            const addError = addMember(
+              ['formatMinimum', 'formatExclusiveMaximum'],
+              [fix, fae],
+              compileFormatNumber);
+            return function betweenExclusiveMaximum(data) {
+              if (!isDataType(data)) return true;
+              if (data >= fix && data < fae) return true;
+              return addError(data);
+            };
+          }
+          else if (fix && fax) {
+            const addError = addMember(
+              ['formatMinimum', 'formatMaximum'],
+              [fie, fae],
+              compileFormatNumber);
+            return function formatBetween(data) {
+              if (!isDataType(data)) return true;
+              if (data >= fix && data <= fax) return true;
+              return addError(data);
+            };
+          }
+          else if (fie) {
+            const addError = addMember(
+              'formatExclusiveMinimum',
+              fie,
+              compileFormatNumber);
+            return function formatExclusiveMinimum(data) {
+              if (!isDataType(data)) return true;
+              if (data > fie) return true;
+              return addError(data);
+            };
+          }
+          else if (fae) {
+            const addError = addMember(
+              'formatExclusiveMaximum',
+              fae,
+              compileFormatNumber);
+            return function formatExclusiveMaximum(data) {
+              if (!isDataType(data)) return true;
+              if (data < fae) return true;
+              return addError(data);
+            };
+          }
+          else if (fax) {
+            const addError = addMember(
+              'formatMaximum',
+              fax,
+              compileFormatNumber);
+            return function formatMaximum(data) {
+              if (!isDataType(data)) return true;
+              if (data <= fax) return true;
+              return addError(data);
+            };
+          }
+          else if (fix) {
+            const addError = addMember(
+              'formatMinimum',
+              fix,
+              compileFormatNumber);
+            return function formatMinimum(data) {
+              if (!isDataType(data)) return true;
+              if (data >= fix) return true;
+              return addError(data);
+            };
+          }
+          return undefined;
         };
       }
     }
@@ -766,22 +772,50 @@ export function createNumberFormatCompiler(name, format) {
   return undefined;
 }
 
-export function compileSchemaObjectValidator(owner, schema, schemaPath, dataPath) {
-  const members = [];
-
-  function addError(key = 'unknown', expected, value) {
-    owner.pushError(
-      new SchemaValidationError(
-        schema,
-        schemaPath,
-        key, expected,
-        dataPath,
-        value,
-      ),
-    );
-    return false;
+const registeredSchemaFormatters = {};
+export function registerSchemaFormat(name, schema) {
+  if (registeredSchemaFormatters[name] == null) {
+    const r = typeof schema;
+    if (r === 'function') {
+      registeredSchemaFormatters[name] = schema;
+      return true;
+    }
+    else {
+      const fn = createNumberFormatCompiler(name, schema);
+      if (fn) {
+        registeredSchemaFormatters[name] = fn;
+        return true;
+      }
+    }
   }
+  return false;
+}
 
+function getFormatCompiler(name) {
+  return registeredSchemaFormatters[name];
+}
+
+function compileSchemaFormat(owner, schema, addMember) {
+  if (isStrictStringType(schema.format)) {
+    const format = getFormatCompiler(schema.format);
+    if (format) {
+      return format(owner, schema, addMember);
+    }
+  }
+  return undefined;
+}
+
+//#endregion
+
+//#region schemaobjects with children
+
+function compileObjectProperties(owner, schema, addChild) {
+  return { owner, schema, addChild };
+}
+
+//#endregion
+
+function compileValidatorSchemaObject(owner, schema, addMember) {
   function fallback(compiled) {
     if (isFn(compiled)) return compiled;
     // eslint-disable-next-line no-unused-vars
@@ -791,31 +825,31 @@ export function compileSchemaObjectValidator(owner, schema, schemaPath, dataPath
   }
 
   const fnType = fallback(
-    compileSchemaType(owner, schema, members, addError),
+    compileSchemaType(owner, schema, addMember),
   );
   const fnFormat = fallback(
-    compileSchemaFormat(owner, schema, members, addError),
+    compileSchemaFormat(owner, schema, addMember),
   );
   const fnEnumPrimitive = fallback(
-    compileEnumPrimitive(owner, schema, members, addError),
+    compileEnumPrimitive(owner, schema, addMember),
   );
   const fnNumberRange = fallback(
-    compileNumberRange(owner, schema, members, addError),
+    compileNumberRange(owner, schema, addMember),
   );
   const fnNumberMultipleOf = fallback(
-    compileNumberMultipleOf(owner, schema, members, addError),
+    compileNumberMultipleOf(owner, schema, addMember),
   );
   const fnStringLength = fallback(
-    compileStringLength(owner, schema, members, addError),
+    compileStringLength(owner, schema, addMember),
   );
   const fnStringPattern = fallback(
-    compileStringPattern(owner, schema, members, addError),
+    compileStringPattern(owner, schema, addMember),
   );
   const fnObjectBasic = fallback(
-    compileObjectBasic(owner, schema, members, addError),
+    compileObjectBasic(owner, schema, addMember),
   );
   const fnArraySize = fallback(
-    compileArraySize(owner, schema, members, addError),
+    compileArraySize(owner, schema, addMember),
   );
 
   return function validateSchemaObject(data, dataRoot) {
@@ -831,11 +865,10 @@ export function compileSchemaObjectValidator(owner, schema, schemaPath, dataPath
   };
 }
 
-export function compileSchemaChildrenValidator(owner, schema, schemaPath, dataPath) {
-
+function compileValidatorSchemaChildren(owner, schema, addChild) {
   function addError(key = 'unknown', expected, value) {
     owner.pushError(
-      new SchemaValidationError(
+      new SchemaValidationMember(
         schema,
         schemaPath,
         key, expected,
@@ -855,4 +888,73 @@ export function compileSchemaChildrenValidator(owner, schema, schemaPath, dataPa
   }
 
 
+}
+
+function compileJSONSchemaRecursive(owner, schema, schemaPath, dataPath, regfn, errfn) {
+  if (!isPureObjectReally(schema)) {
+    return function whatever(that = true) {
+      return that === true || true;
+    };
+  }
+
+  const addMember = function addMember(key, expected, fn, ...grp) {
+    const member = new SchemaValidationMember(
+      owner,
+      schema,
+      schemaPath,
+      dataPath,
+      key, expected,
+      fn, grp,
+    );
+    return regfn(member,
+      function compileJSONSchema_addError(value, ...rest) {
+        const data = rest.length > 0 ? [value, ...rest] : value;
+        errfn(member, data);
+        return false;
+      },
+    );
+  };
+
+  const validateBasic = compileValidatorSchemaObject(
+    owner,
+    schema,
+    addMember);
+
+  const addChild = function addChild(_schema, _schemaPath, _dataPath) {
+    return compileJSONSchemaRecursive(owner, _schema, _schemaPath, _dataPath, regfn, errfn);
+  };
+
+  const validateChildren = compileValidatorSchemaChildren(
+    owner,
+    schema,
+    addChild);
+
+  return function validateJSONSchemaRecursive(data, dataRoot) {
+    return validateBasic(data, dataRoot)
+      && validateChildren(data, dataRoot);
+  };
+}
+
+export function compileJSONSchema(owner, regCallback, errCallback) {
+  const regfn = isFn(regCallback)
+    ? regCallback
+    // eslint-disable-next-line no-unused-vars
+    : function regCallbackProxy(member, callback) {
+      return callback;
+    };
+  const errfn = isFn(errCallback)
+    ? errCallback
+    // eslint-disable-next-line no-unused-vars
+    : function errCallbackProxy(member = true, callback) {
+      return member;
+    };
+
+  return compileJSONSchemaRecursive(
+    owner,
+    owner.getRootSchema(),
+    owner.getRootSchemaPath(),
+    owner.getRootDataPath(),
+    regfn,
+    errfn,
+  );
 }
