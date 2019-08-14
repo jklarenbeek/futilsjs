@@ -15,6 +15,7 @@ import {
   isPureObjectReally,
   trueThat,
   undefThat,
+  falseThat,
 } from './types-base';
 
 import {
@@ -32,6 +33,7 @@ import {
   createIsStrictDataType,
   isObjectishType,
   isStrictArrayType,
+  isArrayishType,
 } from './json-schema-types';
 
 export class SchemaValidationMember {
@@ -823,6 +825,7 @@ function compileObjectChildren(owner, schema, addMember, addChildSchema) {
   if (properties == null && patterns == null && additional === true)
     return undefined;
 
+  // make sure we are not part of a map!
   if (additional !== true && additional !== false) {
     if (properties == null && patterns == null) {
       let isobj = true;
@@ -840,6 +843,7 @@ function compileObjectChildren(owner, schema, addMember, addChildSchema) {
   function compileProperties() {
     const keys = Object.keys(properties);
     const props = {};
+
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
       const prop = properties[key];
@@ -852,7 +856,7 @@ function compileObjectChildren(owner, schema, addMember, addChildSchema) {
     if (Object.keys(props).length > 0) {
       return function validateProperty(key, data, dataRoot) {
         const cb = props[key];
-        return isFn(cb)
+        return cb != null
           ? cb(data[key], dataRoot)
           : undefined;
       };
@@ -865,18 +869,37 @@ function compileObjectChildren(owner, schema, addMember, addChildSchema) {
     const keys = Object.keys(patterns);
     const regs = {};
     const props = {};
+
     for (let i = 0; i < keys.length; ++i) {
       const key = keys[i];
       const rxp = String_createRegExp(key);
       if (rxp != null) {
         const patt = patterns[key];
-        const cb = addChildSchema(['properties', key], patt, compileObjectChildren);
+        const cb = addChildSchema(['patternProperties', key], patt, compileObjectChildren);
         if (cb != null) {
           regs[key] = rxp;
           props[key] = cb;
-        }        
+        }
+      }
     }
 
+    const regKeys = Object.keys(regs);
+
+    if (regKeys.length > 0) {
+      return function validatePatternProperty(key, data, dataRoot) {
+        for (let i = 0; i < regKeys.length; ++i) {
+          const rky = regKeys[i];
+          const rxp = regs[rky];
+          if (rxp != null && rxp.test(key)) {
+            const cb = props[key];
+            return cb(data[key], dataRoot);
+          }
+        }
+        return undefined;
+      };
+    }
+
+    return undefined;
   }
 
   function compileAdditional() {
@@ -888,10 +911,10 @@ function compileObjectChildren(owner, schema, addMember, addChildSchema) {
       };
     }
     if (additional !== true) {
-      const cb = addChildSchema('additionalProperties', additional, compileObjectChildren);
-      if (isFn(cb)) {
+      const validate = addChildSchema('additionalProperties', additional, compileObjectChildren);
+      if (validate != null) {
         return function validateAdditional(key, data, dataRoot) {
-          return cb(data[key], dataRoot);
+          return validate(data[key], dataRoot);
         };
       }
     }
@@ -925,6 +948,7 @@ function compileObjectChildren(owner, schema, addMember, addChildSchema) {
         if (found != null) {
           dataKeys[i] = found;
           valid = valid && found;
+          if (found === false) return false;
         }
       }
     }
@@ -932,16 +956,68 @@ function compileObjectChildren(owner, schema, addMember, addChildSchema) {
   };
 }
 
-function compileMapChildren(owner, schema, addMember, addChildSchema) {
-  return { owner, schema, addMember, addChildSchema };
+// eslint-disable-next-line no-unused-vars
+function compileMapChildren(owner, schema, addMember, addChildSchema) { // TODO
+  return undefined;
 }
 
 function compileArrayChildren(owner, schema, addMember, addChildSchema) {
-  return { owner, schema, addMember, addChildSchema };
+  const items = getPureObject(schema.items);
+  const contains = getPureObject(schema.contains);
+  if (items == null && contains == null) return undefined;
+
+  const maxItems = getPureNumber(schema.maxItems, 0);
+
+  function compileItems() {
+    if (items == null) return undefined;
+
+    const validate = addChildSchema('items', items, compileArrayChildren);
+    if (validate != null) {
+      return function validateItem(childData, dataRoot) {
+        return validate(childData, dataRoot);
+      };
+    }
+
+    return undefined;
+  }
+
+  function compileContains() {
+    if (contains == null) return undefined;
+
+    const validate = addChildSchema('contains', contains, compileArrayChildren);
+    if (validate != null) {
+      return function validateContains(childData, dataRoot) {
+        return validate(childData, dataRoot);
+      };
+    }
+
+    return undefined;
+  }
+
+  const validateItem = fallbackFn(compileItems(), trueThat);
+  const validateContains = fallbackFn(compileContains(), falseThat);
+
+  return function validateArrayChildren(data, dataRoot) {
+    let valid = true;
+    if (isArrayishType(data)) {
+      const len = maxItems > 0
+        ? Math.min(maxItems, data.length)
+        : data.length;
+      for (let i = 0; i < len; ++i) {
+        const obj = data[i];
+        valid = valid
+          && validateItem(i, obj, dataRoot);
+        if (validateContains(i, obj, dataRoot) === true)
+          return true;
+      }
+    }
+    return valid;
+  };
 }
 
+// eslint-disable-next-line no-unused-vars
 function compileSetChildren(owner, schema, addMember, addChildSchema) {
-  return { owner, schema, addMember, addChildSchema };
+  return undefined;
 }
 
 function compileTupleChildren(owner, schema, addMember, addChildSchema) {

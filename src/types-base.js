@@ -28,8 +28,14 @@ export function trueThat(whatever = true) {
   return whatever === true || that;
 }
 
+export function falseThat(boring = true) {
+  return false && boring;
+}
+
 export function undefThat(whatever = undefined) {
-  return undefined;
+  return whatever !== undefined
+    ? undefined
+    : whatever;
 }
 
 export function fallbackFn(compiled, fallback = trueThat) {
