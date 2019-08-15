@@ -198,7 +198,7 @@ export function isStrictObjectOfType(data, fn) {
 }
 isStrictObjectOfType.typeName = 'object';
 
-export function createIsStrictObjectOfType(fn) {
+function createIsStrictObjectOfType(fn) {
   // eslint-disable-next-line no-undef-init
   let usefull = undefined;
   if (isFn(fn)) {
@@ -212,10 +212,10 @@ export function createIsStrictObjectOfType(fn) {
       const type = fn[i];
       const tn = typeof type;
       if (tn === 'string') {
-        types.push('data.constructor===' + type);
+        types.push('data.constructor===\'' + type + '\'');
       }
       else if (tn === 'function') {
-        types.push('data.constructor===' + type.name);
+        types.push('data.constructor===\'' + type.name + '\'');
       }
     }
     if (types > 0) {
@@ -233,7 +233,6 @@ export function createIsStrictObjectOfType(fn) {
       'return data!=null && data.constructor===' + fn,
     );
   }
-  usefull.typeName = 'object';
   return usefull;
 }
 
@@ -310,10 +309,12 @@ export function createIsStrictDataType(type, format, isstrict = false) {
     return createIsStrictObjectOfType(type);
   }
   else if (type === 'object') {
-    if (isstrict) {
+    if (isFn(format))
+      return createIsStrictDataType(format);
+    else if (isstrict)
       return isStrictObjectType;
-    }
-    return isObjectishType;
+    else
+      return isObjectishType;
   }
   else if (type === 'array') {
     if (isStrictStringType(format)) {

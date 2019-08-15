@@ -16,6 +16,7 @@ import {
   trueThat,
   undefThat,
   falseThat,
+  getStringOrArray,
 } from './types-base';
 
 import {
@@ -1020,8 +1021,63 @@ function compileSetChildren(owner, schema, addMember, addChildSchema) {
   return undefined;
 }
 
+// eslint-disable-next-line no-unused-vars
 function compileTupleChildren(owner, schema, addMember, addChildSchema) {
-  return { owner, schema, addMember, addChildSchema };
+  const items = getPureArray(schema.items);
+  const contains = getPureObject(schema.contains);
+
+  if (items == null && contains == null) return undefined;
+
+  // check if we are really in a tuple
+  if (items == null) {
+    const type = getStringOrArray(schema.type);
+    let istuple = false;
+    if (isStrictArrayType(type)) {
+      istuple = type.includes('tuple');
+    }
+    else if (type === 'tuple') {
+      istuple = true;
+    }
+    if (istuple !== true) return undefined;
+  }
+
+  function compileItems() {
+    if (items == null) return undefined;
+    const vals = new Array(items.length);
+    for (let i = 0; i < items.length; ++i) {
+      const cb = addChildSchema(i, items[i], compileTupleChildren);
+      vals[i] = cb;
+    }
+
+    return function validateItem(i, data, dataRoot) {
+      if (vals.length < i) {
+        const validate = vals[i];
+      }
+      return true;
+    };
+  }
+
+  function compileContains() {
+
+  }
+
+  const validateItem = fallbackFn(compileItems(), trueThat);
+  const validateContains = fallbackFn(compileContains, falseThat);
+
+  return function validateTuple(data, dataRoot) {
+    let valid = true;
+    if (isArrayishType(data)) {
+      for (let i = 0; i < data.length; ++i) {
+        const val = data[i];
+        let found = validateItem(i, val, dataRoot);
+        if (found != null) {
+          valid = valid && found;
+        }
+        if (validateContains(i, val, dataRoot) === true))
+      }
+    }
+    return valid;
+  };
 }
 
 //#endregion
