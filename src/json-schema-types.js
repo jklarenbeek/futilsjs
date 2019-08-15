@@ -212,10 +212,10 @@ function createIsStrictObjectOfType(fn) {
       const type = fn[i];
       const tn = typeof type;
       if (tn === 'string') {
-        types.push('data.constructor===\'' + type + '\'');
+        types.push('data.constructor===' + type);
       }
       else if (tn === 'function') {
-        types.push('data.constructor===\'' + type.name + '\'');
+        types.push('data.constructor===' + type.name);
       }
     }
     if (types > 0) {

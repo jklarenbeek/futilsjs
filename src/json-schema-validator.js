@@ -1041,39 +1041,52 @@ function compileTupleChildren(owner, schema, addMember, addChildSchema) {
     if (istuple !== true) return undefined;
   }
 
+  const maxItems = getPureNumber(schema.maxItems, 0);
+
   function compileItems() {
     if (items == null) return undefined;
     const vals = new Array(items.length);
     for (let i = 0; i < items.length; ++i) {
-      const cb = addChildSchema(i, items[i], compileTupleChildren);
+      const cb = addChildSchema(['items', i], items[i], compileTupleChildren);
       vals[i] = cb;
     }
 
     return function validateItem(i, data, dataRoot) {
       if (vals.length < i) {
-        const validate = vals[i];
+        const cb = vals[i];
+        if (cb != null) {
+          return cb(data, dataRoot);
+        }
       }
-      return true;
+      return false;
     };
   }
 
   function compileContains() {
-
+    if (contains == null) return undefined;
+    const cb = addChildSchema('contains', contains, compileTupleChildren);
+    if (cb == null) return undefined;
+    return function validateContains(data, dataRoot) {
+      return cb(data, dataRoot);
+    };
   }
 
-  const validateItem = fallbackFn(compileItems(), trueThat);
-  const validateContains = fallbackFn(compileContains, falseThat);
+  const validateItem = fallbackFn(compileItems(), falseThat);
+  const validateContains = fallbackFn(compileContains(), falseThat);
 
   return function validateTuple(data, dataRoot) {
     let valid = true;
     if (isArrayishType(data)) {
-      for (let i = 0; i < data.length; ++i) {
+      const len = maxItems > 0
+        ? Math.min(maxItems, data.length)
+        : data.length;
+      for (let i = 0; i < len; ++i) {
         const val = data[i];
-        let found = validateItem(i, val, dataRoot);
-        if (found != null) {
-          valid = valid && found;
+        if (!validateItem(i, val, dataRoot)) {
+          if (validateContains(i, val, dataRoot) === true)
+            continue;
+          valid = false;
         }
-        if (validateContains(i, val, dataRoot) === true))
       }
     }
     return valid;
