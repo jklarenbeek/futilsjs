@@ -1,0 +1,6 @@
+{
+  "$comment": "https://json-schema.org/understanding-json-schema/reference/string.html#regular-expressions",
+
+  "type": "string",
+  "pattern": "^(\\([0-9]{3}\\))?[0-9]{3}-[0-9]{4}$"
+}

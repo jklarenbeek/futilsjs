@@ -1,0 +1,6 @@
+{
+  "$comment": "https://json-schema.org/understanding-json-schema/reference/combining.html#oneof",
+  "not": {
+    "type": "string"
+  }
+}

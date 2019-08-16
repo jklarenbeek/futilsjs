@@ -1,0 +1,8 @@
+{
+  "$comment": "https://json-schema.org/understanding-json-schema/reference/combining.html#oneof",
+
+  "oneOf": [
+    { "type": "number", "multipleOf": 5 },
+    { "type": "number", "multipleOf": 3 }
+  ]
+}

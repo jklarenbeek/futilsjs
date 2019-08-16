@@ -1,0 +1,9 @@
+{
+  "$comment": "https://json-schema.org/understanding-json-schema/reference/generic.html#const",
+
+  "properties": {
+    "country": {
+      "const": "United States of America"
+    }
+  }
+}

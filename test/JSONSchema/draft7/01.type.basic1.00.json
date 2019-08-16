@@ -1,0 +1,5 @@
+{
+  "$comment": "https://json-schema.org/understanding-json-schema/reference/type.html",
+
+  "type": "number"
+}

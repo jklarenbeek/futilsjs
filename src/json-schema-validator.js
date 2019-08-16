@@ -1125,15 +1125,24 @@ function compileValidatorSchemaObject(owner, schema, addMember) {
   );
 
   return function validateSchemaObject(data, dataRoot) {
-    return fnType(data, dataRoot)
-      && fnFormat(data, dataRoot)
-      && fnEnumPrimitive(data, dataRoot)
-      && fnNumberRange(data, dataRoot)
-      && fnNumberMultipleOf(data, dataRoot)
-      && fnStringLength(data, dataRoot)
-      && fnStringPattern(data, dataRoot)
-      && fnObjectBasic(data, dataRoot)
-      && fnArraySize(data, dataRoot);
+    const vType = fnType(data, dataRoot);
+    const vFormat = fnFormat(data, dataRoot);
+    const vEnumPrimitive = fnEnumPrimitive(data, dataRoot);
+    const vNumberRange = fnNumberRange(data, dataRoot);
+    const vNumberMultipleOf = fnNumberMultipleOf(data, dataRoot);
+    const vStringLength = fnStringLength(data, dataRoot);
+    const vStringPattern = fnStringPattern(data, dataRoot);
+    const vObjectBasic = fnObjectBasic(data, dataRoot);
+    const vArraySize = fnArraySize(data, dataRoot);
+    return vType
+      && vFormat
+      && vEnumPrimitive
+      && vNumberRange
+      && vNumberMultipleOf
+      && vStringLength
+      && vStringPattern
+      && vObjectBasic
+      && vArraySize;
   };
 }
 
@@ -1179,7 +1188,9 @@ function compileJSONSchemaRecursive(owner, schema, schemaPath, dataPath, regfn, 
     );
     return regfn(member,
       function compileJSONSchema_addError(value, ...rest) {
-        const data = rest.length > 0 ? [value, ...rest] : value;
+        const data = rest.length > 0
+          ? [value, ...rest]
+          : value;
         errfn(member, data);
         return false;
       },
@@ -1191,13 +1202,14 @@ function compileJSONSchemaRecursive(owner, schema, schemaPath, dataPath, regfn, 
     schema,
     addMember);
 
-  const addChild = function addChildSchema(_schema, _schemaPath, _dataPath) {
+  const addChild = function addChildSchema(key, childSchema, fn) {
     return compileJSONSchemaRecursive(owner, _schema, _schemaPath, _dataPath, regfn, errfn);
   };
 
   const validateChildren = compileValidatorSchemaChildren(
     owner,
     schema,
+    addMember,
     addChild);
 
   return function validateJSONSchemaRecursive(data, dataRoot) {
