@@ -198,7 +198,7 @@ export function isStrictObjectOfType(data, fn) {
 }
 isStrictObjectOfType.typeName = 'object';
 
-function createIsStrictObjectOfType(fn) {
+export function createIsStrictObjectOfType(fn) {
   // eslint-disable-next-line no-undef-init
   let usefull = undefined;
   if (isFn(fn)) {
@@ -239,9 +239,9 @@ function createIsStrictObjectOfType(fn) {
 export function isStrictObjectType(data) {
   return data != null
     && typeof data === 'object'
-    && !(data.constructor === Map
+    && !(data instanceof Array
+      || data.constructor === Map
       || data.constructor === Set
-      || data instanceof Array
       || data.constructor === Int8Array
       || data.constructor === Uint8Array
       || data.constructor === Uint8ClampedArray
@@ -303,50 +303,5 @@ export function isStrictTypedArray(data) {
     || data.constructor === BigUint64Array);
 }
 isStrictTypedArray.typeName = 'array';
-
-export function createIsStrictDataType(type, format, isstrict = false) {
-  if (isFn(type)) {
-    return createIsStrictObjectOfType(type);
-  }
-  else if (type === 'object') {
-    if (isFn(format))
-      return createIsStrictDataType(format);
-    else if (isstrict)
-      return isStrictObjectType;
-    else
-      return isObjectishType;
-  }
-  else if (type === 'array') {
-    if (isStrictStringType(format)) {
-      const at = numberFormats[format]
-        ? numberFormats[format].arrayType
-        : undefined;
-      if (at) {
-        return createIsStrictObjectOfType(at);
-      }
-    }
-    else return isStrictArrayType;
-  }
-  else if (type === 'set') {
-    return createIsStrictObjectOfType(Set);
-  }
-  else if (type === 'map') {
-    return createIsStrictObjectOfType(Map);
-  }
-  else if (type === 'tuple') {
-    return isStrictArrayType;
-  }
-  else {
-    switch (type) {
-      case 'boolean': return isStrictBooleanType;
-      case 'integer': return isStrictIntegerType;
-      case 'bigint': return isStrictBigIntType;
-      case 'number': return isStrictNumberType;
-      case 'string': return isStrictStringType;
-      default: break;
-    }
-  }
-  return undefined;
-}
 
 //#endregion

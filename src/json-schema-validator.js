@@ -23,6 +23,7 @@ import {
   String_createRegExp,
 } from './types-String';
 
+// eslint-disable-next-line import/no-cycle
 import {
   isIntegerSchema,
   isBigIntSchema,
@@ -485,14 +486,14 @@ function compileObjectBasic(owner, schema, addMember) {
 
     // when the array is present but empty,
     // REQUIRE all of the properties
+    const objProps = getPureObject(schema.properties);
+    const mapProps = getPureArray(schema.properties);
+    let ismap = mapProps != null;
     let keys = required;
-    const ms = getPureArray(schema.properties);
-    let ismap = ms != null;
     if (keys.length === 0) {
-      const os = getPureObject(schema.properties);
-      const ok = os && Object.keys(os);
-      const mk = ms > 0 && Array.from(new Map(ms).keys());
-      ismap = ms != null;
+      const ok = objProps && Object.keys(objProps);
+      const mk = mapProps > 0 && Array.from(new Map(mapProps).keys());
+      ismap = mapProps != null;
       keys = ok || mk || keys;
     }
 
