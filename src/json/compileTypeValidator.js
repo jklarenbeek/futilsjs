@@ -5,52 +5,13 @@ import {
 } from '../types-base';
 
 import {
-  createIsStrictObjectOfType,
-  isStrictBooleanType,
-  isStrictIntegerType,
-  isStrictBigIntType,
-  isStrictNumberType,
   isStrictStringType,
   isStrictArrayType,
-  isArrayishType,
-  isStrictObjectType,
-  isObjectishType,
 } from '../json-schema-types';
 
-// TODO: rename to createIsSchemaDataType
-export function createIsStrictDataType(type, format, isstrict = false) {
-  if (type === 'object') {
-    return isstrict
-      ? isStrictObjectType
-      : isObjectishType;
-  }
-  else if (type === 'array') {
-    return isstrict
-      ? isStrictArrayType
-      : isArrayishType;
-  }
-  else if (type === 'set') {
-    return createIsStrictObjectOfType(Set);
-  }
-  else if (type === 'map') {
-    return createIsStrictObjectOfType(Map);
-  }
-  else if (type === 'tuple') {
-    return isStrictArrayType;
-  }
-  else {
-    switch (type) {
-      case 'boolean': return isStrictBooleanType;
-      case 'integer': return isStrictIntegerType;
-      case 'bigint': return isStrictBigIntType;
-      case 'number': return isStrictNumberType;
-      case 'string': return isStrictStringType;
-      default: break;
-    }
-  }
-  return undefined;
-}
+import { createIsStrictDataType } from './createIsStrictDataType';
 
+// TODO: rename to createIsSchemaDataType
 function compileValidateType(schema, addMember) {
   const type = getStringOrArray(schema.type);
   const nullable = getPureBool(schema.nullable);
@@ -134,7 +95,7 @@ function compileValidateRequired(schema, addMember) {
   return undefined;
 }
 
-export function compileSchemaBasicValidator(schema, addMember) {
+export function compileTypeValidator(schema, addMember) {
   const fnType = compileValidateType(schema, addMember);
   const fnRequired = compileValidateRequired(schema, addMember);
   if (fnType && fnRequired) {
@@ -151,4 +112,4 @@ export function compileSchemaBasicValidator(schema, addMember) {
   return undefined;
 }
 
-export default compileSchemaBasicValidator;
+export default compileTypeValidator;
