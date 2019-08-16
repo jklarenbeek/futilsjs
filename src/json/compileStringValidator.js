@@ -1,5 +1,3 @@
-import { maxHeaderSize } from "http";
-
 import {
   getPureInteger,
 } from '../types-base';
