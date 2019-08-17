@@ -87,8 +87,6 @@ function isPureNumber_asCastFloat(obj) {
   return +obj === +obj; // we equal NaN with NaN here.
 }
 
-// endregion
-
 /**
  * @example
  *  const fns_all = [ isPureNumber_asNumber, isPureNumber_asParseFloat ];
@@ -134,6 +132,7 @@ export function performanceIndexOfUnaryBool(functionList, testList) {
   }
   return index;
 }
+//#endregion
 
 export const isPureNumber = (function calibrate(doit = false) {
   if (!doit) return isPureNumber_asNumber;

@@ -1,5 +1,4 @@
 import {
-  createIsStrictObjectOfType,
   isStrictBooleanType,
   isStrictIntegerType,
   isStrictBigIntType,
@@ -9,7 +8,11 @@ import {
   isArrayishType,
   isStrictObjectType,
   isObjectishType,
-} from '../json-schema-types';
+} from './isDataType';
+
+import {
+  createIsStrictObjectOfType,
+} from './createIsStrictObjectOfType';
 
 export function createIsStrictDataType(type, format, isstrict = false) {
   if (type === 'object') {

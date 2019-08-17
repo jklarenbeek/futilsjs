@@ -7,20 +7,20 @@ import {
 import {
   isStrictStringType,
   isStrictArrayType,
-} from '../json-schema-types';
+} from './isDataType';
 
 import { createIsStrictDataType } from './createIsStrictDataType';
 
 // TODO: rename to createIsSchemaDataType
-function compileValidateType(schema, addMember) {
+function compileType(schema, addMember) {
   const type = getStringOrArray(schema.type);
   const nullable = getPureBool(schema.nullable);
 
   if (isStrictStringType(type)) {
     const isStrictDataType = createIsStrictDataType(type);
     if (isStrictDataType) {
-      const addError = addMember('type', type, compileValidateType, 'string');
-      if (nullable != null) addMember('nullable', nullable, compileValidateType, 'string');
+      const addError = addMember('type', type, compileType, 'string');
+      if (nullable != null) addMember('nullable', nullable, compileType, 'string');
 
       if (nullable === true) {
         return function validateNullableType(data) {
@@ -43,7 +43,7 @@ function compileValidateType(schema, addMember) {
       if (cb) types.push(cb);
     }
     if (types.length > 0) {
-      const addError = addMember('type', type, compileValidateType, 'array');
+      const addError = addMember('type', type, compileType, 'array');
       if (isnullable === true) {
         return function validateNullableTypes(data) {
           if (data == null) return true;
@@ -64,7 +64,7 @@ function compileValidateType(schema, addMember) {
     }
   }
   else if (nullable === false) {
-    const addError = addMember('nullable', nullable, compileValidateType);
+    const addError = addMember('nullable', nullable, compileType);
     return function validateNotNullable(data) {
       return data == null
         ? addError(data)
@@ -75,10 +75,10 @@ function compileValidateType(schema, addMember) {
   return undefined;
 }
 
-function compileValidateRequired(schema, addMember) {
+function compileRequired(schema, addMember) {
   const required = getBoolOrArray(schema.required);
   if (required === true) {
-    const addError = addMember('required', true, compileValidateRequired, 'bool');
+    const addError = addMember('required', true, compileRequired, 'bool');
     return function validateRequiredTrue(data) {
       if (data === undefined) return addError(data);
       if (data === null && typeof data !== 'object') return addError(data);
@@ -86,7 +86,7 @@ function compileValidateRequired(schema, addMember) {
     };
   }
   if (required != null) {
-    const addError = addMember('required', true, compileValidateRequired, 'array');
+    const addError = addMember('required', true, compileRequired, 'array');
     return function validateRequired(data) {
       if (data == null) return addError(data);
       return true;
@@ -95,9 +95,9 @@ function compileValidateRequired(schema, addMember) {
   return undefined;
 }
 
-export function compileTypeValidator(schema, addMember) {
-  const fnType = compileValidateType(schema, addMember);
-  const fnRequired = compileValidateRequired(schema, addMember);
+export function compileTypeBasic(schema, addMember) {
+  const fnType = compileType(schema, addMember);
+  const fnRequired = compileRequired(schema, addMember);
   if (fnType && fnRequired) {
     return function validateSchemaBasic(data) {
       return fnType(data) && fnRequired(data);
@@ -111,5 +111,3 @@ export function compileTypeValidator(schema, addMember) {
   }
   return undefined;
 }
-
-export default compileTypeValidator;

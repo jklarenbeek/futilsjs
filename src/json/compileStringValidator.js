@@ -7,7 +7,7 @@ import {
 } from '../types-String';
 
 
-function compileStringLength(owner, schema, addMember) {
+function compileStringLength(schema, addMember) {
   const min = Math.max(getPureInteger(schema.minLength, 0), 0);
   const max = Math.max(getPureInteger(schema.maxLength, 0), 0);
 
@@ -70,7 +70,7 @@ function compileStringPattern(schema, addMember) {
   return undefined;
 }
 
-export function compileStringValidator(schema, addMember) {
+export function compileStringBasic(schema, addMember) {
   const fnLength = compileStringLength(schema, addMember);
   const fnPattern = compileStringPattern(schema, addMember);
   if (fnLength && fnPattern) {
@@ -86,5 +86,3 @@ export function compileStringValidator(schema, addMember) {
   }
   return undefined;
 }
-
-export default compileStringValidator;

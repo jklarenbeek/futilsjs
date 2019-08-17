@@ -1,0 +1,36 @@
+import {
+  isStrictBooleanType,
+  isStrictIntegerType,
+  isStrictNumberType,
+  isStrictStringType,
+  isStrictArrayType,
+  isStrictObjectType,
+} from './isDataType';
+
+export function getStrictObject(obj, def) {
+  return isStrictObjectType(obj) ? obj : def;
+}
+
+export function getStrictArray(obj, def) {
+  return isStrictArrayType(obj) ? obj : def;
+}
+
+export function getStrictArrayMinItems(obj, len, def) {
+  return isStrictArrayType(obj) && obj.length > len ? obj: def;
+}
+
+export function getStrictString(obj, def) {
+  return isStrictStringType(obj) ? obj : def;
+}
+
+export function getStrictNumber(obj, def) {
+  return isStrictNumberType(obj) ? obj : def; // TODO: performance check for isNaN and Number!!!
+}
+
+export function getStrictInteger(obj, def = undefined) {
+  return isStrictIntegerType(obj) ? obj : def;
+}
+
+export function getStrictBoolean(obj, def = undefined) {
+  return isStrictBooleanType(obj) ? obj : def;
+}
