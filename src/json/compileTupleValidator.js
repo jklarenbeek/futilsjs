@@ -16,7 +16,7 @@ import {
 import {
   fallbackFn,
   falseThat,
-} from './functionUtils';
+} from './isFunctionType';
 
 export function compileTupleChildren(schema, addMember, addChildSchema) {
   const items = getArrayishType(schema.items);

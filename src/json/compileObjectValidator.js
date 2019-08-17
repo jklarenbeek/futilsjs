@@ -22,7 +22,7 @@ import {
 import {
   fallbackFn,
   undefThat,
-} from './functionUtils';
+} from './isFunctionType';
 
 export function compileObjectBasic(schema, addMember) {
   // get the defined lower and upper bounds of an array.

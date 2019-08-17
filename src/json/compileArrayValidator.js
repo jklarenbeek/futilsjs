@@ -20,7 +20,7 @@ import {
   fallbackFn,
   trueThat,
   falseThat,
-} from './functionUtils';
+} from './isFunctionType';
 
 
 export function compileArrayBasic(schema, addMember) {
