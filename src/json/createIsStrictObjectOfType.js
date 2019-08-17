@@ -1,6 +1,6 @@
 import {
   isFn,
-} from '../types-base';
+} from './functionUtils';
 
 import {
   isStrictObjectOfType,

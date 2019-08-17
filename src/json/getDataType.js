@@ -5,8 +5,13 @@ import {
   isStrictStringType,
   isStrictArrayType,
   isStrictObjectType,
+  isNumberishType,
+  isIntegerishType,
+  isObjectishType,
+  isArrayishType,
 } from './isDataType';
 
+//#region strict
 export function getStrictObject(obj, def) {
   return isStrictObjectType(obj) ? obj : def;
 }
@@ -34,3 +39,30 @@ export function getStrictInteger(obj, def = undefined) {
 export function getStrictBoolean(obj, def = undefined) {
   return isStrictBooleanType(obj) ? obj : def;
 }
+//#endregion
+
+//#region ishes
+export function getObjectishType(obj, def) {
+  return isObjectishType(obj) ? obj : def;
+}
+
+export function getArrayishType(obj, def) {
+  return isArrayishType(obj) ? obj : def;
+}
+
+export function getNumberishType(obj, def) {
+  return isNumberishType(obj) ? Number(obj) : def;
+}
+
+export function getIntegerishType(obj, def) {
+  return isIntegerishType(obj) ? Number(obj) : def;
+}
+
+export function getBooleanishType(obj, def) {
+  return obj === true || obj === 'true'
+    ? true
+    : obj === false || obj === 'false'
+      ? false
+      : def;
+}
+//#endregion

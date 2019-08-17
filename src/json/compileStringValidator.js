@@ -1,15 +1,12 @@
 import {
-  getPureInteger,
-} from '../types-base';
-
-import {
   String_createRegExp,
 } from '../types-String';
 
+import { getIntegerishType } from './getDataType';
 
 function compileStringLength(schema, addMember) {
-  const min = Math.max(getPureInteger(schema.minLength, 0), 0);
-  const max = Math.max(getPureInteger(schema.maxLength, 0), 0);
+  const min = Math.max(getIntegerishType(schema.minLength, 0), 0);
+  const max = Math.max(getIntegerishType(schema.maxLength, 0), 0);
 
   if (min > 0 && max > 0) {
     const addError = addMember(['minLength', 'maxLength'], [min, max], compileStringLength);

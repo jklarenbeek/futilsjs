@@ -1,20 +1,26 @@
 import {
-  getPureArray,
-  getPureObject,
-  getPureNumber,
-  fallbackFn,
-  falseThat,
-  getStringOrArray,
-} from '../types-base';
-
-import {
   isStrictArrayType,
   isArrayishType,
 } from './isDataType';
 
+import {
+  getObjectishType,
+  getNumberishType,
+  getArrayishType,
+} from './getDataType';
+
+import {
+  getStringOrArray,
+} from './getDataTypeExtra';
+
+import {
+  fallbackFn,
+  falseThat,
+} from './functionUtils';
+
 export function compileTupleChildren(schema, addMember, addChildSchema) {
-  const items = getPureArray(schema.items);
-  const contains = getPureObject(schema.contains);
+  const items = getArrayishType(schema.items);
+  const contains = getObjectishType(schema.contains);
 
   if (items == null && contains == null) return undefined;
 
@@ -31,7 +37,7 @@ export function compileTupleChildren(schema, addMember, addChildSchema) {
     if (istuple !== true) return undefined;
   }
 
-  const maxItems = getPureNumber(schema.maxItems, 0);
+  const maxItems = getNumberishType(schema.maxItems, 0);
 
   function compileItems() {
     if (items == null) return undefined;

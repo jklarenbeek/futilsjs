@@ -1,14 +1,13 @@
 import {
-  getPureArrayMinItems,
-} from '../types-base';
+  getArrayMinItems,
+} from './isDataTypeExtra';
 
 import {
   isPrimitiveSchema,
 } from './isSchemaType';
 
-
 export function compileEnumBasic(schema, addMember) {
-  const enums = getPureArrayMinItems(schema.enum, 1);
+  const enums = getArrayMinItems(schema.enum, 1);
   if (enums) {
     if (isPrimitiveSchema(schema)) {
       const addError = addMember('enum', enums, compileEnumBasic);

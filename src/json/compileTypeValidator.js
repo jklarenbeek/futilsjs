@@ -1,20 +1,24 @@
 import {
-  getStringOrArray,
-  getPureBool,
+  getBooleanishType,
+} from './getDataType';
+
+import {
   getBoolOrArray,
-} from '../types-base';
+  getStringOrArray,
+} from './getDataTypeExtra';
 
 import {
   isStrictStringType,
   isStrictArrayType,
 } from './isDataType';
 
+
 import { createIsStrictDataType } from './createIsStrictDataType';
 
 // TODO: rename to createIsSchemaDataType
 function compileType(schema, addMember) {
   const type = getStringOrArray(schema.type);
-  const nullable = getPureBool(schema.nullable);
+  const nullable = getBooleanishType(schema.nullable);
 
   if (isStrictStringType(type)) {
     const isStrictDataType = createIsStrictDataType(type);

@@ -1,33 +1,34 @@
 import {
-  getPureObject,
-  getPureNumber,
-  getPureInteger,
-  fallbackFn,
-  trueThat,
-  falseThat,
-} from '../types-base';
-
-import {
   isArrayishType,
 } from './isDataType';
 
+import {
+  getObjectishType,
+  getIntegerishType,
+} from './getDataType';
+
+import {
+  isArrayOrSet,
+  getArrayOrSetLength,
+} from './isDataTypeExtra';
+
+
+import {
+  fallbackFn,
+  trueThat,
+  falseThat,
+} from './functionUtils';
+
 
 export function compileArrayBasic(schema, addMember) {
-  const min = getPureInteger(schema.minItems);
-  const max = getPureInteger(schema.maxItem);
-
-  function isArrayOrSet(data) {
-    return (data != null && (data.constructor === Array || data.constructor === Set));
-  }
-  function getLength(data) {
-    return data.constructor === Set ? data.size : data.length;
-  }
+  const min = getIntegerishType(schema.minItems);
+  const max = getIntegerishType(schema.maxItem);
 
   if (min && max) {
     const addError = addMember(['minItems', 'maxItems'], [min, max], compileArrayBasic);
     return function itemsBetween(data) {
       if (!isArrayOrSet(data)) { return true; }
-      const len = getLength(data);
+      const len = getArrayOrSetLength(data);
       const valid = len >= min && len <= max;
       if (!valid) addError(data);
       return valid;
@@ -37,7 +38,7 @@ export function compileArrayBasic(schema, addMember) {
     const addError = addMember('maxItems', max, compileArrayBasic);
     return function maxItems(data) {
       if (!isArrayOrSet(data)) { return true; }
-      const len = getLength(data);
+      const len = getArrayOrSetLength(data);
       const valid = len <= max;
       if (!valid) addError(data);
       return valid;
@@ -47,7 +48,7 @@ export function compileArrayBasic(schema, addMember) {
     const addError = addMember('minItems', min, compileArrayBasic);
     return function minItems(data) {
       if (!isArrayOrSet(data)) { return true; }
-      const len = getLength(data);
+      const len = getArrayOrSetLength(data);
       const valid = len >= min;
       if (!valid) addError(data);
       return valid;
@@ -57,11 +58,11 @@ export function compileArrayBasic(schema, addMember) {
 }
 
 export function compileArrayChildren(schema, addMember, addChildSchema) {
-  const items = getPureObject(schema.items);
-  const contains = getPureObject(schema.contains);
+  const items = getObjectishType(schema.items);
+  const contains = getObjectishType(schema.contains);
   if (items == null && contains == null) return undefined;
 
-  const maxItems = getPureNumber(schema.maxItems, 0);
+  const maxItems = getIntegerishType(schema.maxItems, 0);
 
   function compileItems() {
     if (items == null) return undefined;

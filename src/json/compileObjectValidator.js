@@ -1,13 +1,4 @@
 import {
-  getPureArray,
-  getPureObject,
-  getPureInteger,
-  getBoolOrObject,
-  fallbackFn,
-  undefThat,
-} from '../types-base';
-
-import {
   String_createRegExp,
 } from '../types-String';
 
@@ -18,10 +9,25 @@ import {
   isStrictArrayType,
 } from './isDataType';
 
+import {
+  getObjectishType,
+  getIntegerishType,
+  getArrayishType,
+} from './getDataType';
+
+import {
+  getBoolOrObject,
+} from './getDataTypeExtra';
+
+import {
+  fallbackFn,
+  undefThat,
+} from './functionUtils';
+
 export function compileObjectBasic(schema, addMember) {
   // get the defined lower and upper bounds of an array.
-  const minprops = getPureInteger(schema.minProperties);
-  const maxprops = getPureInteger(schema.maxProperties);
+  const minprops = getIntegerishType(schema.minProperties);
+  const maxprops = getIntegerishType(schema.maxProperties);
 
   function compilePropertyBounds() {
     if (minprops && maxprops) {
@@ -53,7 +59,7 @@ export function compileObjectBasic(schema, addMember) {
   const checkBounds = compilePropertyBounds();
 
   // find all required properties
-  const required = getPureArray(schema.required);
+  const required = getArrayishType(schema.required);
 
   function compileRequiredProperties() {
     if (required == null) {
@@ -75,8 +81,8 @@ export function compileObjectBasic(schema, addMember) {
 
     // when the array is present but empty,
     // REQUIRE all of the properties
-    const objProps = getPureObject(schema.properties);
-    const mapProps = getPureArray(schema.properties);
+    const objProps = getObjectishType(schema.properties);
+    const mapProps = getArrayishType(schema.properties);
     let ismap = mapProps != null;
     let keys = required;
     if (keys.length === 0) {
@@ -127,7 +133,7 @@ export function compileObjectBasic(schema, addMember) {
     return undefined;
   }
 
-  const patterns = getPureArray(schema.patternRequired);
+  const patterns = getArrayishType(schema.patternRequired);
 
   function compileRequiredPatterns() {
     if (patterns && patterns.length > 0) {
@@ -140,7 +146,7 @@ export function compileObjectBasic(schema, addMember) {
         }
       }
 
-      const ismap = (getPureArray(schema.properties) != null);
+      const ismap = (getArrayishType(schema.properties) != null);
       if (regs.length > 0) {
         const addError = addMember('patternRequired', regs, compileRequiredPatterns, ismap ? 'ismap' : 'isobject');
         return function patternRequiredMap(data) {
@@ -193,8 +199,8 @@ export function compileObjectBasic(schema, addMember) {
 }
 
 export function compileObjectChildren(schema, addMember, addChildSchema) {
-  const properties = getPureObject(schema.properties);
-  const patterns = getPureObject(schema.patternProperties);
+  const properties = getObjectishType(schema.properties);
+  const patterns = getObjectishType(schema.patternProperties);
   const additional = getBoolOrObject(schema.additionalProperties, true);
 
   if (properties == null && patterns == null && additional === true)

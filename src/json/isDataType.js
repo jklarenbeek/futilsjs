@@ -1,7 +1,3 @@
-export function isStrictFnType(data) {
-  return typeof data === 'function';
-}
-
 export function isStrictBooleanType(data) {
   return data === false || data === true;
 }
@@ -48,11 +44,6 @@ export function isStrictStringType(data) {
 }
 isStrictStringType.typeName = 'string';
 
-export function isStrictObjectOfType(data, fn) {
-  return data != null && data.constructor === fn;
-}
-isStrictObjectOfType.typeName = 'object';
-
 export function isStrictObjectType(data) {
   return data != null
     && typeof data === 'object'
@@ -82,6 +73,11 @@ export function isObjectishType(data) {
       || data.constructor === Set);
 }
 isObjectishType.typeName = 'object';
+
+export function isStrictObjectOfType(data, fn) {
+  return data != null && data.constructor === fn;
+}
+isStrictObjectOfType.typeName = 'object';
 
 export function isStrictArrayType(data) {
   return data != null

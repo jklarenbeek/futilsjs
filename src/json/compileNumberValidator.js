@@ -1,6 +1,6 @@
 import {
-  getPureNumber,
-} from '../types-base';
+  getNumberishType,
+} from './getDataType';
 
 import {
   isIntegerSchema,
@@ -124,7 +124,7 @@ function compileNumberRange(schema, addMember) {
 }
 
 function compileNumberMultipleOf(schema, addMember) {
-  const mulOf = getPureNumber(schema.multipleOf);
+  const mulOf = getNumberishType(schema.multipleOf);
   // we compare against bigint too! javascript is awesome!
   // eslint-disable-next-line eqeqeq
   if (mulOf && mulOf != 0) {

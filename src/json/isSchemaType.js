@@ -5,13 +5,13 @@ import {
 } from '../json-schema-formats';
 
 import {
-  getPureBool,
-} from '../types-base';
-
-import {
   isObjectishType,
   isStrictArrayType,
 } from './isDataType';
+
+import {
+  getBooleanishType,
+} from './getDataType';
 
 export function isSchemaOfType(schema, type) {
   if (type == null) return false;
@@ -126,7 +126,7 @@ export function isArraySchema(schema) {
 }
 export function isSetSchema(schema) {
   const isknown = schema.type === 'set';
-  const isunique = getPureBool(schema.uniqueItems, false);
+  const isunique = getBooleanishType(schema.uniqueItems, false);
   return isknown || isunique;
 }
 export function isTupleSchema(schema) {
