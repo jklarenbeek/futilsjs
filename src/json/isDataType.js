@@ -9,8 +9,7 @@ export function isPrimitiveTypeEx(typeString) {
 }
 
 export function isPrimitiveType(obj) {
-  const tp = typeof obj;
-  return isPrimitiveTypeEx(tp);
+  return obj != null && isPrimitiveTypeEx(typeof obj);
 }
 
 export function isStrictBooleanType(data) {
