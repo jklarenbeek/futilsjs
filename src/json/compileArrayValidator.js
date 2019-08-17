@@ -22,7 +22,6 @@ import {
   falseThat,
 } from './isFunctionType';
 
-
 export function compileArrayBasic(schema, addMember) {
   const min = getIntegerishType(schema.minItems);
   const max = getIntegerishType(schema.maxItem);
