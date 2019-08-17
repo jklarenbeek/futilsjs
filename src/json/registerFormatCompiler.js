@@ -263,7 +263,7 @@ export const stringFormats = {
 };
 //#endregion
 
-export function createNumberFormatCompiler(name, format) {
+export function createFormatNumberCompiler(name, format) {
   if (format != null && format === 'object') {
     if (['integer', 'bigint', 'number'].includes(format.type)) {
       //const rbts = getPureNumber(r.bits);
@@ -426,7 +426,7 @@ export function registerFormatCompiler(name, schema) {
       return true;
     }
     else {
-      const fn = createNumberFormatCompiler(name, schema);
+      const fn = createFormatNumberCompiler(name, schema);
       if (fn) {
         registeredSchemaFormatters[name] = fn;
         return true;
