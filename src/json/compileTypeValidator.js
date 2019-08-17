@@ -12,8 +12,9 @@ import {
   isStrictArrayType,
 } from './isDataType';
 
-
-import { createIsStrictDataType } from './createIsStrictDataType';
+import {
+  createIsStrictDataType,
+} from './createIsDataType';
 
 // TODO: rename to createIsSchemaDataType
 function compileType(schema, addMember) {
