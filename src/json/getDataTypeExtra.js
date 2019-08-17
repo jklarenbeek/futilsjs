@@ -1,4 +1,8 @@
 import {
+  isArrayishType,
+} from './isDataType';
+
+import {
   isBoolOrNumber,
   isBoolOrArray,
   isBoolOrObject,
@@ -24,4 +28,18 @@ export function getStringOrObject(obj, def) {
 
 export function getStringOrArray(obj, def) {
   return isStringOrArray(obj) ? obj : def;
+}
+
+export function getArrayOrSetLength(data) {
+  return data.constructor === Set
+    ? data.size
+    : isArrayishType(data)
+      ? data.length
+      : 0;
+}
+
+export function getArrayMinItems(obj, len, def) {
+  return isArrayishType(obj) && obj.length >= len
+    ? obj
+    : def;
 }

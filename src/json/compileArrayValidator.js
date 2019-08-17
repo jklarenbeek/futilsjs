@@ -8,8 +8,11 @@ import {
 } from './getDataType';
 
 import {
-  isArrayOrSet,
   getArrayOrSetLength,
+} from './getDataTypeExtra';
+
+import {
+  isArrayOrSet,
 } from './isDataTypeExtra';
 
 

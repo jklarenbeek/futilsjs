@@ -1,3 +1,18 @@
+export function isPrimitiveTypeEx(typeString) {
+  // primitives: boolean = 1, integer = 32, float = 64, bigint = 0, letter = 16
+  // complex: struct, array, string, map
+  return typeString === 'integer'
+    || typeString === 'number'
+    || typeString === 'string'
+    || typeString === 'bigint'
+    || typeString === 'boolean';
+}
+
+export function isPrimitiveType(obj) {
+  const tp = typeof obj;
+  return isPrimitiveTypeEx(tp);
+}
+
 export function isStrictBooleanType(data) {
   return data === false || data === true;
 }

@@ -44,17 +44,3 @@ export function isObjectOrMap(data) {
         && data.constructor !== Set
         && typeof data === 'object'));
 }
-
-export function getArrayOrSetLength(data) {
-  return data.constructor === Set
-    ? data.size
-    : isArrayishType(data)
-      ? data.length
-      : 0;
-}
-
-export function getArrayMinItems(obj, len, def) {
-  return isArrayishType(obj) && getArrayOrSetLength(obj) >= len
-    ? obj
-    : def;
-}

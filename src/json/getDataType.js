@@ -1,4 +1,5 @@
 import {
+  isPrimitiveType,
   isStrictBooleanType,
   isStrictIntegerType,
   isStrictNumberType,
@@ -10,6 +11,12 @@ import {
   isObjectishType,
   isArrayishType,
 } from './isDataType';
+
+export function getSanitizedPrimitive(value, defaultValue = undefined, nullable = false) {
+  if (nullable && value == null) return value;
+  if (value == null) return defaultValue;
+  return isPrimitiveType(value) ? value : defaultValue;
+}
 
 //#region strict
 export function getStrictObject(obj, def) {
