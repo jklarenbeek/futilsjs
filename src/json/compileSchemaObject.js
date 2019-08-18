@@ -91,7 +91,7 @@ function compileSchemaSelectors(schema, addMember, addSelectSchema) {
   return trueThat;
 }
 
-export function compileSchemaObject(schemadoc, jsonschema, schemaPath, dataPath, regfn, errfn) {
+export function compileSchemaObject(schemadoc, jsonschema, schemaPath, dataPath) {
   if (!isStrictObjectType(jsonschema)) {
     return trueThat;
   }
@@ -101,36 +101,12 @@ export function compileSchemaObject(schemadoc, jsonschema, schemaPath, dataPath,
   function addMember(key, expected, ...options) {
     const member = schema.createSchemaMember(key, expected, ...options);
     return member.createAddError();
-    // eslint-disable-next-line no-unreachable
-    if (isStrictStringType(key)) {
-      return function addErrorSingle(value, ...rest) {
-        const data = rest.length > 0
-          ? [value, ...rest]
-          : value;
-        errfn(member, data);
-        return false;
-      };
-    }
   }
   function addChildSchema(key, childSchema) {
-    return compileSchemaObject(
-      schemadoc,
-      childSchema,
-      schemaPath + key,
-      dataPath + key,
-      regfn,
-      errfn,
-    );
+    return schema.createSchemaMember(key, childSchema);
   }
   function addSelectSchema(key, selectSchema) {
-    return compileSchemaObject(
-      schemadoc,
-      selectSchema,
-      schemaPath + key,
-      dataPath,
-      regfn,
-      errfn,
-    );
+    return schema.createChildSchema(key, selectSchema);
   }
 
   const validateBasic = compileSchemaBasic(jsonschema, addMember);
