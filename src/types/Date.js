@@ -25,7 +25,8 @@ export function Date_hoursBetween(startDate, endDate) {
   return (endDate.getTime() / Date_ONE_HOUR) - (startDate.getTime() / Date_ONE_HOUR);
 }
 
-export function Date_inBetween(value, startDate, endDate, exclusiveStart = false, exclusiveEnd = false) {
+export function Date_inBetween(value, startDate, endDate,
+  exclusiveStart = false, exclusiveEnd = false) {
   if (!value || value.constructor !== Date) return false;
   const hs = startDate && startDate.constructor === Date;
   const he = endDate && endDate.constructor === Date;
@@ -37,15 +38,14 @@ export function Date_inBetween(value, startDate, endDate, exclusiveStart = false
       return (vdt > sdt) && (vdt < edt);
     }
     else if (exclusiveStart) {
-      return (vdt > sdt) && (vdt =< edt);
+      return (vdt > sdt) && (vdt <= edt);
     }
     else if (exclusiveEnd) {
       return (vdt >= sdt) && (vdt < edt);
     }
     else {
-      return (vdt >= sdt) && (vdt =< edt);
+      return (vdt >= sdt) && (vdt <= edt);
     }
-
   }
   else if (hs) {
     const sdt = startDate.getTime();
