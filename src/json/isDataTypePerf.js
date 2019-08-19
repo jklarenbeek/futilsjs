@@ -44,6 +44,18 @@ export function getPerformanceIndexOfUnaryBool(functionList, testList) {
   return index;
 }
 
+export function createPerformanceRun(func, loop, value) {
+  func(value); // warm-up
+  return function run() {
+    const startTime = performance.now();
+    for (let i = 0; i < loop; i++) {
+      func(value);
+    }
+    const endTime = performance.now();
+    return ((endTime - startTime) / loop).toFixed(4);
+  };
+}
+
 //#region isStrictNumberType
 
 function isStrictNumberType_asType(obj) {
