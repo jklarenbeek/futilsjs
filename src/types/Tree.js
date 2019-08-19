@@ -1,4 +1,4 @@
-import { Queue } from './types-Queue';
+import { Queue } from './Queue';
 
 export function Tree_traverseDF(currentNode, callback) {
   const children = currentNode.children;
