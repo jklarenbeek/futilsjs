@@ -8,7 +8,7 @@ import {
 } from '../types/getDataType';
 
 import {
-  trueThat,
+  falseThat,
 } from '../types/isFunctionType';
 
 import {
@@ -19,42 +19,68 @@ class SchemaRoot {
   constructor(baseUri, json) {
     this.baseUri = baseUri;
     this.json = json;
-    this.validateFn = trueThat;
+    this.firstSchema = new SchemaObject();
     this.errors = [];
   }
 
-  createSchemaObject(schemaPath, dataPath) {
-    return new SchemaObject(this, schemaPath, dataPath);
+  createSchemaObject() {
+    const schema = new SchemaObject(this, '', '');
+    this.firstSchema = this.firstSchema || schema;
+    return schema;
   }
 
   addErrorSingle(method, value, rest) {
-    this.errors.push([performance.now(), method, value, rest]);
+    this.errors.push([
+      performance.now(),
+      method,
+      value,
+      rest]);
   }
 
-  addErrorMulti(method, key, value, rest) {
-    this.errors.push([performance.now(), method, key, value, rest]);
+  addErrorPair(method, key, value, rest) {
+    this.errors.push([
+      performance.now(),
+      method,
+      key,
+      value,
+      rest]);
   }
 
-  validate(data, dataRoot) {
+  get validate() {
+    // clear all errors
     while (this.errors.pop());
-    return this.validateFn(data, dataRoot);
+    // call compiled validator
+    return this.firstSchema.validate;
   }
 }
 
 class SchemaObject {
-  constructor(document, schemaPath, dataPath) {
-    this.schemaDocument = document;
+  constructor(schemaRoot, schemaPath, dataPath) {
+    this.schemaRoot = schemaRoot;
     this.schemaPath = schemaPath;
     this.dataPath = dataPath;
-    this.validateFn = trueThat;
+    this.validateFn = falseThat;
   }
 
-  validate(data, dataRoot) {
-    return this.validateFn(data, dataRoot);
+  createSchemaObject(schemaPath, dataPath) {
+    const schema = new SchemaObject(this.schemaRoot, schemaPath, dataPath);
+    return schema;
   }
 
-  createSchemaMember(schemaKey, expectedValue, ...options) {
+  createLocalMember(schemaKey, expectedValue, ...options) {
     return new SchemaMember(this, schemaKey, expectedValue, options);
+  }
+
+  addErrorSingle(member, value, rest) {
+    return this.schemaRoot.addErrorSingle(member, value, rest);
+  }
+
+  addErrorPair(member, key, value, rest) {
+    return this.schemaRoot.addErrorPair(member, key, value, rest);
+  }
+
+  get validate() {
+    return this.validateFn;
   }
 }
 
@@ -68,16 +94,16 @@ class SchemaMember {
 
   createAddError() {
     const self = this;
-    const document = this.schemaObject.schemaDocument;
+    const parent = this.schemaObject;
     if (isStrictStringType(this.schemaKey)) {
       return function addErrorSingle(value, ...rest) {
-        document.addErrorSingle(self, value, rest);
+        parent.addErrorSingle(self, value, rest);
         return false;
       };
     }
     else if (isStrictArrayType(this.schemaKey)) {
       return function addErrorPair(key, value, ...rest) {
-        document.addErrorPair(self, key, value, rest);
+        parent.addErrorPair(self, key, value, rest);
         return false;
       };
     }
