@@ -208,27 +208,28 @@ function compileProperties(schema, addMember, addChildObject) {
   const properties = getObjectishType(schema.properties);
 
   const keys = Object.keys(properties);
-  const children = {};
+  if (keys.length > 0) {
+    const children = {};
 
-  const member = addMember('properties');
-  for (let i = 0; i < keys.length; i++) {
-    const key = keys[i];
-    const child = properties[key];
-    if (isObjectishType(child)) {
-      const cb = addChildObject(member, key, child);
-      if (cb != null) children[key] = cb;
+    const member = addMember('properties');
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const child = properties[key];
+      if (isObjectishType(child)) {
+        const cb = addChildObject(member, key, child);
+        if (cb != null) children[key] = cb;
+      }
+    }
+
+    if (Object.keys(children).length > 0) {
+      return function validateProperty(key, data, dataRoot) {
+        const cb = children[key];
+        return cb != null
+          ? cb(data[key], dataRoot)
+          : undefined;
+      };
     }
   }
-
-  if (Object.keys(children).length > 0) {
-    return function validateProperty(key, data, dataRoot) {
-      const cb = children[key];
-      return cb != null
-        ? cb(data[key], dataRoot)
-        : undefined;
-    };
-  }
-
   return undefined;
 }
 
@@ -236,38 +237,40 @@ function compilePatterns(schema, addMember, addChildSchema) {
   const patterns = getObjectishType(schema.patternProperties);
 
   const keys = Object.keys(patterns);
-  const regs = {};
-  const props = {};
+  if (keys.length > 0) {
+    const regs = {};
+    const props = {};
 
-  for (let i = 0; i < keys.length; ++i) {
-    const key = keys[i];
-    const rxp = String_createRegExp(key);
-    if (rxp != null) {
-      const patt = patterns[key];
-      const cb = addChildSchema(['patternProperties', key], patt, compileObjectChildren);
-      if (cb != null) {
-        regs[key] = rxp;
-        props[key] = cb;
-      }
-    }
-  }
-
-  const regKeys = Object.keys(regs);
-
-  if (regKeys.length > 0) {
-    return function validatePatternProperty(key, data, dataRoot) {
-      for (let i = 0; i < regKeys.length; ++i) {
-        const rky = regKeys[i];
-        const rxp = regs[rky];
-        if (rxp != null && rxp.test(key)) {
-          const cb = props[key];
-          return cb(data[key], dataRoot);
+    const member = addMember('patternProperties', compileObjectChildren);
+    for (let i = 0; i < keys.length; ++i) {
+      const key = keys[i];
+      const rxp = String_createRegExp(key);
+      if (rxp != null) {
+        const child = patterns[key];
+        const cb = addChildSchema(member, key, child);
+        if (cb != null) {
+          regs[key] = rxp;
+          props[key] = cb;
         }
       }
-      return undefined;
-    };
-  }
+    }
 
+    const regKeys = Object.keys(regs);
+
+    if (regKeys.length > 0) {
+      return function validatePatternProperty(key, data, dataRoot) {
+        for (let i = 0; i < regKeys.length; ++i) {
+          const rky = regKeys[i];
+          const rxp = regs[rky];
+          if (rxp != null && rxp.test(key)) {
+            const cb = props[key];
+            return cb(data[key], dataRoot);
+          }
+        }
+        return undefined;
+      };
+    }
+  }
   return undefined;
 }
 
