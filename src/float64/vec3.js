@@ -1,6 +1,6 @@
-import { mathf64_sqrt } from './float64-math';
+import { mathf64_sqrt } from './math';
 
-import { vec2f64 } from './float64-vec2';
+import { vec2f64 } from './vec2';
 
 export class vec3f64 {
   constructor(x = 0.0, y = 0.0, z = 0.0) {

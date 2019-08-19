@@ -13,7 +13,7 @@ import {
   mathf64_min as min,
   mathf64_max as max,
   mathf64_EPSILON as EPSILON,
-} from './float64-math';
+} from './math';
 
 export class vec2f64 {
   constructor(x = 0.0, y = 0.0) {

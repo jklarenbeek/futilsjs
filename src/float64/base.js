@@ -11,7 +11,7 @@ import {
   mathf64_PI1H,
   mathf64_PI41,
   mathf64_PI42,
-} from './float64-math';
+} from './math';
 
 export function float64_gcd(a=0.0, b=0.0) {
   a = +a; b = +b;

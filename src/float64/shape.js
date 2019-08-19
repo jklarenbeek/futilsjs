@@ -3,7 +3,7 @@
 import {
   vec2f64 as vec2f,
   def_vec2f64 as def_vec2f,
-} from './float64-vec2';
+} from './vec2';
 
 
 //#region basic svg object
