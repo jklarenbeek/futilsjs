@@ -46,11 +46,11 @@ class SchemaRoot {
       rest]);
   }
 
-  get validate() {
+  validate(data) {
     // clear all errors
     while (this.errors.pop());
     // call compiled validator
-    return this.firstSchema.validate;
+    return this.firstSchema.validate(data, data);
   }
 }
 
