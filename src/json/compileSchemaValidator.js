@@ -5,7 +5,8 @@ import {
 } from '../types/isFunctionType';
 
 import {
-  isStrictObjectType, isPrimitiveType,
+  isStrictObjectType,
+  isPrimitiveType,
 } from '../types/isDataType';
 
 import { compileTypeBasic } from './compileTypeValidator';
@@ -101,17 +102,25 @@ export function compileSchemaObject(schemaDoc, jsonSchema, schemaPath, dataPath)
     return trueThat;
   }
 
-  const schema = schemaDoc.createSchemaObject(schemaPath, dataPath);
+  const schemaObj = schemaDoc.createSchemaObject(schemaPath, dataPath);
 
   function addLocalMember(key, expected, ...options) {
-    const member = schema.createLocalMember(key, expected, ...options);
+    const member = schemaObj.createLocalMember(key, expected, ...options);
     return member.createAddError();
   }
-  function addDataMember(member, key, childSchema) {
-    return schema.createChildMember(member, key, childSchema);
+
+  function addChildObject(member, key, schema) {
+    const child = schemaObj.createChildObject(member, key);
+    const obj = compileSchemaObject(
+      schemaObj,
+      schema,
+      child.schemaPath,
+      child.dataPath,
+    );
   }
-  function addSchemaMember(member, key, selectSchema) {
-    return schema.createSchemaMember(member, key, selectSchema);
+
+  function addChildSchema(member, key, selectSchema) {
+    return schemaObj.createChildSchema(member, key, selectSchema);
   }
 
   const validateBasic = compileSchemaBasic(
@@ -121,15 +130,15 @@ export function compileSchemaObject(schemaDoc, jsonSchema, schemaPath, dataPath)
   const validateChildren = compileSchemaChildren(
     jsonSchema,
     addLocalMember,
-    addDataMember,
+    addChildObject,
   );
   const validateSelectors = compileSchemaSelectors(jsonSchema,
     addLocalMember,
-    addSchemaMember,
+    addChildSchema,
   );
   const validateConditions = compileSchemaConditions(jsonSchema,
     addLocalMember,
-    addSchemaMember,
+    addChildSchema,
   );
 
   return function validateSchemaRecursive(data, dataRoot) {

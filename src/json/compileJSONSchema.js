@@ -71,12 +71,34 @@ class SchemaObject {
     return new SchemaMember(this, schemaKey, expectedValue, options);
   }
 
-  addErrorSingle(member, value, rest) {
-    return this.schemaRoot.addErrorSingle(member, value, rest);
+  createChildObject(member, key) {
+    if (isStrictStringType(member)) {
+      return new SchemaObject(
+        this.schemaRoot,
+        this.schemaPath + key,
+        this.dataPath + key,
+      );
+    }
+    if (member instanceof SchemaMember) {
+      return new SchemaObject(
+        this.schemaRoot,
+        this.schemaPath + key.schemaKey + key,
+        this.dataPath + key.schemaKey + key,
+      );
+    }
+    return undefined;
   }
 
-  addErrorPair(member, key, value, rest) {
-    return this.schemaRoot.addErrorPair(member, key, value, rest);
+  createChildSchema()
+
+
+
+  get addErrorSingle() {
+    return this.schemaRoot.addErrorSingle;
+  }
+
+  get addErrorPair() {
+    return this.schemaRoot.addErrorPair;
   }
 
   get validate() {
