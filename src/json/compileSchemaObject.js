@@ -1,121 +1,111 @@
 import {
-  fallbackFn,
+  isStrictStringType,
+  isStrictArrayType,
+} from '../types/isDataType';
+
+import {
+  getStrictString,
+} from '../types/getDataType';
+
+import {
   trueThat,
 } from '../types/isFunctionType';
 
 import {
-  isStrictStringType,
-  isStrictObjectType,
-} from '../types/isDataType';
+  compileSchemaValidator,
+} from './compileSchemaValidator';
 
-import { compileTypeBasic } from './compileTypeValidator';
-import { compileFormatBasic } from './compileFormatValidator';
-import { compileEnumBasic } from './compileEnumValidator';
-import { compileNumberBasic } from './compileNumberValidator';
-import { compileStringBasic } from './compileStringValidator';
-import { compileObjectBasic, compileObjectChildren } from './compileObjectValidator';
-import { compileArrayBasic, compileArrayChildren } from './compileArrayValidator';
-import { compileMapChildren } from './compileMapValidator';
-import { compileSetChildren } from './compileSetValidator';
-import { compileTupleChildren } from './compileTupleValidator';
+class SchemaRoot {
+  constructor(baseUri, json) {
+    this.baseUri = baseUri;
+    this.json = json;
+    this.validateFn = trueThat;
+    this.errors = [];
+  }
 
-function compileSchemaBasic(schema, addMember) {
-  const fnType = fallbackFn(
-    compileTypeBasic(schema, addMember),
-  );
-  const fnFormat = fallbackFn(
-    compileFormatBasic(schema, addMember),
-  );
-  const fnEnum = fallbackFn(
-    compileEnumBasic(schema, addMember),
-  );
-  const fnNumber = fallbackFn(
-    compileNumberBasic(schema, addMember),
-  );
-  const fnString = fallbackFn(
-    compileStringBasic(schema, addMember),
-  );
-  const fnObject = fallbackFn(
-    compileObjectBasic(schema, addMember),
-  );
-  const fnArray = fallbackFn(
-    compileArrayBasic(schema, addMember),
-  );
+  createSchemaObject(schemaPath, dataPath) {
+    return new SchemaObject(this, schemaPath, dataPath);
+  }
 
-  return function validateSchemaObject(data, dataRoot) {
-    const vType = fnType(data, dataRoot);
-    const vFormat = fnFormat(data, dataRoot);
-    const vEnum = fnEnum(data, dataRoot);
-    const vNumber = fnNumber(data, dataRoot);
-    const vString = fnString(data, dataRoot);
-    const vObject = fnObject(data, dataRoot);
-    const vArray = fnArray(data, dataRoot);
-    return vType
-      && vFormat
-      && vEnum
-      && vNumber
-      && vString
-      && vObject
-      && vArray;
-  };
+  addErrorSingle(method, value, rest) {
+    this.errors.push([performance.now(), method, value, rest]);
+  }
+
+  addErrorMulti(method, key, value, rest) {
+    this.errors.push([performance.now(), method, key, value, rest]);
+  }
+
+  validate(data, dataRoot) {
+    while (this.errors.pop());
+    return this.validateFn(data, dataRoot);
+  }
 }
 
-function compileSchemaChildren(schema, addMember, addChildSchema) {
-  const fnObject = fallbackFn(
-    compileObjectChildren(schema, addMember, addChildSchema),
-  );
-  const fnMap = fallbackFn(
-    compileMapChildren(schema, addMember, addChildSchema),
-  );
-  const fnArray = fallbackFn(
-    compileArrayChildren(schema, addMember, addChildSchema),
-  );
-  const fnSet = fallbackFn(
-    compileSetChildren(schema, addMember, addChildSchema),
-  );
-  const fnTuple = fallbackFn(
-    compileTupleChildren(schema, addMember, addChildSchema),
-  );
+class SchemaObject {
+  constructor(document, schemaPath, dataPath) {
+    this.schemaDocument = document;
+    this.schemaPath = schemaPath;
+    this.dataPath = dataPath;
+    this.validateFn = trueThat;
+  }
 
-  return function validateSchemaChildren(data, dataRoot) {
-    return fnObject(data, dataRoot)
-      && fnMap(data, dataRoot)
-      && fnArray(data, dataRoot)
-      && fnSet(data, dataRoot)
-      && fnTuple(data, dataRoot);
-  };
+  validate(data, dataRoot) {
+    return this.validateFn(data, dataRoot);
+  }
+
+  createSchemaMember(schemaKey, expectedValue, ...options) {
+    return new SchemaMember(this, schemaKey, expectedValue, options);
+  }
 }
 
-// eslint-disable-next-line no-unused-vars
-function compileSchemaSelectors(schema, addMember, addSelectSchema) {
-  return trueThat;
+class SchemaMember {
+  constructor(schemaObject, schemaKey, expectedValue, options) {
+    this.schemaObject = schemaObject;
+    this.schemaKey = schemaKey;
+    this.expectedValue = expectedValue;
+    this.options = options;
+  }
+
+  createAddError() {
+    const self = this;
+    const document = this.schemaObject.schemaDocument;
+    if (isStrictStringType(this.schemaKey)) {
+      return function addErrorSingle(value, ...rest) {
+        document.addErrorSingle(self, value, rest);
+        return false;
+      };
+    }
+    else if (isStrictArrayType(this.schemaKey)) {
+      return function addErrorPair(key, value, ...rest) {
+        document.addErrorPair(self, key, value, rest);
+        return false;
+      };
+    }
+    return undefined;
+  }
 }
 
-export function compileSchemaObject(schemadoc, jsonschema, schemaPath, dataPath) {
-  if (!isStrictObjectType(jsonschema)) {
-    return trueThat;
+const registeredDocuments = {};
+
+export function compileJSONSchema(baseUri, json) {
+  baseUri = getStrictString(baseUri, '');
+  // TODO: test if valid baseUri
+  if (registeredDocuments.hasOwnProperty(baseUri)) {
+    return false;
   }
 
-  const schema = schemadoc.createSchemaObject(schemaPath, dataPath);
+  const root = new SchemaRoot(baseUri, json);
+  root.validateFn = compileSchemaValidator(root, json, '', '');
 
-  function addMember(key, expected, ...options) {
-    const member = schema.createSchemaMember(key, expected, ...options);
-    return member.createAddError();
-  }
-  function addChildSchema(key, childSchema) {
-    return schema.createSchemaMember(key, childSchema);
-  }
-  function addSelectSchema(key, selectSchema) {
-    return schema.createChildSchema(key, selectSchema);
-  }
+  registeredDocuments[baseUri] = root;
 
-  const validateBasic = compileSchemaBasic(jsonschema, addMember);
-  const validateChildren = compileSchemaChildren(jsonschema, addMember, addChildSchema);
-  const validateSelectors = compileSchemaSelectors(jsonschema, addMember, addSelectSchema);
+  return false;
+}
 
-  return function validateSchemaRecursive(data, dataRoot) {
-    return validateBasic(data, dataRoot)
-      && validateChildren(data, dataRoot)
-      && validateSelectors(data, dataRoot);
-  };
+export function getJSONSchema(baseUri) {
+  baseUri = getStrictString(baseUri, '');
+  if (registeredDocuments.hasOwnProperty(baseUri)) {
+    return registeredDocuments[baseUri];
+  }
+  return undefined;
 }
