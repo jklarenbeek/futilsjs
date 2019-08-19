@@ -121,3 +121,14 @@ export function isArrayishType(data) {
     || isStrictTypedArray(data));
 }
 isArrayishType.typeName = 'array';
+
+// isStrictNumberType(string type) return bool {
+//   return ['integer', 'float', 'boolean']
+//     includes type;
+// }
+// operator bool includes(array<string> source, string type);
+
+// isObjectishType(string type) return bool {
+//  return type != null
+//    && ['Array', 'Set', 'Map'] includes type
+// }
