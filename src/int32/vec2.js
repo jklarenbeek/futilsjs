@@ -3,7 +3,7 @@ import {
   mathi32_sqrt,
   mathi32_asin,
   mathi32_atan2,
-} from './int32-math';
+} from './math';
 
 export class vec2i32 {
   constructor(x = 0, y = 0) {

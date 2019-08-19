@@ -9,10 +9,10 @@ import {
   mathi32_PI2,
   mathi32_PI41,
   mathi32_PI42,
-} from './int32-math';
+} from './math';
 import {
   mathf64_random,
-} from './float64-math';
+} from '../float64/math';
 
 let random_seed = mathi32_abs(performance.now() ^ (+mathf64_random() * Number.MAX_SAFE_INTEGER));
 export function int32_random() {
