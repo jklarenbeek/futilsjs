@@ -7,6 +7,7 @@ import {
 import {
   isStrictObjectType,
   isPrimitiveType,
+  isStrictStringType,
 } from '../types/isDataType';
 
 import { compileTypeBasic } from './compileTypeValidator';
@@ -104,19 +105,26 @@ export function compileSchemaObject(schemaDoc, jsonSchema, schemaPath, dataPath)
 
   const schemaObj = schemaDoc.createSchemaObject(schemaPath, dataPath);
 
-  function addLocalMember(key, expected, ...options) {
-    const member = schemaObj.createLocalMember(key, expected, ...options);
+  function addErrorMember(key, expected, ...options) {
+    const member = schemaObj.createLocalMember(key, expected, options);
     return member.createAddError();
   }
 
+  function addChildMember(key, ...options) {
+    return schemaObj.createLocalMember(key, null, options);
+  }
+
   function addChildObject(member, key, schema) {
-    const child = schemaObj.createChildObject(member, key);
-    const obj = compileSchemaObject(
-      schemaObj,
-      schema,
-      child.schemaPath,
-      child.dataPath,
-    );
+    const childSchema = schemaObj.getChildSchemaPath(member, key);
+    const childData = schemaObj.getChildDataPath(member, key);
+    return (schemaPath && dataPath)
+      ? compileSchemaObject(
+        schemaDoc,
+        schema,
+        childSchema,
+        childData,
+      )
+      : undefined;
   }
 
   function addChildSchema(member, key, selectSchema) {
@@ -125,26 +133,28 @@ export function compileSchemaObject(schemaDoc, jsonSchema, schemaPath, dataPath)
 
   const validateBasic = compileSchemaBasic(
     jsonSchema,
-    addLocalMember,
+    addErrorMember,
   );
   const validateChildren = compileSchemaChildren(
     jsonSchema,
-    addLocalMember,
+    addChildMember,
     addChildObject,
   );
   const validateSelectors = compileSchemaSelectors(jsonSchema,
-    addLocalMember,
+    addChildMember,
     addChildSchema,
   );
   const validateConditions = compileSchemaConditions(jsonSchema,
-    addLocalMember,
+    addChildMember,
     addChildSchema,
   );
 
-  return function validateSchemaRecursive(data, dataRoot) {
+  schemaObj.validateFn = function validateSchemaRecursive(data, dataRoot) {
     return validateBasic(data, dataRoot)
       && validateChildren(data, dataRoot)
       && validateSelectors(data, dataRoot)
       && validateConditions(data, dataRoot);
   };
+
+  return schemaObj;
 }

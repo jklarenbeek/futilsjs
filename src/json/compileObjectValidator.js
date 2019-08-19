@@ -24,14 +24,14 @@ import {
   undefThat,
 } from '../types/isFunctionType';
 
-function compileCheckBounds(schema, addMember) {
+function compileCheckBounds(schema, addErrorMember) {
   // get the defined lower and upper bounds of an array.
   const minprops = getIntegerishType(schema.minProperties);
   const maxprops = getIntegerishType(schema.maxProperties);
 
   function compileMaxProperties() {
     if (maxprops > 0) {
-      const addError = addMember('maxProperties', maxprops, compileObjectBasic);
+      const addError = addErrorMember('maxProperties', maxprops, compileObjectBasic);
       return function maxProperties(length) {
         const valid = length <= maxprops;
         if (!valid) addError(length);
@@ -42,7 +42,7 @@ function compileCheckBounds(schema, addMember) {
   }
   function compileMinProperties() {
     if (minprops > 0) {
-      const addError = addMember('minProperties', minprops, compileObjectBasic);
+      const addError = addErrorMember('minProperties', minprops, compileObjectBasic);
       return function minProperties(length) {
         const valid = length >= minprops;
         if (!valid) addError(length);
@@ -61,7 +61,7 @@ function compileCheckBounds(schema, addMember) {
   return xp || mp;
 }
 
-function compileRequiredProperties(schema, addMember, checkBounds) {
+function compileRequiredProperties(schema, addErrorMember, checkBounds) {
   const required = getStrictArray(schema.required);
   const objProps = getObjectishType(schema.properties);
   const mapProps = getStrictArray(schema.properties);
@@ -98,7 +98,7 @@ function compileRequiredProperties(schema, addMember, checkBounds) {
 
   if (keys.length > 0) {
     if (ismap === true) {
-      const addError = addMember('required', keys, compileRequiredProperties, 'ismap');
+      const addError = addErrorMember('required', keys, compileRequiredProperties, 'ismap');
       return function requiredMapKeys(data) {
         let valid = true;
         if (data.constructor === Map) {
@@ -116,7 +116,7 @@ function compileRequiredProperties(schema, addMember, checkBounds) {
       };
     }
     else {
-      const addError = addMember('required', keys, compileRequiredProperties, 'isobject');
+      const addError = addErrorMember('required', keys, compileRequiredProperties, 'isobject');
       return function requiredProperties(data) {
         let valid = true;
         const dataKeys = Object.keys(data);
@@ -137,7 +137,7 @@ function compileRequiredProperties(schema, addMember, checkBounds) {
   return undefined;
 }
 
-function compileRequiredPatterns(schema, addMember) {
+function compileRequiredPatterns(schema, addErrorMember) {
   const patterns = getStrictArray(schema.patternRequired);
 
   if (patterns && patterns.length > 0) {
@@ -152,7 +152,7 @@ function compileRequiredPatterns(schema, addMember) {
 
     const ismap = (getStrictArray(schema.properties) != null);
     if (regs.length > 0) {
-      const addError = addMember('patternRequired', regs, compileRequiredPatterns, ismap ? 'ismap' : 'isobject');
+      const addError = addErrorMember('patternRequired', regs, compileRequiredPatterns, ismap ? 'ismap' : 'isobject');
       return function patternRequiredMap(data) {
         if (data == null) return true;
         if (typeof data !== 'object') return true;
@@ -184,10 +184,10 @@ function compileRequiredPatterns(schema, addMember) {
   return undefined;
 }
 
-export function compileObjectBasic(schema, addMember) {
+export function compileObjectBasic(schema, addErrorMember) {
   const checkBounds = compileCheckBounds();
-  const valProps = compileRequiredProperties(schema, addMember, checkBounds);
-  const valPatts = compileRequiredPatterns(schema, addMember, checkBounds);
+  const valProps = compileRequiredProperties(schema, addErrorMember, checkBounds);
+  const valPatts = compileRequiredPatterns(schema, addErrorMember, checkBounds);
 
   if (valProps && valPatts) {
     return function validateObjectBasic(data) {
@@ -204,24 +204,25 @@ export function compileObjectBasic(schema, addMember) {
   return undefined;
 }
 
-function compileProperties(schema, addMember, addChildSchema) {
+function compileProperties(schema, addMember, addChildObject) {
   const properties = getObjectishType(schema.properties);
 
   const keys = Object.keys(properties);
-  const props = {};
+  const children = {};
 
+  const member = addMember('properties');
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
-    const prop = properties[key];
-    if (isObjectishType(prop)) {
-      const cb = addChildSchema(['properties', key], prop, compileObjectChildren);
-      if (cb != null) props[key] = cb;
+    const child = properties[key];
+    if (isObjectishType(child)) {
+      const cb = addChildObject(member, key, child);
+      if (cb != null) children[key] = cb;
     }
   }
 
-  if (Object.keys(props).length > 0) {
+  if (Object.keys(children).length > 0) {
     return function validateProperty(key, data, dataRoot) {
-      const cb = props[key];
+      const cb = children[key];
       return cb != null
         ? cb(data[key], dataRoot)
         : undefined;

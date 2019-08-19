@@ -71,28 +71,6 @@ class SchemaObject {
     return new SchemaMember(this, schemaKey, expectedValue, options);
   }
 
-  createChildObject(member, key) {
-    if (isStrictStringType(member)) {
-      return new SchemaObject(
-        this.schemaRoot,
-        this.schemaPath + key,
-        this.dataPath + key,
-      );
-    }
-    if (member instanceof SchemaMember) {
-      return new SchemaObject(
-        this.schemaRoot,
-        this.schemaPath + key.schemaKey + key,
-        this.dataPath + key.schemaKey + key,
-      );
-    }
-    return undefined;
-  }
-
-  createChildSchema()
-
-
-
   get addErrorSingle() {
     return this.schemaRoot.addErrorSingle;
   }
@@ -142,8 +120,12 @@ export function compileJSONSchema(baseUri, json) {
     return false;
   }
 
-  const root = new SchemaRoot(baseUri, json);
-  root.validateFn = compileSchemaObject(root, json, '', '');
+  const root = compileSchemaObject(
+    new SchemaRoot(baseUri, json),
+    json,
+    '',
+    '',
+  );
 
   registeredDocuments[baseUri] = root;
 
