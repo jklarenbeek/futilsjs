@@ -24,9 +24,9 @@
 // DEALINGS IN THE SOFTWARE.
 //
 import { collapseCssClass } from '../client/css';
-import { cloneObject } from '../types/Object';
+import { cloneObject } from '../helpers/Object';
 import { VNode, getVNodeKey } from './base';
-import { isFn } from '../json/isFunctionType';
+import { isFn } from '../types/isFunctionType';
 
 function Path_getValue(path, source) {
   let i = 0;
