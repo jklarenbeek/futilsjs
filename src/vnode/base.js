@@ -1,7 +1,7 @@
 
 
-import { Array_collapseShallow } from './types-Array';
-import { isFn } from '../types-base';
+import { Array_collapseShallow } from '../types/Array';
+import { isFn } from '../json/isFunctionType';
 
 export class VNode {
   constructor(name, attributes, children) {

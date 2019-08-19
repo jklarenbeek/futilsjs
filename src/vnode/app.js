@@ -23,10 +23,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 //
-import { collapseCssClass } from './css';
-import { cloneObject } from './types-Object';
-import { VNode, getVNodeKey } from './vnode-base';
-import { isFn } from './types-base';
+import { collapseCssClass } from '../client/css';
+import { cloneObject } from '../types/Object';
+import { VNode, getVNodeKey } from './base';
+import { isFn } from '../json/isFunctionType';
 
 function Path_getValue(path, source) {
   let i = 0;

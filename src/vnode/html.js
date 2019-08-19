@@ -1,4 +1,4 @@
-import { VN } from './vnode-base';
+import { VN } from './base';
 
 export function wrapVN(name, type) {
   if (type === undefined) {
