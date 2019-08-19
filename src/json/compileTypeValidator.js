@@ -1,20 +1,20 @@
 import {
   getBooleanishType,
-} from './getDataType';
+} from '../types/getDataType';
 
 import {
   getBoolOrArray,
   getStringOrArray,
-} from './getDataTypeExtra';
+} from '../types/getDataTypeExtra';
 
 import {
   isStrictStringType,
   isStrictArrayType,
-} from './isDataType';
+} from '../types/isDataType';
 
 import {
   createIsStrictDataType,
-} from './createIsDataType';
+} from '../types/createIsDataType';
 
 // TODO: rename to createIsSchemaDataType
 function compileType(schema, addMember) {

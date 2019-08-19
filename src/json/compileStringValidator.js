@@ -1,8 +1,8 @@
 import {
   String_createRegExp,
-} from '../types-String';
+} from '../helpers/String';
 
-import { getIntegerishType } from './getDataType';
+import { getIntegerishType } from '../types/getDataType';
 
 function compileStringLength(schema, addMember) {
   const min = Math.max(getIntegerishType(schema.minLength, 0), 0);

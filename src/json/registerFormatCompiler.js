@@ -1,13 +1,13 @@
 import {
   isFn,
-} from './isFunctionType';
+} from '../types/isFunctionType';
 
 import {
   isStrictStringType,
   isStrictIntegerType,
   isStrictBigIntType,
   isStrictNumberType,
-} from './isDataType';
+} from '../types/isDataType';
 
 //#region number definitions
 /* eslint-disable quote-props */

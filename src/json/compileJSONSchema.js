@@ -1,15 +1,15 @@
 import {
   isStrictStringType,
   isStrictArrayType,
-} from './isDataType';
+} from '../types/isDataType';
 
 import {
   getStrictString,
-} from './getDataType';
+} from '../types/getDataType';
 
 import {
   trueThat,
-} from './isFunctionType';
+} from '../types/isFunctionType';
 
 import {
   compileSchemaObject,

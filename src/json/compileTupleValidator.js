@@ -1,22 +1,22 @@
 import {
   isStrictArrayType,
   isArrayishType,
-} from './isDataType';
+} from '../types/isDataType';
 
 import {
   getObjectishType,
   getNumberishType,
   getArrayishType,
-} from './getDataType';
+} from '../types/getDataType';
 
 import {
   getStringOrArray,
-} from './getDataTypeExtra';
+} from '../types/getDataTypeExtra';
 
 import {
   fallbackFn,
   falseThat,
-} from './isFunctionType';
+} from '../types/isFunctionType';
 
 export function compileTupleChildren(schema, addMember, addChildSchema) {
   const items = getArrayishType(schema.items);

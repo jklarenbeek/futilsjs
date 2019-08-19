@@ -1,26 +1,26 @@
 import {
   isArrayishType,
-} from './isDataType';
+} from '../types/isDataType';
 
 import {
   getObjectishType,
   getIntegerishType,
-} from './getDataType';
+} from '../types/getDataType';
 
 import {
   getArrayOrSetLength,
-} from './getDataTypeExtra';
+} from '../types/getDataTypeExtra';
 
 import {
   isArrayOrSet,
-} from './isDataTypeExtra';
+} from '../types/isDataTypeExtra';
 
 
 import {
   fallbackFn,
   trueThat,
   falseThat,
-} from './isFunctionType';
+} from '../types/isFunctionType';
 
 export function compileArrayBasic(schema, addMember) {
   const min = getIntegerishType(schema.minItems);

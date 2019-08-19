@@ -1,28 +1,28 @@
 import {
   String_createRegExp,
-} from '../types-String';
+} from '../helpers/String';
 
 // eslint-disable-next-line import/no-cycle
 import {
   isStrictStringType,
   isObjectishType,
   isStrictArrayType,
-} from './isDataType';
+} from '../types/isDataType';
 
 import {
   getObjectishType,
   getIntegerishType,
   getArrayishType,
-} from './getDataType';
+} from '../types/getDataType';
 
 import {
   getBoolOrObject,
-} from './getDataTypeExtra';
+} from '../types/getDataTypeExtra';
 
 import {
   fallbackFn,
   undefThat,
-} from './isFunctionType';
+} from '../types/isFunctionType';
 
 export function compileObjectBasic(schema, addMember) {
   // get the defined lower and upper bounds of an array.

@@ -1,6 +1,6 @@
 import {
   getNumberishType,
-} from './getDataType';
+} from '../types/getDataType';
 
 import {
   isIntegerSchema,

@@ -1,12 +1,12 @@
 import {
   fallbackFn,
   trueThat,
-} from './isFunctionType';
+} from '../types/isFunctionType';
 
 import {
   isStrictStringType,
   isStrictObjectType,
-} from './isDataType';
+} from '../types/isDataType';
 
 import { compileTypeBasic } from './compileTypeValidator';
 import { compileFormatBasic } from './compileFormatValidator';

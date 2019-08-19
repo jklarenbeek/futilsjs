@@ -1,6 +1,6 @@
 import {
   getArrayMinItems,
-} from './getDataTypeExtra';
+} from '../types/getDataTypeExtra';
 
 import {
   isPrimitiveSchema,

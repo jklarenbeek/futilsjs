@@ -7,11 +7,11 @@ import {
 import {
   isObjectishType,
   isStrictArrayType,
-} from './isDataType';
+} from '../types/isDataType';
 
 import {
   getBooleanishType,
-} from './getDataType';
+} from '../types/getDataType';
 
 export function isSchemaOfType(schema, type) {
   if (type == null) return false;
