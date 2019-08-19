@@ -151,9 +151,9 @@ export function compileSchemaObject(schemaDoc, jsonSchema, schemaPath, dataPath)
 
   schemaObj.validateFn = function validateSchemaRecursive(data, dataRoot) {
     return validateBasic(data, dataRoot)
-      && validateChildren(data, dataRoot)
       && validateSelectors(data, dataRoot)
-      && validateConditions(data, dataRoot);
+      && validateConditions(data, dataRoot)
+      && validateChildren(data, dataRoot);
   };
 
   return schemaObj;
