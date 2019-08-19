@@ -6,8 +6,6 @@ import {
 
 import {
   isStrictObjectType,
-  isPrimitiveType,
-  isStrictStringType,
 } from '../types/isDataType';
 
 import { compileTypeBasic } from './compileTypeValidator';
