@@ -2,7 +2,7 @@ import {
   integerFormats,
   bigIntFormats,
   floatFormats,
-} from '../json-schema-formats';
+} from './registerFormatCompiler';
 
 import {
   isObjectishType,
