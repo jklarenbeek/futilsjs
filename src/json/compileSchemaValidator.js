@@ -90,7 +90,7 @@ function compileSchemaSelectors(schema, addMember, addSelectSchema) {
   return trueThat;
 }
 
-export function compileSchemaValidator(schemadoc, jsonschema, schemaPath, dataPath) {
+export function compileSchemaObject(schemadoc, jsonschema, schemaPath, dataPath) {
   if (!isStrictObjectType(jsonschema)) {
     return trueThat;
   }

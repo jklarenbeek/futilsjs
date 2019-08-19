@@ -1,25 +1,27 @@
 /* eslint-disable import/no-named-default */
 /* eslint-disable no-console */
 import {
-  JSONSchemaDocument,
-  JSONSchemaBooleanType,
+  compileJSONSchema,
+  getJSONSchema,
+  registerDefaultFormatCompilers,
 // eslint-disable-next-line import/no-unresolved
-} from '__futilsjs';
+} from '__futilsjs/json';
 
-import data from './examples/basic-person.json';
+import data1 from './draft7/01.type.basic1.00.json';
+import data2 from './draft7/11.combining.allOf3.01.json';
+import data2a from './draft7/11.combining.allOf3.02.true.json';
+import data2b from './draft7/11.combining.allOf3.03.false.json';
 
-const doc = new JSONSchemaDocument();
-doc.registerDefaultSchemaHandlers();
-doc.registerDefaultFormatCompilers();
-doc.loadSchema(data);
+registerDefaultFormatCompilers();
 
-console.log(doc, new JSONSchemaBooleanType());
+compileJSONSchema('01.type.basic1.00', data1);
+compileJSONSchema('11.combining.allOf3.00', data2);
 
-const schemadoc = loadJSONSchema('http://localhost/contact.json');
-const ContactForm = schemadoc.createComponent({ default: 'data' });
+const doc1 = getJSONSchema('01.type.basic1.00');
+console.log(doc1.baseUri, true, doc1.validate(42), doc1.errors);
+console.log(doc1.baseUri, false, doc1.validate('42'), doc1.errors);
 
-export default function () {
-  return (<ContactForm />);
-}
+const doc2 = getJSONSchema('11.combining.allOf3.00');
 
-const docCache = new Map();
+console.log(doc2.baseUri, true, doc2.validate(data2a), doc2.errors);
+console.log(doc2.baseUri, false, doc2.validate(data2b), doc2.errors);

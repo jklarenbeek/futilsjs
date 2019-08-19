@@ -12,7 +12,7 @@ import {
 } from '../types/isFunctionType';
 
 import {
-  compileSchemaValidator,
+  compileSchemaObject,
 } from './compileSchemaValidator';
 
 class SchemaRoot {
@@ -95,11 +95,11 @@ export function compileJSONSchema(baseUri, json) {
   }
 
   const root = new SchemaRoot(baseUri, json);
-  root.validateFn = compileSchemaValidator(root, json, '', '');
+  root.validateFn = compileSchemaObject(root, json, '', '');
 
   registeredDocuments[baseUri] = root;
 
-  return false;
+  return true;
 }
 
 export function getJSONSchema(baseUri) {
