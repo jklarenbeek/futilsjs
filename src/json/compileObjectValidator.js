@@ -4,7 +4,7 @@ import {
 
 // eslint-disable-next-line import/no-cycle
 import {
-  isObjectishType,
+  isObjectishType, isStrictArrayType,
 } from '../types/isDataType';
 
 import {
@@ -26,14 +26,14 @@ import {
   isOfSchemaType,
 } from './isSchemaType';
 
-function compileCheckBounds(schema, addErrorMember) {
+function compileCheckBounds(schema, addMemberError) {
   // get the defined lower and upper bounds of an array.
   const minprops = getIntegerishType(schema.minProperties);
   const maxprops = getIntegerishType(schema.maxProperties);
 
   function compileMaxProperties() {
     if (maxprops > 0) {
-      const addError = addErrorMember('maxProperties', maxprops, compileObjectBasic);
+      const addError = addMemberError('maxProperties', maxprops, compileObjectBasic);
       return function maxProperties(length) {
         const valid = length <= maxprops;
         if (!valid) addError(length);
@@ -44,7 +44,7 @@ function compileCheckBounds(schema, addErrorMember) {
   }
   function compileMinProperties() {
     if (minprops > 0) {
-      const addError = addErrorMember('minProperties', minprops, compileObjectBasic);
+      const addError = addMemberError('minProperties', minprops, compileObjectBasic);
       return function minProperties(length) {
         const valid = length >= minprops;
         if (!valid) addError(length);
@@ -63,10 +63,10 @@ function compileCheckBounds(schema, addErrorMember) {
   return xp || mp;
 }
 
-function compileRequiredProperties(schema, addErrorMember, checkBounds) {
+function compileRequiredProperties(schema, addMemberError, checkBounds) {
   const required = getStrictArray(schema.required);
   const objProps = getObjectishType(schema.properties);
-  const mapProps = getStrictArray(schema.properties);
+  const mapItems = getStrictArray(schema.properties);
 
   // short cut to check for property bounds in case
   // no required properties are available
@@ -89,18 +89,18 @@ function compileRequiredProperties(schema, addErrorMember, checkBounds) {
 
   // when the array is present but empty,
   // REQUIRE all of the properties
-  let ismap = mapProps != null;
+  let ismap = mapItems != null;
   let keys = required;
   if (keys.length === 0) {
     const ok = objProps && Object.keys(objProps);
-    const mk = mapProps > 0 && Array.from(new Map(mapProps).keys());
-    ismap = mapProps != null;
+    const mk = mapItems > 0 && Array.from(new Map(mapItems).keys());
+    ismap = isStrictArrayType(mk);
     keys = ok || mk || keys;
   }
 
   if (keys.length > 0) {
     if (ismap === true) {
-      const addError = addErrorMember('required', keys, compileRequiredProperties, 'ismap');
+      const addError = addMemberError('required', keys, compileRequiredProperties, 'ismap');
       return function requiredMapKeys(data) {
         let valid = true;
         if (data.constructor === Map) {
@@ -118,7 +118,7 @@ function compileRequiredProperties(schema, addErrorMember, checkBounds) {
       };
     }
     else {
-      const addError = addErrorMember('required', keys, compileRequiredProperties, 'isobject');
+      const addError = addMemberError('required', keys, compileRequiredProperties, 'isobject');
       return function requiredProperties(data) {
         let valid = true;
         const dataKeys = Object.keys(data);
@@ -139,7 +139,7 @@ function compileRequiredProperties(schema, addErrorMember, checkBounds) {
   return undefined;
 }
 
-function compileRequiredPatterns(schema, addErrorMember) {
+function compileRequiredPatterns(schema, addMemberError) {
   const patterns = getStrictArray(schema.patternRequired);
 
   if (patterns && patterns.length > 0) {
@@ -154,7 +154,7 @@ function compileRequiredPatterns(schema, addErrorMember) {
 
     const ismap = (getStrictArray(schema.properties) != null);
     if (regs.length > 0) {
-      const addError = addErrorMember('patternRequired', regs, compileRequiredPatterns, ismap ? 'ismap' : 'isobject');
+      const addError = addMemberError('patternRequired', regs, compileRequiredPatterns, ismap ? 'ismap' : 'isobject');
       return function patternRequiredMap(data) {
         if (data == null) return true;
         if (typeof data !== 'object') return true;
@@ -206,7 +206,7 @@ export function compileObjectBasic(schema, addErrorMember) {
   return undefined;
 }
 
-function compileProperties(schema, addMember, addChildObject) {
+function compilePropertyItem(schema, addMember, addChildObject) {
   const properties = getObjectishType(schema.properties);
 
   const keys = Object.keys(properties);
@@ -224,7 +224,7 @@ function compileProperties(schema, addMember, addChildObject) {
     }
 
     if (Object.keys(children).length > 0) {
-      return function validateProperty(key, data, dataRoot) {
+      return function validatePropertyItem(key, data, dataRoot) {
         const cb = children[key];
         return cb != null
           ? cb(data[key], dataRoot)
@@ -235,7 +235,7 @@ function compileProperties(schema, addMember, addChildObject) {
   return undefined;
 }
 
-function compilePatterns(schema, addMember, addChildSchema) {
+function compilePatternItem(schema, addMember, addChildSchema) {
   const patterns = getObjectishType(schema.patternProperties);
 
   const keys = Object.keys(patterns);
@@ -260,7 +260,7 @@ function compilePatterns(schema, addMember, addChildSchema) {
     const regKeys = Object.keys(regs);
 
     if (regKeys.length > 0) {
-      return function validatePatternProperty(key, data, dataRoot) {
+      return function validatePatternItem(key, data, dataRoot) {
         for (let i = 0; i < regKeys.length; ++i) {
           const rky = regKeys[i];
           const rxp = regs[rky];
@@ -276,7 +276,7 @@ function compilePatterns(schema, addMember, addChildSchema) {
   return undefined;
 }
 
-function compileAdditional(schema, addMember, addChildSchema) {
+function compileAdditionalItem(schema, addMember, addChildSchema) {
   const additional = getBoolOrObject(schema.additionalProperties, true);
   if (additional === false) {
     const addError = addMember('additionalProperties', false, compileObjectChildren);
@@ -288,7 +288,7 @@ function compileAdditional(schema, addMember, addChildSchema) {
   if (additional !== true) {
     const validate = addChildSchema('additionalProperties', additional, compileObjectChildren);
     if (validate != null) {
-      return function validateAdditional(key, data, dataRoot) {
+      return function validateAdditionalItem(key, data, dataRoot) {
         return validate(data[key], dataRoot);
       };
     }
@@ -316,15 +316,15 @@ export function compileObjectChildren(schema, addMember, addChildSchema) {
   // eslint-disable-next-line no-constant-condition
   if (true) {
     const validateProperty = fallbackFn(
-      compileProperties(schema, addMember, addChildSchema),
+      compilePropertyItem(schema, addMember, addChildSchema),
       undefThat,
     );
     const validatePattern = fallbackFn(
-      compilePatterns(schema, addMember, addChildSchema),
+      compilePatternItem(schema, addMember, addChildSchema),
       undefThat,
     );
     const validateAdditional = fallbackFn(
-      compileAdditional(schema, addMember, addChildSchema),
+      compileAdditionalItem(schema, addMember, addChildSchema),
       undefThat,
     );
 

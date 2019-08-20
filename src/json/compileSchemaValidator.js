@@ -96,15 +96,13 @@ function compileSchemaConditions(schema, addMember, addSelectSchema) {
   return trueThat;
 }
 
-export function compileSchemaRecursive(schemaDoc, jsonSchema, schemaPath, dataPath) {
+export function compileSchemaRecursive(schemaObj, jsonSchema, schemaPath, dataPath) {
   if (!isStrictObjectType(jsonSchema)) {
     return trueThat;
   }
 
-  const schemaObj = schemaDoc.createSchemaObject(schemaPath, dataPath);
-
   function addErrorMember(key, expected, ...options) {
-    const member = schemaObj.createLocalMember(key, expected, options);
+    const member = schemaObj.addSchemaMember(key, expected, options);
     return member.createAddError();
   }
 
