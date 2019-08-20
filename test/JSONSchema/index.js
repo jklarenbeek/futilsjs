@@ -15,7 +15,7 @@ import data2b from './draft7/05.object.props2.02.false.json';
 registerDefaultFormatCompilers();
 
 compileJSONSchema('01.type.basic1.00', data1);
-compileJSONSchema('11.combining.allOf3.00', data2);
+compileJSONSchema('05.object.props2.00', data2);
 
 const doc1 = getJSONSchema('01.type.basic1.00');
 console.log(doc1.baseUri, true, doc1.validate(42), doc1.errors);
