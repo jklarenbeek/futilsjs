@@ -96,7 +96,7 @@ function compileSchemaConditions(schema, addMember, addSelectSchema) {
   return trueThat;
 }
 
-export function compileSchemaObject(schemaDoc, jsonSchema, schemaPath, dataPath) {
+export function compileSchemaRecursive(schemaDoc, jsonSchema, schemaPath, dataPath) {
   if (!isStrictObjectType(jsonSchema)) {
     return trueThat;
   }
@@ -116,7 +116,7 @@ export function compileSchemaObject(schemaDoc, jsonSchema, schemaPath, dataPath)
     const childSchema = schemaObj.getChildSchemaPath(member, key);
     const childData = schemaObj.getChildDataPath(member, key);
     return (schemaPath && dataPath)
-      ? compileSchemaObject(
+      ? compileSchemaRecursive(
         schemaDoc,
         schema,
         childSchema,

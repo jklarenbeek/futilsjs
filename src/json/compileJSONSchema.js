@@ -1,6 +1,7 @@
 import {
   isStrictStringType,
   isStrictArrayType,
+  isPrimitiveType,
 } from '../types/isDataType';
 
 import {
@@ -12,39 +13,45 @@ import {
 } from '../types/isFunctionType';
 
 import {
-  compileSchemaObject,
+  compileSchemaRecursive,
 } from './compileSchemaValidator';
+
+class SchemaError {
+  constructor(timeStamp, member, key, value, rest) {
+    this.timeStamp = timeStamp;
+    this.member = member;
+    this.key = key;
+    this.value = value;
+    this.rest = rest;
+  }
+}
 
 class SchemaRoot {
   constructor(baseUri, json) {
     this.baseUri = baseUri;
     this.json = json;
-    this.firstSchema = null;
+    this.firstSchema = new SchemaObject(this, '', '');
     this.errors = [];
   }
 
-  createSchemaObject() {
-    const schema = new SchemaObject(this, '', '');
-    this.firstSchema = this.firstSchema || schema;
-    Object.freeze(this);
-    return schema;
-  }
-
-  addErrorSingle(method, value, rest) {
-    this.errors.push([
+  addErrorSingle(member, value, rest) {
+    this.errors.push(new SchemaError(
       performance.now(),
-      method,
+      member,
+      null,
       value,
-      rest]);
+      rest,
+    ));
   }
 
-  addErrorPair(method, key, value, rest) {
-    this.errors.push([
+  addErrorPair(member, key, value, rest) {
+    this.errors.push(new SchemaError(
       performance.now(),
-      method,
+      member,
       key,
       value,
-      rest]);
+      rest,
+    ));
   }
 
   validate(data) {
@@ -59,22 +66,51 @@ class SchemaObject {
   constructor(schemaRoot, schemaPath, dataPath) {
     this.schemaRoot = schemaRoot;
     this.schemaPath = schemaPath;
-    this.dataPath = dataPath;
     this.validateFn = falseThat;
+    this.members = [];
   }
 
-  createSchemaObject(schemaPath, dataPath) {
-    const schemaRoot = this.schemaRoot;
-    const schemaObj = new SchemaObject(
-      schemaRoot,
-      schemaPath,
-      dataPath,
-    );
-    return schemaObj;
+  // returns a simple member for schema properties
+  // like: minProperties, maxProperties, pattern, etc.
+  addSchemaMember(schemaKey, expectedValue, options) {
+    if (isPrimitiveType(expectedValue)) {
+      const member = new SchemaMember(
+        this,
+        schemaKey,
+        expectedValue,
+        options,
+      );
+      return member;
+    }
+    if (expectedValue instanceof SchemaObject) {
+      const member = new SchemaMember(
+        this,
+        schemaKey,
+        expectedValue,
+        options,
+      );
+      return member;
+    }
+    return undefined;
   }
 
-  createLocalMember(schemaKey, expectedValue, ...options) {
-    return new SchemaMember(this, schemaKey, expectedValue, options);
+  addSchemaChildObject(member, key) {
+    if (member instanceof SchemaMember) {
+      const memberKey = member.memberKey;
+      const memberPath = this.schemaPath + '/' + memberKey + '/' + key;
+      const dataPath = this.dataPath + '/' + key;
+      const schemaObj = new SchemaObject(
+        this.schemaRoot,
+        memberPath,
+        dataPath,
+      );
+      return schemaObj;
+    }
+    return undefined;
+  }
+
+  get errors() {
+    return this.schemaRoot.errors;
   }
 
   get addErrorSingle() {
@@ -91,9 +127,9 @@ class SchemaObject {
 }
 
 class SchemaMember {
-  constructor(schemaObject, schemaKey, expectedValue, options) {
+  constructor(schemaObject, memberKey, expectedValue, options) {
     this.schemaObject = schemaObject;
-    this.schemaKey = schemaKey;
+    this.memberKey = memberKey;
     this.expectedValue = expectedValue;
     this.options = options;
   }
@@ -101,13 +137,13 @@ class SchemaMember {
   createAddError() {
     const self = this;
     const parent = this.schemaObject;
-    if (isStrictStringType(this.schemaKey)) {
+    if (isStrictStringType(this.memberKey)) {
       return function addErrorSingle(value, ...rest) {
         parent.addErrorSingle(self, value, rest);
         return false;
       };
     }
-    else if (isStrictArrayType(this.schemaKey)) {
+    else if (isStrictArrayType(this.memberKey)) {
       return function addErrorPair(key, value, ...rest) {
         parent.addErrorPair(self, key, value, rest);
         return false;
@@ -126,14 +162,19 @@ export function compileJSONSchema(baseUri, json) {
     return false;
   }
 
-  const root = compileSchemaObject(
-    new SchemaRoot(baseUri, json),
+  // create a new schema root
+  const root = new SchemaRoot(baseUri, json);
+
+  // compile the first schema object
+  const first = root.createSchemaObject();
+  first.validateFn = compileSchemaRecursive(
+    first,
     json,
     '',
     '',
   );
 
-  registeredDocuments[baseUri] = root;
+  registeredDocuments[baseUri] = first;
 
   return true;
 }
