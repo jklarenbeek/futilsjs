@@ -63,8 +63,13 @@ class SchemaObject {
   }
 
   createSchemaObject(schemaPath, dataPath) {
-    const schema = new SchemaObject(this.schemaRoot, schemaPath, dataPath);
-    return schema;
+    const schemaRoot = this.schemaRoot;
+    const schemaObj = new SchemaObject(
+      schemaRoot,
+      schemaPath,
+      dataPath,
+    );
+    return schemaObj;
   }
 
   createLocalMember(schemaKey, expectedValue, ...options) {
