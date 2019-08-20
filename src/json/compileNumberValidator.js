@@ -13,13 +13,7 @@ import {
   isBigIntSchema,
 } from './isSchemaType';
 
-
-function compileNumberRange(schema, addMember) {
-  const min = Number(schema.minimum) || undefined;
-  const emin = schema.exclusiveMinimum === true
-    ? min
-    : Number(schema.exclusiveMinimum) || undefined;
-
+function compileNumberMaximum(schema, addMember) {
   const max = Number(schema.maximum) || undefined;
   const emax = schema.exclusiveMaximum === true
     ? max
@@ -31,52 +25,8 @@ function compileNumberRange(schema, addMember) {
       ? isStrictIntegerType
       : isStrictNumberType;
 
-  if (emin && emax) {
-    const addError = addMember(['exclusiveMinimum', 'exclusiveMaximum'], [emin, emax], compileNumberRange);
-    return function betweenExclusive(data) {
-      if (isDataType(data)) {
-        const valid = data > emin && data < emax;
-        if (!valid) addError(data);
-        return valid;
-      }
-      return true;
-    };
-  }
-  else if (emin && max) {
-    const addError = addMember(['exclusiveMinimum', 'maximum'], [emin, max], compileNumberRange);
-    return function betweenexclusiveMinimum(data) {
-      if (isDataType(data)) {
-        const valid = data > emin && data <= max;
-        if (!valid) addError(data);
-        return valid;
-      }
-      return true;
-    };
-  }
-  else if (emax && min) {
-    const addError = addMember(['minimum', 'exclusiveMaximum'], [min, emax], compileNumberRange);
-    return function betweenexclusiveMaximum(data) {
-      if (isDataType(data)) {
-        const valid = data >= min && data < emax;
-        if (!valid) addError(data);
-        return valid;
-      }
-      return true;
-    };
-  }
-  else if (min && max) {
-    const addError = addMember(['minimum', 'maximum'], [min, max], compileNumberRange);
-    return function between(data) {
-      if (isDataType(data)) {
-        const valid = data >= min && data <= max;
-        if (!valid) addError(data);
-        return valid;
-      }
-      return true;
-    };
-  }
-  else if (emax) {
-    const addError = addMember('exclusiveMaximum', emax, compileNumberRange);
+  if (emax) {
+    const addError = addMember('exclusiveMaximum', emax, compileNumberMaximum);
     return function exclusiveMaximum(data) {
       if (isDataType(data)) {
         const valid = data < emax;
@@ -87,7 +37,7 @@ function compileNumberRange(schema, addMember) {
     };
   }
   else if (max) {
-    const addError = addMember('maximum', max, compileNumberRange);
+    const addError = addMember('maximum', max, compileNumberMaximum);
     return function maximum(data) {
       if (isDataType(data)) {
         const valid = data <= max;
@@ -97,8 +47,23 @@ function compileNumberRange(schema, addMember) {
       return true;
     };
   }
-  else if (emin) {
-    const addError = addMember('exclusiveMinimum', emin, compileNumberRange);
+  return undefined;
+}
+
+function compileNumberMinimum(schema, addMember) {
+  const min = Number(schema.minimum) || undefined;
+  const emin = schema.exclusiveMinimum === true
+    ? min
+    : Number(schema.exclusiveMinimum) || undefined;
+
+  const isDataType = isBigIntSchema(schema)
+    ? isStrictBigIntType
+    : isIntegerSchema(schema)
+      ? isStrictIntegerType
+      : isStrictNumberType;
+
+  if (emin) {
+    const addError = addMember('exclusiveMinimum', emin, compileNumberMinimum);
     return function exclusiveMinimum(data) {
       if (isDataType(data)) {
         const valid = data > emin;
@@ -109,7 +74,7 @@ function compileNumberRange(schema, addMember) {
     };
   }
   else if (min) {
-    const addError = addMember('minimum', min, compileNumberRange);
+    const addError = addMember('minimum', min, compileNumberMinimum);
     return function minimum(data) {
       if (isDataType(data)) {
         const valid = data >= min;
@@ -119,6 +84,21 @@ function compileNumberRange(schema, addMember) {
       return true;
     };
   }
+  return undefined;
+}
+
+function compileNumberRange(schema, addMember) {
+  const fnMin = compileNumberMinimum(schema, addMember);
+  const fnMax = compileNumberMaximum(schema, addMember);
+  if (fnMin && fnMax) {
+    return function numberRange(data, dataRoot) {
+      return fnMin(data, dataRoot) && fnMin(data, dataRoot);
+    };
+  }
+  else if (fnMin != null)
+    return fnMin;
+  else if (fnMax != null)
+    return fnMax;
   return undefined;
 }
 
@@ -142,7 +122,7 @@ function compileNumberMultipleOf(schema, addMember) {
       else {
         return function multipleOfIntAsNumber(data) {
           if (typeof data === 'number') {
-            const valid = Number.isInteger(Number(data) / mulOf);
+            const valid = Number.isInteger(data / mulOf);
             if (!valid) addError(data);
             return valid;
           }
@@ -150,7 +130,7 @@ function compileNumberMultipleOf(schema, addMember) {
         };
       }
     }
-    if (isBigIntSchema(schema)) {
+    else if (isBigIntSchema(schema)) {
       const mf = BigInt(mulOf);
       const addError = addMember('multipleOf', mf, compileNumberMultipleOf, 'bigint');
       return function multipleOfBigInt(data) {
@@ -167,7 +147,7 @@ function compileNumberMultipleOf(schema, addMember) {
     }
     else {
       const addError = addMember('multipleOf', mulOf, compileNumberMultipleOf, 'number');
-      return function multipleOf(data) {
+      return function multipleOfNumber(data) {
         if (typeof data === 'number') {
           const valid = Number.isInteger(Number(data) / mulOf);
           if (!valid) addError(data);
