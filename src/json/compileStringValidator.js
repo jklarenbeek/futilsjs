@@ -4,23 +4,8 @@ import {
 
 import { getIntegerishType } from '../types/getDataType';
 
-function compileStringLength(schema, addMember) {
+function compileMinLength(schema, addMember) {
   const min = Math.max(getIntegerishType(schema.minLength, 0), 0);
-  const max = Math.max(getIntegerishType(schema.maxLength, 0), 0);
-
-  if (min > 0 && max > 0) {
-    const addError = addMember(['minLength', 'maxLength'], [min, max], compileStringLength);
-    return function betweenLength(data) {
-      if (typeof data === 'string') {
-        const len = data.length;
-        const valid = len >= min && len <= max;
-        if (!valid) addError(len);
-        return valid;
-      }
-      return true;
-    };
-  }
-
   if (min > 0) {
     const addError = addMember('minLength', min, compileStringLength);
     return function minLength(data) {
@@ -33,6 +18,11 @@ function compileStringLength(schema, addMember) {
       return true;
     };
   }
+  else return undefined;
+}
+
+function compileMaxLength(schema, addMember) {
+  const max = Math.max(getIntegerishType(schema.maxLength, 0), 0);
 
   if (max > 0) {
     const addError = addMember('maxLength', max, compileStringLength);
@@ -46,8 +36,21 @@ function compileStringLength(schema, addMember) {
       return true;
     };
   }
+  else return undefined;
+}
 
-  return undefined;
+function compileStringLength(schema, addMember) {
+  const fnMin = compileMinLength(schema, addMember);
+  const fnMax = compileMaxLength(schema, addMember);
+
+  if (fnMin && fnMax) {
+    return function betweenLength(data, dataRoot) {
+      return fnMin(data, dataRoot) && fnMax(data, dataRoot);
+    };
+  }
+  else if (fnMin) return fnMin;
+  else if (fnMax) return fnMax;
+  else return undefined;
 }
 
 function compileStringPattern(schema, addMember) {
@@ -64,7 +67,7 @@ function compileStringPattern(schema, addMember) {
       return true;
     };
   }
-  return undefined;
+  else return undefined;
 }
 
 export function compileStringBasic(schema, addMember) {
@@ -75,11 +78,7 @@ export function compileStringBasic(schema, addMember) {
       return fnLength(data) && fnPattern(data);
     };
   }
-  else if (fnLength) {
-    return fnLength;
-  }
-  else if (fnPattern) {
-    return fnPattern;
-  }
-  return undefined;
+  else if (fnLength) return fnLength;
+  else if (fnPattern) return fnPattern;
+  else return undefined;
 }
