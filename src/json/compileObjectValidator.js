@@ -4,9 +4,7 @@ import {
 
 // eslint-disable-next-line import/no-cycle
 import {
-  isStrictStringType,
   isObjectishType,
-  isStrictArrayType,
 } from '../types/isDataType';
 
 import {
@@ -23,6 +21,10 @@ import {
   fallbackFn,
   undefThat,
 } from '../types/isFunctionType';
+
+import {
+  isOfSchemaType,
+} from './isSchemaType';
 
 function compileCheckBounds(schema, addErrorMember) {
   // get the defined lower and upper bounds of an array.
@@ -306,57 +308,55 @@ export function compileObjectChildren(schema, addMember, addChildSchema) {
   // make sure we are not part of a map!
   if (additional !== true && additional !== false) {
     if (properties == null && patterns == null) {
-      let isobj = true;
-      if (isStrictArrayType(schema.type)) {
-        isobj = !schema.type.includes('map');
-        isobj = isobj && schema.type.includes('object');
-      }
-      else if (isStrictStringType(schema.type)) {
-        isobj = schema.type === 'object';
-      }
-      if (isobj === false) return undefined;
+      if (isOfSchemaType(schema, 'map')) return undefined;
     }
   }
 
-  const validateProperty = fallbackFn(
-    compileProperties(schema, addMember, addChildSchema),
-    undefThat,
-  );
-  const validatePattern = fallbackFn(
-    compilePatterns(schema, addMember, addChildSchema),
-    undefThat,
-  );
-  const validateAdditional = fallbackFn(
-    compileAdditional(schema, addMember, addChildSchema),
-    undefThat,
-  );
+  // TODO: check for properties only!
+  // eslint-disable-next-line no-constant-condition
+  if (true) {
+    const validateProperty = fallbackFn(
+      compileProperties(schema, addMember, addChildSchema),
+      undefThat,
+    );
+    const validatePattern = fallbackFn(
+      compilePatterns(schema, addMember, addChildSchema),
+      undefThat,
+    );
+    const validateAdditional = fallbackFn(
+      compileAdditional(schema, addMember, addChildSchema),
+      undefThat,
+    );
 
-  return function validateObjectChildren(data, dataRoot) {
-    let valid = true;
-    if (isObjectishType(data)) {
-      const dataKeys = Object.keys(data);
-      for (let i = 0; i < dataKeys.length; ++i) {
-        const dataKey = dataKeys[i];
-        let found = validateProperty(dataKey, data, dataRoot);
-        if (found != null) {
-          dataKeys[i] = found;
-          valid = valid && found;
-          continue;
-        }
-        found = validatePattern(dataKey, data, dataRoot);
-        if (found != null) {
-          dataKeys[i] = found;
-          valid = valid && found;
-          continue;
-        }
-        found = validateAdditional(dataKey, data, dataRoot);
-        if (found != null) {
-          dataKeys[i] = found;
-          valid = valid && found;
-          if (found === false) return false;
+    return function validateObjectChildren(data, dataRoot) {
+      let valid = true;
+      if (isObjectishType(data)) {
+        const dataKeys = Object.keys(data);
+        for (let i = 0; i < dataKeys.length; ++i) {
+          const dataKey = dataKeys[i];
+          let found = validateProperty(dataKey, data, dataRoot);
+          if (found != null) {
+            dataKeys[i] = found;
+            valid = valid && found;
+            continue;
+          }
+          found = validatePattern(dataKey, data, dataRoot);
+          if (found != null) {
+            dataKeys[i] = found;
+            valid = valid && found;
+            continue;
+          }
+          found = validateAdditional(dataKey, data, dataRoot);
+          if (found != null) {
+            dataKeys[i] = found;
+            valid = valid && found;
+            if (found === false) return false;
+          }
         }
       }
-    }
-    return valid;
-  };
+      return valid;
+    };
+  }
+
+  return undefined;
 }

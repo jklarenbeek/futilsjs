@@ -1,4 +1,10 @@
 import {
+  isStrictBigIntType,
+  isStrictIntegerType,
+  isStrictNumberType,
+} from '../types/isDataType';
+
+import {
   getNumberishType,
 } from '../types/getDataType';
 
@@ -20,17 +26,10 @@ function compileNumberRange(schema, addMember) {
     : Number(schema.exclusiveMaximum) || undefined;
 
   const isDataType = isBigIntSchema(schema)
-    ? function compileNumberRange_isBigIntType(data) {
-      // eslint-disable-next-line valid-typeof
-      return typeof data === 'bigint';
-    }
+    ? isStrictBigIntType
     : isIntegerSchema(schema)
-      ? function compileNumberRange_isIntegerType(data) {
-        return Number.isInteger(data);
-      }
-      : function compileNumberRange_isNumberType(data) {
-        return typeof data === 'number';
-      };
+      ? isStrictIntegerType
+      : isStrictNumberType;
 
   if (emin && emax) {
     const addError = addMember(['exclusiveMinimum', 'exclusiveMaximum'], [emin, emax], compileNumberRange);
