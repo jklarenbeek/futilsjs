@@ -63,7 +63,7 @@ class SchemaRoot {
 }
 
 class SchemaObject {
-  constructor(schemaRoot, schemaPath, dataPath) {
+  constructor(schemaRoot, schemaPath) {
     this.schemaRoot = schemaRoot;
     this.schemaPath = schemaPath;
     this.validateFn = falseThat;
