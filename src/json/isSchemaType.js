@@ -7,24 +7,27 @@ import {
 import {
   isObjectishType,
   isStrictArrayType,
+  isStrictStringType,
 } from '../types/isDataType';
 
 import {
   getBooleanishType,
 } from '../types/getDataType';
 
-export function isSchemaOfType(schema, type) {
+export function isOfSchemaType(schema, type) {
   if (type == null) return false;
-  if (schema.type.constructor === String) {
-    return schema.type === type;
+  if (schema.type === type) return true;
+  if (schema.type.constructor === Array) {
+    return schema.type.includes(type);
   }
-  else if (schema.type.constructor === Array) {
-    const types = type;
-    for (let i = 0; i < types.length; ++i) {
-      const tp = types[i];
-      if (tp === type) return true;
-    }
-  }
+  return false;
+}
+
+export function isOfStrictSchemaType(schema, type) {
+  if (type == null) return false;
+  if (schema.type === type) return true;
+  if (schema.type.constructor === Array && schema.type.length <= 2)
+    return schema.type.includes('null') && schema.type.includes(type);
   return false;
 }
 
@@ -40,15 +43,15 @@ export function isUnkownSchema(schema) {
 
 //#region is-primitive
 export function isBooleanSchema(schema) {
-  const isknown = schema.type === 'boolean';
+  const isknown = isOfStrictSchemaType(schema, 'boolean');
   const isvalid = isUnkownSchema(schema)
     && (typeof schema.const === 'boolean'
       || typeof schema.default === 'boolean');
   return isknown || isvalid;
 }
 export function isNumberSchema(schema) {
-  const isknown = schema.type === 'number';
-  const isformat = typeof schema.format === 'string'
+  const isknown = isOfStrictSchemaType(schema, 'number');
+  const isformat = isStrictStringType(schema.format)
     && floatFormats[schema.format] != null;
 
   const isconst = (Number(schema.const) || false) !== false;
@@ -59,7 +62,7 @@ export function isNumberSchema(schema) {
   return isknown || isformat || isvalid;
 }
 export function isIntegerSchema(schema) {
-  const isknown = schema.type === 'integer';
+  const isknown = isOfStrictSchemaType(schema, 'integer');
   const isformat = typeof schema.format === 'string'
     && integerFormats[schema.format] != null;
 
@@ -71,7 +74,9 @@ export function isIntegerSchema(schema) {
   return isknown || isformat || isvalid;
 }
 export function isBigIntSchema(schema) {
-  const isknown = schema.type === 'bigint' || schema.type === 'biginteger';
+  const isknown = isOfStrictSchemaType(schema, 'bigint')
+    || isOfStrictSchemaType(schema, 'biginteger');
+
   const isformat = typeof schema.format === 'string'
     && bigIntFormats[schema.format] != null;
 
@@ -82,7 +87,7 @@ export function isBigIntSchema(schema) {
   return isknown || isformat || isvalid;
 }
 export function isStringSchema(schema) {
-  const isknown = schema.type === 'string';
+  const isknown = isOfStrictSchemaType(schema, 'string');
   const isvalid = isUnkownSchema(schema)
     && (typeof schema.const === 'string'
       || typeof schema.default === 'string');
@@ -100,7 +105,7 @@ export function isPrimitiveSchema(schema) {
 
 //#region has-children
 export function isObjectSchema(schema) {
-  const isknown = schema.type === 'object';
+  const isknown = isOfStrictSchemaType(schema, 'object');
 
   const isprops = isObjectishType(schema.properties)
     || isObjectishType(schema.patternProperties)
@@ -111,12 +116,12 @@ export function isObjectSchema(schema) {
   return isknown || isprops || isvalid;
 }
 export function isMapSchema(schema) {
-  const isknown = schema.type === 'map';
+  const isknown = isOfStrictSchemaType(schema, 'map');
   const ismap = isStrictArrayType(schema.properties);
   return isknown || ismap;
 }
 export function isArraySchema(schema) {
-  const isknown = schema.type === 'array';
+  const isknown = isOfStrictSchemaType(schema === 'array');
   const isitems = isObjectishType(schema.items);
   const iscontains = isObjectishType(schema.contains);
   const isvalid = schema.type == null
@@ -125,12 +130,12 @@ export function isArraySchema(schema) {
   return isknown || isitems || iscontains || isvalid;
 }
 export function isSetSchema(schema) {
-  const isknown = schema.type === 'set';
+  const isknown = isOfStrictSchemaType(schema, 'set');
   const isunique = getBooleanishType(schema.uniqueItems, false);
   return isknown || isunique;
 }
 export function isTupleSchema(schema) {
-  const isknown = schema.type === 'tuple';
+  const isknown = isOfStrictSchemaType(schema, 'tuple');
   const istuple = isStrictArrayType(schema.items);
   const isadditional = schema.type == null
     && schema.hasOwnProperty('additionalItems');

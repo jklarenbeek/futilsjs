@@ -28,7 +28,7 @@ export function getStrictArray(obj, def) {
 }
 
 export function getStrictArrayMinItems(obj, len, def) {
-  return isStrictArrayType(obj) && obj.length > len ? obj: def;
+  return isStrictArrayType(obj) && obj.length >= len ? obj: def;
 }
 
 export function getStrictString(obj, def) {
