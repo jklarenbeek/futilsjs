@@ -8,7 +8,7 @@ function compileMinLength(schema, addMember) {
   const min = Math.max(getIntegerishType(schema.minLength, 0), 0);
   if (min > 0) {
     const addError = addMember('minLength', min, compileStringLength);
-    return function minLength(data) {
+    return function validateStringMinLength(data) {
       if (typeof data === 'string') {
         const len = data.length;
         const valid = len >= min;
@@ -26,7 +26,7 @@ function compileMaxLength(schema, addMember) {
 
   if (max > 0) {
     const addError = addMember('maxLength', max, compileStringLength);
-    return function maxLength(data) {
+    return function validateStringMaxLength(data) {
       if (typeof data === 'string') {
         const len = data.length;
         const valid = len <= max;
@@ -44,7 +44,7 @@ function compileStringLength(schema, addMember) {
   const fnMax = compileMaxLength(schema, addMember);
 
   if (fnMin && fnMax) {
-    return function betweenLength(data, dataRoot) {
+    return function validateStringBetweenLength(data, dataRoot) {
       return fnMin(data, dataRoot) && fnMax(data, dataRoot);
     };
   }
@@ -58,7 +58,7 @@ function compileStringPattern(schema, addMember) {
   const re = String_createRegExp(ptrn);
   if (re) {
     const addError = addMember('pattern', ptrn, compileStringPattern);
-    return function pattern(data) {
+    return function validateStringPattern(data) {
       if (typeof data === 'string') {
         const valid = re.test(data);
         if (!valid) addError(data);
