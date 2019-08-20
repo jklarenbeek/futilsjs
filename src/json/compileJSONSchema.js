@@ -19,13 +19,14 @@ class SchemaRoot {
   constructor(baseUri, json) {
     this.baseUri = baseUri;
     this.json = json;
-    this.firstSchema = new SchemaObject();
+    this.firstSchema = null;
     this.errors = [];
   }
 
   createSchemaObject() {
     const schema = new SchemaObject(this, '', '');
     this.firstSchema = this.firstSchema || schema;
+    Object.freeze(this);
     return schema;
   }
 
