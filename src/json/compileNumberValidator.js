@@ -13,20 +13,24 @@ import {
   isBigIntSchema,
 } from './isSchemaType';
 
-function compileNumberMaximum(schema, addMember) {
-  const max = Number(schema.maximum) || undefined;
-  const emax = schema.exclusiveMaximum === true
+function compileNumberMaximum(schemaObj, jsonSchema) {
+  const max = Number(jsonSchema.maximum) || undefined;
+  const emax = jsonSchema.exclusiveMaximum === true
     ? max
-    : Number(schema.exclusiveMaximum) || undefined;
+    : Number(jsonSchema.exclusiveMaximum) || undefined;
 
-  const isDataType = isBigIntSchema(schema)
+  const isDataType = isBigIntSchema(jsonSchema)
     ? isStrictBigIntType
-    : isIntegerSchema(schema)
+    : isIntegerSchema(jsonSchema)
       ? isStrictIntegerType
       : isStrictNumberType;
 
   if (emax) {
-    const addError = addMember('exclusiveMaximum', emax, compileNumberMaximum);
+    const addError = schemaObj.createMemberError(
+      'exclusiveMaximum',
+      emax,
+      compileNumberMaximum,
+    );
     return function exclusiveMaximum(data) {
       if (isDataType(data)) {
         const valid = data < emax;
@@ -37,7 +41,11 @@ function compileNumberMaximum(schema, addMember) {
     };
   }
   else if (max) {
-    const addError = addMember('maximum', max, compileNumberMaximum);
+    const addError = schemaObj.createMemberError(
+      'maximum',
+      max,
+      compileNumberMaximum,
+    );
     return function maximum(data) {
       if (isDataType(data)) {
         const valid = data <= max;
@@ -50,20 +58,24 @@ function compileNumberMaximum(schema, addMember) {
   return undefined;
 }
 
-function compileNumberMinimum(schema, addMember) {
-  const min = Number(schema.minimum) || undefined;
-  const emin = schema.exclusiveMinimum === true
+function compileNumberMinimum(schemaObj, jsonSchema) {
+  const min = Number(jsonSchema.minimum) || undefined;
+  const emin = jsonSchema.exclusiveMinimum === true
     ? min
-    : Number(schema.exclusiveMinimum) || undefined;
+    : Number(jsonSchema.exclusiveMinimum) || undefined;
 
-  const isDataType = isBigIntSchema(schema)
+  const isDataType = isBigIntSchema(jsonSchema)
     ? isStrictBigIntType
-    : isIntegerSchema(schema)
+    : isIntegerSchema(jsonSchema)
       ? isStrictIntegerType
       : isStrictNumberType;
 
   if (emin) {
-    const addError = addMember('exclusiveMinimum', emin, compileNumberMinimum);
+    const addError = schemaObj.createMemberError(
+      'exclusiveMinimum',
+      emin,
+      compileNumberMinimum,
+    );
     return function exclusiveMinimum(data) {
       if (isDataType(data)) {
         const valid = data > emin;
@@ -74,7 +86,11 @@ function compileNumberMinimum(schema, addMember) {
     };
   }
   else if (min) {
-    const addError = addMember('minimum', min, compileNumberMinimum);
+    const addError = schemaObj.createMemberError(
+      'minimum',
+      min,
+      compileNumberMinimum,
+    );
     return function minimum(data) {
       if (isDataType(data)) {
         const valid = data >= min;
@@ -87,9 +103,9 @@ function compileNumberMinimum(schema, addMember) {
   return undefined;
 }
 
-function compileNumberRange(schema, addMember) {
-  const fnMin = compileNumberMinimum(schema, addMember);
-  const fnMax = compileNumberMaximum(schema, addMember);
+function compileNumberRange(schemaObj, jsonSchema) {
+  const fnMin = compileNumberMinimum(schemaObj, jsonSchema);
+  const fnMax = compileNumberMaximum(schemaObj, jsonSchema);
   if (fnMin && fnMax) {
     return function numberRange(data, dataRoot) {
       return fnMin(data, dataRoot) && fnMin(data, dataRoot);
@@ -102,14 +118,19 @@ function compileNumberRange(schema, addMember) {
   return undefined;
 }
 
-function compileNumberMultipleOf(schema, addMember) {
-  const mulOf = getNumberishType(schema.multipleOf);
+function compileNumberMultipleOf(schemaObj, jsonSchema) {
+  const mulOf = getNumberishType(jsonSchema.multipleOf);
   // we compare against bigint too! javascript is awesome!
   // eslint-disable-next-line eqeqeq
   if (mulOf && mulOf != 0) {
     if (Number.isInteger(mulOf)) {
-      const addError = addMember('multipleOf', mulOf, compileNumberMultipleOf, 'integer');
-      if (isIntegerSchema(schema)) {
+      const addError = schemaObj.createMemberError(
+        'multipleOf',
+        mulOf,
+        compileNumberMultipleOf,
+        'integer',
+      );
+      if (isIntegerSchema(jsonSchema)) {
         return function multipleOfInteger(data) {
           if (Number.isInteger(data)) {
             const valid = (data % mulOf) === 0;
@@ -130,9 +151,14 @@ function compileNumberMultipleOf(schema, addMember) {
         };
       }
     }
-    else if (isBigIntSchema(schema)) {
+    else if (isBigIntSchema(jsonSchema)) {
       const mf = BigInt(mulOf);
-      const addError = addMember('multipleOf', mf, compileNumberMultipleOf, 'bigint');
+      const addError = schemaObj.createMemberError(
+        'multipleOf',
+        mf,
+        compileNumberMultipleOf,
+        'bigint',
+      );
       return function multipleOfBigInt(data) {
         // eslint-disable-next-line valid-typeof
         if (typeof data === 'bigint') {
@@ -146,7 +172,12 @@ function compileNumberMultipleOf(schema, addMember) {
       };
     }
     else {
-      const addError = addMember('multipleOf', mulOf, compileNumberMultipleOf, 'number');
+      const addError = schemaObj.createMemberError(
+        'multipleOf',
+        mulOf,
+        compileNumberMultipleOf,
+        'number',
+      );
       return function multipleOfNumber(data) {
         if (typeof data === 'number') {
           const valid = Number.isInteger(Number(data) / mulOf);
@@ -160,9 +191,9 @@ function compileNumberMultipleOf(schema, addMember) {
   return undefined;
 }
 
-export function compileNumberBasic(schema, addMember) {
-  const fnRange = compileNumberRange(schema, addMember);
-  const fnMulOf = compileNumberMultipleOf(schema, addMember);
+export function compileNumberBasic(schemaObj, jsonSchema) {
+  const fnRange = compileNumberRange(schemaObj, jsonSchema);
+  const fnMulOf = compileNumberMultipleOf(schemaObj, jsonSchema);
   if (fnRange && fnMulOf) {
     return function validateNumberBasic(data) {
       return fnRange(data) && fnMulOf(data);

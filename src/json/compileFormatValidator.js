@@ -2,10 +2,10 @@ import {
   getSchemaFormatCompiler,
 } from './registerFormatCompiler';
 
-export function compileFormatBasic(owner, schema, addMember) {
-  const compiler = getSchemaFormatCompiler(schema.format);
+export function compileFormatBasic(schemaObj, jsonSchema) {
+  const compiler = getSchemaFormatCompiler(jsonSchema.format);
   if (compiler) {
-    return compiler(owner, schema, addMember);
+    return compiler(schemaObj, jsonSchema);
   }
   return undefined;
 }

@@ -16,16 +16,15 @@ import {
   createIsStrictDataType,
 } from '../types/createIsDataType';
 
-// TODO: rename to createIsSchemaDataType
-function compileType(schema, addMember) {
-  const type = getStringOrArray(schema.type);
-  const nullable = getBooleanishType(schema.nullable);
+function compileType(schemaObj, jsonSchema) {
+  const type = getStringOrArray(jsonSchema.type);
+  const nullable = getBooleanishType(jsonSchema.nullable);
 
   if (isStrictStringType(type)) {
     const isStrictDataType = createIsStrictDataType(type);
     if (isStrictDataType) {
-      const addError = addMember('type', type, compileType, 'string');
-      if (nullable != null) addMember('nullable', nullable, compileType, 'string');
+      const addError = schemaObj.createMemberError('type', type, compileType, 'string');
+      if (nullable != null) schemaObj.createMemberError('nullable', nullable, compileType, 'string');
 
       if (nullable === true) {
         return function validateNullableType(data) {
@@ -48,7 +47,7 @@ function compileType(schema, addMember) {
       if (cb) types.push(cb);
     }
     if (types.length > 0) {
-      const addError = addMember('type', type, compileType, 'array');
+      const addError = schemaObj.createMemberError('type', type, compileType, 'array');
       if (isnullable === true) {
         return function validateNullableTypes(data) {
           if (data == null) return true;
@@ -69,7 +68,7 @@ function compileType(schema, addMember) {
     }
   }
   else if (nullable === false) {
-    const addError = addMember('nullable', nullable, compileType);
+    const addError = schemaObj.createMemberError('nullable', nullable, compileType);
     return function validateNotNullable(data) {
       return data == null
         ? addError(data)
@@ -80,10 +79,10 @@ function compileType(schema, addMember) {
   return undefined;
 }
 
-function compileRequired(schema, addMember) {
-  const required = getBoolOrArray(schema.required);
+function compileRequired(schemaObj, jsonSchema) {
+  const required = getBoolOrArray(jsonSchema.required);
   if (required === true) {
-    const addError = addMember('required', true, compileRequired, 'bool');
+    const addError = schemaObj.createMemberError('required', true, compileRequired, 'bool');
     return function validateRequiredTrue(data) {
       if (data === undefined) return addError(data);
       if (data === null && typeof data !== 'object') return addError(data);
@@ -91,7 +90,7 @@ function compileRequired(schema, addMember) {
     };
   }
   if (required != null) {
-    const addError = addMember('required', true, compileRequired, 'array');
+    const addError = schemaObj.createMemberError('required', true, compileRequired, 'array');
     return function validateRequired(data) {
       if (data == null) return addError(data);
       return true;
@@ -100,9 +99,9 @@ function compileRequired(schema, addMember) {
   return undefined;
 }
 
-export function compileTypeBasic(schema, addMember) {
-  const fnType = compileType(schema, addMember);
-  const fnRequired = compileRequired(schema, addMember);
+export function compileTypeBasic(schemaObj, jsonSchema) {
+  const fnType = compileType(schemaObj, jsonSchema);
+  const fnRequired = compileRequired(schemaObj, jsonSchema);
   if (fnType && fnRequired) {
     return function validateSchemaBasic(data) {
       return fnType(data) && fnRequired(data);

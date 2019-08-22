@@ -4,10 +4,10 @@ import {
 
 import { getIntegerishType } from '../types/getDataType';
 
-function compileMinLength(schema, addMember) {
-  const min = Math.max(getIntegerishType(schema.minLength, 0), 0);
+function compileMinLength(schemaObj, jsonSchema) {
+  const min = Math.max(getIntegerishType(jsonSchema.minLength, 0), 0);
   if (min > 0) {
-    const addError = addMember('minLength', min, compileStringLength);
+    const addError = schemaObj.createMemberError('minLength', min, compileStringLength);
     return function validateStringMinLength(data) {
       if (typeof data === 'string') {
         const len = data.length;
@@ -21,11 +21,11 @@ function compileMinLength(schema, addMember) {
   else return undefined;
 }
 
-function compileMaxLength(schema, addMember) {
-  const max = Math.max(getIntegerishType(schema.maxLength, 0), 0);
+function compileMaxLength(schemaObj, jsonSchema) {
+  const max = Math.max(getIntegerishType(jsonSchema.maxLength, 0), 0);
 
   if (max > 0) {
-    const addError = addMember('maxLength', max, compileStringLength);
+    const addError = schemaObj.createMemberError('maxLength', max, compileStringLength);
     return function validateStringMaxLength(data) {
       if (typeof data === 'string') {
         const len = data.length;
@@ -39,9 +39,9 @@ function compileMaxLength(schema, addMember) {
   else return undefined;
 }
 
-function compileStringLength(schema, addMember) {
-  const fnMin = compileMinLength(schema, addMember);
-  const fnMax = compileMaxLength(schema, addMember);
+function compileStringLength(schemaObj, jsonSchema) {
+  const fnMin = compileMinLength(schemaObj, jsonSchema);
+  const fnMax = compileMaxLength(schemaObj, jsonSchema);
 
   if (fnMin && fnMax) {
     return function validateStringBetweenLength(data, dataRoot) {
@@ -53,11 +53,11 @@ function compileStringLength(schema, addMember) {
   else return undefined;
 }
 
-function compileStringPattern(schema, addMember) {
-  const ptrn = schema.pattern;
+function compileStringPattern(schemaObj, jsonSchema) {
+  const ptrn = jsonSchema.pattern;
   const re = String_createRegExp(ptrn);
   if (re) {
-    const addError = addMember('pattern', ptrn, compileStringPattern);
+    const addError = schemaObj.createMemberError('pattern', ptrn, compileStringPattern);
     return function validateStringPattern(data) {
       if (typeof data === 'string') {
         const valid = re.test(data);
@@ -70,9 +70,9 @@ function compileStringPattern(schema, addMember) {
   else return undefined;
 }
 
-export function compileStringBasic(schema, addMember) {
-  const fnLength = compileStringLength(schema, addMember);
-  const fnPattern = compileStringPattern(schema, addMember);
+export function compileStringBasic(schemaObj, jsonSchema) {
+  const fnLength = compileStringLength(schemaObj, jsonSchema);
+  const fnPattern = compileStringPattern(schemaObj, jsonSchema);
   if (fnLength && fnPattern) {
     return function validateSchemaBasic(data) {
       return fnLength(data) && fnPattern(data);

@@ -2,6 +2,7 @@
 import {
   fallbackFn,
   trueThat,
+  falseThat,
 } from '../types/isFunctionType';
 
 import {
@@ -98,7 +99,7 @@ function compileSchemaConditions(schemaObj, jsonSchema) {
 
 export function compileSchemaRecursive(schemaObj, jsonSchema) {
   if (!isStrictObjectType(jsonSchema)) {
-    return trueThat;
+    return falseThat;
   }
 
   const validateBasic = compileSchemaBasic(schemaObj, jsonSchema);
