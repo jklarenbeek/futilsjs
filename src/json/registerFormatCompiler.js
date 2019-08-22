@@ -1,5 +1,5 @@
 import {
-  isFn,
+  fallbackFn,
 } from '../types/isFunctionType';
 
 import {
@@ -8,6 +8,10 @@ import {
   isStrictBigIntType,
   isStrictNumberType,
 } from '../types/isDataType';
+
+import {
+  isStringOrDate,
+} from '../types/isDataTypeExtra';
 
 //#region number definitions
 /* eslint-disable quote-props */
@@ -181,14 +185,6 @@ function compileDateFormat(schemaObj, jsonSchema) {
       : Date.parse(femax) || undefined;
 
     // eslint-disable-next-line no-inner-declarations
-    function isStringOrDate(data) {
-      return (data != null && (data.constructor === String || data.constructor === Date));
-    }
-
-    // eslint-disable-next-line no-inner-declarations
-    function fallback(fn) { return isFn(fn) ? fn : function allgood() { return true; }; }
-
-    // eslint-disable-next-line no-inner-declarations
     function compileMinimum() {
       if (emin) {
         const addError = schemaObj.createMemberError('formatExclusiveMinimum', emin, compileDateFormat);
@@ -245,8 +241,8 @@ function compileDateFormat(schemaObj, jsonSchema) {
 
     const parseDate = compileDateType();
 
-    const isMinimum = fallback(compileMinimum());
-    const isMaximum = fallback(compileMaximum());
+    const isMinimum = fallbackFn(compileMinimum());
+    const isMaximum = fallbackFn(compileMaximum());
 
     return function formatDate(data) {
       const date = parseDate(data);

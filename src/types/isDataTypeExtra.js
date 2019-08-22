@@ -44,3 +44,7 @@ export function isObjectOrMap(data) {
         && data.constructor !== Set
         && typeof data === 'object'));
 }
+
+export function isStringOrDate(data) {
+  return (data != null && (data.constructor === String || data.constructor === Date));
+}
