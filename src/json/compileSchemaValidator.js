@@ -1,7 +1,6 @@
 /* eslint-disable function-paren-newline */
 import {
   fallbackFn,
-  trueThat,
   falseThat,
 } from '../types/isFunctionType';
 
@@ -19,6 +18,8 @@ import { compileArrayBasic, compileArrayChildren } from './compileArrayValidator
 import { compileMapChildren } from './compileMapValidator';
 import { compileSetChildren } from './compileSetValidator';
 import { compileTupleChildren } from './compileTupleValidator';
+import { compileCombineSchema } from './compileCombineValidator';
+import { compileConditionSchema } from './compileConditionValidator';
 
 function compileSchemaBasic(schemaObj, jsonSchema) {
   const fnType = fallbackFn(
@@ -88,13 +89,16 @@ function compileSchemaChildren(schemaObj, jsonSchema) {
 }
 
 // eslint-disable-next-line no-unused-vars
-function compileSchemaSelectors(schemaObj, jsonSchema) {
-  return trueThat;
-}
+function compileSchemaAdvanced(schemaObj, jsonSchema) {
+  const fnCombine = compileCombineSchema(schemaObj, jsonSchema);
+  const fnCondition = compileConditionSchema(schemaObj, jsonSchema);
 
-// eslint-disable-next-line no-unused-vars
-function compileSchemaConditions(schemaObj, jsonSchema) {
-  return trueThat;
+  if (fnCombine && fnCondition) {
+    return function validateAdvandedSchema(data, dataRoot) {
+      return fnCombine(data, dataRoot) && fnCondition(data, dataRoot);
+    };
+  }
+  return fnCombine || fnCondition;
 }
 
 export function compileSchemaObject(schemaObj, jsonSchema) {
@@ -104,13 +108,11 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
 
   const validateBasic = compileSchemaBasic(schemaObj, jsonSchema);
   const validateChildren = compileSchemaChildren(schemaObj, jsonSchema);
-  const validateSelectors = compileSchemaSelectors(schemaObj, jsonSchema);
-  const validateConditions = compileSchemaConditions(schemaObj, jsonSchema);
+  const validateAdvanced = compileSchemaAdvanced(schemaObj, jsonSchema);
 
   return function validateSchemaObject(data, dataRoot) {
     return validateBasic(data, dataRoot)
-      && validateSelectors(data, dataRoot)
-      && validateConditions(data, dataRoot)
+      && validateAdvanced(data, dataRoot)
       && validateChildren(data, dataRoot);
   };
 }
