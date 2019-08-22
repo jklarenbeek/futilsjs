@@ -19,27 +19,27 @@ import { compileMapChildren } from './compileMapValidator';
 import { compileSetChildren } from './compileSetValidator';
 import { compileTupleChildren } from './compileTupleValidator';
 
-function compileSchemaBasic(schema, addMember) {
+function compileSchemaBasic(schemaObj, jsonSchema) {
   const fnType = fallbackFn(
-    compileTypeBasic(schema, addMember),
+    compileTypeBasic(schemaObj, jsonSchema),
   );
   const fnFormat = fallbackFn(
-    compileFormatBasic(schema, addMember),
+    compileFormatBasic(schemaObj, jsonSchema),
   );
   const fnEnum = fallbackFn(
-    compileEnumBasic(schema, addMember),
+    compileEnumBasic(schemaObj, jsonSchema),
   );
   const fnNumber = fallbackFn(
-    compileNumberBasic(schema, addMember),
+    compileNumberBasic(schemaObj, jsonSchema),
   );
   const fnString = fallbackFn(
-    compileStringBasic(schema, addMember),
+    compileStringBasic(schemaObj, jsonSchema),
   );
   const fnObject = fallbackFn(
-    compileObjectBasic(schema, addMember),
+    compileObjectBasic(schemaObj, jsonSchema),
   );
   const fnArray = fallbackFn(
-    compileArrayBasic(schema, addMember),
+    compileArrayBasic(schemaObj, jsonSchema),
   );
 
   return function validateSchemaObject(data, dataRoot) {
@@ -60,21 +60,21 @@ function compileSchemaBasic(schema, addMember) {
   };
 }
 
-function compileSchemaChildren(schema, addMember, addChildSchema) {
+function compileSchemaChildren(schemaObj, jsonSchema) {
   const fnObject = fallbackFn(
-    compileObjectChildren(schema, addMember, addChildSchema),
+    compileObjectChildren(schemaObj, jsonSchema),
   );
   const fnMap = fallbackFn(
-    compileMapChildren(schema, addMember, addChildSchema),
+    compileMapChildren(schemaObj, jsonSchema),
   );
   const fnArray = fallbackFn(
-    compileArrayChildren(schema, addMember, addChildSchema),
+    compileArrayChildren(schemaObj, jsonSchema),
   );
   const fnSet = fallbackFn(
-    compileSetChildren(schema, addMember, addChildSchema),
+    compileSetChildren(schemaObj, jsonSchema),
   );
   const fnTuple = fallbackFn(
-    compileTupleChildren(schema, addMember, addChildSchema),
+    compileTupleChildren(schemaObj, jsonSchema),
   );
 
   return function validateSchemaChildren(data, dataRoot) {
@@ -87,63 +87,24 @@ function compileSchemaChildren(schema, addMember, addChildSchema) {
 }
 
 // eslint-disable-next-line no-unused-vars
-function compileSchemaSelectors(schema, addMember, addSelectSchema) {
+function compileSchemaSelectors(schemaObj, jsonSchema) {
   return trueThat;
 }
 
 // eslint-disable-next-line no-unused-vars
-function compileSchemaConditions(schema, addMember, addSelectSchema) {
+function compileSchemaConditions(schemaObj, jsonSchema) {
   return trueThat;
 }
 
-export function compileSchemaRecursive(schemaObj, jsonSchema, schemaPath, dataPath) {
+export function compileSchemaRecursive(schemaObj, jsonSchema) {
   if (!isStrictObjectType(jsonSchema)) {
     return trueThat;
   }
 
-  function addErrorMember(key, expected, ...options) {
-    const member = schemaObj.addSchemaMember(key, expected, options);
-    return member.createAddError();
-  }
-
-  function addChildMember(key, ...options) {
-    return schemaObj.createLocalMember(key, null, options);
-  }
-
-  function addChildObject(member, key, schema) {
-    const childSchema = schemaObj.getChildSchemaPath(member, key);
-    const childData = schemaObj.getChildDataPath(member, key);
-    return (schemaPath && dataPath)
-      ? compileSchemaRecursive(
-        schemaDoc,
-        schema,
-        childSchema,
-        childData,
-      )
-      : undefined;
-  }
-
-  function addChildSchema(member, key, selectSchema) {
-    return schemaObj.createChildSchema(member, key, selectSchema);
-  }
-
-  const validateBasic = compileSchemaBasic(
-    jsonSchema,
-    addErrorMember,
-  );
-  const validateChildren = compileSchemaChildren(
-    jsonSchema,
-    addChildMember,
-    addChildObject,
-  );
-  const validateSelectors = compileSchemaSelectors(jsonSchema,
-    addChildMember,
-    addChildSchema,
-  );
-  const validateConditions = compileSchemaConditions(jsonSchema,
-    addChildMember,
-    addChildSchema,
-  );
+  const validateBasic = compileSchemaBasic(schemaObj, jsonSchema);
+  const validateChildren = compileSchemaChildren(schemaObj, jsonSchema);
+  const validateSelectors = compileSchemaSelectors(schemaObj, jsonSchema);
+  const validateConditions = compileSchemaConditions(schemaObj, jsonSchema);
 
   schemaObj.validateFn = function validateSchemaRecursive(data, dataRoot) {
     return validateBasic(data, dataRoot)
