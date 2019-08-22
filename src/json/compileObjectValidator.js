@@ -38,7 +38,7 @@ function compileCheckBounds(schemaObj, jsonSchema) {
       const addError = schemaObj.createMemberError(
         'maxProperties',
         maxprops,
-        compileCheckBounds);
+        compileMaxProperties);
       return function maxProperties(length) {
         const valid = length <= maxprops;
         if (!valid) addError(length);
@@ -52,7 +52,7 @@ function compileCheckBounds(schemaObj, jsonSchema) {
       const addError = schemaObj.createMemberError(
         'minProperties',
         minprops,
-        compileCheckBounds);
+        compileMinProperties);
       return function minProperties(length) {
         const valid = length >= minprops;
         if (!valid) addError(length);

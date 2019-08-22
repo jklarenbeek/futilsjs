@@ -97,7 +97,7 @@ function compileSchemaConditions(schemaObj, jsonSchema) {
   return trueThat;
 }
 
-export function compileSchemaRecursive(schemaObj, jsonSchema) {
+export function compileSchemaObject(schemaObj, jsonSchema) {
   if (!isStrictObjectType(jsonSchema)) {
     return falseThat;
   }
@@ -107,7 +107,7 @@ export function compileSchemaRecursive(schemaObj, jsonSchema) {
   const validateSelectors = compileSchemaSelectors(schemaObj, jsonSchema);
   const validateConditions = compileSchemaConditions(schemaObj, jsonSchema);
 
-  schemaObj.validateFn = function validateSchemaRecursive(data, dataRoot) {
+  schemaObj.validateFn = function validateSchemaObject(data, dataRoot) {
     return validateBasic(data, dataRoot)
       && validateSelectors(data, dataRoot)
       && validateConditions(data, dataRoot)
