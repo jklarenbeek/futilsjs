@@ -4580,6 +4580,7 @@ function compilePropertyItem(schemaObj, jsonSchema) {
 
 function compilePatternItem(schemaObj, jsonSchema) {
   const patterns = getObjectishType(jsonSchema.patternProperties);
+  if (patterns == null) return undefined;
 
   const keys = Object.keys(patterns);
   if (keys.length > 0) {
@@ -5016,14 +5017,12 @@ function compileSchemaObject(schemaObj, jsonSchema) {
   const validateSelectors = compileSchemaSelectors();
   const validateConditions = compileSchemaConditions();
 
-  schemaObj.validateFn = function validateSchemaObject(data, dataRoot) {
+  return function validateSchemaObject(data, dataRoot) {
     return validateBasic(data, dataRoot)
       && validateSelectors(data, dataRoot)
       && validateConditions(data, dataRoot)
       && validateChildren(data, dataRoot);
   };
-
-  return schemaObj;
 }
 
 const JSONPointer_pathSeparator = '/';
@@ -5193,7 +5192,7 @@ function compileJSONSchema(baseUri, json) {
   const root = new SchemaRoot(baseUri, json);
 
   // compile the first schema object
-  const first = root.createSchemaObject();
+  const first = root.firstSchema;
   first.validateFn = compileSchemaObject(first, json);
 
   registeredDocuments[baseUri] = first;
