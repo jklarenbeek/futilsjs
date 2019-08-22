@@ -254,6 +254,7 @@ function compilePropertyItem(schemaObj, jsonSchema) {
 
 function compilePatternItem(schemaObj, jsonSchema) {
   const patterns = getObjectishType(jsonSchema.patternProperties);
+  if (patterns == null) return undefined;
 
   const keys = Object.keys(patterns);
   if (keys.length > 0) {

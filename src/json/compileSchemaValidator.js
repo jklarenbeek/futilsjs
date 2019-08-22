@@ -107,12 +107,10 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
   const validateSelectors = compileSchemaSelectors(schemaObj, jsonSchema);
   const validateConditions = compileSchemaConditions(schemaObj, jsonSchema);
 
-  schemaObj.validateFn = function validateSchemaObject(data, dataRoot) {
+  return function validateSchemaObject(data, dataRoot) {
     return validateBasic(data, dataRoot)
       && validateSelectors(data, dataRoot)
       && validateConditions(data, dataRoot)
       && validateChildren(data, dataRoot);
   };
-
-  return schemaObj;
 }

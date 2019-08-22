@@ -177,7 +177,7 @@ export function compileJSONSchema(baseUri, json) {
   const root = new SchemaRoot(baseUri, json);
 
   // compile the first schema object
-  const first = root.createSchemaObject();
+  const first = root.firstSchema;
   first.validateFn = compileSchemaObject(first, json);
 
   registeredDocuments[baseUri] = first;
