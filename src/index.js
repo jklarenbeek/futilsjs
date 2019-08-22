@@ -32,3 +32,5 @@ export * from './types/getDataType';
 export * from './types/getDataTypeExtra';
 export * from './types/isFunctionType';
 export * from './types/createIsDataType';
+
+export * from './json/index';

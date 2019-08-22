@@ -3232,6 +3232,10 @@ function isObjectOrMap(data) {
         && typeof data === 'object'));
 }
 
+function isStringOrDate(data) {
+  return (data != null && (data.constructor === String || data.constructor === Date));
+}
+
 function getSanitizedPrimitive(value, defaultValue = undefined, nullable = false) {
   if (nullable && value == null) return value;
   if (value == null) return defaultValue;
@@ -3399,5 +3403,1811 @@ function createIsStrictObjectOfType(fn) {
   return usefull;
 }
 
-export { VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, collapseCssClass, collapseToString, copyAttributes, createIsStrictDataType, createIsStrictObjectOfType, createStorageCache, def_vec2f64, def_vec2i32, def_vec3f64, base$1 as f64, fallbackFn, falseThat, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, math$1 as fm64, getArrayMinItems, getArrayOrSetLength, getArrayishType, getBoolOrArray, getBoolOrNumber, getBoolOrObject, getBooleanishType, getIntegerishType, getNumberishType, getObjectishType, getSanitizedPrimitive, getStrictArray, getStrictArrayMinItems, getStrictBoolean, getStrictInteger, getStrictNumber, getStrictObject, getStrictString, getStringOrArray, getStringOrObject, getVNodeAttr, getVNodeKey, getVNodeName, h, hasCssClass, base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isArrayOrSet, isArrayishType, isBoolOrArray, isBoolOrNumber, isBoolOrObject, isBooleanishType, isFn, isFnEx, isIntegerishType, isNumberishType, isObjectOrMap, isObjectishType, isPrimitiveType, isPrimitiveTypeEx, isStrictArrayType, isStrictBigIntType, isStrictBooleanType, isStrictIntegerType, isStrictNumberType, isStrictObjectOfType, isStrictObjectType, isStrictStringType, isStrictTypedArray, isStringOrArray, isStringOrObject, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, shape as s2f64, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, trueThat, undefThat, vec2$1 as v2f64, vec2 as v2i32, vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_add, vec3f64_adds, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_dot, vec3f64_iadd, vec3f64_iadds, vec3f64_idiv, vec3f64_idivs, vec3f64_imul, vec3f64_imuls, vec3f64_isub, vec3f64_isubs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_mul, vec3f64_muls, vec3f64_new, vec3f64_sub, vec3f64_subs, vec3f64_unit, workletState, wrapVN };
+function compileType(schemaObj, jsonSchema) {
+  const type = getStringOrArray(jsonSchema.type);
+  const nullable = getBooleanishType(jsonSchema.nullable);
+
+  if (isStrictStringType(type)) {
+    const isStrictDataType = createIsStrictDataType(type);
+    if (isStrictDataType) {
+      const addError = schemaObj.createMemberError('type', type, compileType, 'string');
+      if (nullable != null) schemaObj.createMemberError('nullable', nullable, compileType, 'string');
+
+      if (nullable === true) {
+        return function validateNullableType(data) {
+          const valid = data == null ? true : isStrictDataType(data);
+          if (valid) return true;
+          return addError(data);
+        };
+      }
+      else {
+        return isStrictDataType;
+      }
+    }
+  }
+  else if (isStrictArrayType(type)) {
+    const types = [];
+    let isnullable = nullable || false;
+    for (let i = 0; i < type.length; ++i) {
+      if (type === 'null') { isnullable = true; continue; }
+      const cb = createIsStrictDataType(type[i]);
+      if (cb) types.push(cb);
+    }
+    if (types.length > 0) {
+      const addError = schemaObj.createMemberError('type', type, compileType, 'array');
+      if (isnullable === true) {
+        return function validateNullableTypes(data) {
+          if (data == null) return true;
+          for (let i = 0; i < types.length; ++i) {
+            if (types[i](data) === true) return true;
+          }
+          return addError(data);
+        };
+      }
+      else {
+        return function validateNotNullableTypes(data) {
+          for (let i = 0; i < types.length; ++i) {
+            if (types[i](data) === true) return true;
+          }
+          return addError(data);
+        };
+      }
+    }
+  }
+  else if (nullable === false) {
+    const addError = schemaObj.createMemberError('nullable', nullable, compileType);
+    return function validateNotNullable(data) {
+      return data == null
+        ? addError(data)
+        : true;
+    };
+  }
+
+  return undefined;
+}
+
+function compileRequired(schemaObj, jsonSchema) {
+  const required = getBoolOrArray(jsonSchema.required);
+  if (required === true) {
+    const addError = schemaObj.createMemberError('required', true, compileRequired, 'bool');
+    return function validateRequiredTrue(data) {
+      if (data === undefined) return addError(data);
+      if (data === null && typeof data !== 'object') return addError(data);
+      return true;
+    };
+  }
+  if (required != null) {
+    const addError = schemaObj.createMemberError('required', true, compileRequired, 'array');
+    return function validateRequired(data) {
+      if (data == null) return addError(data);
+      return true;
+    };
+  }
+  return undefined;
+}
+
+function compileTypeBasic(schemaObj, jsonSchema) {
+  const fnType = compileType(schemaObj, jsonSchema);
+  const fnRequired = compileRequired(schemaObj, jsonSchema);
+  if (fnType && fnRequired) {
+    return function validateSchemaBasic(data) {
+      return fnType(data) && fnRequired(data);
+    };
+  }
+  else if (fnType) {
+    return fnType;
+  }
+  else if (fnRequired) {
+    return fnRequired;
+  }
+  return undefined;
+}
+
+//#region number definitions
+/* eslint-disable quote-props */
+
+const integerFormats = {
+  int8: {
+    type: 'integer',
+    arrayType: Int8Array,
+    bits: 8,
+    signed: true,
+    minimum: -128,
+    maximum: 127,
+  },
+  uint8: {
+    type: 'integer',
+    arrayType: Uint8Array,
+    bits: 8,
+    signed: false,
+    minimum: 0,
+    maximum: 255,
+  },
+  uint8c: {
+    type: 'integer',
+    arrayType: Uint8ClampedArray,
+    bits: 8,
+    signed: false,
+    minimum: 0,
+    maximum: 255,
+    clamped: true,
+  },
+  int16: {
+    type: 'integer',
+    arrayType: Int16Array,
+    bits: 16,
+    signed: true,
+    minimum: -32768,
+    maximum: 32767,
+  },
+  uint16: {
+    type: 'integer',
+    arrayType: Uint16Array,
+    bits: 16,
+    signed: false,
+    minimum: 0,
+    maximum: 65535,
+  },
+  int32: {
+    type: 'integer',
+    arrayType: Int32Array,
+    bits: 32,
+    signed: true,
+    minimum: -(2 ** 31),
+    maximum: (2 ** 31) - 1,
+  },
+  uint32: {
+    type: 'integer',
+    arrayType: Uint32Array,
+    bits: 32,
+    signed: false,
+    minimum: 0,
+    maximum: (2 ** 32) - 1,
+  },
+  int64: {
+    type: 'integer',
+    bits: 53,
+    packed: 64,
+    signed: true,
+    minimum: Number.MIN_SAFE_INTEGER,
+    maximum: Number.MAX_SAFE_INTEGER,
+  },
+  uint64: {
+    type: 'integer',
+    bits: 64,
+    signed: false,
+    minimum: 0,
+    maximum: Number.MAX_SAFE_INTEGER,
+  },
+};
+
+const bigIntFormats = {
+  big64: {
+    type: 'bigint',
+    // eslint-disable-next-line no-undef
+    arrayType: BigInt64Array,
+    bits: 64,
+    signed: true,
+    minimum: -(2 ** 63),
+    maximum: (2 ** 63) - 1, // TODO: bigint eslint support anyone?
+  },
+  ubig64: {
+    type: 'bigint',
+    // eslint-disable-next-line no-undef
+    arrayType: BigUint64Array,
+    bits: 64,
+    signed: true,
+    minimum: 0,
+    maximum: (2 ** 64) - 1, // TODO: bigint eslint support anyone?
+  },
+};
+
+const floatFormats = {
+  float: {
+    type: 'number',
+    bits: 32,
+    minimum: 1.175494e-38, // largest negative number in float32
+    maximum: 3.402823e+38, // largest positive number in float32
+    epsilon: 1.192093e-07, // smallest number in float32
+  },
+  double: {
+    type: 'number',
+    bits: 64,
+    minimum: Number.MIN_VALUE,
+    maximum: Number.MAX_VALUE,
+    epsilon: Number.EPSILON,
+  },
+};
+
+const numberFormats = {
+  ...integerFormats,
+  ...bigIntFormats,
+  ...floatFormats,
+};
+
+const dateTimeFormats = {
+  year: {
+    type: 'integer',
+    minimum: 1970,
+    maximum: 2378,
+  },
+  month: {
+    type: 'integer',
+    minimum: 1,
+    maximum: 12,
+  },
+  week: {
+    type: 'integer',
+    minimum: 1,
+    maximum: 52,
+  },
+  hour: {
+    type: 'integer',
+    minimum: 0,
+    maximum: 23,
+  },
+  minute: {
+    type: 'integer',
+    minimum: 0,
+    maximum: 59,
+  },
+  second: {
+    type: 'integer',
+    minimum: 0,
+    maximum: 59,
+  },
+};
+//#endregion
+
+//#region string definitions
+function compileDateFormat(schemaObj, jsonSchema) {
+  if (jsonSchema.format === 'date-time') {
+    const fmin = jsonSchema.formatMinimum;
+    const femin = jsonSchema.formatExclusiveMinimum;
+    const min = Date.parse(fmin) || undefined;
+    const emin = femin === true ? min
+      : Date.parse(femin) || undefined;
+
+    const fmax = jsonSchema.formatMaximum;
+    const femax = jsonSchema.formatExclusiveMaximum;
+    const max = Date.parse(fmax);
+    const emax = femax === true ? max
+      : Date.parse(femax) || undefined;
+
+    // eslint-disable-next-line no-inner-declarations
+    function compileMinimum() {
+      if (emin) {
+        const addError = schemaObj.createMemberError('formatExclusiveMinimum', emin, compileDateFormat);
+        return function formatExclusiveMinimum(date) {
+          if (!(date > emin)) return addError(date);
+          return true;
+        };
+      }
+      else if (min) {
+        const addError = schemaObj.createMemberError('formatMinimum', min, compileDateFormat);
+        return function formatMinimum(date) {
+          if (!(date >= min)) return addError(date);
+          return true;
+        };
+      }
+      return undefined;
+    }
+
+    // eslint-disable-next-line no-inner-declarations
+    function compileMaximum() {
+      if (emax) {
+        const addError = schemaObj.createMemberError('formatExclusiveMaximum', emax, compileDateFormat);
+        return function formatExclusiveMaximum(date) {
+          if (!(date < emax)) return addError(date);
+          return true;
+        };
+      }
+      else if (max) {
+        const addError = schemaObj.createMemberError('formatMaximum', max, compileDateFormat);
+        return function formatMaximum(date) {
+          if (!(date <= max)) return addError(date);
+          return true;
+        };
+      }
+      return undefined;
+    }
+
+    // eslint-disable-next-line no-inner-declarations
+    function compileDateType() {
+      const addError = schemaObj.createMemberError('format', 'date', compileDateFormat);
+      return function parseDate(data) {
+        if (isStringOrDate(data)) {
+          const date = Date.parse(data) || false;
+          if (date === false) return addError(
+            'format',
+            'date',
+            data,
+          );
+          return date;
+        }
+        return true;
+      };
+    }
+
+    const parseDate = compileDateType();
+
+    const isMinimum = fallbackFn(compileMinimum());
+    const isMaximum = fallbackFn(compileMaximum());
+
+    return function formatDate(data) {
+      const date = parseDate(data);
+      if (date === false) return false;
+      if (date === true) return true;
+      return isMinimum(date) && isMaximum(date);
+    };
+  }
+  return undefined;
+}
+
+const stringFormats = {
+  'date-time': compileDateFormat,
+};
+//#endregion
+
+function createFormatNumberCompiler(name, format) {
+  if (format != null && format === 'object') {
+    if (['integer', 'bigint', 'number'].includes(format.type)) {
+      //const rbts = getPureNumber(r.bits);
+      //const rsgn = getPureBool(r.signed);
+
+      const rix = Number(format.minimum) || false;
+      const rax = Number(format.maximum) || false;
+
+      const isDataType = format.type === 'integer'
+        ? isStrictIntegerType
+        : format.type === 'bigint'
+          ? isStrictBigIntType
+          : format.type === 'number'
+            ? isStrictNumberType
+            : undefined;
+
+      if (isDataType) {
+        return function compileFormatNumber(schemaObj, jsonSchema) {
+          const fix = Math.max(Number(jsonSchema.formatMinimum) || rix, rix);
+          const _fie = jsonSchema.formatExclusiveMinimum === true
+            ? fix
+            : Number(jsonSchema.formatExclusiveMinimum) || false;
+          const fie = fix !== false && _fie !== false
+            ? Math.max(fix, _fie)
+            : _fie;
+
+          const fax = Math.min(Number(jsonSchema.formatMaximum) || rax, rax);
+          const _fae = jsonSchema.formatExclusiveMaximum === true
+            ? fax
+            : Number(jsonSchema.formatExclusiveMaximum) || false;
+          const fae = fax !== false && _fae !== false
+            ? Math.max(fax, _fae)
+            : _fae;
+
+          if (fie && fae) {
+            const addError = schemaObj.createMemberError(
+              ['formatExclusiveMinimum', 'formatExclusiveMaximum'],
+              [fie, fae],
+              compileFormatNumber,
+            );
+            return function betweenExclusive(data) {
+              if (!isDataType(data)) return true;
+              if (data > fie && data < fae) return true;
+              return addError(data);
+            };
+          }
+          else if (fie && fax) {
+            const addError = schemaObj.createMemberError(
+              ['formatExclusiveMinimum', 'formatMaximum'],
+              [fie, fax],
+              compileFormatNumber,
+            );
+            return function betweenExclusiveMinimum(data) {
+              if (!isDataType(data)) return true;
+              if (data > fie && data <= fax) return true;
+              return addError(data);
+            };
+          }
+          else if (fae && fix) {
+            const addError = schemaObj.createMemberError(
+              ['formatMinimum', 'formatExclusiveMaximum'],
+              [fix, fae],
+              compileFormatNumber,
+            );
+            return function betweenExclusiveMaximum(data) {
+              if (!isDataType(data)) return true;
+              if (data >= fix && data < fae) return true;
+              return addError(data);
+            };
+          }
+          else if (fix && fax) {
+            const addError = schemaObj.createMemberError(
+              ['formatMinimum', 'formatMaximum'],
+              [fie, fae],
+              compileFormatNumber,
+            );
+            return function formatBetween(data) {
+              if (!isDataType(data)) return true;
+              if (data >= fix && data <= fax) return true;
+              return addError(data);
+            };
+          }
+          else if (fie) {
+            const addError = schemaObj.createMemberError(
+              'formatExclusiveMinimum',
+              fie,
+              compileFormatNumber,
+            );
+            return function formatExclusiveMinimum(data) {
+              if (!isDataType(data)) return true;
+              if (data > fie) return true;
+              return addError(data);
+            };
+          }
+          else if (fae) {
+            const addError = schemaObj.createMemberError(
+              'formatExclusiveMaximum',
+              fae,
+              compileFormatNumber,
+            );
+            return function formatExclusiveMaximum(data) {
+              if (!isDataType(data)) return true;
+              if (data < fae) return true;
+              return addError(data);
+            };
+          }
+          else if (fax) {
+            const addError = schemaObj.createMemberError(
+              'formatMaximum',
+              fax,
+              compileFormatNumber,
+            );
+            return function formatMaximum(data) {
+              if (!isDataType(data)) return true;
+              if (data <= fax) return true;
+              return addError(data);
+            };
+          }
+          else if (fix) {
+            const addError = schemaObj.createMemberError(
+              'formatMinimum',
+              fix,
+              compileFormatNumber,
+            );
+            return function formatMinimum(data) {
+              if (!isDataType(data)) return true;
+              if (data >= fix) return true;
+              return addError(data);
+            };
+          }
+          return undefined;
+        };
+      }
+    }
+  }
+  return undefined;
+}
+
+function registerDefaultFormatCompilers() {
+  const all = {
+    ...numberFormats,
+    ...dateTimeFormats,
+    ...stringFormats,
+  };
+
+  const keys = Object.keys(all);
+  for (let i = 0; i < keys.length; ++i) {
+    const key = keys[i];
+    const item = all[key];
+    registerFormatCompiler(key, item);
+  }
+}
+
+const registeredSchemaFormatters = {};
+function registerFormatCompiler(name, jsonSchema) {
+  if (registeredSchemaFormatters[name] == null) {
+    const r = typeof jsonSchema;
+    if (r === 'function') {
+      registeredSchemaFormatters[name] = jsonSchema;
+      return true;
+    }
+    else {
+      const fn = createFormatNumberCompiler(name, jsonSchema);
+      if (fn) {
+        registeredSchemaFormatters[name] = fn;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function getSchemaFormatCompiler(name) {
+  if (isStrictStringType(name))
+    return registeredSchemaFormatters[name];
+  else
+    return undefined;
+}
+
+function compileFormatBasic(schemaObj, jsonSchema) {
+  const compiler = getSchemaFormatCompiler(jsonSchema.format);
+  if (compiler) {
+    return compiler(schemaObj, jsonSchema);
+  }
+  return undefined;
+}
+
+function isOfSchemaType(schema, type) {
+  if (type == null) return false;
+  if (schema.type === type) return true;
+  if (schema.type.constructor === Array) {
+    return schema.type.includes(type);
+  }
+  return false;
+}
+
+function isOfStrictSchemaType(schema, type) {
+  if (type == null) return false;
+  if (schema.type === type) return true;
+  if (schema.type.constructor === Array && schema.type.length <= 2)
+    return schema.type.includes('null') && schema.type.includes(type);
+  return false;
+}
+
+function isUnkownSchema(schema) {
+  return (schema.type == null
+    && schema.properties == null
+    && schema.patternProperties == null
+    && schema.additionalProperties == null
+    && schema.items == null
+    && schema.contains == null
+    && schema.additionalItems == null);
+}
+
+//#region is-primitive
+function isBooleanSchema(schema) {
+  const isknown = isOfStrictSchemaType(schema, 'boolean');
+  const isvalid = isUnkownSchema(schema)
+    && (typeof schema.const === 'boolean'
+      || typeof schema.default === 'boolean');
+  return isknown || isvalid;
+}
+function isNumberSchema(schema) {
+  const isknown = isOfStrictSchemaType(schema, 'number');
+  const isformat = isStrictStringType(schema.format)
+    && floatFormats[schema.format] != null;
+
+  const isconst = (Number(schema.const) || false) !== false;
+  const isdeflt = (Number(schema.default) || false) !== false;
+
+  const isvalid = isUnkownSchema(schema) && (isconst || isdeflt);
+
+  return isknown || isformat || isvalid;
+}
+function isIntegerSchema(schema) {
+  const isknown = isOfStrictSchemaType(schema, 'integer');
+  const isformat = typeof schema.format === 'string'
+    && integerFormats[schema.format] != null;
+
+  const isconst = Number.isInteger(Number(schema.const));
+  const isdeflt = Number.isInteger(Number(schema.default));
+
+  const isvalid = isUnkownSchema(schema) && (isconst || isdeflt);
+
+  return isknown || isformat || isvalid;
+}
+function isBigIntSchema(schema) {
+  const isknown = isOfStrictSchemaType(schema, 'bigint')
+    || isOfStrictSchemaType(schema, 'biginteger');
+
+  const isformat = typeof schema.format === 'string'
+    && bigIntFormats[schema.format] != null;
+
+  const isvalid = isUnkownSchema(schema)
+    // eslint-disable-next-line valid-typeof
+    && (typeof schema.const === 'bigint' || typeof schema.default === 'bigint');
+
+  return isknown || isformat || isvalid;
+}
+function isStringSchema(schema) {
+  const isknown = isOfStrictSchemaType(schema, 'string');
+  const isvalid = isUnkownSchema(schema)
+    && (typeof schema.const === 'string'
+      || typeof schema.default === 'string');
+
+  return isknown || isvalid;
+}
+function isPrimitiveSchema(schema) {
+  return isStringSchema(schema)
+    || isIntegerSchema(schema)
+    || isBigIntSchema(schema)
+    || isNumberSchema(schema)
+    || isBooleanSchema(schema);
+}
+
+function compileEnumBasic(schemaObj, jsonSchema) {
+  const enums = getArrayMinItems(jsonSchema.enum, 1);
+  if (enums) {
+    if (isPrimitiveSchema(jsonSchema)) {
+      const addError = schemaObj.createMemberError(
+        'enum',
+        enums,
+        compileEnumBasic,
+      );
+      return function validateEnumBasic(data) {
+        if (data != null && typeof data !== 'object') {
+          if (!enums.includes(data)) {
+            addError(data);
+            return false;
+          }
+        }
+        return true;
+      };
+    }
+  }
+  return undefined;
+}
+
+function compileNumberMaximum(schemaObj, jsonSchema) {
+  const max = Number(jsonSchema.maximum) || undefined;
+  const emax = jsonSchema.exclusiveMaximum === true
+    ? max
+    : Number(jsonSchema.exclusiveMaximum) || undefined;
+
+  const isDataType = isBigIntSchema(jsonSchema)
+    ? isStrictBigIntType
+    : isIntegerSchema(jsonSchema)
+      ? isStrictIntegerType
+      : isStrictNumberType;
+
+  if (emax) {
+    const addError = schemaObj.createMemberError(
+      'exclusiveMaximum',
+      emax,
+      compileNumberMaximum,
+    );
+    return function exclusiveMaximum(data) {
+      if (isDataType(data)) {
+        const valid = data < emax;
+        if (!valid) addError(data);
+        return valid;
+      }
+      return true;
+    };
+  }
+  else if (max) {
+    const addError = schemaObj.createMemberError(
+      'maximum',
+      max,
+      compileNumberMaximum,
+    );
+    return function maximum(data) {
+      if (isDataType(data)) {
+        const valid = data <= max;
+        if (!valid) addError(data);
+        return valid;
+      }
+      return true;
+    };
+  }
+  return undefined;
+}
+
+function compileNumberMinimum(schemaObj, jsonSchema) {
+  const min = Number(jsonSchema.minimum) || undefined;
+  const emin = jsonSchema.exclusiveMinimum === true
+    ? min
+    : Number(jsonSchema.exclusiveMinimum) || undefined;
+
+  const isDataType = isBigIntSchema(jsonSchema)
+    ? isStrictBigIntType
+    : isIntegerSchema(jsonSchema)
+      ? isStrictIntegerType
+      : isStrictNumberType;
+
+  if (emin) {
+    const addError = schemaObj.createMemberError(
+      'exclusiveMinimum',
+      emin,
+      compileNumberMinimum,
+    );
+    return function exclusiveMinimum(data) {
+      if (isDataType(data)) {
+        const valid = data > emin;
+        if (!valid) addError(data);
+        return valid;
+      }
+      return true;
+    };
+  }
+  else if (min) {
+    const addError = schemaObj.createMemberError(
+      'minimum',
+      min,
+      compileNumberMinimum,
+    );
+    return function minimum(data) {
+      if (isDataType(data)) {
+        const valid = data >= min;
+        if (!valid) addError(data);
+        return valid;
+      }
+      return true;
+    };
+  }
+  return undefined;
+}
+
+function compileNumberRange(schemaObj, jsonSchema) {
+  const fnMin = compileNumberMinimum(schemaObj, jsonSchema);
+  const fnMax = compileNumberMaximum(schemaObj, jsonSchema);
+  if (fnMin && fnMax) {
+    return function numberRange(data, dataRoot) {
+      return fnMin(data, dataRoot) && fnMin(data, dataRoot);
+    };
+  }
+  else if (fnMin != null)
+    return fnMin;
+  else if (fnMax != null)
+    return fnMax;
+  return undefined;
+}
+
+function compileNumberMultipleOf(schemaObj, jsonSchema) {
+  const mulOf = getNumberishType(jsonSchema.multipleOf);
+  // we compare against bigint too! javascript is awesome!
+  // eslint-disable-next-line eqeqeq
+  if (mulOf && mulOf != 0) {
+    if (Number.isInteger(mulOf)) {
+      const addError = schemaObj.createMemberError(
+        'multipleOf',
+        mulOf,
+        compileNumberMultipleOf,
+        'integer',
+      );
+      if (isIntegerSchema(jsonSchema)) {
+        return function multipleOfInteger(data) {
+          if (Number.isInteger(data)) {
+            const valid = (data % mulOf) === 0;
+            if (!valid) addError(data);
+            return valid;
+          }
+          return true;
+        };
+      }
+      else {
+        return function multipleOfIntAsNumber(data) {
+          if (typeof data === 'number') {
+            const valid = Number.isInteger(data / mulOf);
+            if (!valid) addError(data);
+            return valid;
+          }
+          return true;
+        };
+      }
+    }
+    else if (isBigIntSchema(jsonSchema)) {
+      const mf = BigInt(mulOf);
+      const addError = schemaObj.createMemberError(
+        'multipleOf',
+        mf,
+        compileNumberMultipleOf,
+        'bigint',
+      );
+      return function multipleOfBigInt(data) {
+        // eslint-disable-next-line valid-typeof
+        if (typeof data === 'bigint') {
+          // we compare against bigint too! javascript is awesome!
+          // eslint-disable-next-line eqeqeq
+          const valid = (data % mf) == 0;
+          if (!valid) addError(data);
+          return valid;
+        }
+        return true;
+      };
+    }
+    else {
+      const addError = schemaObj.createMemberError(
+        'multipleOf',
+        mulOf,
+        compileNumberMultipleOf,
+        'number',
+      );
+      return function multipleOfNumber(data) {
+        if (typeof data === 'number') {
+          const valid = Number.isInteger(Number(data) / mulOf);
+          if (!valid) addError(data);
+          return valid;
+        }
+        return true;
+      };
+    }
+  }
+  return undefined;
+}
+
+function compileNumberBasic(schemaObj, jsonSchema) {
+  const fnRange = compileNumberRange(schemaObj, jsonSchema);
+  const fnMulOf = compileNumberMultipleOf(schemaObj, jsonSchema);
+  if (fnRange && fnMulOf) {
+    return function validateNumberBasic(data) {
+      return fnRange(data) && fnMulOf(data);
+    };
+  }
+  else if (fnRange) {
+    return fnRange;
+  }
+  else if (fnMulOf) {
+    return fnMulOf;
+  }
+  return undefined;
+}
+
+/* eslint-disable eqeqeq */
+
+function String_createRegExp(pattern) {
+  try {
+    if (pattern != null) {
+      if (pattern.constructor === String) {
+        if (pattern[0] === '/') {
+          const e = pattern.lastIndexOf('/');
+          if (e >= 0) {
+            const r = pattern.substring(1, e);
+            const g = pattern.substring(e + 1);
+            return new RegExp(r, g);
+          }
+        }
+        return new RegExp(pattern);
+      }
+      if (pattern.constructor === Array && pattern.length > 1) {
+        return new RegExp(pattern[0], pattern[1]);
+      }
+      if (pattern.constructor === RegExp) {
+        return pattern;
+      }
+    }
+    return undefined;
+  }
+  catch (e) {
+    return undefined;
+  }
+}
+
+function compileMinLength(schemaObj, jsonSchema) {
+  const min = Math.max(getIntegerishType(jsonSchema.minLength, 0), 0);
+  if (min > 0) {
+    const addError = schemaObj.createMemberError('minLength', min, compileStringLength);
+    return function validateStringMinLength(data) {
+      if (typeof data === 'string') {
+        const len = data.length;
+        const valid = len >= min;
+        if (!valid) addError(len);
+        return valid;
+      }
+      return true;
+    };
+  }
+  else return undefined;
+}
+
+function compileMaxLength(schemaObj, jsonSchema) {
+  const max = Math.max(getIntegerishType(jsonSchema.maxLength, 0), 0);
+
+  if (max > 0) {
+    const addError = schemaObj.createMemberError('maxLength', max, compileStringLength);
+    return function validateStringMaxLength(data) {
+      if (typeof data === 'string') {
+        const len = data.length;
+        const valid = len <= max;
+        if (!valid) addError(len);
+        return valid;
+      }
+      return true;
+    };
+  }
+  else return undefined;
+}
+
+function compileStringLength(schemaObj, jsonSchema) {
+  const fnMin = compileMinLength(schemaObj, jsonSchema);
+  const fnMax = compileMaxLength(schemaObj, jsonSchema);
+
+  if (fnMin && fnMax) {
+    return function validateStringBetweenLength(data, dataRoot) {
+      return fnMin(data, dataRoot) && fnMax(data, dataRoot);
+    };
+  }
+  else if (fnMin) return fnMin;
+  else if (fnMax) return fnMax;
+  else return undefined;
+}
+
+function compileStringPattern(schemaObj, jsonSchema) {
+  const ptrn = jsonSchema.pattern;
+  const re = String_createRegExp(ptrn);
+  if (re) {
+    const addError = schemaObj.createMemberError('pattern', ptrn, compileStringPattern);
+    return function validateStringPattern(data) {
+      if (typeof data === 'string') {
+        const valid = re.test(data);
+        if (!valid) addError(data);
+        return valid;
+      }
+      return true;
+    };
+  }
+  else return undefined;
+}
+
+function compileStringBasic(schemaObj, jsonSchema) {
+  const fnLength = compileStringLength(schemaObj, jsonSchema);
+  const fnPattern = compileStringPattern(schemaObj, jsonSchema);
+  if (fnLength && fnPattern) {
+    return function validateSchemaBasic(data) {
+      return fnLength(data) && fnPattern(data);
+    };
+  }
+  else if (fnLength) return fnLength;
+  else if (fnPattern) return fnPattern;
+  else return undefined;
+}
+
+/* eslint-disable function-paren-newline */
+
+function compileCheckBounds(schemaObj, jsonSchema) {
+  // get the defined lower and upper bounds of an array.
+  const minprops = getIntegerishType(jsonSchema.minProperties);
+  const maxprops = getIntegerishType(jsonSchema.maxProperties);
+
+  function compileMaxProperties() {
+    if (maxprops > 0) {
+      const addError = schemaObj.createMemberError(
+        'maxProperties',
+        maxprops,
+        compileMaxProperties);
+      return function maxProperties(length) {
+        const valid = length <= maxprops;
+        if (!valid) addError(length);
+        return valid;
+      };
+    }
+    return undefined;
+  }
+  function compileMinProperties() {
+    if (minprops > 0) {
+      const addError = schemaObj.createMemberError(
+        'minProperties',
+        minprops,
+        compileMinProperties);
+      return function minProperties(length) {
+        const valid = length >= minprops;
+        if (!valid) addError(length);
+        return valid;
+      };
+    }
+    return undefined;
+  }
+  const xp = compileMaxProperties();
+  const mp = compileMinProperties();
+  if (xp && mp) {
+    return function checkPropertyBounds(length) {
+      return xp(length) && mp(length);
+    };
+  }
+  return xp || mp;
+}
+
+function compileRequiredProperties(schemaObj, jsonSchema, checkBounds) {
+  const required = getStrictArray(jsonSchema.required);
+  const objProps = getObjectishType(jsonSchema.properties);
+  const mapItems = getStrictArray(jsonSchema.properties);
+
+  // short cut to check for property bounds in case
+  // no required properties are available
+  if (required == null) {
+    if (checkBounds == null) {
+      return undefined;
+    }
+
+    return function propertyBounds(data) {
+      if (data == null) return true;
+      if (typeof data !== 'object') return true;
+      if (data.constructor === Map) {
+        return checkBounds(data.size);
+      }
+      else {
+        return checkBounds(Object.keys(data).length);
+      }
+    };
+  }
+
+  // when the array is present but empty,
+  // REQUIRE all of the properties
+  let ismap = mapItems != null;
+  let keys = required;
+  if (keys.length === 0) {
+    const ok = objProps && Object.keys(objProps);
+    const mk = mapItems > 0 && Array.from(new Map(mapItems).keys());
+    ismap = isStrictArrayType(mk);
+    keys = ok || mk || keys;
+  }
+
+  if (keys.length > 0) {
+    if (ismap === true) {
+      const addError = schemaObj.createMemberError(
+        'required',
+        keys,
+        compileRequiredProperties,
+        'ismap');
+      return function requiredMapKeys(data) {
+        let valid = true;
+        if (data.constructor === Map) {
+          for (let i = 0; i < keys.length; ++i) {
+            const key = keys[i];
+            if (data.has(key) === false) {
+              addError(key, data);
+              valid = false;
+            }
+          }
+          const length = data.size;
+          valid = checkBounds(length) && valid;
+        }
+        return valid;
+      };
+    }
+    else {
+      const addError = schemaObj.createMemberError(
+        'required',
+        keys,
+        compileRequiredProperties,
+        'isobject');
+      return function requiredProperties(data) {
+        let valid = true;
+        const dataKeys = Object.keys(data);
+        for (let i = 0; i < keys.length; i++) {
+          const key = keys[i];
+          if (dataKeys.includes(key) === false) {
+            addError(key, data);
+            valid = false;
+          }
+        }
+        const length = dataKeys.length;
+        valid = checkBounds(length) && valid;
+        return valid;
+      };
+    }
+  }
+
+  return undefined;
+}
+
+function compileRequiredPatterns(schemaObj, jsonSchema) {
+  const patterns = getStrictArray(jsonSchema.patternRequired);
+
+  if (patterns && patterns.length > 0) {
+    // produce an array of regexp objects to validate members.
+    const regs = [];
+    for (let i = 0; i < patterns.length; ++i) {
+      const pattern = String_createRegExp(patterns[i]);
+      if (pattern) {
+        regs.push(pattern);
+      }
+    }
+
+    const ismap = (getStrictArray(jsonSchema.properties) != null);
+    if (regs.length > 0) {
+      const addError = schemaObj.createMemberError('patternRequired', regs, compileRequiredPatterns, ismap ? 'ismap' : 'isobject');
+      return function patternRequiredMap(data) {
+        if (data == null) return true;
+        if (typeof data !== 'object') return true;
+
+        let valid = true;
+        const dataKeys = data.constructor === Map
+          ? Array.from(data.keys())
+          : Object.keys(data);
+
+        for (let i = 0; i < regs.length; ++i) {
+          const reg = regs[i];
+          let found = false;
+          for (let j = 0; j < dataKeys.length; ++j) {
+            if (reg.test(dataKeys)) {
+              found = true;
+              continue;
+            }
+          }
+          if (!found) {
+            addError(reg, data);
+            valid = false;
+          }
+        }
+        return valid;
+      };
+    }
+  }
+
+  return undefined;
+}
+
+function compileObjectBasic(schemaObj, jsonSchema) {
+  const checkBounds = compileCheckBounds(schemaObj, jsonSchema);
+  const valProps = compileRequiredProperties(schemaObj, jsonSchema, checkBounds);
+  const valPatts = compileRequiredPatterns(schemaObj, jsonSchema);
+
+  if (valProps && valPatts) {
+    return function validateObjectBasic(data) {
+      return valProps(data) && valPatts(data);
+    };
+  }
+  else if (valProps) {
+    return valProps;
+  }
+  else if (valPatts) {
+    return valPatts;
+  }
+
+  return undefined;
+}
+
+function compilePropertyItem(schemaObj, jsonSchema) {
+  const properties = getObjectishType(jsonSchema.properties);
+
+  const keys = Object.keys(properties);
+  if (keys.length > 0) {
+    const children = {};
+
+    const member = schemaObj.createMember('properties', compilePropertyItem);
+
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const child = properties[key];
+      if (isObjectishType(child)) {
+        const validator = schemaObj.createPairValidator(member, key, child);
+        if (validator != null) children[key] = validator;
+      }
+    }
+
+    if (Object.keys(children).length > 0) {
+      return function validatePropertyItem(key, data, dataRoot) {
+        const validate = children[key];
+        return validate != null
+          ? validate(data[key], dataRoot)
+          : undefined;
+      };
+    }
+  }
+  return undefined;
+}
+
+function compilePatternItem(schemaObj, jsonSchema) {
+  const patterns = getObjectishType(jsonSchema.patternProperties);
+
+  const keys = Object.keys(patterns);
+  if (keys.length > 0) {
+    const regs = {};
+    const props = {};
+
+    const member = schemaObj.createMember('patternProperties', compilePatternItem);
+    for (let i = 0; i < keys.length; ++i) {
+      const key = keys[i];
+      const rxp = String_createRegExp(key);
+      if (rxp != null) {
+        const child = patterns[key];
+        const validator = schemaObj.createPairValidator(member, key, child);
+        if (validator != null) {
+          regs[key] = rxp;
+          props[key] = validator;
+        }
+      }
+    }
+
+    const regKeys = Object.keys(regs);
+    if (regKeys.length > 0) {
+      return function validatePatternItem(key, data, dataRoot) {
+        for (let i = 0; i < regKeys.length; ++i) {
+          const rky = regKeys[i];
+          const rxp = regs[rky];
+          if (rxp != null && rxp.test(key)) {
+            const validate = props[key];
+            return validate(data[key], dataRoot);
+          }
+        }
+        return undefined;
+      };
+    }
+  }
+  return undefined;
+}
+
+function compileAdditionalItem(schemaObj, jsonSchema) {
+  const additional = getBoolOrObject(jsonSchema.additionalProperties, true);
+  if (additional === false) {
+    const addError = schemaObj.createMemberError(
+      'additionalProperties',
+      false,
+      compileAdditionalItem);
+    // eslint-disable-next-line no-unused-vars
+    return function noAdditionalProperties(dataKey, data, dataRoot) {
+      return addError(dataKey, data);
+    };
+  }
+  if (additional !== true) {
+    const validate = schemaObj.createSingleValidator(
+      'additionalProperties',
+      additional,
+      compileAdditionalItem);
+    if (validate != null) {
+      return function validateAdditionalItem(key, data, dataRoot) {
+        return validate(data[key], dataRoot);
+      };
+    }
+  }
+
+  return undefined;
+}
+
+function compileObjectChildren(schemaObj, jsonSchema) {
+  const properties = getObjectishType(jsonSchema.properties);
+  const patterns = getObjectishType(jsonSchema.patternProperties);
+  const additional = getBoolOrObject(jsonSchema.additionalProperties, true);
+
+  if (properties == null && patterns == null && additional === true)
+    return undefined;
+
+  // make sure we are not part of a map!
+  if (!isStrictBooleanType(additional)) {
+    if (properties == null && patterns == null) {
+      if (isOfSchemaType(jsonSchema, 'map')) return undefined;
+    }
+  }
+
+  // eslint-disable-next-line no-constant-condition
+  {
+    const validateProperty = fallbackFn(
+      compilePropertyItem(schemaObj, jsonSchema),
+      undefThat,
+    );
+    const validatePattern = fallbackFn(
+      compilePatternItem(schemaObj, jsonSchema),
+      undefThat,
+    );
+    const validateAdditional = fallbackFn(
+      compileAdditionalItem(schemaObj, jsonSchema),
+      trueThat,
+    );
+
+    return function validateObjectChildren(data, dataRoot) {
+      let valid = true;
+      if (isObjectishType(data)) {
+        const dataKeys = Object.keys(data);
+        let errors = 0;
+        for (let i = 0; i < dataKeys.length; ++i) {
+          if (errors > 32) break;
+          const dataKey = dataKeys[i];
+          let result = validateProperty(dataKey, data, dataRoot);
+          if (result != null) {
+            dataKeys[i] = result;
+            if (result === false) {
+              valid = false;
+              errors++;
+            }
+            continue;
+          }
+          result = validatePattern(dataKey, data, dataRoot);
+          if (result != null) {
+            dataKeys[i] = result;
+            if (result === false) {
+              valid = false;
+              errors++;
+            }
+            continue;
+          }
+          result = validateAdditional(dataKey, data, dataRoot);
+          dataKeys[i] = result;
+          if (result === false) {
+            valid = false;
+            errors++;
+          }
+        }
+      }
+      return valid;
+    };
+  }
+
+  return undefined;
+}
+
+/* eslint-disable function-paren-newline */
+
+function compileArrayBasic(schemaObj, jsonSchema) {
+  const min = getIntegerishType(jsonSchema.minItems);
+  const max = getIntegerishType(jsonSchema.maxItem);
+
+  function compileMinItems() {
+    if (min > 0) {
+      const addError = schemaObj.createMemberError(
+        'minItems',
+        min,
+        compileArrayBasic);
+      return function minItems(data) {
+        if (!isArrayOrSet(data)) { return true; }
+        const len = getArrayOrSetLength(data);
+        const valid = len >= min;
+        if (!valid) addError(data);
+        return valid;
+      };
+    }
+    return undefined;
+  }
+
+  function compileMaxItems() {
+    if (max > 0) {
+      const addError = schemaObj.createMemberError(
+        'maxItems',
+        max,
+        compileArrayBasic);
+      return function maxItems(data) {
+        if (!isArrayOrSet(data)) { return true; }
+        const len = getArrayOrSetLength(data);
+        const valid = len <= max;
+        if (!valid) addError(data);
+        return valid;
+      };
+    }
+    return undefined;
+  }
+
+  const minItems = compileMinItems();
+  const maxItems = compileMaxItems();
+  if (minItems && maxItems) {
+    return function checkArrayBounds(data, dataRoot) {
+      return minItems(data, dataRoot) && maxItems(data, dataRoot);
+    };
+  }
+  return minItems || maxItems;
+}
+
+function compileArrayChildren(schemaObj, jsonSchema) {
+  const items = getObjectishType(jsonSchema.items);
+  const contains = getObjectishType(jsonSchema.contains);
+  const maxItems = getIntegerishType(jsonSchema.maxItems, 0);
+
+  function compileItems() {
+    if (items == null) return undefined;
+
+    const validate = schemaObj.createSingleValidator(
+      'items',
+      items,
+      compileArrayChildren);
+    if (validate != null) {
+      return function validateItem(childData, dataRoot) {
+        return validate(childData, dataRoot);
+      };
+    }
+
+    return undefined;
+  }
+
+  function compileContains() {
+    if (contains == null) return undefined;
+
+    const validate = schemaObj.createSingleValidator(
+      'contains',
+      contains,
+      compileArrayChildren);
+
+    if (validate == null) return undefined;
+    return function validateContainsItem(childData, dataRoot) {
+      return validate(childData, dataRoot);
+    };
+  }
+
+  const validateItem = compileItems();
+  const validateContains = compileContains();
+
+  if (validateItem || validateContains) {
+    return function validateArrayChildren(data, dataRoot) {
+      let valid = true;
+      let found = false;
+      if (isArrayishType(data)) {
+        let errors = 32;
+        const len = maxItems > 0
+          ? Math.min(maxItems, data.length)
+          : data.length;
+        for (let i = 0; i < len; ++i) {
+          if (errors > 32) break;
+          const obj = data[i];
+          if (validateItem) {
+            if (validateItem(i, obj, dataRoot) === false) {
+              valid = false;
+              errors++;
+              continue;
+            }
+          }
+          if (validateContains && found === false) {
+            if (validateContains(i, obj, dataRoot) === true) {
+              if (validateItem == null) return true;
+              found = true;
+            }
+          }
+        }
+      }
+      return valid && (validateContains == null || found === true);
+    };
+  }
+  return undefined;
+}
+
+// eslint-disable-next-line no-unused-vars
+function compileMapChildren(owner, schema, addMember, addChildSchema) { // TODO
+  return undefined;
+}
+
+// eslint-disable-next-line no-unused-vars
+function compileSetChildren(owner, schema, addMember, addChildSchema) {
+  return undefined;
+}
+
+function compileTupleChildren(schemaObj, jsonSchema) {
+  const items = getArrayishType(jsonSchema.items);
+  const additional = getObjectishType(jsonSchema.additionalItems);
+  const maxItems = getNumberishType(jsonSchema.maxItems, 0);
+
+
+  if (items == null && additional == null) return undefined;
+
+  // check if we are really in a tuple
+  if (items == null) {
+    const type = getStringOrArray(jsonSchema.type);
+    let istuple = false;
+    if (isStrictArrayType(type)) {
+      istuple = type.includes('tuple');
+    }
+    else if (type === 'tuple') {
+      istuple = true;
+    }
+    if (istuple !== true) return undefined;
+  }
+
+  function compileItems() {
+    if (items == null) return undefined;
+    const member = schemaObj.createMember('items', compileTupleChildren);
+    const validators = new Array(items.length);
+    for (let i = 0; i < items.length; ++i) {
+      const validator = member.createPairValidator(member, i, items[i]);
+      validators[i] = validator;
+    }
+
+    return function validateItem(i, data, dataRoot) {
+      if (validators.length < i) {
+        const validator = validators[i];
+        if (validator != null) {
+          return validator(data[i], dataRoot);
+        }
+      }
+      return false;
+    };
+  }
+
+  function compileAdditionalItems() {
+    if (additional == null) return undefined;
+
+    const validate = schemaObj.createSingleValidator(
+      'additionalItems',
+      additional,
+      compileTupleChildren,
+    );
+    if (validate == null) return undefined;
+    return function validateContains(data, dataRoot) {
+      return validate(data, dataRoot);
+    };
+  }
+
+  const validateItem = fallbackFn(compileItems(), falseThat);
+  const validateAdditional = fallbackFn(compileAdditionalItems(), falseThat);
+
+  return function validateTuple(data, dataRoot) {
+    let valid = true;
+    if (isArrayishType(data)) {
+      let errors = 0;
+      const len = maxItems > 0
+        ? Math.min(maxItems, data.length)
+        : data.length;
+      for (let i = 0; i < len; ++i) {
+        if (errors > 32) break;
+        const val = data[i];
+        if (!validateItem(i, val, dataRoot)) {
+          if (validateAdditional(i, val, dataRoot) === true)
+            continue;
+          valid = false;
+          errors++;
+        }
+      }
+    }
+    return valid;
+  };
+}
+
+/* eslint-disable function-paren-newline */
+
+function compileSchemaBasic(schemaObj, jsonSchema) {
+  const fnType = fallbackFn(
+    compileTypeBasic(schemaObj, jsonSchema),
+  );
+  const fnFormat = fallbackFn(
+    compileFormatBasic(schemaObj, jsonSchema),
+  );
+  const fnEnum = fallbackFn(
+    compileEnumBasic(schemaObj, jsonSchema),
+  );
+  const fnNumber = fallbackFn(
+    compileNumberBasic(schemaObj, jsonSchema),
+  );
+  const fnString = fallbackFn(
+    compileStringBasic(schemaObj, jsonSchema),
+  );
+  const fnObject = fallbackFn(
+    compileObjectBasic(schemaObj, jsonSchema),
+  );
+  const fnArray = fallbackFn(
+    compileArrayBasic(schemaObj, jsonSchema),
+  );
+
+  return function validateSchemaObject(data, dataRoot) {
+    const vType = fnType(data, dataRoot);
+    const vFormat = fnFormat(data, dataRoot);
+    const vEnum = fnEnum(data, dataRoot);
+    const vNumber = fnNumber(data, dataRoot);
+    const vString = fnString(data, dataRoot);
+    const vObject = fnObject(data, dataRoot);
+    const vArray = fnArray(data, dataRoot);
+    return vType
+      && vFormat
+      && vEnum
+      && vNumber
+      && vString
+      && vObject
+      && vArray;
+  };
+}
+
+function compileSchemaChildren(schemaObj, jsonSchema) {
+  const fnObject = fallbackFn(
+    compileObjectChildren(schemaObj, jsonSchema),
+  );
+  const fnMap = fallbackFn(
+    compileMapChildren(),
+  );
+  const fnArray = fallbackFn(
+    compileArrayChildren(schemaObj, jsonSchema),
+  );
+  const fnSet = fallbackFn(
+    compileSetChildren(),
+  );
+  const fnTuple = fallbackFn(
+    compileTupleChildren(schemaObj, jsonSchema),
+  );
+
+  return function validateSchemaChildren(data, dataRoot) {
+    return fnObject(data, dataRoot)
+      && fnMap(data, dataRoot)
+      && fnArray(data, dataRoot)
+      && fnSet(data, dataRoot)
+      && fnTuple(data, dataRoot);
+  };
+}
+
+// eslint-disable-next-line no-unused-vars
+function compileSchemaSelectors(schemaObj, jsonSchema) {
+  return trueThat;
+}
+
+// eslint-disable-next-line no-unused-vars
+function compileSchemaConditions(schemaObj, jsonSchema) {
+  return trueThat;
+}
+
+function compileSchemaObject(schemaObj, jsonSchema) {
+  if (!isStrictObjectType(jsonSchema)) {
+    return falseThat;
+  }
+
+  const validateBasic = compileSchemaBasic(schemaObj, jsonSchema);
+  const validateChildren = compileSchemaChildren(schemaObj, jsonSchema);
+  const validateSelectors = compileSchemaSelectors();
+  const validateConditions = compileSchemaConditions();
+
+  schemaObj.validateFn = function validateSchemaObject(data, dataRoot) {
+    return validateBasic(data, dataRoot)
+      && validateSelectors(data, dataRoot)
+      && validateConditions(data, dataRoot)
+      && validateChildren(data, dataRoot);
+  };
+
+  return schemaObj;
+}
+
+const JSONPointer_pathSeparator = '/';
+
+function JSONPointer_concatPath(parent, key, ...extra) {
+  if (extra.length > 0) {
+    const all = [parent, key, ...extra];
+    return all.join(JSONPointer_pathSeparator);
+  }
+  return parent + JSONPointer_pathSeparator + key;
+}
+
+class SchemaError {
+  constructor(timeStamp, member, key, value, rest) {
+    this.timeStamp = timeStamp;
+    this.member = member;
+    this.key = key;
+    this.value = value;
+    this.rest = rest;
+  }
+}
+
+class SchemaRoot {
+  constructor(baseUri, json) {
+    this.baseUri = baseUri;
+    this.json = json;
+    this.firstSchema = new SchemaObject(this, '', '');
+    this.errors = [];
+  }
+
+  addErrorSingle(member, value, rest) {
+    this.errors.push(new SchemaError(
+      performance.now(),
+      member,
+      null,
+      value,
+      rest,
+    ));
+  }
+
+  addErrorPair(member, key, value, rest) {
+    this.errors.push(new SchemaError(
+      performance.now(),
+      member,
+      key,
+      value,
+      rest,
+    ));
+  }
+
+  validate(data) {
+    // clear all errors
+    while (this.errors.pop());
+    // call compiled validator
+    return this.firstSchema.validate(data, data);
+  }
+}
+
+class SchemaObject {
+  constructor(schemaRoot, schemaPath, meta) {
+    this.schemaRoot = schemaRoot;
+    this.schemaPath = schemaPath;
+    this.metaData = meta;
+    this.validateFn = falseThat;
+    this.members = [];
+  }
+
+  get errors() {
+    return this.schemaRoot.errors;
+  }
+
+  get addErrorSingle() {
+    return this.schemaRoot.addErrorSingle;
+  }
+
+  get addErrorPair() {
+    return this.schemaRoot.addErrorPair;
+  }
+
+  get validate() {
+    return this.validateFn;
+  }
+
+  createMember(key, ...rest) {
+    const member = new SchemaMember(
+      this,
+      key,
+      null,
+      rest,
+    );
+    return member;
+  }
+
+  createMemberError(key, expected, ...rest) {
+    const member = new SchemaMember(
+      this,
+      key,
+      expected,
+      rest,
+    );
+
+    if (isStrictArrayType(key)) {
+      this.members.push(...key);
+      return function addErrorPair(dataKey, data, ...meta) {
+        return this.addErrorPair(member, dataKey, data, meta);
+      };
+    }
+    else if (isStrictStringType(key)) {
+      this.members.push(key);
+      return function addErrorSingle(data, ...meta) {
+        return this.addErrorSingle(member, data, meta);
+      };
+    }
+    return undefined;
+  }
+
+  createSingleValidator(key, child, ...rest) {
+    if (isStrictStringType(key)) {
+      const childObj = new SchemaObject(
+        this.schemaRoot,
+        JSONPointer_concatPath(this.schemaPath, key),
+        rest,
+      );
+      const validator = compileSchemaObject(childObj, child);
+      childObj.validateFn = validator;
+      return validator;
+    }
+    return undefined;
+  }
+
+  createPairValidator(member, key, child, ...rest) {
+    const valid = member instanceof SchemaMember
+      && isStrictStringType(key)
+      && isObjectishType(child);
+    if (!valid) return undefined;
+
+    const childObj = new SchemaObject(
+      this.schemaRoot,
+      JSONPointer_concatPath(this.schemaPath, member.schemaKey, key),
+      rest,
+    );
+    const validator = compileSchemaObject(childObj, child);
+    childObj.validateFn = validator;
+    return validator;
+  }
+}
+
+class SchemaMember {
+  constructor(schemaObject, memberKey, expectedValue, options) {
+    this.schemaObject = schemaObject;
+    this.memberKey = memberKey;
+    this.expectedValue = expectedValue;
+    this.options = options;
+  }
+}
+
+const registeredDocuments = {};
+
+function compileJSONSchema(baseUri, json) {
+  baseUri = getStrictString(baseUri, '');
+  // TODO: test if valid baseUri
+  if (registeredDocuments.hasOwnProperty(baseUri)) {
+    return false;
+  }
+
+  // create a new schema root
+  const root = new SchemaRoot(baseUri, json);
+
+  // compile the first schema object
+  const first = root.createSchemaObject();
+  first.validateFn = compileSchemaObject(first, json);
+
+  registeredDocuments[baseUri] = first;
+
+  return true;
+}
+
+function getJSONSchema(baseUri) {
+  baseUri = getStrictString(baseUri, '');
+  if (registeredDocuments.hasOwnProperty(baseUri)) {
+    return registeredDocuments[baseUri];
+  }
+  return undefined;
+}
+
+export { VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, collapseCssClass, collapseToString, compileJSONSchema, copyAttributes, createIsStrictDataType, createIsStrictObjectOfType, createStorageCache, def_vec2f64, def_vec2i32, def_vec3f64, base$1 as f64, fallbackFn, falseThat, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, math$1 as fm64, getArrayMinItems, getArrayOrSetLength, getArrayishType, getBoolOrArray, getBoolOrNumber, getBoolOrObject, getBooleanishType, getIntegerishType, getJSONSchema, getNumberishType, getObjectishType, getSanitizedPrimitive, getStrictArray, getStrictArrayMinItems, getStrictBoolean, getStrictInteger, getStrictNumber, getStrictObject, getStrictString, getStringOrArray, getStringOrObject, getVNodeAttr, getVNodeKey, getVNodeName, h, hasCssClass, base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isArrayOrSet, isArrayishType, isBoolOrArray, isBoolOrNumber, isBoolOrObject, isBooleanishType, isFn, isFnEx, isIntegerishType, isNumberishType, isObjectOrMap, isObjectishType, isPrimitiveType, isPrimitiveTypeEx, isStrictArrayType, isStrictBigIntType, isStrictBooleanType, isStrictIntegerType, isStrictNumberType, isStrictObjectOfType, isStrictObjectType, isStrictStringType, isStrictTypedArray, isStringOrArray, isStringOrDate, isStringOrObject, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, registerDefaultFormatCompilers, registerFormatCompiler, removeCssClass, shape as s2f64, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, trueThat, undefThat, vec2$1 as v2f64, vec2 as v2i32, vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_add, vec3f64_adds, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_dot, vec3f64_iadd, vec3f64_iadds, vec3f64_idiv, vec3f64_idivs, vec3f64_imul, vec3f64_imuls, vec3f64_isub, vec3f64_isubs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_mul, vec3f64_muls, vec3f64_new, vec3f64_sub, vec3f64_subs, vec3f64_unit, workletState, wrapVN };
 //# sourceMappingURL=index.js.map
