@@ -5,7 +5,7 @@ import {
   getJSONSchema,
   registerDefaultFormatCompilers,
 // eslint-disable-next-line import/no-unresolved
-} from '__futilsjs/json';
+} from '../../src/json';
 
 import data1 from './draft7/01.type.basic1.00.json';
 import data2 from './draft7/05.object.props2.00.json';

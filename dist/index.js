@@ -17,7 +17,7 @@ const mathi32_PI1H = (mathi32_PI / 2)|0;
 const mathi32_PI41 = ((4 / Math.PI) * mathi32_MULTIPLIER)|0;
 const mathi32_PI42 = ((4 / (Math.PI * Math.PI)) * mathi32_MULTIPLIER)|0;
 
-var int32Math = {
+var math = {
   abs: mathi32_abs,
   round: mathi32_round,
   floor: mathi32_floor,
@@ -34,809 +34,6 @@ var int32Math = {
   PI41: mathi32_PI41,
   PI42: mathi32_PI42,
 };
-
-function isPrimitiveTypeEx(typeString) {
-  // primitives: boolean = 1, integer = 32, float = 64, bigint = 0, letter = 16
-  // complex: struct, array, string, map
-  return typeString === 'integer'
-    || typeString === 'number'
-    || typeString === 'string'
-    || typeString === 'bigint'
-    || typeString === 'boolean';
-}
-
-function isPrimitiveType(obj) {
-  const tp = typeof obj;
-  return isPrimitiveTypeEx(tp);
-}
-
-function sanitizePrimitiveValue(value, nullable, defaultValue = undefined) {
-  if (nullable && value == null) return value;
-  if (value == null) return defaultValue;
-  return isPrimitiveType(value) ? value : defaultValue;
-}
-
-// region isPureNumber
-function isPureNumber_asNaN(obj) {
-  // eslint-disable-next-line no-restricted-globals
-  return isNaN(obj) === false;
-}
-
-function isPureNumber_asNumber(obj) {
-  return (Number(obj) || false) !== false;
-}
-
-function isPureNumber_asParseInt(obj) {
-  // eslint-disable-next-line radix
-  const n = parseInt(obj);
-  // eslint-disable-next-line no-self-compare
-  return n === n;
-}
-
-function isPureNumber_asParseFloat(obj) {
-  // eslint-disable-next-line radix
-  const n = parseFloat(obj);
-  // eslint-disable-next-line no-self-compare
-  return n === n; // we equal NaN with NaN here.
-}
-
-function isPureNumber_asMathRound(obj) {
-  const n = Math.round(obj);
-  // eslint-disable-next-line no-self-compare
-  return n === n; // we equal NaN with NaN here.
-}
-
-function isPureNumber_asCastFloat(obj) {
-  // eslint-disable-next-line no-self-compare
-  return +obj === +obj; // we equal NaN with NaN here.
-}
-
-// endregion
-
-/**
- * @example
- *  const fns_all = [ isPureNumber_asNumber, isPureNumber_asParseFloat ];
- *  const test_stringi = ['12345', '54321', '12358', '85321'];
- *  const test_stringf = ['12.345', '54.321', '12.358', '85.321'];
- *  const test_nan = ['abcde', 'edcba', 'abceh', 'hecba'];
- *  const test_number = [13.234, 21.123, 34.456, 55.223];
- *  const test_integer = [13, 21, 34, 55];
- *  const pref_idx = performanceIndexOfUnaryBool(fns_all, [ test_number, test_integer ]);
- *  const pref_fn = pref_idx >= 0 ? fns_all[pref_idx] : undefined;
- *
- * @param {*} functionList
- * @param {*} testList
- */
-function performanceIndexOfUnaryBool(functionList, testList) {
-  let index = -1;
-  let start = 0.0;
-  let end = 0.0;
-  let delta = 0.0;
-  // eslint-disable-next-line no-unused-vars
-  let tmp = false;
-
-  // eslint-disable-next-line func-names
-  let fn = function () { };
-
-  for (let i = 0; i < functionList.length; ++i) {
-    fn = functionList[i];
-    end = 0.0;
-    for (let j = 0; j < testList.length; ++j) {
-      const test = testList[j];
-      start = performance.now();
-      for (let k = 0; k < 1000; ++k) {
-        tmp |= fn(test % k);
-      }
-      end += performance.now() - start;
-    }
-    end /= testList.length;
-
-    if (delta > end) {
-      delta = end;
-      index = i;
-    }
-  }
-  return index;
-}
-
-const isPureNumber = (function calibrate(doit = false) {
-  if (!doit) return isPureNumber_asNumber;
-  const floats = [Math.PI, 13.234, 21.123, 34.456, 55.223];
-  const integers = [13, 21, 34, 55, 108];
-  const fns = [
-    isPureNumber_asNaN,
-    isPureNumber_asNumber,
-    isPureNumber_asParseInt,
-    isPureNumber_asParseFloat,
-    isPureNumber_asMathRound,
-    isPureNumber_asCastFloat,
-  ];
-  return fns[performanceIndexOfUnaryBool(fns, [floats, integers])];
-})(false);
-
-function isPureString(obj) {
-  return obj != null && obj.constructor === String;
-}
-
-function isPureObject(obj) {
-  return (typeof obj === 'object' && obj.constructor !== Array);
-}
-
-function isPureObjectReally(obj) {
-  return (typeof obj === 'object'
-    && !(obj.constructor === Array
-      || obj.constructor === Map
-      || obj.constructor === Set
-      || obj.constructor === WeakMap
-      || obj.constructor === WeakSet
-      || obj.constructor === Int8Array
-      || obj.constructor === Int16Array
-      || obj.constructor === Int32Array
-      // eslint-disable-next-line no-undef
-      || obj.constructor === BigInt64Array
-      // eslint-disable-next-line no-undef
-      || obj.constructor === UInt8Array
-      || obj.constructor === Uint8ClampedArray
-      // eslint-disable-next-line no-undef
-      || obj.constructor === UInt32Array
-      // eslint-disable-next-line no-undef
-      || obj.constructor === UInt16Array
-      // eslint-disable-next-line no-undef
-      || obj.constructor === UInt32Array
-      // eslint-disable-next-line no-undef
-      || obj.constructor === BigUint64Array
-    ));
-}
-
-function isPureArray(obj) {
-  return (obj != null && obj.constructor === Array);
-}
-
-function isPureTypedArray(obj) {
-  return (obj != null
-    && (obj.constructor === Int8Array
-      || obj.constructor === Int16Array
-      || obj.constructor === Int32Array
-      // eslint-disable-next-line no-undef
-      || obj.constructor === BigInt64Array
-      // eslint-disable-next-line no-undef
-      || obj.constructor === UInt8Array
-      || obj.constructor === Uint8ClampedArray
-      // eslint-disable-next-line no-undef
-      || obj.constructor === UInt32Array
-      // eslint-disable-next-line no-undef
-      || obj.constructor === UInt16Array
-      // eslint-disable-next-line no-undef
-      || obj.constructor === UInt32Array
-      // eslint-disable-next-line no-undef
-      || obj.constructor === BigUint64Array
-    ));
-}
-
-function isBoolOrNumber(obj) {
-  return obj != null && (obj === true
-    || obj === false
-    || obj.constructor === Number);
-}
-
-function isBoolOrArray(obj) {
-  return obj != null
-    && (obj === true
-      || obj === false
-      || obj.constructor === Array);
-}
-
-function isBoolOrObject(obj) {
-  return obj != null
-    && (obj === true
-      || obj === false
-      || (typeof obj === 'object'
-        && obj.constructor !== Array));
-}
-
-function isStringOrArray(obj) {
-  return obj != null
-    && (obj.constructor === String
-      || obj.constructor === Array);
-}
-
-function isStringOrObject(obj) {
-  return obj != null
-    && (obj.constructor === String
-      || (obj.constructor !== Array && typeof obj === 'object'));
-}
-
-function getBoolOrNumber(obj, def = undefined) {
-  return isBoolOrNumber(obj) ? obj : def;
-}
-
-function getBoolOrArray(obj, def) {
-  return isBoolOrArray(obj) ? obj : def;
-}
-
-function getBoolOrObject(obj, def) {
-  return isBoolOrObject(obj) ? obj : def;
-}
-
-function getStringOrObject(obj, def) {
-  return isStringOrObject(obj) ? obj : def;
-}
-
-function getStringOrArray(obj, def) {
-  return isStringOrArray(obj) ? obj : def;
-}
-
-function getPureObject(obj, def) {
-  return isPureObject(obj) ? obj : def;
-}
-function getPureArray(obj, def) {
-  return isPureArray(obj) ? obj : def;
-}
-
-function getPureArrayMinItems(obj, len, def) {
-  return isPureArray(obj) && obj.length > len ? obj: def;
-}
-
-function getPureString(obj, def) {
-  return (obj != null && obj.constructor === String) ? obj : def;
-}
-
-function getPureNumber(obj, def) {
-  return Number(obj) || def; // TODO: performance check for isNaN and Number!!!
-}
-
-function getPureInteger(obj, def) {
-  return mathi32_round(obj) || def;
-}
-
-function getPureBool(obj, def) {
-  return obj === true || obj === false ? obj : def;
-}
-
-/* eslint-disable prefer-rest-params */
-
-function getObjectAllKeys(obj) {
-  if (obj != null && typeof obj === 'object') {
-    return Object.keys(obj);
-  }
-  return undefined;
-}
-
-function getObjectAllValues(obj) {
-  if (obj != null && typeof obj === 'object') {
-    const keys = Object.keys(obj);
-    const arr = new Array(keys.length);
-    for (let i = 0; i < keys.length; ++i) {
-      arr[i] = obj[keys[i]];
-    }
-    return arr;
-  }
-  return undefined;
-}
-
-function getObjectFirstKey(obj) {
-  if (obj != null && typeof obj === 'object') {
-    return Object.keys(obj)[0];
-  }
-  return undefined;
-}
-
-function getObjectFirstItem(obj) {
-  if (obj != null && typeof obj === 'object') {
-    const key = Object.keys(obj)[0];
-    if (key) return obj[key];
-  }
-  return undefined;
-}
-
-function getObjectCountItems(obj) {
-  if (obj != null && typeof obj === 'object') {
-    return Object.keys(obj).length;
-  }
-  return 0;
-}
-
-function isObjectEmpty(obj) {
-  return getObjectCountItems(obj) === 0;
-}
-
-function cloneObject(target, source) {
-  // const out = {};
-
-  // for (const t in target) {
-  //   if (target.hasOwnProperty(t)) out[t] = target[t];
-  // }
-  // for (const s in source) {
-  //   if (source.hasOwnProperty(s)) out[s] = source[s];
-  // }
-  // return out;
-  return { ...target, ...source };
-}
-
-function cloneDeep(o) {
-  if (o == null || typeof o !== 'object') {
-    return o;
-  }
-
-  if (o.constructor === Array) {
-    const arr = [];
-    for (let i = 0; i < o.length; ++i) {
-      arr[i] = cloneDeep(o[i]);
-    }
-    return arr;
-  }
-  else {
-    const obj = {};
-    const keys = Object.keys(o);
-    for (let i = 0; i < keys.length; ++i) {
-      const key = keys[i];
-      obj[i] = cloneDeep(o[key]);
-    }
-    return obj;
-  }
-}
-
-function mergeObjects(target, ...rest) {
-  const ln = rest.length;
-
-  let i = 0;
-  for (; i < ln; i++) {
-    const object = rest[i];
-    for (const key in object) {
-      if (object.hasOwnProperty(key)) {
-        const value = object[key];
-        if (value == null) continue;
-        if (value.constructor !== Array) {
-          const sourceKey = target[key];
-          mergeObjects(sourceKey, value);
-        }
-        else {
-          target[key] = value;
-        }
-      }
-    }
-  }
-  return target;
-}
-
-/* eslint-disable eqeqeq */
-
-function String_byteCount(str) {
-  /**
-   * console.info(
-   *   new Blob(['😂']).size,                             // 4
-   *   new Blob(['👍']).size,                             // 4
-   *   new Blob(['😂👍']).size,                           // 8
-   *   new Blob(['👍😂']).size,                           // 8
-   *   new Blob(['I\'m a string']).size,                  // 12
-   *
-   *   // from Premasagar correction of Lauri's answer for
-   *   // strings containing lone characters in the surrogate pair range:
-   *   // https://stackoverflow.com/a/39488643/6225838
-   *   new Blob([String.fromCharCode(55555)]).size,       // 3
-   *   new Blob([String.fromCharCode(55555, 57000)]).size // 4 (not 6)
-   * );
-   *
-   * nodejs => return Buffer.byteLength(string, 'utf8');
-   */
-
-  // return encodeURI(str).split(/%..|./).length - 1;
-  return encodeURI(str).split(/%(?:u[0-9A-F]{2})?[0-9A-F]{2}|./).length - 1;
-}
-
-function String_createRegExp(pattern) {
-  try {
-    if (pattern != null) {
-      if (pattern.constructor === String) {
-        if (pattern[0] === '/') {
-          const e = pattern.lastIndexOf('/');
-          if (e >= 0) {
-            const r = pattern.substring(1, e);
-            const g = pattern.substring(e + 1);
-            return new RegExp(r, g);
-          }
-        }
-        return new RegExp(pattern);
-      }
-      if (pattern.constructor === Array && pattern.length > 1) {
-        return new RegExp(pattern[0], pattern[1]);
-      }
-      if (pattern.constructor === RegExp) {
-        return pattern;
-      }
-    }
-    return undefined;
-  }
-  catch (e) {
-    return undefined;
-  }
-}
-
-function String_trimLeft(str, c) {
-  let i = 0;
-  while (str[i] === c) ++i;
-  return i === 0 ? str : str.substring(i);
-}
-
-function String_encodeURI(str) {
-  str = encodeURIComponent(str);
-  return str.replace(/[!'()*]/g, function String_encodeURICallback(c) {
-    return '%' + c.charCodeAt(0).toString(16);
-  });
-}
-
-function String_decodeURI(str) {
-  str = str.replace(/%(27|28|29|2A)/ig, function String_decodeURICallback(s, h) {
-    return String.fromCharCode(parseInt(h, 16));
-  });
-  return decodeURIComponent(str);
-}
-
-function String_fromSnakeToCamel(str) {
-  throw new Error('not implemented', str);
-}
-
-function String_fromCamelToSnake(str) {
-  throw new Error('not implemented', str);
-}
-
-
-function Letter_isEmptyOrWhiteSpace(str, i = 0) {
-  if (str == null) return true;
-
-  const c = str[i]; //.chatAt(i);
-  return c == ' '
-    || c == '\f'
-    || c == '\n'
-    || c == '\t'
-    || c == '\v'
-    || c == '\u00A0'
-    || c == '\u1680​'
-    || c == '\u180e'
-    || c == '\u2000'
-    || c == '​\u2001'
-    || c == '\u2002'
-    || c == '​\u2003'
-    || c == '\u2004​'
-    || c == '\u2005'
-    || c == '\u2006'
-    || c == '\u2008'
-    || c == '​\u2009'
-    || c == '\u200a'
-    || c == '​\u2028'
-    || c == '\u2029'
-    || c == '​\u2028'
-    || c == '\u2029'
-    || c == '​\u202f'
-    || c == '\u205f'
-    || c == '​\u3000';
-}
-
-function Letter_isSymbol(str, i = 0) {
-  if (str == null) return false;
-  const c = str[i];
-  return c === '_'
-    || c === '~'
-    || c === '!'
-    || c === '?'
-    || c === '@'
-    || c === '#'
-    || c === '$'
-    || c === '='
-    || c === '%'
-    || c === '^'
-    || c === '&'
-    || c === '|'
-    || c === '+'
-    || c === '-'
-    || c === '*'
-    || c === '/'
-    || c === '('
-    || c === ')'
-    || c === '['
-    || c === ']'
-    || c === '{'
-    || c === '}'
-    || c === '<'
-    || c === '>'
-    || c === '.'
-    || c === ','
-    || c === ':'
-    || c === ';'
-    || c === '\"'
-    || c === '\''
-    || c === '\`'
-    || c === '\\';
-}
-
-function Letter_isUpperCase(str, i = 0) {
-  throw new Error('not implemented', i);
-}
-
-function Letter_isLowerCase(str, i = 0) {
-  throw new Error('not implemented', i);
-}
-
-function Letter_isTileCase(str, i = 0) {
-  throw new Error('not implemented', i);
-}
-
-function Letter_isModifierLetter(str, i = 0) {
-  throw new Error('not implemented', i);
-}
-
-function Letter_isOtherLetter(str, i = 0) {
-  throw new Error('not implemented', i);
-}
-
-function Letter_isNumberLetter(str, i = 0) {
-  throw new Error('not implemented', i);
-}
-
-/* eslint-disable no-extend-native */
-
-function Array_unique(array) {
-  return array.filter((el, index, a) => index === a.indexOf(el));
-  // return Array.from(new Set(array));
-}
-
-// e3Merge from https://jsperf.com/merge-two-arrays-keeping-only-unique-values/22
-function Array_uniqueMerge(target = [], source = []) {
-  target = [...target];
-
-  const hash = {};
-
-  let i = target.length;
-  while (i--) {
-    hash[target[i]] = 1;
-  }
-
-  for (i = 0; i < source.length; ++i) {
-    const e = source[i];
-    // eslint-disable-next-line no-unused-expressions
-    hash[e] || target.push(e);
-  }
-  return target;
-}
-
-function Array_collapseShallow(array) {
-  const result = [];
-  let cursor = 0;
-
-  const lenx = array.length;
-  let itemx = null;
-  let ix = 0;
-
-
-  let leny = 0;
-  let itemy = null;
-  let iy = 0;
-
-  // fill the children array with the array argument
-  for (ix = 0; ix < lenx; ++ix) {
-    itemx = array[ix];
-    if (itemx == null) continue;
-    if (itemx.constructor === Array) {
-      // fill the result array with the
-      // items of this next loop. We do
-      // not go any deeper.
-      leny = itemx.length;
-      for (iy = 0; iy < leny; ++iy) {
-        itemy = itemx[iy];
-        if (itemy == null) continue;
-        // whatever it is next, put it in!?
-        result[cursor++] = itemy;
-      }
-    }
-    else {
-      // whatever it is next, put it in!?
-      result[cursor++] = itemx;
-    }
-  }
-  return result;
-}
-
-function Array_patchPrototype() {
-  Array.prototype.getItem = function Array_prototype_getItem(index = 0) {
-    index = index | 0;
-    return this[index];
-  };
-  Array.prototype.setItem = function Array_prototype_setItem(index = 0, value) {
-    index = index | 0;
-    this[index] = value;
-    return value;
-  };
-  Array.prototype.getUnique = function Array_prototype_getUnique() {
-    return Array_unique(this);
-  };
-  Array.prototype.mergeUnique = function Array_prototype_mergeUnique(right = []) {
-    return Array_uniqueMerge(this, right);
-  };
-  Array.prototype.collapseShallow = function Array_prototype_collapseShallow() {
-    return Array_collapseShallow(this);
-  };
-}
-
-/* eslint-disable no-extend-native */
-const Map_prototype_set = Map.prototype.set;
-function BetterMap_prototype_set(key, value) {
-  this._keys = undefined;
-  Map_prototype_set.call(this, key, value);
-}
-
-function BetterMap_prototype_getItem(index = 0) {
-  if (this._keys === undefined) {
-    this._keys = Array.from(this.keys());
-  }
-  return this.get(this._keys[index | 0]);
-}
-
-function BetterMap_prototype_setItem(index = 0, value) {
-  const len = this.size;
-  const ret = Map_prototype_set.call(this, this._keys[index | 0], value);
-  if (len !== this.size) {
-    this._keys = undefined;
-  }
-  return ret;
-}
-
-function Map_patchPrototype() {
-  Map.prototype.set = BetterMap_prototype_set;
-  Map.prototype.getItem = BetterMap_prototype_getItem;
-  Map.prototype.setItem = BetterMap_prototype_setItem;
-}
-
-class BetterMap extends Map {
-  constructor(iterable) {
-    super(iterable);
-    this._keys = undefined;
-  }
-
-  set(key, value) {
-    return BetterMap_prototype_set.call(this, key, value);
-  }
-
-  getItem(index = 0) {
-    return BetterMap_prototype_getItem.call(this, index | 0);
-  }
-
-  setItem(index = 0, value) {
-    return BetterMap_prototype_setItem.call(this, index | 0, value);
-  }
-}
-
-class Queue {
-  constructor() {
-    this.data = [];
-  }
-
-  enqueue(element) {
-    this.data.push(element);
-  }
-
-  dequeue() {
-    return this.data.shift();
-  }
-
-  front() {
-    return this.data[0];
-  }
-
-  back() {
-    const data = this.data;
-    return data[data.length - 1];
-  }
-}
-
-function Tree_traverseDF(currentNode, callback) {
-  const children = currentNode.children;
-  const len = children.length;
-  let i = 0;
-  let child = null;
-  for (i = 0; i < len; ++i) {
-    child = children[i];
-    Tree_traverseDF(child, callback);
-  }
-  callback(currentNode);
-}
-
-function Tree_traverseBF(currentNode, callback) {
-  const queue = new Queue();
-  queue.enqueue(currentNode);
-
-  let children = null;
-  let len = 0;
-  let i = 0;
-  let child = null;
-
-  currentNode = queue.dequeue();
-  while (currentNode) {
-    children = currentNode.children;
-    len = children.length;
-    for (i = 0; i < len; i++) {
-      child = children[i];
-      queue.enqueue(child);
-    }
-
-    callback(currentNode);
-    currentNode = queue.dequeue();
-  }
-}
-
-function Tree_findIndex(arr, data) {
-  let index = -1;
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i].data === data) {
-      index = i;
-    }
-  }
-  return index;
-}
-
-class TreeNode {
-  constructor(data) {
-    this.data = data;
-    this.parent = null;
-    this.children = [];
-  }
-}
-
-class Tree {
-  constructor(data) {
-    this.root = new TreeNode(data);
-  }
-
-  contains(callback, traversal = Tree_traverseBF) {
-    traversal(this.root, callback);
-  }
-
-  add(data, toParent, traversal = Tree_traverseBF) {
-    const child = new TreeNode(data);
-    let parent = null;
-    const callback = function Tree_addCallback(node) {
-      if (node.data === toParent) {
-        parent = node;
-      }
-    };
-
-    this.contains(callback, traversal);
-
-    if (parent) {
-      parent.children.push(child);
-      child.parent = parent;
-    } else {
-      throw new Error('Cannot add node to a non-existent parent.');
-    }
-  }
-
-  remove(data, fromParent, traversal) {
-    let parent = null;
-    let childToRemove = null;
-    let index = 0;
-
-    const callback = function Tree_removeCallback(node) {
-      if (node.data === fromParent) {
-        parent = node;
-      }
-    };
-
-    this.contains(callback, traversal);
-
-    if (parent) {
-      index = Tree_findIndex(parent.children, data);
-
-      if (index === -1) {
-        throw new Error('Node to remove does not exist.');
-      } else {
-        childToRemove = parent.children.splice(index, 1);
-      }
-    } else {
-      throw new Error('Parent does not exist.');
-    }
-
-    return childToRemove;
-  }
-}
 
 const mathf64_abs = Math.abs;
 
@@ -865,7 +62,7 @@ const mathf64_PI1H = +(mathf64_PI / 2);
 const mathf64_PI41 = +(4 / mathf64_PI);
 const mathf64_PI42 = +(4 / (mathf64_PI * mathf64_PI));
 
-var float64Math = {
+var math$1 = {
   abs: mathf64_abs,
 
   sqrt: mathf64_sqrt,
@@ -1038,7 +235,7 @@ function int32_sinLp(r = 0) {
   return int32_sinLpEx(int32_wrapRadians(r))|0;
 }
 
-var int32Base = {
+var base = {
   random: int32_random,
   sqrt: int32_sqrt,
   sqrtEx: int32_sqrtEx,
@@ -1322,7 +519,7 @@ export function fastSin3(a) {
 const def_vec2i32 = Object.freeze(Object.seal(new vec2i32()));
 function vec2i32_new(x = 0, y = 0) { return new vec2i32(x|0, y|0); }
 
-var int32Vec2 = {
+var vec2 = {
   Vec2: vec2i32,
   defVec2: def_vec2i32,
   newVec2: vec2i32_new,
@@ -1639,7 +836,7 @@ function float64_phi(y = 0.0, length = 0.0) {
 
 //#endregion
 
-var float64Base = {
+var base$1 = {
   gcd: float64_gcd,
   sqrt: float64_sqrt,
   hypot2: float64_hypot2,
@@ -2265,7 +1462,7 @@ function vec2f64_iabout(a = def_vec2f64, b = def_vec2f64, radians = 0.0) {
 const def_vec2f64 = Object.freeze(Object.seal(vec2f64_new()));
 function vec2f64_new(x = 0.0, y = 0.0) { return new vec2f64(+x, +y); }
 
-var float64Vec2 = {
+var vec2$1 = {
   Vec2: vec2f64,
   defVec2: def_vec2f64,
   newVec2: vec2f64_new,
@@ -2504,7 +1701,7 @@ function vec3f64_crossABAB(a = def_vec3f64, b = def_vec3f64) {
 
 function vec3f64_new(x = 0.0, y = 0.0, z = 0.0) { return new vec3f64(+x, +y, +z); }
 
-var float64Vec3 = {
+var vec3 = {
   Vec3: vec3f64,
   defVec3: def_vec3f64,
   newVec3: vec3f64_new,
@@ -3042,7 +2239,7 @@ class path2f64 extends shape2f64 {
 
 //#endregion
 
-var float64Shape = {
+var shape = {
   Shape: shape2f64,
   Point: point2f64,
   Circle: circle2f64,
@@ -3295,6 +2492,33 @@ function toggleCssClass(node, name) {
   return true;
 }
 
+/* eslint-disable class-methods-use-this */
+
+function createStorageCache() {
+  const cache = {};
+  class StorageCache {
+    getCache(key) {
+      if (!cache[key]) {
+        cache[key] = localStorage[key];
+      }
+      return cache[key];
+    }
+
+    setCache(key, value) {
+      cache[key] = value;
+    }
+
+    syncCache() {
+      const keys = Object.keys(cache);
+      for (let i = 0; i < keys.length; ++i) {
+        const key = keys[i];
+        localStorage[key] = cache[key];
+      }
+    }
+  }
+  return StorageCache;
+}
+
 /* eslint-disable no-undef */
 // a dummy function to mimic the CSS-Paint-Api-1 specification
 const myRegisteredPaint__store__ = {};
@@ -3317,6 +2541,76 @@ const workletState = Object.freeze(Object.seal({
   ended: 5,
 }));
 
+/* eslint-disable no-extend-native */
+
+function Array_collapseShallow(array) {
+  const result = [];
+  let cursor = 0;
+
+  const lenx = array.length;
+  let itemx = null;
+  let ix = 0;
+
+
+  let leny = 0;
+  let itemy = null;
+  let iy = 0;
+
+  // fill the children array with the array argument
+  for (ix = 0; ix < lenx; ++ix) {
+    itemx = array[ix];
+    if (itemx == null) continue;
+    if (itemx.constructor === Array) {
+      // fill the result array with the
+      // items of this next loop. We do
+      // not go any deeper.
+      leny = itemx.length;
+      for (iy = 0; iy < leny; ++iy) {
+        itemy = itemx[iy];
+        if (itemy == null) continue;
+        // whatever it is next, put it in!?
+        result[cursor++] = itemy;
+      }
+    }
+    else {
+      // whatever it is next, put it in!?
+      result[cursor++] = itemx;
+    }
+  }
+  return result;
+}
+
+function isFnEx(typeString) {
+  return typeString === 'function';
+}
+
+function isFn(obj) {
+  return typeof obj === 'function';
+}
+
+function trueThat(whatever = true) {
+  const that = true;
+  return whatever === true || that;
+}
+
+function falseThat(boring = true) {
+  return false ;
+}
+
+function undefThat(whatever = undefined) {
+  return whatever !== undefined
+    ? undefined
+    : whatever;
+}
+
+function fallbackFn(compiled, fallback = trueThat) {
+  if (isFn(compiled)) return compiled;
+  // eslint-disable-next-line no-unused-vars
+  return isFn(fallback)
+    ? fallback
+    : trueThat;
+}
+
 class VNode {
   constructor(name, attributes, children) {
     if (name.constructor !== String) throw new Error('ERROR: new VNode without a nodeName');
@@ -3327,10 +2621,22 @@ class VNode {
   }
 }
 
+function getVNodeKey(node) {
+  return node ? node.key : null;
+}
+
+function getVNodeName(node) {
+  return node ? node.nodeName : null;
+}
+
+function getVNodeAttr(node) {
+  return node ? node.attributes : null;
+}
+
 function VN(name, attributes, ...rest) {
   attributes = attributes || {};
   const children = Array_collapseShallow(rest);
-  return typeof name === 'function'
+  return isFn(name)
     ? name(attributes, children)
     : new VNode(name, attributes, children);
 }
@@ -3349,6 +2655,21 @@ function wrapVN(name, type) {
     };
   }
   // return (attr, children) => h(name, attr, children);
+}
+
+/* eslint-disable prefer-rest-params */
+
+function cloneObject(target, source) {
+  // const out = {};
+
+  // for (const t in target) {
+  //   if (target.hasOwnProperty(t)) out[t] = target[t];
+  // }
+  // for (const s in source) {
+  //   if (source.hasOwnProperty(s)) out[s] = source[s];
+  // }
+  // return out;
+  return { ...target, ...source };
 }
 
 /* eslint-disable object-shorthand */
@@ -3401,7 +2722,7 @@ function app(state, actions, view, container) {
   }
 
   function resolveNode(node) {
-    if (typeof node === 'function')
+    if (isFn(node))
       return resolveNode(node(globalState, wiredActions));
     else
       return node || '';
@@ -3431,17 +2752,22 @@ function app(state, actions, view, container) {
   }
 
   function wireStateToActions(path, myState, myActions) {
-    function createActionProxy(key, action) {
-      myActions[key] = function actionProxy(data) {
+    // action proxy for each action in myActions.
+    function createActionProxy(action) {
+      return function actionProxy(data) {
         const slice = Path_getValue(path, globalState);
 
         let result = action(data);
-        if (typeof result === 'function') {
+        if (isFn(result)) {
           result = result(slice, myActions);
         }
 
         if (result && result !== slice && !result.then) {
-          globalState = Path_setValue(path, cloneObject(slice, result), globalState);
+          globalState = Path_setValue(
+            path,
+            cloneObject(slice, result),
+            globalState,
+          );
           scheduleRender();
         }
 
@@ -3449,9 +2775,11 @@ function app(state, actions, view, container) {
       };
     }
 
+    // eslint-disable-next-line guard-for-in
     for (const key in myActions) {
-      if (typeof myActions[key] === 'function') {
-        createActionProxy(key, myActions[key]);
+      const act = myActions[key];
+      if (isFn(act)) {
+        myActions[key] = createActionProxy(act);
       }
       else {
         // wire slice/namespace of state to actions
@@ -3464,10 +2792,6 @@ function app(state, actions, view, container) {
     }
 
     return myActions;
-  }
-
-  function getKey(node) {
-    return node ? node.key : null;
   }
 
   function eventListener(event) {
@@ -3662,7 +2986,7 @@ function app(state, actions, view, container) {
         for (let i = 0; i < oldChildren.length; i++) {
           oldElements[i] = element.childNodes[i];
 
-          const oldKey = getKey(oldChildren[i]);
+          const oldKey = getVNodeKey(oldChildren[i]);
           if (oldKey != null) {
             oldKeyed[oldKey] = [oldElements[i], oldChildren[i]];
           }
@@ -3672,8 +2996,8 @@ function app(state, actions, view, container) {
         let k = 0;
         const l = children.length;
         while (k < l) {
-          const oldKey = getKey(oldChildren[i]);
-          const newKey = getKey((children[k] = resolveNode(children[k])));
+          const oldKey = getVNodeKey(oldChildren[i]);
+          const newKey = getVNodeKey((children[k] = resolveNode(children[k])));
 
           if (newKeyed[oldKey]) {
             i++;
@@ -3713,7 +3037,7 @@ function app(state, actions, view, container) {
         }
 
         while (i < oldChildren.length) {
-          if (getKey(oldChildren[i]) == null) {
+          if (getVNodeKey(oldChildren[i]) == null) {
             removeElement(element, oldElements[i], oldChildren[i]);
           }
           i++;
@@ -3732,561 +3056,44 @@ function app(state, actions, view, container) {
   }
 }
 
-/* eslint-disable eqeqeq */
-
-
-const JSONPointer_pathSeparator = '/';
-const JSONPointer_fragmentSeparator = '#';
-
-function JSONPointer_addFolder(pointer, folder) {
-  const isvalid = typeof pointer === 'string'
-    && (typeof folder === 'number'
-      || typeof folder === 'string');
-
-  if (isvalid) {
-    folder = String(folder);
-    if (folder.charAt(0) === '/') {
-      folder = folder.substring(1);
-    }
-    return pointer + JSONPointer_pathSeparator + folder;
-  }
+function isPrimitiveTypeEx(typeString) {
+  // primitives: boolean = 1, integer = 32, float = 64, bigint = 0, letter = 16
+  // complex: struct, array, string, map
+  return typeString === 'integer'
+    || typeString === 'number'
+    || typeString === 'string'
+    || typeString === 'bigint'
+    || typeString === 'boolean';
 }
 
-function JSONPointer_addRelativePointer(pointer, relative) {
-  const isvalid = typeof pointer === 'string'
-    && (typeof relative === 'number'
-      || typeof relative === 'string');
-
-  if (isvalid) {
-    if (pointer.charAt(0) === '/') {
-      if (typeof relative === 'string') {
-        const idx = String_indexOfEndInteger(0, relative);
-        if (idx > 0) {
-          const tokens = pointer.split('/');
-          tokens.shift();
-
-          const depth = tokens.length - Number(relative.substring(0, idx));
-          if (depth > 0) {
-            const parent = '/' + tokens.splice(0, depth).join('/');
-            const rest = relative.substring(idx);
-            return parent + JSONPointer_pathSeparator + rest;
-          }
-        }
-        else if (relative.charAt(0) === '/') {
-          return pointer + relative;
-        }
-        else {
-          return pointer + JSONPointer_pathSeparator + relative;
-        }
-      }
-      else { // typeof relative === 'number'
-        return pointer + JSONPointer_pathSeparator + String(relative);
-      }
-    }
-  }
-  return undefined;
+function isPrimitiveType(obj) {
+  return obj != null && isPrimitiveTypeEx(typeof obj);
 }
 
-function JSONPointer_traverseFilterObjectBF(obj, id = '$ref', callback) {
-  const qarr = [];
-
-  // traverse tree breath first
-  let current = obj;
-  while (typeof current === 'object') {
-    if (current.constructor === Array) {
-      for (let i = 0; i < current.length; ++i) {
-        const child = current[i];
-        if (typeof child === 'object') {
-          qarr.push(child);
-        }
-      }
-    }
-    else {
-      const keys = Object.keys(current);
-      for (let i = 0; i < keys.length; ++i) {
-        const key = keys[i];
-        if (key == id) {
-          callback(current);
-          continue;
-        }
-        const child = obj[key];
-        if (typeof child === 'object') {
-          qarr.push(child);
-        }
-      }
-    }
-    current = qarr.shift();
-  }
+function isStrictBooleanType(data) {
+  return data === false || data === true;
 }
+isStrictBooleanType.typeName = 'boolean';
 
-function JSONPointer_createGetFunction(dst, id, next) {
-  id = Number(id) || decodeURIComponent(id) || '';
-  if (next) {
-    const f = JSONPointer_compileGetPointer(next);
-    if (f) {
-      if (dst === 0 || dst === 1) { // BUG: dst === 0?
-        return function JSONPointer_resursiveGetFunction(obj) {
-          return typeof obj === 'object'
-            ? f(obj[id])
-            : f(obj);
-        };
-      }
-      else if (dst > 1) { // WARNING
-        // TODO: probably doesnt work!
-        return function JSONPointer_traverseGetFunction(obj) {
-          const qarr = [];
-          JSONPointer_traverseFilterObjectBF(obj, id,
-            function JSONPointer_traverseGetFunctionCallback(o) {
-              qarr.push(f(o[id]));
-            });
-          return qarr;
-        };
-      }
-    }
-  }
-
-  if (dst > 1) return function JSONPointer_defaultTraverseGetFunction(obj) {
-    const qarr = [];
-    JSONPointer_traverseFilterObjectBF(obj, id,
-      function JSONPointer_defaultTraverseGetFunctionCallback(o) {
-        qarr.push(o[id]);
-      });
-    return qarr;
-  };
-  else return function JSONPointer_defaultGetFunction(obj) {
-    return (typeof obj === 'object') ? obj[id] : obj;
-  };
+function isBooleanishType(data) {
+  return data === true
+    || data === false
+    || data === 'true'
+    || data === 'false';
+  // || data === 0
+  // || data === 1;
 }
-
-function JSONPointer_compileGetPointer(path) {
-  path = typeof path === 'string' ? path : '';
-  if (path === '') return function JSONPointer_compileGetRootFunction(obj) {
-    return obj;
-  };
-
-  const token = String_trimLeft(path, JSONPointer_pathSeparator);
-  const dist = path.length - token.length;
-  const arr = [];
-  let csr = 0;
-
-  for (let i = 0; i < token.length; ++i) {
-    const c = token[i];
-    if (c === '/' && csr === 0) {
-      const j = arr.length > 0 ? arr[0][0] : i;
-      const ct = token.substring(0, j);
-      const nt = token.substring(i);
-      return JSONPointer_createGetFunction(dist, ct, nt);
-    }
-    else if (c === '[') { // TODO: handle index and conditionals
-      arr[csr] = [i, -1];
-      csr++;
-    }
-    else if (c === ']') {
-      csr--; // TODO: add check < 0
-      arr[csr][1] = i;
-    }
-  }
-
-  const j = arr.length > 0 ? arr[0][0] : token.length;
-  const ct = token.substring(0, j);
-  return JSONPointer_createGetFunction(dist, ct, null);
-}
-
-function String_indexOfEndInteger(start = 0, search) {
-  if (typeof start === 'string') {
-    search = start;
-    start = 0;
-  }
-
-  if (typeof search === 'string') {
-    let i = start;
-    for (; i < search.length; ++i) {
-      if ((Number(search[i]) || false) === false) {
-        if ((i - start) > 0) {
-          return i;
-        }
-        else {
-          return -1;
-        }
-      }
-    }
-    if (i > 0) return i;
-  }
-  return -1;
-}
-
-function JSONPointer_resolveRelative(pointer, relative) {
-  const idx = String_indexOfEndInteger(0, relative);
-  if (idx >= 0) {
-    const depth = relative.substring(0, idx);
-    const rest = relative.substring(idx);
-    const parent = JSONPointer_resolveRelative(pointer, Number(depth));
-    return JSONPointer_addFolder(parent, rest);
-  }
-  return pointer;
-}
-
-class JSONPointer {
-  constructor(baseUri, basePointer, relative) {
-    if (!basePointer) {
-      basePointer = baseUri;
-      baseUri = null;
-    }
-    if (baseUri && !relative) {
-      if (Number(basePointer[0]) || false) {
-        relative = basePointer;
-        basePointer = baseUri;
-        baseUri = null;
-      }
-    }
-
-    basePointer = typeof pointer !== 'string'
-      ? ''
-      : basePointer;
-
-    // trim whitespace left.
-    basePointer = basePointer.replace(/^\s+/, '');
-
-    // check if there is a baseUri and fragment in the pointer
-    const baseIdx = basePointer.indexOf(JSONPointer_fragmentSeparator);
-    // rewrite baseUri and json pointer if so
-    if (baseIdx > 0) baseUri = basePointer.substring(0, baseIdx);
-    if (baseIdx >= 0) basePointer = basePointer.substring(baseIdx + 1);
-    // setup basic flags
-    this.isFragment = baseIdx >= 0;
-    this.isAbsolute = basePointer[0] === JSONPointer_pathSeparator;
-
-    // setup pointer
-    this.baseUri = baseUri;
-    this.basePointer = basePointer;
-
-    this.pointer = pointer;
-    this.relative = relative;
-    this.absolute = absolute;
-    this.get = JSONPointer_compileGetPointer(basePointer);
-  }
-
-  toString() {
-    return (this.baseUri || '')
-      + (this.isFragment ? JSONPointer_fragmentSeparator : '')
-      + this.pointer;
-  }
-}
-
-/* eslint-disable quote-props */
-
-const integerFormats = {
-  int8: {
-    type: 'integer',
-    arrayType: Int8Array,
-    bits: 8,
-    signed: true,
-    minimum: -128,
-    maximum: 127,
-  },
-  uint8: {
-    type: 'integer',
-    arrayType: Uint8Array,
-    bits: 8,
-    signed: false,
-    minimum: -128,
-    maximum: 127,
-  },
-  uint8c: {
-    type: 'integer',
-    arrayType: Uint8ClampedArray,
-    bits: 8,
-    signed: false,
-    minimum: -128,
-    maximum: 255,
-    clamped: true,
-  },
-  int16: {
-    type: 'integer',
-    arrayType: Int16Array,
-    bits: 16,
-    signed: true,
-    minimum: -32768,
-    maximum: 32767,
-  },
-  uint16: {
-    type: 'integer',
-    arrayType: Uint16Array,
-    bits: 16,
-    signed: false,
-    minimum: 0,
-    maximum: 65535,
-  },
-  int32: {
-    type: 'integer',
-    arrayType: Int32Array,
-    bits: 32,
-    signed: true,
-    minimum: -(2 ** 31),
-    maximum: (2 ** 31) - 1,
-  },
-  uint32: {
-    type: 'integer',
-    arrayType: Uint32Array,
-    bits: 32,
-    signed: false,
-    minimum: 0,
-    maximum: (2 ** 32) - 1,
-  },
-  int64: {
-    type: 'integer',
-    bits: 53,
-    packed: 64,
-    signed: true,
-    minimum: Number.MIN_SAFE_INTEGER,
-    maximum: Number.MAX_SAFE_INTEGER,
-  },
-  uint64: {
-    type: 'integer',
-    bits: 64,
-    signed: false,
-    minimum: 0,
-    maximum: Number.MAX_SAFE_INTEGER,
-  },
-};
-
-const bigIntFormats = {
-  big64: {
-    type: 'bigint',
-    // eslint-disable-next-line no-undef
-    arrayType: BigInt64Array,
-    bits: 64,
-    signed: true,
-    minimum: -(2 ** 63),
-    maximum: (2 ** 63) - 1, // TODO: bigint eslint support anyone?
-  },
-  ubig64: {
-    type: 'bigint',
-    // eslint-disable-next-line no-undef
-    arrayType: BigUint64Array,
-    bits: 64,
-    signed: true,
-    minimum: 0,
-    maximum: (2 ** 64) - 1, // TODO: bigint eslint support anyone?
-  },
-};
-
-const floatFormats = {
-  float: {
-    type: 'number',
-    bits: 32,
-    minimum: 1.175494e-38, // largest negative number in float32
-    maximum: 3.402823e+38, // largest positive number in float32
-    epsilon: 1.192093e-07, // smallest number in float32
-  },
-  double: {
-    type: 'number',
-    bits: 64,
-    minimum: Number.MIN_VALUE,
-    maximum: Number.MAX_VALUE,
-    epsilon: Number.EPSILON,
-  },
-};
-
-const numberFormats = {
-  ...integerFormats,
-  ...bigIntFormats,
-  ...floatFormats,
-};
-
-const dateTimeFormats = {
-  year: {
-    type: 'integer',
-    minimum: 1970,
-    maximum: 2378,
-  },
-  month: {
-    type: 'integer',
-    minimum: 1,
-    maximum: 12,
-  },
-  week: {
-    type: 'integer',
-    minimum: 1,
-    maximum: 52,
-  },
-  hour: {
-    type: 'integer',
-    minimum: 0,
-    maximum: 23,
-  },
-  minute: {
-    type: 'integer',
-    minimum: 0,
-    maximum: 59,
-  },
-  second: {
-    type: 'integer',
-    minimum: 0,
-    maximum: 59,
-  },
-};
-
-const stringFormats = {
-  'date-time': function compileDate(owner, schema, members, addError) {
-    if (schema.format === 'date-time') {
-      const fmin = schema.formatMinimum;
-      const femin = schema.formatExclusiveMinimum;
-      const min = Date.parse(fmin) || undefined;
-      const emin = femin === true ? min
-        : Date.parse(femin) || undefined;
-
-      const fmax = schema.formatMaximum;
-      const femax = schema.formatExclusiveMaximum;
-      const max = Date.parse(fmax);
-      const emax = femax === true ? max
-        : Date.parse(femax) || undefined;
-
-      if (emin) members.push('formatExclusiveMinimum');
-      else if (min) members.push('formatMinimum');
-      if (emax) members.push('formatExclusiveMaximum');
-      else if (max) members.push('formatMaximum');
-
-      return function formatDate(data) {
-        let valid = true;
-        if (data != null && (data.constructor === String || data.constructor === Date)) {
-          const date = Date.parse(data) || false;
-          if (date === false) return addError(
-            'format',
-            'date',
-            data,
-          );
-
-          if (emin) {
-            if (!(date > emin)) valid = addError(
-              'formatExclusiveMinimum',
-              femin === true ? fmin : femin,
-              data,
-            );
-          }
-          else if (min) {
-            if (!(date >= min)) valid = addError(
-              'formatMinimum',
-              fmin,
-              data,
-            );
-          }
-
-          if (emax) {
-            if (!(date < emax)) valid = addError(
-              'formatExclusiveMaximum',
-              femax === true ? fmax : femax,
-              data,
-            );
-          }
-          else if (max) {
-            if (!(date <= emax)) valid = addError(
-              'formatMaximum',
-              fmax,
-              data,
-            );
-          }
-        }
-        return valid;
-      };
-    }
-    return undefined;
-  },
-};
-
-//#region Schema Types
-
-function isUnkownSchema(schema) {
-  return (schema.type == null
-    && schema.properties == null
-    && schema.patternProperties == null
-    && schema.additionalProperties == null
-    && schema.items == null
-    && schema.contains == null
-    && schema.additionalItems == null);
-}
-
-function getSchemaSelectorName(schema) {
-  const name = typeof schema === 'object'
-    ? schema.allOf ? 'allOf'
-      : schema.anyOf ? 'anyOf'
-        : schema.oneOf ? 'oneOf'
-          : schema.not ? 'not'
-            : undefined
-    : undefined;
-  return name;
-}
-
-function isBooleanSchema(schema) {
-  const isknown = schema.type === 'boolean';
-  const isvalid = isUnkownSchema(schema)
-    && (typeof schema.const === 'boolean'
-      || typeof schema.default === 'boolean');
-  return isknown || isvalid;
-}
-function isNumberSchema(schema) {
-  const isknown = schema.type === 'number';
-  const isformat = typeof schema.format === 'string'
-    && floatFormats[schema.format] != null;
-
-  const isconst = (Number(schema.const) || false) !== false;
-  const isdeflt = (Number(schema.default) || false) !== false;
-
-  const isvalid = isUnkownSchema(schema) && (isconst || isdeflt);
-
-  return isknown || isformat || isvalid;
-}
-function isIntegerSchema(schema) {
-  const isknown = schema.type === 'integer';
-  const isformat = typeof schema.format === 'string'
-    && integerFormats[schema.format] != null;
-
-  const isconst = Number.isInteger(Number(schema.const));
-  const isdeflt = Number.isInteger(Number(schema.default));
-
-  const isvalid = isUnkownSchema(schema) && (isconst || isdeflt);
-
-  return isknown || isformat || isvalid;
-}
-function isStringSchema(schema) {
-  const isknown = schema.type === 'string';
-  const isvalid = isUnkownSchema(schema)
-    && (typeof schema.const === 'string'
-      || typeof schema.default === 'string');
-
-  return isknown || isvalid;
-}
-function isObjectSchema(schema) {
-  const isknown = schema.type === 'object';
-
-  const isprops = isPureObject(schema.properties)
-    || isPureObject(schema.patternProperties)
-    || isPureObject(schema.additionalProperties);
-
-  const isvalid = schema.type == null
-      && (isPureObject(schema.const) || isPureObject(schema.default));
-  return isknown || isprops || isvalid;
-}
-function isArraySchema(schema) {
-  const isknown = schema.type === 'array';
-  const isitems = isPureObject(schema.items);
-  const iscontains = isPureObject(schema.contains);
-  const isvalid = schema.type == null
-    && (isPureArray(schema.const) || isPureArray(schema.default));
-  return isknown || isitems || iscontains || isvalid;
-}
-function isTupleSchema(schema) {
-  const isknown = schema.type === 'tuple';
-  const istuple = isPureArray(schema.items);
-  const isadditional = schema.type == null
-    && schema.hasOwnProperty('additionalItems');
-  return isknown || istuple || isadditional;
-}
+isBooleanishType.typeName = 'boolean';
 
 function isStrictIntegerType(data) {
   return Number.isInteger(data);
 }
 isStrictIntegerType.typeName = 'integer';
+
+function isIntegerishType(data) {
+  return Number.isInteger(Number(data));
+}
+isIntegerishType.typeName = 'integer';
 
 function isStrictBigIntType(data) {
   // eslint-disable-next-line valid-typeof
@@ -4299,896 +3106,298 @@ function isStrictNumberType(data) {
 }
 isStrictNumberType.typeName = 'number';
 
-/* eslint-disable function-paren-newline */
+function isNumberishType(data) {
+  return (Number(data) || false) !== false;
+}
+isNumberishType.typeName = 'number';
 
+function isStrictStringType(data) {
+  return typeof data === 'string';
+}
+isStrictStringType.typeName = 'string';
 
-function createNumberFormatCompiler(name, format) {
-  if (format === 'object') {
-    if (['integer', 'bigint', 'number'].includes(format.type)) {
-      //const rbts = getPureNumber(r.bits);
-      //const rsgn = getPureBool(r.signed);
+function isStrictObjectType(data) {
+  return data != null
+    && typeof data === 'object'
+    && !(data instanceof Array
+      || data.constructor === Map
+      || data.constructor === Set
+      || data.constructor === Int8Array
+      || data.constructor === Uint8Array
+      || data.constructor === Uint8ClampedArray
+      || data.constructor === Int16Array
+      || data.constructor === Uint16Array
+      || data.constructor === Int32Array
+      || data.constructor === Uint32Array
+      // eslint-disable-next-line no-undef
+      || data.constructor === BigInt64Array
+      // eslint-disable-next-line no-undef
+      || data.constructor === BigUint64Array
+    );
+}
+isStrictObjectOfType.typeName = 'object';
 
-      const rix = Number(format.minimum) || false;
-      const rax = Number(format.maximum) || false;
+function isObjectishType(data) {
+  return data != null
+    && typeof data === 'object'
+    && !(data.constructor === Array
+      || data.constructor === Map
+      || data.constructor === Set);
+}
+isObjectishType.typeName = 'object';
 
-      const isDataType = format.type === 'integer'
-        ? isStrictIntegerType
-        : format.type === 'bigint'
-          ? isStrictBigIntType
-          : format.type === 'number'
-            ? isStrictNumberType
-            : undefined;
+function isStrictObjectOfType(data, fn) {
+  return data != null && data.constructor === fn;
+}
+isStrictObjectOfType.typeName = 'object';
 
-      if (isDataType) {
-        return function compileFormatNumber(owner, schema, members, addError) {
-          const fix = Math.max(Number(schema.formatMinimum) || rix, rix);
-          const fax = Math.min(Number(schema.formatMaximum) || rax, rax);
-          const _fie = schema.formatExclusiveMinimum === true
-            ? fix
-            : Number(schema.formatExclusiveMinimum) || false;
-          const _fae = schema.formatExclusiveMaximum === true
-            ? fax
-            : Number(schema.formatExclusiveMaximum) || false;
-          const fie = fix !== false && _fie !== false
-            ? Math.max(fix, _fie)
-            : _fie;
-          const fae = fax !== false && _fae !== false
-            ? Math.max(fax, _fae)
-            : _fae;
+function isStrictArrayType(data) {
+  return data != null
+    && data.constructor === Array;
+}
+isStrictArrayType.typeName = 'array';
 
-          members.push('format');
-          if (Number(schema.formatMinimum)) members.push('formatMinimum');
-          if (Number(schema.formatMaximum)) members.push('formatMaximum');
-          if (isBoolOrNumber(schema.formatExclusiveMinimum)) members.push('formatExclusiveMinimum');
-          if (isBoolOrNumber(schema.formatExclusiveMaximum)) members.push('formatExclusiveMaximum');
+function isStrictTypedArray(data) {
+  return data != null
+    && (data.constructor === Int8Array
+    || data.constructor === Uint8Array
+    || data.constructor === Uint8ClampedArray
+    || data.constructor === Int16Array
+    || data.constructor === Uint16Array
+    || data.constructor === Int32Array
+    || data.constructor === Uint32Array
+    // eslint-disable-next-line no-undef
+    || data.constructor === BigInt64Array
+    // eslint-disable-next-line no-undef
+    || data.constructor === BigUint64Array);
+}
+isStrictTypedArray.typeName = 'array';
 
-          return function formatNumber(data) {
-            let valid = true;
-            if (isDataType(data)) {
-              if (fie && fae) {
-                valid = data > fie && data < fae;
-                if (!valid) addError(
-                  ['formatExclusiveMinimum', 'formatExclusiveMaximum'],
-                  [fie, fae],
-                  data,
-                );
-              }
-              else if (fie && fax) {
-                valid = data > fie && data <= fax;
-                if (!valid) addError(
-                  ['formatExclusiveMinimum', 'formatMaximum'],
-                  [fie, fax],
-                  data,
-                );
-              }
-              else if (fae && fix) {
-                valid = data >= fix && data < fae;
-                if (!valid) addError(
-                  ['formatMinimum', 'formatExclusiveMaximum'],
-                  [fix, fae],
-                  data,
-                );
-              }
-              else if (fix && fax) {
-                valid = data >= fix && data <= fax;
-                if (!valid) addError(
-                  ['formatMinimum', 'formatMaximum'],
-                  [fix, fax],
-                  data,
-                );
-              }
-              else if (fie) {
-                valid = data > fie;
-                if (!valid) addError(
-                  'formatExclusiveMinimum',
-                  fie,
-                  data,
-                );
-              }
-              else if (fae) {
-                valid = data > fae;
-                if (!valid) addError(
-                  'formatExclusiveMaximum',
-                  fae,
-                  data,
-                );
-              }
-              else if (fax) {
-                valid = data <= fax;
-                if (!valid) addError(
-                  'formatMaximum',
-                  fax,
-                  data,
-                );
-              }
-              else if (fix) {
-                valid = data <= fix;
-                if (!valid) addError(
-                  'formatMinimum',
-                  fix,
-                  data,
-                );
-              }
-            }
-            return valid;
-          };
-        };
-      }
+function isArrayishType(data) {
+  return data != null
+    && (data instanceof Array
+    || isStrictTypedArray(data));
+}
+isArrayishType.typeName = 'array';
+
+// isStrictNumberType(string type) return bool {
+//   return ['integer', 'float', 'boolean']
+//     includes type;
+// }
+// operator bool includes(array<string> source, string type);
+
+// isObjectishType(string type) return bool {
+//  return type != null
+//    && ['Array', 'Set', 'Map'] includes type
+// }
+
+function isBoolOrNumber(obj) {
+  return (obj === true || obj === false)
+    || (isNumberishType(obj));
+}
+
+function isBoolOrArray(obj) {
+  return (obj === true || obj === false)
+      || isArrayishType(obj);
+}
+
+function isStringOrArray(obj) {
+  return obj != null
+    && (obj.constructor === String
+      || isArrayishType(obj));
+}
+
+function isBoolOrObject(obj) {
+  return (obj === true || obj === false)
+      || isObjectishType(obj);
+}
+
+function isStringOrObject(obj) {
+  return obj != null
+    && (obj.constructor === String
+      || isObjectishType(obj));
+}
+
+function isArrayOrSet(data) {
+  return (data != null
+    && (isArrayishType(data)
+      || data.constructor === Set));
+}
+
+function isObjectOrMap(data) {
+  return (data != null)
+    && (data.constructor === Map
+      || (data.constructor !== Array
+        && data.constructor !== Set
+        && typeof data === 'object'));
+}
+
+function getSanitizedPrimitive(value, defaultValue = undefined, nullable = false) {
+  if (nullable && value == null) return value;
+  if (value == null) return defaultValue;
+  return isPrimitiveType(value) ? value : defaultValue;
+}
+
+//#region strict
+function getStrictObject(obj, def) {
+  return isStrictObjectType(obj) ? obj : def;
+}
+
+function getStrictArray(obj, def) {
+  return isStrictArrayType(obj) ? obj : def;
+}
+
+function getStrictArrayMinItems(obj, len, def) {
+  return isStrictArrayType(obj) && obj.length >= len ? obj: def;
+}
+
+function getStrictString(obj, def) {
+  return isStrictStringType(obj) ? obj : def;
+}
+
+function getStrictNumber(obj, def) {
+  return isStrictNumberType(obj) ? obj : def; // TODO: performance check for isNaN and Number!!!
+}
+
+function getStrictInteger(obj, def = undefined) {
+  return isStrictIntegerType(obj) ? obj : def;
+}
+
+function getStrictBoolean(obj, def = undefined) {
+  return isStrictBooleanType(obj) ? obj : def;
+}
+//#endregion
+
+//#region ishes
+function getObjectishType(obj, def) {
+  return isObjectishType(obj) ? obj : def;
+}
+
+function getArrayishType(obj, def) {
+  return isArrayishType(obj) ? obj : def;
+}
+
+function getNumberishType(obj, def) {
+  return isNumberishType(obj) ? Number(obj) : def;
+}
+
+function getIntegerishType(obj, def) {
+  return isIntegerishType(obj) ? Number(obj) : def;
+}
+
+function getBooleanishType(obj, def) {
+  return obj === true || obj === 'true'
+    ? true
+    : obj === false || obj === 'false'
+      ? false
+      : def;
+}
+//#endregion
+
+function getBoolOrNumber(obj, def = undefined) {
+  return isBoolOrNumber(obj) ? obj : def;
+}
+
+function getBoolOrArray(obj, def) {
+  return isBoolOrArray(obj) ? obj : def;
+}
+
+function getBoolOrObject(obj, def) {
+  return isBoolOrObject(obj) ? obj : def;
+}
+
+function getStringOrObject(obj, def) {
+  return isStringOrObject(obj) ? obj : def;
+}
+
+function getStringOrArray(obj, def) {
+  return isStringOrArray(obj) ? obj : def;
+}
+
+function getArrayOrSetLength(data) {
+  return data.constructor === Set
+    ? data.size
+    : isArrayishType(data)
+      ? data.length
+      : 0;
+}
+
+function getArrayMinItems(obj, len, def) {
+  return isArrayishType(obj) && obj.length >= len
+    ? obj
+    : def;
+}
+
+function createIsStrictDataType(type, format, isstrict = false) {
+  if (type === 'object') {
+    return isstrict
+      ? isStrictObjectType
+      : isObjectishType;
+  }
+  else if (type === 'array') {
+    return isstrict
+      ? isStrictArrayType
+      : isArrayishType;
+  }
+  else if (type === 'set') {
+    return createIsStrictObjectOfType(Set);
+  }
+  else if (type === 'map') {
+    return createIsStrictObjectOfType(Map);
+  }
+  else if (type === 'tuple') {
+    return isStrictArrayType;
+  }
+  else {
+    switch (type) {
+      case 'boolean': return isStrictBooleanType;
+      case 'integer': return isStrictIntegerType;
+      case 'bigint': return isStrictBigIntType;
+      case 'number': return isStrictNumberType;
+      case 'string': return isStrictStringType;
+      default: break;
     }
   }
   return undefined;
 }
 
-/* eslint-disable quote-props */
-
-function JSONSchema_expandSchemaReferences(json, baseUri, callback) {
-  // in place merge of object members
-  // TODO: circular reference check.
-  JSONPointer_traverseFilterObjectBF(json, '$ref',
-    function JSONSchema_expandSchemaReferencesCallback(obj) {
-      const ref = obj.$ref;
-      delete obj.$ref;
-      const pointer = new JSONPointer(baseUri, ref);
-      const root = (pointer.baseUri != baseUri)
-        ? ((typeof callback === 'function')
-          ? callback(baseUri)
-          : json)
-        : json;
-      const source = pointer.get(root);
-      const keys = Object.keys(source);
-      for (let i = 0; i < keys.length; ++i) {
-        const key = keys[i];
-        obj[key] = source[key];
-      }
-    });
-}
-
-class JSONDocument {
-  constructor(baseUri) {
-    if (this.constructor === JSONDocument) {
-      throw new Error('JSONDocument is an abstract class');
-    }
-    this.baseUri = baseUri;
-  }
-}
-
-class JSONSchemaDocument extends JSONDocument {
-  constructor(baseUri) {
-    super(baseUri);
-    this.schema = null;
-    this.formatters = {};
-    this.handlers = {};
-    this.defaultHandler = null;
-    this.baseUriCallback = undefined;
-  }
-
-  registerSchemaHandler(formatName = 'default', schemaHandler) {
-    if (schemaHandler instanceof JSONSchemaObject) {
-      const schemaType = schemaHandler.getSchemaType();
-      if (schemaHandler instanceof schemaType) {
-        const schemaName = schemaType.name;
-        if (!this.handlers[schemaName]) {
-          this.handlers[schemaName] = {};
-        }
-        const formats = this.handlers[schemaName];
-        if (formats.hasOwnProperty(formatName) === false) {
-          formats[formatName] = schemaHandler.constructor;
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  registerDefaultSchemaHandlers() {
-    this.defaultHandler = JSONSchemaStringType;
-    return this.registerSchemaHandler('default', new JSONSchemaSelectorType())
-      && this.registerSchemaHandler('default', new JSONSchemaBooleanType())
-      && this.registerSchemaHandler('default', new JSONSchemaNumberType())
-      && this.registerSchemaHandler('default', new JSONSchemaIntegerType())
-      && this.registerSchemaHandler('default', new JSONSchemaStringType())
-      && this.registerSchemaHandler('default', new JSONSchemaObjectType())
-      && this.registerSchemaHandler('default', new JSONSchemaArrayType())
-      && this.registerSchemaHandler('default', new JSONSchemaTupleType());
-  }
-
-  getSchemaHandler(schema, force = true) {
-    if (typeof schema === 'object' && !(isPureArray(schema) || isPureTypedArray(schema))) {
-      let typeName = null;
-
-      const selector = getSchemaSelectorName(schema);
-      if (selector) {
-        typeName = JSONSchemaSelectorType.name;
-      }
-      else if (isBooleanSchema(schema)) {
-        typeName = JSONSchemaBooleanType.name;
-      }
-      else if (isIntegerSchema(schema)) {
-        typeName = JSONSchemaIntegerType.name;
-      }
-      else if (isNumberSchema(schema)) {
-        typeName = JSONSchemaNumberType.name;
-      }
-      else if (isStringSchema(schema)) {
-        typeName = JSONSchemaStringType.name;
-      }
-      else if (isObjectSchema(schema)) {
-        typeName = JSONSchemaObjectType.name;
-      }
-      else if (isArraySchema(schema)) {
-        typeName = JSONSchemaArrayType.name;
-      }
-      else if (isTupleSchema(schema)) {
-        typeName = JSONSchemaTupleType.name;
-      }
-      else {
-        if (force === false) return undefined;
-        typeName = this.defaultHandler.name;
-      }
-
-      if (this.handlers.hasOwnProperty(typeName)) {
-        const formats = this.handlers[typeName];
-        const format = typeof schema.format === 'string'
-          ? schema.format
-          : 'default';
-        // eslint-disable-next-line dot-notation
-        return formats[format] || formats['default'];
-      }
-    }
-    return undefined;
-  }
-
-  createSchemaHandler(path, schema) {
-    const Handler = this.getSchemaHandler(schema);
-    return Handler
-      ? new Handler(this, path, schema)
-      : undefined;
-  }
-
-  registerFormatCompiler(name, schema) {
-    if (this.formatters[name] == null) {
-      const r = typeof schema;
-      if (r === 'function') {
-        this.formatters[name] = schema;
-        return true;
-      }
-      else {
-        const fn = createNumberFormatCompiler(name, schema);
-        if (fn) {
-          this.formatters[name] = fn;
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  getFormatCompiler(name) {
-    return this.formatters[name];
-  }
-
-  registerDefaultFormatCompilers() {
-    const all = {
-      ...numberFormats,
-      ...dateTimeFormats,
-      ...stringFormats,
-    };
-
-    const keys = Object.keys(all);
-    for (let i = 0; i < keys.length; ++i) {
-      const key = keys[i];
-      const item = all[key];
-      this.registerFormatCompiler(key, item);
-    }
-  }
-
-  registerBaseUriCallBack(callback) {
-    this.baseUriCallback = callback;
-  }
-
-  compileValidator(json, baseUri) {
-  }
-
-  loadSchema(json, baseUri) {
-    const callback = typeof this.baseUriCallback === 'function'
-      ? this.baseUriCallback
-      : (function JSONSchemaDocument_loadSchemaDefaultCallback() { return json; });
-
-    JSONSchema_expandSchemaReferences(
-      json,
-      baseUri || this.baseUri,
-      callback,
-    );
-
-
-    this.baseUri = typeof baseUri === 'string'
-      ? baseUri
-      : this.baseUri; // TODO: parse baseUri from JSONPointer_compile?
-    const schema = this.createSchemaHandler(
-      '/',
-      json,
-    );
-    this.schema = schema;
-  }
-}
-
-class JSONSchemaXMLObject {
-  constructor(schema) {
-    const xml = getPureObject(schema.xml, {});
-    this.name = getPureString(xml.name);
-    this.namespace = getPureString(xml.namespace);
-    this.prefix = getPureString(xml.prefix);
-    this.attribute = getPureBool(xml.attribute, false);
-    this.wrapped = getPureBool(xml.wrapped, false);
-    this.attributes = getPureObject(xml.attributes);
-  }
-}
-
-const Object_prototype_propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
-
-class JSONSchemaObject {
-  constructor(owner, schemaPath, dataPath, schema, type) {
-    if (this.constructor === JSONSchemaObject)
-      throw new TypeError('JSONSchemaObject is an abstract class');
-
-    let parent = null;
-    if (owner != null) {
-      if (owner instanceof JSONSchemaObject) {
-        parent = owner;
-        owner = owner._parent;
-      }
-      if (!(owner instanceof JSONSchemaDocument))
-        throw new TypeError('JSONSchemaObject owner MUST be of type JSONSchemaDocument');
-    }
-
-    this._owner = owner;
-    this._parent = parent;
-    this._schemaPath = schemaPath && new JSONPointer(owner.baseUri, schemaPath);
-    this._dataPath = new JSONPointer(owner.baseUri, dataPath);
-
-    this.type = getPureString(type, getPureString(schema.type));
-    this.required = getBoolOrArray(schema.required, false);
-    this.nullable = getBoolOrArray(schema.nullable, true);
-
-    this.format = getPureString(schema.format);
-
-    this.readOnly = getBoolOrArray(schema.readOnly, false);
-    this.writeOnly = getBoolOrArray(schema.writeOnly, false);
-
-    this.title = getPureString(schema.title);
-    this.placeholder = getPureString(schema.placeholder);
-
-    this.$comment = getPureString(schema.$comment);
-    this.description = getPureString(schema.description); // MarkDown
-
-    this.default = schema.default !== null ? schema.default : undefined;
-    this.const = schema.const !== null ? schema.const : undefined;
-
-    this.examples = getPureArray(schema.examples);
-  }
-
-  getSchemaType() { throw new Error('Abstract Method'); }
-
-  isPrimitiveSchemaType() { return true; }
-
-  hasSchemaChildren() { return false; }
-
-  getDefault() { return this.const || this.default; }
-
-  propertyIsEnumerable(prop) {
-    return (typeof prop === 'string' || prop.indexOf('_') !== 0)
-      && Object_prototype_propertyIsEnumerable.call(this, prop);
-  }
-}
-
-class JSONSchemaEmptyType extends JSONSchemaObject {
-  constructor(owner, path, schema = {}, clone = false) {
-    super(owner, path, schema, undefined, clone);
-  }
-}
-
-class JSONSchemaBooleanType extends JSONSchemaObject {
-  constructor(owner, schemaPath, dataPath, schema = {}, clone = false) {
-    super(owner, schemaPath, schema, 'boolean', clone);
-    this.validateEx = JSONSchemaObject.compileValidateSchemaType(schemaPath, dataPath, schema);
-  }
-
-  getSchemaType() { return JSONSchemaBooleanType; }
-
-  isValid(data, err = []) {
-    return this.isValidState('boolean', data, err);
-  }
-}
-
-class JSONSchemaNumberType extends JSONSchemaObject {
-  constructor(owner, path, schema = {}, clone = false) {
-    super(owner, path, schema, 'number', clone);
-
-    this.minimum = getPureNumber(schema.minimum);
-    this.maximum = getPureNumber(schema.maximum);
-    this.exclusiveMinimum = getBoolOrNumber(schema.exclusiveMinimum);
-    this.exclusiveMaximum = getBoolOrNumber(schema.exclusiveMaximum);
-    this.multipleOf = getPureNumber(schema.multipleOf);
-
-    this.low = getPureNumber(schema.low);
-    this.high = getPureNumber(schema.high);
-    this.optimum = getPureNumber(schema.optimum);
-  }
-
-  getSchemaType() { return JSONSchemaNumberType; }
-}
-
-class JSONSchemaIntegerType extends JSONSchemaObject {
-  constructor(owner, path, schema = {}, clone = false) {
-    super(owner, path, schema, 'integer', clone);
-    this.minimum = getPureInteger(schema.minimum);
-    this.maximum = getPureInteger(schema.maximum);
-    this.exclusiveMinimum = getPureBool(schema.exclusiveMinimum, false);
-    this.exclusiveMaximum = getPureBool(schema.exclusiveMaximum, false);
-    this.multipleOf = getPureInteger(schema.multipleOf, 1);
-
-    this.low = getPureInteger(schema.low, 0);
-    this.high = getPureInteger(schema.high, 0);
-    this.optimum = getPureInteger(schema.optimum, 0);
-  }
-
-  getSchemaType() { return JSONSchemaIntegerType; }
-}
-class JSONSchemaStringType extends JSONSchemaObject {
-  constructor(owner, path, schema = {}, clone = false) {
-    super(owner, path, schema, 'string', clone);
-
-    this.maxLength = getPureInteger(schema.maxLength, 0);
-    this.minLength = getPureInteger(schema.minLength, 0);
-
-    this.pattern = String_createRegExp(schema.pattern);
-  }
-
-  getSchemaType() { return JSONSchemaStringType; }
-}
-
-class JSONSchemaSelectorType extends JSONSchemaObject {
-  constructor(owner, path, schema = {}) {
-    super(owner, path, schema, undefined);
-    const selectName = getSchemaSelectorName(schema);
-    const selectBase = { ...schema };
-    delete selectBase.oneOf;
-    delete selectBase.anyOf;
-    delete selectBase.allOf;
-    delete selectBase.not;
-    const selectItems = getPureArrayMinItems(schema[selectName], 1);
-
-    this._selectName = selectName;
-    this._selectItems = this.initSelectorItems(selectName, selectBase, selectItems);
-
-    this[selectName] = this._selectItems;
-  }
-
-  initSelectorItems(name, base, items) {
-    const owner = this._owner;
-    const path = JSONPointer_addFolder(this._schemaPath, name);
-    if (items) {
-      const selectors = [];
-      const len = items.length;
-      for (let i = 0; i < len; i++) {
-        const item = getPureObject(items[i]);
-        if (item) {
-          const schema = cloneObject(base, item);
-          const child = owner.createSchemaHandler(
-            JSONPointer_addFolder(path, String(i)),
-            schema,
-          );
-          selectors.push(child);
-        }
-      }
-      return selectors.length > 0 ? selectors : undefined;
-    }
-    return undefined;
-  }
-
-  getSchemaType() { return JSONSchemaSelectorType; }
-
-  isPrimitiveSchemaType() { return false; }
-
-  hasSchemaChildren() { return false; }
-
-  isValid(data, err = [], callback) {
-    throw new Error('not implemented', data, err, callback);
-  }
-}
-
-class JSONSchemaObjectType extends JSONSchemaObject {
-  constructor(owner, path, schema = {}, clone = false) {
-    super(owner, path, schema, 'object', clone);
-
-    this.maxProperties = getPureInteger(schema.maxProperties, 0);
-    this.minProperties = getPureInteger(schema.minProperties, 0);
-
-    this.required = getBoolOrArray(schema.required, false);
-
-    this.properties = this.initObjectProperties(schema);
-
-    const patternRequiredCached = schema._patternRequired
-      || this.initObjectPatternRequired(schema);
-
-    this.patternRequired = patternRequiredCached
-      ? schema.patternRequired
-      : undefined;
-    this._patternRequired = patternRequiredCached;
-
-    const { patternProperties, patternPropertiesCached } = this.initObjectPatternProperties(schema);
-    this.patternProperties = patternProperties;
-    this._patternProperties = patternPropertiesCached;
-
-    this.additionalProperties = this.initObjectAdditionalProperties(schema);
-  }
-
-  //#region init schema
-
-  initObjectPatternRequired(schema) {
-    const patterns = getPureArrayMinItems(schema.patternRequired, 1);
-    if (patterns) {
-      const required = [];
-      for (let i = 0; i < patterns.length; ++i) {
-        const pattern = patterns[i];
-        // TODO: Test if valid regexp pattern before adding
-        const regex = String_createRegExp(pattern);
-        if (regex) required.push(regex);
-      }
-      if (required.length > 0) return required;
-    }
-    return undefined;
-  }
-
-  initObjectProperties(schema) {
-    const owner = this._owner;
-    const path = JSONPointer_addFolder(this._schemaPath, 'properties');
-    const properties = getPureObject(schema.properties);
-    if (properties) {
-      const obj = {};
-      const keys = Object.keys(properties);
-      for (let i = 0; i < keys.length; ++i) {
-        const key = keys[i];
-        const item = properties[key];
-        const handler = owner.createSchemaHandler(
-          JSONPointer_addFolder(path, key),
-          item,
-        );
-        obj[key] = handler;
-      }
-      return obj;
-    }
-    return undefined;
-  }
-
-  initObjectPatternProperties(schema) {
-    const owner = this._owner;
-    const path = JSONPointer_addFolder(this._schemaPath, 'patternProperties');
-    const properties = getPureObject(schema.patternProperties);
-    const cached = getPureObject(schema._patternProperties);
-    if (properties && !cached) {
-      const regex = {};
-      const patterns = {};
-      const keys = Object.keys(properties);
-      for (let i = 0; i < keys.length; ++i) {
-        const key = keys[i];
-
-        const rxp = String_createRegExp(key);
-        regex[key] = rxp;
-
-        patterns[key] = owner.createSchemaHandler(
-          JSONPointer_addFolder(path, key),
-          properties[key],
-        );
-      }
-      return {
-        patternProperties: patterns,
-        patternPropertiesCached: regex,
-      };
-    }
-    else if (cached) {
-      return {
-        patternProperties: schema.patternProperties,
-        patternPropertiesCached: schema._patternProperties,
-      };
-    }
-    return {
-      patternProperties: undefined,
-      patternPropertiesCached: undefined,
+function createIsStrictObjectOfType(fn) {
+  // eslint-disable-next-line no-undef-init
+  let usefull = undefined;
+  if (isFn(fn)) {
+    usefull = function isStrictObjectOfTypeFn(data) {
+      return isStrictObjectOfType(data, fn);
     };
   }
-
-  initObjectAdditionalProperties(schema) {
-    const additionalProperties = getBoolOrObject(schema.additionalProperties, true);
-    if (additionalProperties.constructor === Boolean) return additionalProperties;
-
-    const owner = this._owner;
-    const path = JSONPointer_addFolder(this._schemaPath, 'additionalProperties');
-    return owner.createSchemaHandler(path, additionalProperties);
-  }
-
-  //#endregion
-
-  getSchemaType() { return JSONSchemaObjectType; }
-
-  isPrimitiveSchemaType() { return false; }
-
-  hasSchemaChildren() { return true; }
-
-  isValid(data, err = [], callback) {
-    err = this.isValidState('object', data, err);
-    if (data == null) return err;
-    if (data.constructor === Array) {
-      err.push([this._schemaPath, 'type', 'object', 'Array']);
-    }
-    if (err.length > 0) return err;
-
-    const dataKeys = Object.keys(data);
-    const properties = this.properties;
-    const propertyKeys = Object.keys(properties);
-
-    if (this.maxProperties) {
-      if (dataKeys.length > this.maxProperties) {
-        err.push([this._schemaPath, 'maxProperties', this.maxProperties, dataKeys.length]);
+  else if (fn instanceof Array) {
+    const types = [];
+    for (let i = 0; i < fn.length; ++i) {
+      const type = fn[i];
+      const tn = typeof type;
+      if (tn === 'string') {
+        types.push('data.constructor===' + type);
+      }
+      else if (tn === 'function') {
+        types.push('data.constructor===' + type.name);
       }
     }
-    if (this.minProperties) {
-      if (dataKeys.length < this.minProperties) {
-        err.push([this._schemaPath, 'minProperties', this.minProperties, dataKeys.length]);
-      }
-    }
-
-    if (this.required) {
-      const required = this.required !== true
-        ? this.required
-        : propertyKeys;
-
-      if (required.constructor === Array) {
-        for (let i = 0; i < required.length; ++i) {
-          const prop = required[i];
-          if (dataKeys.includes(prop) === false) {
-            err.push([this._schemaPath, 'required', prop]);
-          }
-        }
-      }
-    }
-
-    if (this._patternRequired) {
-      const required = this._patternRequired;
-      if (required.constructor === Array) {
-        loop:
-        for (let i = 0; i < required.length; ++i) {
-          const rgx = required[i];
-          for (let j = 0; j < dataKeys.length; ++j) {
-            const key = dataKeys[j];
-            if (rgx.test(key)) continue loop;
-          }
-          err.push([this._schemaPath, 'patternRequired', rgx]);
-        }
-      }
-    }
-    if (err.length > 0) return err;
-
-    const patterns = this._patternProperties;
-    const patternKeys = Object.keys(patterns);
-
-    next:
-    for (let i = 0; i < dataKeys.length; ++i) {
-      const key = dataKeys[i];
-      // test whether all properties of data are
-      // within limits of properties and patternProperties
-      // defined in schema.
-
-      if (propertyKeys.includes(key)) {
-        if (callback) {
-          const s = properties[key];
-          const d = data[key];
-          const p = JSONPointer_addFolder(this._schemaPath, key);
-          callback(s, p, d, err);
-        }
-        continue;
-      }
-
-      if (patterns) {
-        for (let j = 0; j < patternKeys.length; ++j) {
-          const pattern = patternKeys[j];
-          const rgx = patterns[pattern];
-          if (rgx.test(key)) {
-            if (callback) {
-              const s = this.patternProperties[pattern];
-              const d = data[key];
-              const p = JSONPointer_addFolder(this._schemaPath, key);
-              callback(s, p, d, err);
-            }
-            continue next;
-          }
-        }
-
-        if (this.additionalProperties === false) {
-          err.push([this._schemaPath, 'patternProperties', key]);
-        }
-        continue;
-      }
-      else {
-        if (this.additionalProperties === false) {
-          err.push([this._schemaPath, 'properties', key]);
-        }
-      }
-    }
-
-    return err;
-  }
-}
-
-class JSONSchemaArrayType extends JSONSchemaObject {
-  constructor(owner, path, schema = {}, clone = false) {
-    super(owner, path, schema, 'array', clone);
-    this.minItems = getPureInteger(schema.minItems, 0);
-    this.maxItems = getPureInteger(schema.maxItems, 0);
-    this.uniqueItems = getPureBool(schema.uniqueItems, false);
-    this.items = this.initArrayItems(schema);
-    this.contains = this.initArrayContains(schema);
-  }
-
-  initArrayItems(schema) {
-    const owner = this._owner;
-    const path = JSONPointer_addFolder(this._schemaPath, 'items');
-    const item = getPureObject(schema.items);
-    return item ? owner.createSchemaHandler(path, item) : undefined;
-  }
-
-  initArrayContains(schema) {
-    const owner = this._owner;
-    const path = JSONPointer_addFolder(this._schemaPath, 'contains');
-    const item = getPureObject(schema.contains);
-    return item ? owner.createSchemaHandler(path, item) : undefined;
-  }
-
-  getSchemaType() { return JSONSchemaArrayType; }
-
-  isPrimitiveSchemaType() { return false; }
-
-  hasSchemaChildren() { return true; }
-
-  isValid(data, err = [], callback) {
-    err = this.isValidState(Array, data, err);
-    if (err.length > 0) return err;
-    if (data == null) return err;
-
-    const length = data.length;
-    if (this.minItems) {
-      if (length < this.minItems) {
-        err.push([this._schemaPath, 'minItems', this.minItems, length]);
-      }
-    }
-    if (this.maxItems) {
-      if (length > this.maxItems) {
-        err.push([this._schemaPath, 'maxItems', this.maxItems, length]);
-      }
-    }
-    if (this.uniqueItems === true) {
-      // TODO: implementation.uniqueItems
-      err.push([this._schemaPath, 'implementation', 'uniqueItems']);
-    }
-
-    if (callback) {
-      const s = this.items;
-      const c = this.contains;
-      for (let i = 0; i < length; ++i) {
-        const d = data[i];
-        const p = JSONPointer_addFolder(this._schemaPath, i);
-        if (c) {
-          if (callback(c, p, d).length === 0) break;
-        }
-        else {
-          callback(s, p, d, err);
-        }
-      }
-    }
-    return err;
-  }
-}
-
-class JSONSchemaTupleType extends JSONSchemaObject {
-  constructor(owner, path, schema = {}, clone = false) {
-    super(owner, path, schema, 'tuple', clone);
-
-    this.items = this.initTupleItems(schema);
-    this.additionalItems = this.initTupleAdditionalItems(schema);
-    if (this.additionalItems) {
-      this.minItems = getPureInteger(schema.minItems);
-      this.maxItems = getPureInteger(schema.maxItems);
-      this.uniqueItems = getPureBool(schema.uniqueItems);
-    }
-  }
-
-  initTupleItems(schema) {
-    const owner = this._owner;
-    const path = JSONPointer_addFolder(this._schemaPath, 'items');
-    const items = getPureArray(schema.items);
-    if (items) {
-      const result = new Array(items.length);
-      for (let i = 0; i < items.length; ++i) {
-        const item = items[i];
-        const handler = owner.createSchemaHandler(
-          JSONPointer_addFolder(path, i),
-          item,
-        );
-        result[i] = handler;
-      }
-      return result.length > 0 ? result : undefined;
-    }
-    return undefined;
-  }
-
-  initTupleAdditionalItems(schema) {
-    const owner = this._owner;
-    const path = JSONPointer_addFolder(this._schemaPath, 'additionalItems');
-    const item = getPureObject(schema.additionalItems);
-    if (item) {
-      const handler = owner.createSchemaHandler(
-        path,
-        item,
+    if (types > 0) {
+      // eslint-disable-next-line no-new-func
+      usefull = new Function(
+        'data',
+        'return data!=null && (' + types.join('||') + ')',
       );
-      return handler;
     }
-    return undefined;
   }
-
-  getSchemaType() { return JSONSchemaTupleType; }
-
-  isPrimitiveSchemaType() { return false; }
-
-  hasSchemaChildren() { return true; }
-
-  isValid(data, err = [], callback) {
-    err = this.isValidState(Array, data, err);
-    if (err.length > 0) return err;
-    if (data == null) return err;
-
-    const length = data.length;
-    const size = this.items.length;
-    if (length !== size) {
-      err.push([this._schemaPath, 'items', size, length]);
-    }
-
-    if (callback) {
-      for (let i = 0; i < size; ++i) {
-        const s = this.items[i];
-        const d = i < data.length ? data[i] : undefined;
-        const p = JSONPointer_addFolder(this._schemaPath, i);
-        callback(s, p, d, err);
-      }
-    }
-
-    if (this.additionalItems) {
-      const minitems = mathi32_max(this.minItems > 0 ? this.minItems : size, size);
-      const maxitems = mathi32_max(this.maxItems > 0 ? this.maxItems : size, size);
-
-      if (length < minitems) {
-        err.push([this._schemaPath, 'minItems', minitems, length]);
-      }
-      if (length > maxitems) {
-        err.push([this._schemaPath, 'maxItems', maxitems, length]);
-      }
-
-      if (this.uniqueItems === true) {
-        // TODO: implementation.uniqueItems
-        err.push([this._schemaPath, 'implementation', 'uniqueItems']);
-      }
-
-      if (callback) {
-        const s = this.additionalItems;
-        for (let i = size; i < data.length; ++i) {
-          const d = data[i];
-          const p = JSONPointer_addFolder(this._schemaPath, i);
-          callback(s, p, d, err);
-        }
-      }
-    }
-    return err;
+  else if (typeof fn === 'string') {
+    // eslint-disable-next-line no-new-func
+    usefull = new Function(
+      'data',
+      'return data!=null && data.constructor===' + fn,
+    );
   }
+  return usefull;
 }
 
-export { Array_collapseShallow, Array_patchPrototype, Array_unique, Array_uniqueMerge, BetterMap, BetterMap_prototype_getItem, BetterMap_prototype_set, BetterMap_prototype_setItem, JSONDocument, JSONPointer, JSONPointer_addFolder, JSONPointer_addRelativePointer, JSONPointer_compileGetPointer, JSONPointer_fragmentSeparator, JSONPointer_pathSeparator, JSONPointer_resolveRelative, JSONPointer_traverseFilterObjectBF, JSONSchemaArrayType, JSONSchemaBooleanType, JSONSchemaDocument, JSONSchemaEmptyType, JSONSchemaIntegerType, JSONSchemaNumberType, JSONSchemaObject, JSONSchemaObjectType, JSONSchemaSelectorType, JSONSchemaStringType, JSONSchemaTupleType, JSONSchemaXMLObject, JSONSchema_expandSchemaReferences, Letter_isEmptyOrWhiteSpace, Letter_isLowerCase, Letter_isModifierLetter, Letter_isNumberLetter, Letter_isOtherLetter, Letter_isSymbol, Letter_isTileCase, Letter_isUpperCase, Map_patchPrototype, Queue, String_byteCount, String_createRegExp, String_decodeURI, String_encodeURI, String_fromCamelToSnake, String_fromSnakeToCamel, String_indexOfEndInteger, String_trimLeft, Tree, TreeNode, Tree_findIndex, Tree_traverseBF, Tree_traverseDF, VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseToString, copyAttributes, def_vec2f64, def_vec2i32, def_vec3f64, float64Base as f64, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, float64Math as fm64, getBoolOrArray, getBoolOrNumber, getBoolOrObject, getObjectAllKeys, getObjectAllValues, getObjectCountItems, getObjectFirstItem, getObjectFirstKey, getPureArray, getPureArrayMinItems, getPureBool, getPureInteger, getPureNumber, getPureObject, getPureString, getStringOrArray, getStringOrObject, h, hasCssClass, int32Base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isBoolOrArray, isBoolOrNumber, isBoolOrObject, isObjectEmpty, isPrimitiveType, isPrimitiveTypeEx, isPureArray, isPureNumber, isPureObject, isPureObjectReally, isPureString, isPureTypedArray, isStringOrArray, isStringOrObject, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, int32Math as mi32, myRegisterPaint, path2f64, performanceIndexOfUnaryBool, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, float64Shape as s2f64, sanitizePrimitiveValue, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, float64Vec2 as v2f64, int32Vec2 as v2i32, float64Vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_add, vec3f64_adds, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_dot, vec3f64_iadd, vec3f64_iadds, vec3f64_idiv, vec3f64_idivs, vec3f64_imul, vec3f64_imuls, vec3f64_isub, vec3f64_isubs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_mul, vec3f64_muls, vec3f64_new, vec3f64_sub, vec3f64_subs, vec3f64_unit, workletState, wrapVN };
+export { VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, collapseCssClass, collapseToString, copyAttributes, createIsStrictDataType, createIsStrictObjectOfType, createStorageCache, def_vec2f64, def_vec2i32, def_vec3f64, base$1 as f64, fallbackFn, falseThat, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, math$1 as fm64, getArrayMinItems, getArrayOrSetLength, getArrayishType, getBoolOrArray, getBoolOrNumber, getBoolOrObject, getBooleanishType, getIntegerishType, getNumberishType, getObjectishType, getSanitizedPrimitive, getStrictArray, getStrictArrayMinItems, getStrictBoolean, getStrictInteger, getStrictNumber, getStrictObject, getStrictString, getStringOrArray, getStringOrObject, getVNodeAttr, getVNodeKey, getVNodeName, h, hasCssClass, base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isArrayOrSet, isArrayishType, isBoolOrArray, isBoolOrNumber, isBoolOrObject, isBooleanishType, isFn, isFnEx, isIntegerishType, isNumberishType, isObjectOrMap, isObjectishType, isPrimitiveType, isPrimitiveTypeEx, isStrictArrayType, isStrictBigIntType, isStrictBooleanType, isStrictIntegerType, isStrictNumberType, isStrictObjectOfType, isStrictObjectType, isStrictStringType, isStrictTypedArray, isStringOrArray, isStringOrObject, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, removeCssClass, shape as s2f64, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, trueThat, undefThat, vec2$1 as v2f64, vec2 as v2i32, vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_add, vec3f64_adds, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_dot, vec3f64_iadd, vec3f64_iadds, vec3f64_idiv, vec3f64_idivs, vec3f64_imul, vec3f64_imuls, vec3f64_isub, vec3f64_isubs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_mul, vec3f64_muls, vec3f64_new, vec3f64_sub, vec3f64_subs, vec3f64_unit, workletState, wrapVN };
 //# sourceMappingURL=index.js.map
