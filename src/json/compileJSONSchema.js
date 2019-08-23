@@ -109,18 +109,19 @@ class SchemaObject {
       rest,
     );
 
-    if (isStrictArrayType(key)) {
-      this.members.push(...key);
-      return function addErrorPair(dataKey, data, ...meta) {
-        return this.addErrorPair(member, dataKey, data, meta);
-      };
-    }
-    else if (isStrictStringType(key)) {
+    if (isStrictStringType(key)) {
       this.members.push(key);
       return function addErrorSingle(data, ...meta) {
         return this.addErrorSingle(member, data, meta);
       };
     }
+    else if (isStrictArrayType(key)) {
+      this.members.push(...key);
+      return function addErrorPair(dataKey, data, ...meta) {
+        return this.addErrorPair(member, dataKey, data, meta);
+      };
+    }
+
     return undefined;
   }
 
