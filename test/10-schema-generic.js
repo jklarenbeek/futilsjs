@@ -2,15 +2,12 @@
 /* eslint-disable padded-blocks */
 /* eslint-disable func-names */
 /* eslint-env mocha */
-import { expect, assert } from 'chai';
+import { assert } from 'chai';
 
 import {
   compileJSONSchema,
   getJSONSchema,
-  registerDefaultFormatCompilers,
 } from '../src/json';
-
-registerDefaultFormatCompilers();
 
 describe('Schema Generics', function () {
 
@@ -53,7 +50,7 @@ describe('Schema Generics', function () {
 
   describe('#consts()', function () {
     // https://json-schema.org/understanding-json-schema/reference/generic.html#const
-    it('should', function () {
+    it('should be a country!', function () {
       compileJSONSchema('constBasic1', {
         properties: {
           country: {
