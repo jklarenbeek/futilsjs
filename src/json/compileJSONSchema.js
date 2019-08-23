@@ -181,7 +181,7 @@ export function compileJSONSchema(baseUri, json) {
   const first = root.firstSchema;
   first.validateFn = compileSchemaObject(first, json);
 
-  registeredDocuments[baseUri] = first;
+  registeredDocuments[baseUri] = root;
 
   return true;
 }
