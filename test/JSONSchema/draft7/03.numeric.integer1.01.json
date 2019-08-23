@@ -1,6 +1,0 @@
-{
-  "$comment": "https://json-schema.org/understanding-json-schema/reference/numeric.html#integer",
-
-  "type": "number",
-  "multipleOf": 1.0
-}
