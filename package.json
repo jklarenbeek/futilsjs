@@ -10,7 +10,7 @@
   "scripts": {
     "build": "rollup -c",
     "schema": "parcel ./test/JSONSchema/index.html",
-    "test": "mocha --require @babel/register \"test/**/*.js\""
+    "test": "mocha --require @babel/register \"test/*.js\""
   },
   "keywords": [
     "javascript",
