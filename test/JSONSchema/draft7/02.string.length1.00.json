@@ -1,7 +1,0 @@
-{
-  "$comment": "https://json-schema.org/understanding-json-schema/reference/string.html#length",
-
-  "type": "string",
-  "minLength": 2,
-  "maxLength": 3
-}
