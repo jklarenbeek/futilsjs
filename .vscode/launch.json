@@ -2,23 +2,36 @@
 	"version": "0.2.0",
 	"configurations": [
     {
-      "name": "Debug JSONSchema",
-      "type": "chrome",
+      "type": "node",
       "request": "launch",
-      "url": "http://localhost:1234/index.html",
-      "webRoot": "${workspaceFolder}/dist",
-      "trace": true,
-      "breakOnLoad": true,
-      "smartStep": true,
-      "showAsyncStacks": true,
-      "skipFiles": [
-          "node_modules/**"
+      "name": "Mocha All",
+      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+      "args": [
+          "--require",
+          "@babel/register",
+          "--timeout",
+          "999999",
+          "--colors",
+          "${workspaceFolder}/test"
       ],
-      "sourceMaps": true,
-      "sourceMapPathOverrides": {
-          "./src/*": "${webRoot}/*",
-          "./test/JSONSchema/*": "${webRoot}/*"
-      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Mocha Current File",
+      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+      "args": [
+        "--require",
+        "@babel/register",
+        "--timeout",
+          "999999",
+          "--colors",
+          "${file}"
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
     }
 	]
 }
