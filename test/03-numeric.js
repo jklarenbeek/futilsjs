@@ -21,7 +21,7 @@ describe('#numeric()', function () {
     assert.isTrue(root.validate(42), 'validates an integer');
     assert.isTrue(root.validate(-1), 'validates a negative integer');
     assert.isTrue(root.validate(Math.PI), 'validates a number');
-    assert.isTrue(root.validate(2.99792458e8), 'a floating point number');
+    assert.isTrue(root.validate(2.99792458e8), 'validates a float literal');
     assert.isFalse(root.validate('42'), 'not validates a string');
   });
 
@@ -31,8 +31,8 @@ describe('#numeric()', function () {
     const root = getJSONSchema('numberBasic2');
     assert.isTrue(root.validate(42), 'validates an integer');
     assert.isTrue(root.validate(-1), 'validates a negative integer');
-    assert.isFalse(root.validate(Math.PI), 'not validates a number');
-    assert.isTrue(root.validate(2.99792458e8), 'not validates a floating point number');
+    assert.isFalse(root.validate(Math.PI), 'not validates a float');
+    assert.isTrue(root.validate(2.99792458e8), 'not validates a float literal');
     assert.isFalse(root.validate('42'), 'not validates a string');
   });
 
