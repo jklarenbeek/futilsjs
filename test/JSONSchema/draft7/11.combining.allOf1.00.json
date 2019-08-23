@@ -1,8 +1,0 @@
-{
-  "$comment": "https://json-schema.org/understanding-json-schema/reference/combining.html#allof",
-
-  "allOf": [
-    { "type": "string" },
-    { "maxLength": 5 }
-  ]
-}
