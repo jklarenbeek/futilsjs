@@ -15,7 +15,7 @@ registerDefaultFormatCompilers();
 
 describe('#types()', function () {
 
-  it('should validate simple number types', function () {
+  describe('should validate simple number types', function () {
     compileJSONSchema('typesBasic1', { type: 'number' });
 
     const root = getJSONSchema('typesBasic1');
