@@ -1,5 +1,0 @@
-{
-  "$comment": "https://json-schema.org/understanding-json-schema/reference/generic.html#enum",
-
-  "enum": ["red", "amber", "green", null, 42]
-}

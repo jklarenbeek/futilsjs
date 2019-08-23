@@ -1,6 +1,0 @@
-{
-  "$comment": "https://json-schema.org/understanding-json-schema/reference/non_json_data.html",
-
-  "type": "string",
-  "contentMediaType": "text/html"
-}
