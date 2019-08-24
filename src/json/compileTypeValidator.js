@@ -42,8 +42,9 @@ function compileType(schemaObj, jsonSchema) {
     const types = [];
     let isnullable = nullable || false;
     for (let i = 0; i < type.length; ++i) {
-      if (type === 'null') { isnullable = true; continue; }
-      const cb = createIsStrictDataType(type[i]);
+      const tp = type[i];
+      if (tp === 'null') { isnullable = true; continue; }
+      const cb = createIsStrictDataType(tp);
       if (cb) types.push(cb);
     }
     if (types.length > 0) {

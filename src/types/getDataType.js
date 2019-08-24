@@ -36,7 +36,7 @@ export function getStrictString(obj, def) {
 }
 
 export function getStrictNumber(obj, def) {
-  return isStrictNumberType(obj) ? obj : def; // TODO: performance check for isNaN and Number!!!
+  return isStrictNumberType(obj) ? obj : def;
 }
 
 export function getStrictInteger(obj, def = undefined) {

@@ -1,3 +1,7 @@
+import {
+  performance,
+} from 'perf_hooks';
+
 /**
  * @example
  *  const fns_all = [ isStrictNumberType_asNumber, isStrictNumberType_asParseFloat ];

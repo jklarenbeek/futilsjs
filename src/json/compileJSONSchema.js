@@ -1,4 +1,8 @@
 import {
+  performance,
+} from 'perf_hooks';
+
+import {
   isStrictStringType,
   isStrictArrayType,
   isObjectishType,
@@ -102,23 +106,24 @@ class SchemaObject {
   }
 
   createMemberError(key, expected, ...rest) {
+    const self = this;
     const member = new SchemaMember(
-      this,
+      self,
       key,
       expected,
       rest,
     );
 
     if (isStrictStringType(key)) {
-      this.members.push(key);
+      self.members.push(key);
       return function addErrorSingle(data, ...meta) {
-        return this.addErrorSingle(member, data, meta);
+        return self.addErrorSingle(member, data, meta);
       };
     }
     else if (isStrictArrayType(key)) {
-      this.members.push(...key);
+      self.members.push(...key);
       return function addErrorPair(dataKey, data, ...meta) {
-        return this.addErrorPair(member, dataKey, data, meta);
+        return self.addErrorPair(member, dataKey, data, meta);
       };
     }
 
@@ -126,10 +131,11 @@ class SchemaObject {
   }
 
   createSingleValidator(key, child, ...rest) {
+    const self = this;
     if (isStrictStringType(key)) {
       const childObj = new SchemaObject(
-        this.schemaRoot,
-        JSONPointer_concatPath(this.schemaPath, key),
+        self.schemaRoot,
+        JSONPointer_concatPath(self.schemaPath, key),
         rest,
       );
       const validator = compileSchemaObject(childObj, child);
@@ -140,14 +146,15 @@ class SchemaObject {
   }
 
   createPairValidator(member, key, child, ...rest) {
+    const self = this;
     const valid = member instanceof SchemaMember
       && isStrictStringType(key)
       && isObjectishType(child);
     if (!valid) return undefined;
 
     const childObj = new SchemaObject(
-      this.schemaRoot,
-      JSONPointer_concatPath(this.schemaPath, member.schemaKey, key),
+      self.schemaRoot,
+      JSONPointer_concatPath(self.schemaPath, member.schemaKey, key),
       rest,
     );
     const validator = compileSchemaObject(childObj, child);
