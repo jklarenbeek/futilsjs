@@ -14,13 +14,13 @@ registerDefaultFormatCompilers();
 // https://json-schema.org/understanding-json-schema/reference/string.html
 
 describe('#strings()', function () {
-  it('should validate strings only', function () {
+  it('should validate string types only', function () {
     compileJSONSchema('stringBasic1', { type: 'string' });
 
     const root = getJSONSchema('stringBasic1');
+    assert.isFalse(root.validate(null), 'not validates null');
     assert.isTrue(root.validate('Déjà vu'), 'validates a string with accents');
     assert.isTrue(root.validate(''), 'validates an empty string');
-    assert.isFalse(root.validate(null), 'not validates null');
     assert.isFalse(root.validate(42), 'not validates a number');
   });
 

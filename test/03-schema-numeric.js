@@ -36,4 +36,7 @@ describe('#numeric()', function () {
     assert.isFalse(root.validate('42'), 'not validates a string');
   });
 
+  it('should validate range of a number', function () {
+
+  });
 });
