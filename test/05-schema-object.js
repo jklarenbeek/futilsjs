@@ -2,7 +2,7 @@
 /* eslint-disable padded-blocks */
 /* eslint-disable func-names */
 /* eslint-env mocha */
-import { expect, assert } from 'chai';
+import { assert } from 'chai';
 
 import {
   compileJSONSchema,
