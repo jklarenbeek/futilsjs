@@ -46,6 +46,7 @@ function compileSchemaBasic(schemaObj, jsonSchema) {
 
   return function validateSchemaBasic(data, dataRoot) {
     const vType = fnType(data, dataRoot);
+    if (vType === false) return false;
     const vFormat = fnFormat(data, dataRoot);
     const vEnum = fnEnum(data, dataRoot);
     const vNumber = fnNumber(data, dataRoot);

@@ -3,24 +3,32 @@
 import {
   compileJSONSchema,
   getJSONSchema,
-  registerDefaultFormatCompilers,
+  // registerDefaultFormatCompilers,
 // eslint-disable-next-line import/no-unresolved
 } from '../../src/json';
 
-import data1 from './draft7/01.type.basic1.00.json';
-import data2 from './draft7/05.object.props2.00.json';
-import data2a from './draft7/05.object.props2.01.true.json';
-import data2b from './draft7/05.object.props2.02.false.json';
+// registerDefaultFormatCompilers();
 
-registerDefaultFormatCompilers();
+compileJSONSchema('objectProps1a', {
+  type: 'object',
+  properties: {
+    number: { type: 'number' },
+    street_name: { type: 'string' },
+    street_type: { enum: ['Street', 'Avenue', 'Boulevard'] },
+  },
+});
 
-compileJSONSchema('01.type.basic1.00', data1);
-compileJSONSchema('05.object.props2.00', data2);
-
-const doc1 = getJSONSchema('01.type.basic1.00');
-console.log(doc1.baseUri, true, doc1.validate(42), doc1.errors);
-console.log(doc1.baseUri, false, doc1.validate('42'), doc1.errors);
-
-const doc2 = getJSONSchema('05.object.props2.00');
-console.log(doc2.baseUri, true, doc2.validate(data2a), doc2.errors);
-console.log(doc2.baseUri, false, doc2.validate(data2b), doc2.errors);
+const root = getJSONSchema('objectProps1a');
+console.log(root.validate({
+  number: 1600, street_name: 'Pennsylvania', street_type: 'Avenue',
+}), 'valid typed address');
+console.log(root.validate({
+  number: '1600', street_name: 'Pennsylvania', street_type: 'Avenue',
+}), 'invalid address number');
+console.log(root.validate({ }), 'empty address object');
+console.log(root.validate({
+  number: 1600, street_name: 'Pennsylvania',
+}), 'valid us address');
+console.log(root.validate({
+  number: 1600, street_name: 'Pennsylvania', street_type: 'Avenue', direction: 'NW',
+}), 'additional properties is default true');

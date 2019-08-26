@@ -17,10 +17,9 @@
       "sourceMaps": true,
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "outFiles": ["${workspaceRoot}/.vscode/out/*"],
-      "cwd": "${workspaceRoot}",
+      "outFiles": ["${workspaceFolder}/.vscode/out/*"],
+      "cwd": "${workspaceFolder}",
       "stopOnEntry": false,
-      "protocol": "inspector",
       "runtimeExecutable": null,
       "env": {
           "NODE_ENV": "testing"
@@ -39,8 +38,35 @@
           "--colors",
           "${file}"
       ],
+      "sourceMaps": true,
       "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen"
+      "internalConsoleOptions": "neverOpen",
+      "outFiles": ["${workspaceFolder}/.vscode/out/*"],
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": false,
+      "runtimeExecutable": null,
+      "env": {
+          "NODE_ENV": "testing"
+      }
+    },
+      {
+      "name": "Debug JSONSchema",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:1234/index.html",
+      "webRoot": "${workspaceFolder}/dist",
+      "trace": true,
+      "breakOnLoad": true,
+      "smartStep": true,
+      "showAsyncStacks": true,
+      "skipFiles": [
+          "node_modules/**"
+      ],
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+          "./src/*": "${webRoot}/*",
+          "./test/JSONSchema/*": "${webRoot}/*"
+      },
     }
 	]
 }

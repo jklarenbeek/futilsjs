@@ -143,5 +143,8 @@
       "react/jsx-uses-react": "error",
       "react/jsx-uses-vars": "error"
     }
+  },
+  "dependencies": {
+    "perf_hooks": "0.0.1"
   }
 }

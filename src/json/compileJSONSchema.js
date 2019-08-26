@@ -1,8 +1,4 @@
 import {
-  performance,
-} from 'perf_hooks';
-
-import {
   isStrictStringType,
   isStrictArrayType,
   isObjectishType,
@@ -15,6 +11,10 @@ import {
 import {
   falseThat,
 } from '../types/isFunctionType';
+
+import {
+  performance,
+} from '../helpers/performance';
 
 import {
   compileSchemaObject,

@@ -25,6 +25,7 @@ export function isOfSchemaType(schema, type) {
 
 export function isOfStrictSchemaType(schema, type) {
   if (type == null) return false;
+  if (schema.type == null) return false;
   if (schema.type === type) return true;
   if (schema.type.constructor === Array && schema.type.length <= 2)
     return schema.type.includes('null') && schema.type.includes(type);

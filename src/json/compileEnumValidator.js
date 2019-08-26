@@ -8,7 +8,7 @@ import {
 
 export function compileEnumBasic(schemaObj, jsonSchema) {
   const enums = getArrayMinItems(jsonSchema.enum, 1);
-  if (enums) {
+  if (enums) { // TODO remove type checking! simplify!
     if (isPrimitiveSchema(jsonSchema)) {
       const addError = schemaObj.createMemberError(
         'enum',
