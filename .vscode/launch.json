@@ -18,6 +18,13 @@
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "outFiles": ["${workspaceRoot}/.vscode/out/*"],
+      "cwd": "${workspaceRoot}",
+      "stopOnEntry": false,
+      "protocol": "inspector",
+      "runtimeExecutable": null,
+      "env": {
+          "NODE_ENV": "testing"
+      }
     },
     {
       "type": "node",
