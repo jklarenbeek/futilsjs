@@ -2,6 +2,7 @@
 import {
   fallbackFn,
   falseThat,
+  trueThat,
 } from '../types/isFunctionType';
 
 import {
@@ -22,9 +23,6 @@ import { compileCombineSchema } from './compileCombineValidator';
 import { compileConditionSchema } from './compileConditionValidator';
 
 function compileSchemaBasic(schemaObj, jsonSchema) {
-  const fnType = fallbackFn(
-    compileTypeBasic(schemaObj, jsonSchema),
-  );
   const fnFormat = fallbackFn(
     compileFormatBasic(schemaObj, jsonSchema),
   );
@@ -45,16 +43,13 @@ function compileSchemaBasic(schemaObj, jsonSchema) {
   );
 
   return function validateSchemaBasic(data, dataRoot) {
-    const vType = fnType(data, dataRoot);
-    if (vType === false) return false;
     const vFormat = fnFormat(data, dataRoot);
     const vEnum = fnEnum(data, dataRoot);
     const vNumber = fnNumber(data, dataRoot);
     const vString = fnString(data, dataRoot);
     const vObject = fnObject(data, dataRoot);
     const vArray = fnArray(data, dataRoot);
-    return vType
-      && vFormat
+    return vFormat
       && vEnum
       && vNumber
       && vString
@@ -103,15 +98,23 @@ function compileSchemaAdvanced(schemaObj, jsonSchema) {
 }
 
 export function compileSchemaObject(schemaObj, jsonSchema) {
+  if (jsonSchema === true) return trueThat;
+  if (jsonSchema === false) return falseThat;
   if (!isStrictObjectType(jsonSchema)) {
     return falseThat;
   }
+
+  const fnType = fallbackFn(compileTypeBasic(schemaObj, jsonSchema));
 
   const validateBasic = compileSchemaBasic(schemaObj, jsonSchema);
   const validateChildren = compileSchemaChildren(schemaObj, jsonSchema);
   const validateAdvanced = compileSchemaAdvanced(schemaObj, jsonSchema);
 
   return function validateSchemaObject(data, dataRoot) {
+    const vType = fnType(data, dataRoot);
+    if (vType === false) return false;
+    if (data === undefined) return true;
+
     return validateBasic(data, dataRoot)
       && validateAdvanced(data, dataRoot)
       && validateChildren(data, dataRoot);

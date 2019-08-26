@@ -9,26 +9,13 @@ import {
 
 // registerDefaultFormatCompilers();
 
-compileJSONSchema('objectProps1a', {
-  type: 'object',
-  properties: {
-    number: { type: 'number' },
-    street_name: { type: 'string' },
-    street_type: { enum: ['Street', 'Avenue', 'Boulevard'] },
+compileJSONSchema('propertyNames1', {
+  type: 'oject',
+  propertyNames: {
+    pattern: '^[A-Za-z_][A-Za-z0-9_]*$',
   },
 });
 
-const root = getJSONSchema('objectProps1a');
-console.log(root.validate({
-  number: 1600, street_name: 'Pennsylvania', street_type: 'Avenue',
-}), 'valid typed address');
-console.log(root.validate({
-  number: '1600', street_name: 'Pennsylvania', street_type: 'Avenue',
-}), 'invalid address number');
-console.log(root.validate({ }), 'empty address object');
-console.log(root.validate({
-  number: 1600, street_name: 'Pennsylvania',
-}), 'valid us address');
-console.log(root.validate({
-  number: 1600, street_name: 'Pennsylvania', street_type: 'Avenue', direction: 'NW',
-}), 'additional properties is default true');
+const root = getJSONSchema('propertyNames');
+console.log(root.validate({ _a_proper_token_001: 'value' }), 'a valid id/key token');
+console.log(root.validate({ '001 invalid': 'key' }), 'an invalid id/key token');
