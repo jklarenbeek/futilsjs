@@ -222,8 +222,25 @@ export function compileObjectBasic(schemaObj, jsonSchema) {
   return undefined;
 }
 
+function compilePropertyNames(schemaObj, jsonSchema) {
+  const propNames = getObjectishType(jsonSchema.propertyNames);
+  if (propNames) {
+    const validate = schemaObj.createSingleValidator(
+      'propertyNames',
+      propNames,
+      compilePropertyNames);
+    if (validate != null) {
+      return function validatePropertyName(key) {
+        return validate(key);
+      };
+    }
+  }
+  return undefined;
+}
+
 function compilePropertyItem(schemaObj, jsonSchema) {
   const properties = getObjectishType(jsonSchema.properties);
+  if (properties == null) return undefined;
 
   const keys = Object.keys(properties);
   if (keys.length > 0) {
@@ -321,11 +338,12 @@ function compileAdditionalItem(schemaObj, jsonSchema) {
 }
 
 export function compileObjectChildren(schemaObj, jsonSchema) {
+  const propNames = getObjectishType(jsonSchema.propertyNames);
   const properties = getObjectishType(jsonSchema.properties);
   const patterns = getObjectishType(jsonSchema.patternProperties);
   const additional = getBoolOrObject(jsonSchema.additionalProperties, true);
 
-  if (properties == null && patterns == null && additional === true)
+  if (propNames == null && properties == null && patterns == null && additional === true)
     return undefined;
 
   // make sure we are not part of a map!
@@ -337,6 +355,10 @@ export function compileObjectChildren(schemaObj, jsonSchema) {
 
   // eslint-disable-next-line no-constant-condition
   if (true) {
+    const validateName = fallbackFn(
+      compilePropertyNames(schemaObj, jsonSchema),
+      trueThat,
+    );
     const validateProperty = fallbackFn(
       compilePropertyItem(schemaObj, jsonSchema),
       undefThat,
@@ -358,6 +380,11 @@ export function compileObjectChildren(schemaObj, jsonSchema) {
         for (let i = 0; i < dataKeys.length; ++i) {
           if (errors > 32) break;
           const dataKey = dataKeys[i];
+          if (validateName(dataKey) === false) {
+            valid = false;
+            continue;
+          }
+
           let result = validateProperty(dataKey, data, dataRoot);
           if (result != null) {
             dataKeys[i] = result;
@@ -367,6 +394,7 @@ export function compileObjectChildren(schemaObj, jsonSchema) {
             }
             continue;
           }
+
           result = validatePattern(dataKey, data, dataRoot);
           if (result != null) {
             dataKeys[i] = result;
@@ -376,6 +404,7 @@ export function compileObjectChildren(schemaObj, jsonSchema) {
             }
             continue;
           }
+
           result = validateAdditional(dataKey, data, dataRoot);
           dataKeys[i] = result;
           if (result === false) {

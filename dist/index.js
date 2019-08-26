@@ -3260,7 +3260,7 @@ function getStrictString(obj, def) {
 }
 
 function getStrictNumber(obj, def) {
-  return isStrictNumberType(obj) ? obj : def; // TODO: performance check for isNaN and Number!!!
+  return isStrictNumberType(obj) ? obj : def;
 }
 
 function getStrictInteger(obj, def = undefined) {
@@ -3403,6 +3403,20 @@ function createIsStrictObjectOfType(fn) {
   return usefull;
 }
 
+/* eslint-disable func-names */
+
+const isBrowser = typeof window !== 'undefined';
+
+const performance$1 = isBrowser
+  ? window.performance
+  : {
+    now: function (start) {
+      if (!start) return process.hrtime();
+      const end = process.hrtime(start);
+      return Math.round((end[0] * 1000) + (end[1] / 1000000));
+    },
+  };
+
 function compileType(schemaObj, jsonSchema) {
   const type = getStringOrArray(jsonSchema.type);
   const nullable = getBooleanishType(jsonSchema.nullable);
@@ -3429,8 +3443,9 @@ function compileType(schemaObj, jsonSchema) {
     const types = [];
     let isnullable = nullable || false;
     for (let i = 0; i < type.length; ++i) {
-      if (type === 'null') { isnullable = true; continue; }
-      const cb = createIsStrictDataType(type[i]);
+      const tp = type[i];
+      if (tp === 'null') { isnullable = true; continue; }
+      const cb = createIsStrictDataType(tp);
       if (cb) types.push(cb);
     }
     if (types.length > 0) {
@@ -3466,40 +3481,32 @@ function compileType(schemaObj, jsonSchema) {
   return undefined;
 }
 
-function compileRequired(schemaObj, jsonSchema) {
-  const required = getBoolOrArray(jsonSchema.required);
-  if (required === true) {
-    const addError = schemaObj.createMemberError('required', true, compileRequired, 'bool');
-    return function validateRequiredTrue(data) {
-      if (data === undefined) return addError(data);
-      if (data === null && typeof data !== 'object') return addError(data);
-      return true;
-    };
-  }
-  if (required != null) {
-    const addError = schemaObj.createMemberError('required', true, compileRequired, 'array');
-    return function validateRequired(data) {
-      if (data == null) return addError(data);
-      return true;
-    };
-  }
-  return undefined;
-}
-
 function compileTypeBasic(schemaObj, jsonSchema) {
+  const required = getBoolOrArray(jsonSchema.required, false);
   const fnType = compileType(schemaObj, jsonSchema);
-  const fnRequired = compileRequired(schemaObj, jsonSchema);
-  if (fnType && fnRequired) {
-    return function validateSchemaBasic(data) {
-      return fnType(data) && fnRequired(data);
-    };
+  if (required === false) {
+    if (fnType) {
+      return function validateTypeBasic(data) {
+        if (data === undefined) return true;
+        return fnType(data);
+      };
+    }
   }
   else if (fnType) {
-    return fnType;
+    const addError = schemaObj.createMemberError('required', required, compileTypeBasic);
+    return function validateRequiredType(data) {
+      if (data === undefined) return addError(data);
+      return fnType(data);
+    };
   }
-  else if (fnRequired) {
-    return fnRequired;
+  else {
+    const addError = schemaObj.createMemberError('required', required, compileTypeBasic);
+    return function validateRequiredData(data) {
+      if (data === undefined) return addError(data);
+      return true;
+    };
   }
+
   return undefined;
 }
 
@@ -3948,6 +3955,7 @@ function isOfSchemaType(schema, type) {
 
 function isOfStrictSchemaType(schema, type) {
   if (type == null) return false;
+  if (schema.type == null) return false;
   if (schema.type === type) return true;
   if (schema.type.constructor === Array && schema.type.length <= 2)
     return schema.type.includes('null') && schema.type.includes(type);
@@ -4027,7 +4035,7 @@ function isPrimitiveSchema(schema) {
 
 function compileEnumBasic(schemaObj, jsonSchema) {
   const enums = getArrayMinItems(jsonSchema.enum, 1);
-  if (enums) {
+  if (enums) { // TODO remove type checking! simplify!
     if (isPrimitiveSchema(jsonSchema)) {
       const addError = schemaObj.createMemberError(
         'enum',
@@ -4529,7 +4537,7 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
 }
 
 function compileObjectBasic(schemaObj, jsonSchema) {
-  const checkBounds = compileCheckBounds(schemaObj, jsonSchema);
+  const checkBounds = fallbackFn(compileCheckBounds(schemaObj, jsonSchema));
   const valProps = compileRequiredProperties(schemaObj, jsonSchema, checkBounds);
   const valPatts = compileRequiredPatterns(schemaObj, jsonSchema);
 
@@ -4548,8 +4556,25 @@ function compileObjectBasic(schemaObj, jsonSchema) {
   return undefined;
 }
 
+function compilePropertyNames(schemaObj, jsonSchema) {
+  const propNames = getObjectishType(jsonSchema.propertyNames);
+  if (propNames) {
+    const validate = schemaObj.createSingleValidator(
+      'propertyNames',
+      propNames,
+      compilePropertyNames);
+    if (validate != null) {
+      return function validatePropertyName(key) {
+        return validate(key);
+      };
+    }
+  }
+  return undefined;
+}
+
 function compilePropertyItem(schemaObj, jsonSchema) {
   const properties = getObjectishType(jsonSchema.properties);
+  if (properties == null) return undefined;
 
   const keys = Object.keys(properties);
   if (keys.length > 0) {
@@ -4647,11 +4672,12 @@ function compileAdditionalItem(schemaObj, jsonSchema) {
 }
 
 function compileObjectChildren(schemaObj, jsonSchema) {
+  const propNames = getObjectishType(jsonSchema.propertyNames);
   const properties = getObjectishType(jsonSchema.properties);
   const patterns = getObjectishType(jsonSchema.patternProperties);
   const additional = getBoolOrObject(jsonSchema.additionalProperties, true);
 
-  if (properties == null && patterns == null && additional === true)
+  if (propNames == null && properties == null && patterns == null && additional === true)
     return undefined;
 
   // make sure we are not part of a map!
@@ -4663,6 +4689,10 @@ function compileObjectChildren(schemaObj, jsonSchema) {
 
   // eslint-disable-next-line no-constant-condition
   {
+    const validateName = fallbackFn(
+      compilePropertyNames(schemaObj, jsonSchema),
+      trueThat,
+    );
     const validateProperty = fallbackFn(
       compilePropertyItem(schemaObj, jsonSchema),
       undefThat,
@@ -4684,6 +4714,11 @@ function compileObjectChildren(schemaObj, jsonSchema) {
         for (let i = 0; i < dataKeys.length; ++i) {
           if (errors > 32) break;
           const dataKey = dataKeys[i];
+          if (validateName(dataKey) === false) {
+            valid = false;
+            continue;
+          }
+
           let result = validateProperty(dataKey, data, dataRoot);
           if (result != null) {
             dataKeys[i] = result;
@@ -4693,6 +4728,7 @@ function compileObjectChildren(schemaObj, jsonSchema) {
             }
             continue;
           }
+
           result = validatePattern(dataKey, data, dataRoot);
           if (result != null) {
             dataKeys[i] = result;
@@ -4702,6 +4738,7 @@ function compileObjectChildren(schemaObj, jsonSchema) {
             }
             continue;
           }
+
           result = validateAdditional(dataKey, data, dataRoot);
           dataKeys[i] = result;
           if (result === false) {
@@ -4928,12 +4965,49 @@ function compileTupleChildren(schemaObj, jsonSchema) {
   };
 }
 
+function compileAllOf(schemaObj, jsonSchema) {
+  const allOf = getStrictArray(jsonSchema.allOf);
+  if (allOf == null) return undefined;
+  return falseThat;
+}
+
+function compileAnyOf(schemaObj, jsonSchema) {
+  const anyOf = getStrictArray(jsonSchema.anyOf);
+  if (anyOf == null) return undefined;
+  return falseThat;
+}
+
+function compileOneOf(schemaObj, jsonSchema) {
+  const oneOf = getStrictArray(jsonSchema.oneOf);
+  if (oneOf == null) return undefined;
+  return falseThat;
+}
+
+function compileNotOf(schemaObj, jsonSchema) {
+  const notOf = getStrictArray(jsonSchema.not);
+  if (notOf == null) return undefined;
+  return falseThat;
+}
+
+function compileCombineSchema(schemaObj, jsonSchema) {
+  const fnAllOf = fallbackFn(compileAllOf(schemaObj, jsonSchema), trueThat);
+  const fnAnyOf = fallbackFn(compileAnyOf(schemaObj, jsonSchema), trueThat);
+  const fnOneOf = fallbackFn(compileOneOf(schemaObj, jsonSchema), trueThat);
+  const fnNotOf = fallbackFn(compileNotOf(schemaObj, jsonSchema), trueThat);
+  return fnAllOf && fnAnyOf && fnOneOf && fnNotOf;
+}
+
+function compileConditionSchema(schemaObj, jsonSchema) {
+  const jsif = getObjectishType(jsonSchema.if);
+  const jsthen = getObjectishType(jsonSchema.then);
+  const jselse = getObjectishType(jsonSchema.else);
+  if (jsif == null && jsthen == null && jselse == null) return trueThat;
+  return falseThat;
+}
+
 /* eslint-disable function-paren-newline */
 
 function compileSchemaBasic(schemaObj, jsonSchema) {
-  const fnType = fallbackFn(
-    compileTypeBasic(schemaObj, jsonSchema),
-  );
   const fnFormat = fallbackFn(
     compileFormatBasic(schemaObj, jsonSchema),
   );
@@ -4953,16 +5027,14 @@ function compileSchemaBasic(schemaObj, jsonSchema) {
     compileArrayBasic(schemaObj, jsonSchema),
   );
 
-  return function validateSchemaObject(data, dataRoot) {
-    const vType = fnType(data, dataRoot);
+  return function validateSchemaBasic(data, dataRoot) {
     const vFormat = fnFormat(data, dataRoot);
     const vEnum = fnEnum(data, dataRoot);
     const vNumber = fnNumber(data, dataRoot);
     const vString = fnString(data, dataRoot);
     const vObject = fnObject(data, dataRoot);
     const vArray = fnArray(data, dataRoot);
-    return vType
-      && vFormat
+    return vFormat
       && vEnum
       && vNumber
       && vString
@@ -4998,29 +5070,39 @@ function compileSchemaChildren(schemaObj, jsonSchema) {
 }
 
 // eslint-disable-next-line no-unused-vars
-function compileSchemaSelectors(schemaObj, jsonSchema) {
-  return trueThat;
-}
+function compileSchemaAdvanced(schemaObj, jsonSchema) {
+  const fnCombine = compileCombineSchema(schemaObj, jsonSchema);
+  const fnCondition = compileConditionSchema(schemaObj, jsonSchema);
 
-// eslint-disable-next-line no-unused-vars
-function compileSchemaConditions(schemaObj, jsonSchema) {
-  return trueThat;
+  if (fnCombine && fnCondition) {
+    return function validateAdvandedSchema(data, dataRoot) {
+      return fnCombine(data, dataRoot) && fnCondition(data, dataRoot);
+    };
+  }
+  return fnCombine || fnCondition;
 }
 
 function compileSchemaObject(schemaObj, jsonSchema) {
+  if (jsonSchema === true) return trueThat;
+  if (jsonSchema === false) return falseThat;
   if (!isStrictObjectType(jsonSchema)) {
     return falseThat;
   }
 
+  const fnType = fallbackFn(compileTypeBasic(schemaObj, jsonSchema));
+
   const validateBasic = compileSchemaBasic(schemaObj, jsonSchema);
   const validateChildren = compileSchemaChildren(schemaObj, jsonSchema);
-  const validateSelectors = compileSchemaSelectors();
-  const validateConditions = compileSchemaConditions();
+  const validateAdvanced = compileSchemaAdvanced(schemaObj, jsonSchema);
 
   return function validateSchemaObject(data, dataRoot) {
+    // test type, nullable and required properties of schema
+    const vType = fnType(data, dataRoot);
+    if (vType === false) return false;
+    if (data === undefined) return true;
+
     return validateBasic(data, dataRoot)
-      && validateSelectors(data, dataRoot)
-      && validateConditions(data, dataRoot)
+      && validateAdvanced(data, dataRoot)
       && validateChildren(data, dataRoot);
   };
 }
@@ -5055,22 +5137,24 @@ class SchemaRoot {
 
   addErrorSingle(member, value, rest) {
     this.errors.push(new SchemaError(
-      performance.now(),
+      performance$1.now(),
       member,
       null,
       value,
       rest,
     ));
+    return false;
   }
 
   addErrorPair(member, key, value, rest) {
     this.errors.push(new SchemaError(
-      performance.now(),
+      performance$1.now(),
       member,
       key,
       value,
       rest,
     ));
+    return false;
   }
 
   validate(data) {
@@ -5117,33 +5201,36 @@ class SchemaObject {
   }
 
   createMemberError(key, expected, ...rest) {
+    const self = this;
     const member = new SchemaMember(
-      this,
+      self,
       key,
       expected,
       rest,
     );
 
-    if (isStrictArrayType(key)) {
-      this.members.push(...key);
-      return function addErrorPair(dataKey, data, ...meta) {
-        return this.addErrorPair(member, dataKey, data, meta);
-      };
-    }
-    else if (isStrictStringType(key)) {
-      this.members.push(key);
+    if (isStrictStringType(key)) {
+      self.members.push(key);
       return function addErrorSingle(data, ...meta) {
-        return this.addErrorSingle(member, data, meta);
+        return self.addErrorSingle(member, data, meta);
       };
     }
+    else if (isStrictArrayType(key)) {
+      self.members.push(...key);
+      return function addErrorPair(dataKey, data, ...meta) {
+        return self.addErrorPair(member, dataKey, data, meta);
+      };
+    }
+
     return undefined;
   }
 
   createSingleValidator(key, child, ...rest) {
+    const self = this;
     if (isStrictStringType(key)) {
       const childObj = new SchemaObject(
-        this.schemaRoot,
-        JSONPointer_concatPath(this.schemaPath, key),
+        self.schemaRoot,
+        JSONPointer_concatPath(self.schemaPath, key),
         rest,
       );
       const validator = compileSchemaObject(childObj, child);
@@ -5154,14 +5241,15 @@ class SchemaObject {
   }
 
   createPairValidator(member, key, child, ...rest) {
+    const self = this;
     const valid = member instanceof SchemaMember
       && isStrictStringType(key)
       && isObjectishType(child);
     if (!valid) return undefined;
 
     const childObj = new SchemaObject(
-      this.schemaRoot,
-      JSONPointer_concatPath(this.schemaPath, member.schemaKey, key),
+      self.schemaRoot,
+      JSONPointer_concatPath(self.schemaPath, member.schemaKey, key),
       rest,
     );
     const validator = compileSchemaObject(childObj, child);
@@ -5195,7 +5283,7 @@ function compileJSONSchema(baseUri, json) {
   const first = root.firstSchema;
   first.validateFn = compileSchemaObject(first, json);
 
-  registeredDocuments[baseUri] = first;
+  registeredDocuments[baseUri] = root;
 
   return true;
 }

@@ -111,6 +111,7 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
   const validateAdvanced = compileSchemaAdvanced(schemaObj, jsonSchema);
 
   return function validateSchemaObject(data, dataRoot) {
+    // test type, nullable and required properties of schema
     const vType = fnType(data, dataRoot);
     if (vType === false) return false;
     if (data === undefined) return true;
