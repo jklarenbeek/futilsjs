@@ -4817,8 +4817,8 @@ function compileArrayChildren(schemaObj, jsonSchema) {
       items,
       compileArrayChildren);
     if (validate != null) {
-      return function validateItem(childData, dataRoot) {
-        return validate(childData, dataRoot);
+      return function validateItem(data, dataRoot) {
+        return validate(data, dataRoot);
       };
     }
 
@@ -4855,7 +4855,7 @@ function compileArrayChildren(schemaObj, jsonSchema) {
           if (errors > 32) break;
           const obj = data[i];
           if (validateItem) {
-            if (validateItem(i, obj, dataRoot) === false) {
+            if (validateItem(obj, dataRoot) === false) {
               valid = false;
               errors++;
               continue;

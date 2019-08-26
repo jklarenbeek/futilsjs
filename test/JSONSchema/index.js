@@ -9,18 +9,13 @@ import {
 
 // registerDefaultFormatCompilers();
 
-compileJSONSchema('objectPatterns1', {
-  type: 'object',
-  patternProperties: {
-    '^S_': { type: 'string' },
-    '^I_': { type: 'integer' },
+compileJSONSchema('arrayContains1', {
+  type: 'array',
+  contains: {
+    type: 'number',
   },
-  additionalProperties: false,
 });
-
-const root = getJSONSchema('objectPatterns1');
-console.log(root.validate({ S_25: 'This is a string' }), 'key within pattern with string value');
-console.log(root.validate({ I_42: 42 }), 'key within pattern with integer value');
-console.log(root.validate({ S_0: 108 }), 'key with pattern but wrong value type');
-console.log(root.validate({ I_42: '42' }), 'key integer within pattern but wrong value type');
-console.log(root.validate({ keyword: 'value' }), 'wrong key value pair');
+const root = getJSONSchema('arrayContains1');
+console.log(root.validate([1, 2, 3, 4, 5]), 'All number array validates');
+console.log(root.validate(['life', 'universe', 'everything', 42]), 'A single “number” is enough to make this pass');
+console.log(root.validate(['life', 'universe', 'everything', 'forty-two']), 'But if we have no number, it fails');

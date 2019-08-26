@@ -123,6 +123,7 @@ describe('#types()', function () {
       assert.isFalse(root.validate(null), 'not validates null!');
       assert.isTrue(root.validate([]), 'validates an empty array literal');
       assert.isTrue(root.validate([1, 2, 3, 4, 5]), 'validates array of integers');
+      assert.isTrue(root.validate([1, '2', null, {}, 5]), 'validates array of integers');
       assert.isTrue(root.validate([3, 'different', { types: 'of values' }]), 'validates array of objects');
       assert.isFalse(root.validate({ Not: 'an array' }), 'not an array type');
       assert.isFalse(root.validate(2.99792458e8), 'not a number type');
