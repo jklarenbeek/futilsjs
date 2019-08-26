@@ -80,39 +80,31 @@ function compileType(schemaObj, jsonSchema) {
   return undefined;
 }
 
-function compileRequired(schemaObj, jsonSchema) {
-  const required = getBoolOrArray(jsonSchema.required);
-  if (required === true) {
-    const addError = schemaObj.createMemberError('required', true, compileRequired, 'bool');
-    return function validateRequiredTrue(data) {
-      if (data === undefined) return addError(data);
-      if (data === null && typeof data !== 'object') return addError(data);
-      return true;
-    };
-  }
-  if (required != null) {
-    const addError = schemaObj.createMemberError('required', true, compileRequired, 'array');
-    return function validateRequired(data) {
-      if (data == null) return addError(data);
-      return true;
-    };
-  }
-  return undefined;
-}
-
 export function compileTypeBasic(schemaObj, jsonSchema) {
+  const required = getBoolOrArray(jsonSchema.required, false);
   const fnType = compileType(schemaObj, jsonSchema);
-  const fnRequired = compileRequired(schemaObj, jsonSchema);
-  if (fnType && fnRequired) {
-    return function validateSchemaBasic(data) {
-      return fnType(data) && fnRequired(data);
-    };
+  if (required === false) {
+    if (fnType) {
+      return function validateTypeBasic(data) {
+        if (data === undefined) return true;
+        return fnType(data);
+      };
+    }
   }
   else if (fnType) {
-    return fnType;
+    const addError = schemaObj.createMemberError('required', required, compileTypeBasic);
+    return function validateRequiredType(data) {
+      if (data === undefined) return addError(data);
+      return fnType(data);
+    };
   }
-  else if (fnRequired) {
-    return fnRequired;
+  else {
+    const addError = schemaObj.createMemberError('required', required, compileTypeBasic);
+    return function validateRequiredData(data) {
+      if (data === undefined) return addError(data);
+      return true;
+    };
   }
+
   return undefined;
 }

@@ -14,15 +14,6 @@ registerDefaultFormatCompilers();
 // https://json-schema.org/understanding-json-schema/reference/type.html
 
 describe('#arrays()', function () {
-
-  it('should validate array types', function () {
-    compileJSONSchema('arrayType1', { type: 'number' });
-    const root = getJSONSchema('arrayType1');
-    assert.isTrue(root.validate([1, 2, 3, 4, 5]), 'validates array of integers');
-    assert.isTrue(root.validate([3, 'different', { types: 'of values' }]), 'validates array of objects');
-    assert.isFalse(root.validate({ Not: 'an array' }), 'not an array type');
-  });
-
   it('should validate each item with number', function () {
     compileJSONSchema('arrayNumber1', {
       type: 'array',
