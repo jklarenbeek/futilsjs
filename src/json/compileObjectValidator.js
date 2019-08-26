@@ -203,7 +203,7 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
 }
 
 export function compileObjectBasic(schemaObj, jsonSchema) {
-  const checkBounds = compileCheckBounds(schemaObj, jsonSchema);
+  const checkBounds = fallbackFn(compileCheckBounds(schemaObj, jsonSchema));
   const valProps = compileRequiredProperties(schemaObj, jsonSchema, checkBounds);
   const valPatts = compileRequiredPatterns(schemaObj, jsonSchema, checkBounds);
 

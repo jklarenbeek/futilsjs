@@ -14,8 +14,10 @@
           "--colors",
           "${workspaceFolder}/test"
       ],
+      "sourceMaps": true,
       "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen"
+      "internalConsoleOptions": "neverOpen",
+      "outFiles": ["${workspaceRoot}/.vscode/out/*"],
     },
     {
       "type": "node",
