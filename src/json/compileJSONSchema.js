@@ -50,6 +50,7 @@ class SchemaRoot {
       value,
       rest,
     ));
+    return false;
   }
 
   addErrorPair(member, key, value, rest) {
@@ -60,6 +61,7 @@ class SchemaRoot {
       value,
       rest,
     ));
+    return false;
   }
 
   validate(data) {
