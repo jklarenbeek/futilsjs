@@ -9,13 +9,18 @@ import {
 
 // registerDefaultFormatCompilers();
 
-compileJSONSchema('propertyNames1', {
+compileJSONSchema('objectPatterns1', {
   type: 'object',
-  propertyNames: {
-    pattern: '^[A-Za-z_][A-Za-z0-9_]*$',
+  patternProperties: {
+    '^S_': { type: 'string' },
+    '^I_': { type: 'integer' },
   },
+  additionalProperties: false,
 });
 
-const root = getJSONSchema('propertyNames1');
-console.log(root.validate({ _a_proper_token_001: 'value' }), 'a valid id/key token');
-console.log(root.validate({ '001 invalid': 'key' }), 'an invalid id/key token');
+const root = getJSONSchema('objectPatterns1');
+console.log(root.validate({ S_25: 'This is a string' }), 'key within pattern with string value');
+console.log(root.validate({ I_42: 42 }), 'key within pattern with integer value');
+console.log(root.validate({ S_0: 108 }), 'key with pattern but wrong value type');
+console.log(root.validate({ I_42: '42' }), 'key integer within pattern but wrong value type');
+console.log(root.validate({ keyword: 'value' }), 'wrong key value pair');

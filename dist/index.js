@@ -4632,8 +4632,8 @@ function compilePatternItem(schemaObj, jsonSchema) {
         for (let i = 0; i < regKeys.length; ++i) {
           const rky = regKeys[i];
           const rxp = regs[rky];
-          if (rxp != null && rxp.test(key)) {
-            const validate = props[key];
+          if (rxp.test(key)) {
+            const validate = props[rky];
             return validate(data[key], dataRoot);
           }
         }
