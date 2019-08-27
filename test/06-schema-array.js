@@ -30,7 +30,7 @@ describe('Schema Array Type', function () {
       assert.isFalse(root.validate([1, 2, 3, 4]), 'four items are invalid');
     });
     it('should ensure uniqueness of array', function () {
-      assert.isTrue(compileJSONSchema('arrayUniqueness', {
+      assert.isTrue(compileJSONSchema('arrayUniqueness1', {
         type: 'array',
         uniqueItems: true,
       }));
@@ -90,6 +90,7 @@ describe('Schema Array Type', function () {
       const root = getJSONSchema('arrayBoolean1');
       assert.isTrue(root.validate([1, 'foo', true]), 'any array is valid');
       assert.isTrue(root.validate([]), 'an empty array is valid');
+      assert.isTrue(root.validate('string'), 'a string is valid');
 
     });
 

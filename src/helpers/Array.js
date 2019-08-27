@@ -1,7 +1,13 @@
 /* eslint-disable no-extend-native */
 
-export function Array_unique(array) {
-  return array.filter((el, index, a) => index === a.indexOf(el));
+export function Array_isUnique(array) {
+  const len = array.length;
+  return Array_getUnique(array).length === len;
+}
+
+export function Array_getUnique(array) {
+  const filtered = array.filter((el, index, a) => index === a.indexOf(el));
+  return filtered;
   // return Array.from(new Set(array));
 }
 
@@ -72,7 +78,7 @@ export function Array_patchPrototype() {
     return value;
   };
   Array.prototype.getUnique = function Array_prototype_getUnique() {
-    return Array_unique(this);
+    return Array_getUnique(this);
   };
   Array.prototype.mergeUnique = function Array_prototype_mergeUnique(right = []) {
     return Array_uniqueMerge(this, right);
@@ -83,7 +89,7 @@ export function Array_patchPrototype() {
 }
 
 export default {
-  uniqueArray: Array_unique,
+  uniqueArray: Array_getUnique,
   uniqueMergeArray: Array_uniqueMerge,
   collapseShallow: Array_collapseShallow,
 };

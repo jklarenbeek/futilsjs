@@ -6,6 +6,7 @@ import {
 import {
   getObjectishType,
   getIntegerishType,
+  getBooleanishType,
 } from '../types/getDataType';
 
 import {
@@ -16,9 +17,13 @@ import {
   isArrayOrSet,
 } from '../types/isDataTypeExtra';
 
-export function compileArrayBasic(schemaObj, jsonSchema) {
+import {
+  Array_isUnique,
+} from '../helpers/Array';
+
+function compileArrayBounds(schemaObj, jsonSchema) {
   const min = getIntegerishType(jsonSchema.minItems);
-  const max = getIntegerishType(jsonSchema.maxItem);
+  const max = getIntegerishType(jsonSchema.maxItems);
 
   function compileMinItems() {
     if (min > 0) {
@@ -62,6 +67,37 @@ export function compileArrayBasic(schemaObj, jsonSchema) {
     };
   }
   return minItems || maxItems;
+}
+
+function compileArrayUniqueness(schemaObj, jsonSchema) {
+  const unique = getBooleanishType(jsonSchema.uniqueItems);
+  if (unique === true) {
+    const addError = schemaObj.createMemberError(
+      'uniqueItems',
+      unique,
+      compileArrayUniqueness);
+    // eslint-disable-next-line no-unused-vars
+    return function validateUniqueItems(data, dataRoot) {
+      if (isArrayishType(data)) {
+        if (!Array_isUnique(data)) {
+          return addError(data);
+        }
+      }
+      return true;
+    };
+  }
+  return undefined;
+}
+
+export function compileArrayBasic(schemaObj, jsonSchema) {
+  const bounds = compileArrayBounds(schemaObj, jsonSchema);
+  const unique = compileArrayUniqueness(schemaObj, jsonSchema);
+  if (bounds && unique) {
+    return function validateArrayBasic(data, dataRoot) {
+      return bounds(data, dataRoot) && unique(data, dataRoot);
+    };
+  }
+  return bounds || unique;
 }
 
 export function compileArrayChildren(schemaObj, jsonSchema) {
