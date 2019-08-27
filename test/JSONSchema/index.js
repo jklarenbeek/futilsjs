@@ -9,13 +9,11 @@ import {
 
 // registerDefaultFormatCompilers();
 
-compileJSONSchema('arrayContains1', {
-  type: 'array',
-  contains: {
-    type: 'number',
-  },
+compileJSONSchema('enumBasic3', {
+  type: 'string',
+  enum: ['red', 'amber', 'green', null, 42],
 });
-const root = getJSONSchema('arrayContains1');
-console.log(root.validate([1, 2, 3, 4, 5]), 'All number array validates');
-console.log(root.validate(['life', 'universe', 'everything', 42]), 'A single “number” is enough to make this pass');
-console.log(root.validate(['life', 'universe', 'everything', 'forty-two']), 'But if we have no number, it fails');
+
+const root = getJSONSchema('enumBasic3');
+console.log(root.validate('red'), 'red is a valid enum type');
+console.log(root.validate(null), 'null will not be accepted!');

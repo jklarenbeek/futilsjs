@@ -35,8 +35,8 @@ describe('Schema Generics', function () {
       assert.isFalse(root.validate(0), 'a zero is not ok!');
     });
 
-    it('should validate a composite type', function () {
-      compileJSONSchema('enumBasic3', {
+    it('should validate a composite type with enum', function () {
+      compileJSONSchema('enumsBasic3', {
         type: 'string',
         enum: ['red', 'amber', 'green', null, 42],
       });

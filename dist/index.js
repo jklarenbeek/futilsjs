@@ -3944,6 +3944,27 @@ function compileFormatBasic(schemaObj, jsonSchema) {
   return undefined;
 }
 
+function compileEnumBasic(schemaObj, jsonSchema) {
+  const enums = getArrayMinItems(jsonSchema.enum, 1);
+  if (enums) { // TODO remove type checking! simplify!
+    const addError = schemaObj.createMemberError(
+      'enum',
+      enums,
+      compileEnumBasic,
+    );
+    return function validateEnumBasic(data) {
+      if (data != null && typeof data !== 'object') {
+        if (!enums.includes(data)) {
+          addError(data);
+          return false;
+        }
+      }
+      return true;
+    };
+  }
+  return undefined;
+}
+
 function isOfSchemaType(schema, type) {
   if (type == null) return false;
   if (schema.type === type) return true;
@@ -3971,27 +3992,6 @@ function isUnkownSchema(schema) {
     && schema.contains == null
     && schema.additionalItems == null);
 }
-
-//#region is-primitive
-function isBooleanSchema(schema) {
-  const isknown = isOfStrictSchemaType(schema, 'boolean');
-  const isvalid = isUnkownSchema(schema)
-    && (typeof schema.const === 'boolean'
-      || typeof schema.default === 'boolean');
-  return isknown || isvalid;
-}
-function isNumberSchema(schema) {
-  const isknown = isOfStrictSchemaType(schema, 'number');
-  const isformat = isStrictStringType(schema.format)
-    && floatFormats[schema.format] != null;
-
-  const isconst = (Number(schema.const) || false) !== false;
-  const isdeflt = (Number(schema.default) || false) !== false;
-
-  const isvalid = isUnkownSchema(schema) && (isconst || isdeflt);
-
-  return isknown || isformat || isvalid;
-}
 function isIntegerSchema(schema) {
   const isknown = isOfStrictSchemaType(schema, 'integer');
   const isformat = typeof schema.format === 'string'
@@ -4016,44 +4016,6 @@ function isBigIntSchema(schema) {
     && (typeof schema.const === 'bigint' || typeof schema.default === 'bigint');
 
   return isknown || isformat || isvalid;
-}
-function isStringSchema(schema) {
-  const isknown = isOfStrictSchemaType(schema, 'string');
-  const isvalid = isUnkownSchema(schema)
-    && (typeof schema.const === 'string'
-      || typeof schema.default === 'string');
-
-  return isknown || isvalid;
-}
-function isPrimitiveSchema(schema) {
-  return isStringSchema(schema)
-    || isIntegerSchema(schema)
-    || isBigIntSchema(schema)
-    || isNumberSchema(schema)
-    || isBooleanSchema(schema);
-}
-
-function compileEnumBasic(schemaObj, jsonSchema) {
-  const enums = getArrayMinItems(jsonSchema.enum, 1);
-  if (enums) { // TODO remove type checking! simplify!
-    if (isPrimitiveSchema(jsonSchema)) {
-      const addError = schemaObj.createMemberError(
-        'enum',
-        enums,
-        compileEnumBasic,
-      );
-      return function validateEnumBasic(data) {
-        if (data != null && typeof data !== 'object') {
-          if (!enums.includes(data)) {
-            addError(data);
-            return false;
-          }
-        }
-        return true;
-      };
-    }
-  }
-  return undefined;
 }
 
 function compileNumberMaximum(schemaObj, jsonSchema) {
