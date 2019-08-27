@@ -13,7 +13,7 @@ describe('Schema Generics', function () {
 
   // https://json-schema.org/understanding-json-schema/reference/generic.html
   describe('#enums()', function () {
-    it('should validate a string enum of red, amber and green', function () {
+    it('should validate a string enum type', function () {
       compileJSONSchema('enumsBasic1', {
         type: 'string',
         enum: ['red', 'amber', 'green'],
@@ -24,7 +24,7 @@ describe('Schema Generics', function () {
       assert.isFalse(root.validate('blue'), 'blue isn\'t a valid enum value');
     });
 
-    it('should validate a dynamic array of colors, numbers and null', function () {
+    it('should validate simple heterogeneous type', function () {
       compileJSONSchema('enumsBasic2', {
         enum: ['red', 'amber', 'green', null, 42],
       });
@@ -35,7 +35,7 @@ describe('Schema Generics', function () {
       assert.isFalse(root.validate(0), 'a zero is not ok!');
     });
 
-    it('should validate a composite type with enum', function () {
+    it('should validate string types only', function () {
       compileJSONSchema('enumsBasic3', {
         type: 'string',
         enum: ['red', 'amber', 'green', null, 42],
@@ -46,12 +46,152 @@ describe('Schema Generics', function () {
       assert.isFalse(root.validate(null), 'null will not be accepted!');
     });
 
+    it('should validate numbers only', function () {
+      compileJSONSchema('enumsSimple1', { enum: [1, 2, 3] });
+      const root = getJSONSchema('enumsSimple1');
+      assert.isTrue(root.validate(1), 'one member of enum is valid');
+      assert.isFalse(root.validate(4), 'something else is invalid');
+    });
+
+    it('should validate deep heterogeneous types', function () {
+      compileJSONSchema('enumHetero1', { enum: [6, 'foo', [], true, { foo: 12 }] });
+      const root = getJSONSchema('enumHetero1');
+      assert.isTrue(root.validate([]), 'empty array is valid');
+      assert.isFalse(root.validate([754, 285]), 'other array is invalid');
+      assert.isFalse(root.validate(null), 'null is invalid');
+      assert.isFalse(root.validate({ foo: false }), 'other object is invalid');
+      assert.isTrue(root.validate({ foo: 12 }), 'same object is valid');
+    });
+
+    it('should validate enums in properties', function () {
+      compileJSONSchema('enumsProps1', {
+        type: 'object',
+        properties: {
+          foo: { enum: ['foo'] },
+          bar: { enum: ['bar'] },
+        },
+        required: ['bar'],
+      });
+      const root = getJSONSchema('enumsProps1');
+      assert.isTrue(root.validate({ foo: 'foo', bar: 'bar' }), 'both properties are valid');
+      assert.isTrue(root.validate({ bar: 'bar' }), 'missing optional property is valid');
+      assert.isFalse(root.validate({ foo: 'foo' }), 'missing required property is invalid');
+      assert.isFalse(root.validate({}), 'missing all properties is invalid');
+    });
+    it('should validate enum with escaped characters', function () {
+      compileJSONSchema('enumsEscape1', { enum: ['foo\nbar', 'foo\rbar'] });
+      const root = getJSONSchema('enumsEscape1');
+      assert.isTrue(root.validate('foo\nbar'), 'member 1 is valid');
+      assert.isTrue(root.validate('foo\rbar'), 'member 2 is valid');
+      assert.isFalse(root.validate('abc'), 'another string is invalid');
+    });
+
+    it('should validate enum with false', function () {
+      compileJSONSchema('enumsFalse1', { enum: [false] });
+      const root = getJSONSchema('enumsFalse1');
+      assert.isTrue(root.validate(false), 'false is valid');
+      assert.isFalse(root.validate(0), 'integer zero is invalid');
+      assert.isFalse(root.validate('0'), 'string zero character is invalid');
+    });
+
+    it('should validate enum with true', function () {
+      compileJSONSchema('enumsTrue1', { enum: [true] });
+      const root = getJSONSchema('enumsTrue1');
+      assert.isTrue(root.validate(true), 'true is valid');
+      assert.isFalse(root.validate(1), 'integer one is invalid');
+      assert.isFalse(root.validate('1'), 'string one character is invalid');
+    });
+
+    it('should validate enum with number 0', function () {
+      compileJSONSchema('enumsZero1', { enum: [0] });
+      const root = getJSONSchema('enumsZero1');
+      assert.isTrue(root.validate(0), '0 is valid');
+      assert.isFalse(root.validate(false), 'integer zero is invalid');
+      assert.isFalse(root.validate('0'), 'string zero character is invalid');
+    });
+
+    it('should validate enum with true', function () {
+      compileJSONSchema('enumsOne1', { enum: [1] });
+      const root = getJSONSchema('enumsOne1');
+      assert.isTrue(root.validate(1), '1 is valid');
+      assert.isFalse(root.validate(true), 'bool true is invalid');
+      assert.isFalse(root.validate('1'), 'string one character is invalid');
+    });
+
   });
 
   describe('#consts()', function () {
+    it('should validate a constant number', function () {
+      compileJSONSchema('constNumber1', { const: 2 });
+      const root = getJSONSchema('constNumber1');
+      assert.isTrue(root.validate(2), 'same value is valid');
+      assert.isFalse(root.validate(5), 'another value is invalid');
+      assert.isFalse(root.validate('ABC'), 'another type is invalid');
+    });
+
+    it('should validate a constant object', function () {
+      compileJSONSchema('constObject1', {
+        const: { foo: 'bar', baz: 'bax' },
+      });
+      const root = getJSONSchema('constObject1');
+      assert.isTrue(root.validate({ foo: 'bar', baz: 'bax' }), 'same object is valid');
+      assert.isTrue(root.validate({ baz: 'bax', foo: 'bar' }), 'same object with different property order is valid');
+      assert.isFalse(root.validate({ foo: 'bar' }), 'another object is invalid');
+      assert.isFalse(root.validate([1, 2, 3]), 'another type is invalid');
+    });
+
+    it('should validate a constant array', function () {
+      compileJSONSchema('constArray1', {
+        const: [{ foo: 'bar' }],
+      });
+      const root = getJSONSchema('constArray1');
+      assert.isTrue(root.validate([{ foo: 'bar' }]), 'same array is valid');
+      assert.isFalse(root.validate([2]), 'another array item is invalid');
+      assert.isFalse(root.validate([1, 2, 3]), 'array with additional items is invalid');
+    });
+
+    it('should validate a const null', function () {
+      compileJSONSchema('constNull1', { const: null });
+      const root = getJSONSchema('constNull1');
+      assert.isTrue(root.validate(null), 'null is valid');
+      assert.isFalse(root.validate(0), 'not null is invalid');
+    });
+
+    it('should validate const with false', function () {
+      compileJSONSchema('constFalse1', { const: false });
+      const root = getJSONSchema('constFalse1');
+      assert.isTrue(root.validate(false), 'false is valid');
+      assert.isFalse(root.validate(0), 'integer zero is invalid');
+      assert.isFalse(root.validate('0'), 'string zero character is invalid');
+    });
+
+    it('should validate const with true', function () {
+      compileJSONSchema('constTrue1', { const: true });
+      const root = getJSONSchema('constTrue1');
+      assert.isTrue(root.validate(true), 'true is valid');
+      assert.isFalse(root.validate(1), 'integer one is invalid');
+      assert.isFalse(root.validate('1'), 'string one character is invalid');
+    });
+
+    it('should validate const with number 0', function () {
+      compileJSONSchema('constZero1', { const: 0 });
+      const root = getJSONSchema('constZero1');
+      assert.isTrue(root.validate(0), '0 is valid');
+      assert.isFalse(root.validate(false), 'integer zero is invalid');
+      assert.isFalse(root.validate('0'), 'string zero character is invalid');
+    });
+
+    it('should validate const with true', function () {
+      compileJSONSchema('constOne1', { const: 1 });
+      const root = getJSONSchema('constOne1');
+      assert.isTrue(root.validate(1), '1 is valid');
+      assert.isFalse(root.validate(true), 'bool true is invalid');
+      assert.isFalse(root.validate('1'), 'string one character is invalid');
+    });
+
     // https://json-schema.org/understanding-json-schema/reference/generic.html#const
     it('should be a country!', function () {
-      compileJSONSchema('constBasic1', {
+      compileJSONSchema('constObject2', {
         properties: {
           country: {
             const: 'Amsterdam',
@@ -59,7 +199,7 @@ describe('Schema Generics', function () {
         },
       });
 
-      const root = getJSONSchema('constBasic1');
+      const root = getJSONSchema('constObject2');
       assert.isTrue(root.validate({ country: 'Amsterdam' }), 'data === Amsterdam');
       assert.isFalse(root.validate({ country: 'The Netherlands' }), 'data != Amsterdam');
     });
