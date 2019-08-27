@@ -9,10 +9,9 @@ import {
   getJSONSchema,
 } from '../src/json';
 
-// https://json-schema.org/understanding-json-schema/reference/combining.html
-
 describe('Schema Combination', function () {
   describe('#allOf()', function () {
+    // https://json-schema.org/understanding-json-schema/reference/combining.html
     it('should  be all or nothing string size', function () {
       compileJSONSchema('combineAllOf1', {
         allOf: [
@@ -41,69 +40,133 @@ describe('Schema Combination', function () {
       assert.isFalse(root.Validate({}), 'an object will not validate either');
     });
 
-    it('should be a type of inheritance 3a', function () {
-      compileJSONSchema('combineAllOf3a', {
-        definitions: {
-          address: {
-            type: 'object',
-            properties: {
-              street_address: { type: 'string' },
-              city: { type: 'string' },
-              state: { type: 'string' },
-            },
-            required: ['street_address', 'city', 'state'],
-          },
-        },
+    // https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/master/tests/draft7/allOf.json
+    it('should validate multiple properties from different objects', function () {
+      compileJSONSchema('testAllOf1', {
         allOf: [
-          { $ref: '#/definitions/address' },
           {
             properties: {
-              type: { enum: ['residential', 'business'] },
+              bar: { type: 'integer' },
             },
+            required: ['bar'],
+          },
+          {
+            properties: {
+              foo: { type: 'string' },
+            },
+            required: ['foo'],
           },
         ],
       });
 
-      const root = getJSONSchema('combineAllOf3a');
-      assert.isTrue(root.validate({
-        street_address: '1600 Pennsylvania Avenue NW',
-        city: 'Washington',
-        state: 'DC',
-        type: 'business',
-      }), 'a valid address with reference');
+      const root = getJSONSchema('testAllOf1');
+      assert.isTrue(root.validate({ foo: 'baz', bar: 2 }), 'both properties are required');
+      assert.isFalse(root.validate({ foo: 'baz' }), 'missing second property');
+      assert.isFalse(root.validate({ bar: 2 }), 'missing first property');
+      assert.isFalse(root.validate({ foo: 'baz', bar: 'quux' }), 'wong type second property');
     });
 
-    it('should be a type of inheritance 3b', function () {
-      compileJSONSchema('combineAllOf3b', {
-        definitions: {
-          address: {
-            type: 'object',
-            properties: {
-              street_address: { type: 'string' },
-              city: { type: 'string' },
-              state: { type: 'string' },
-            },
-            required: ['street_address', 'city', 'state'],
-          },
-        },
+    it('should validate allOf with base schema', function () {
+      compileJSONSchema('testAllOf2', {
+        properties: { bar: { type: 'integer' } },
+        required: ['bar'],
         allOf: [
-          { $ref: '#/definitions/address' },
           {
             properties: {
-              type: { enum: ['residential', 'business'] },
+              foo: { type: 'string' },
             },
+            required: ['foo'],
+          },
+          {
+            properties: {
+              baz: { type: 'null' },
+            },
+            required: ['baz'],
           },
         ],
-        additionalProperties: false,
       });
+      const root = getJSONSchema('testAllOf2');
+      assert.isTrue(root.validate({ foo: 'quux', bar: 2, baz: null }), 'all properties available');
+      assert.isFalse(root.validate({ foo: 'quux', baz: null }), 'missing property base schema');
+      assert.isFalse(root.validate({ bar: 2, baz: null }), 'missing first allOf');
+      assert.isFalse(root.validate({ foo: 'quux', bar: 2 }), 'mismatch second allOf');
+      assert.isFalse(root.validate({ bar: 2 }), 'mismatch both allOf\'s');
+    });
 
-      const root = getJSONSchema('combineAllOf3b');
-      assert.isFalse(root.validate({
-        street_address: '1600 Pennsylvania Avenue NW',
-        city: 'Washington',
-        state: 'DC',
-        type: 'business',
-      }), 'same with no additional properties');
+    it('should validate allOf with simple type constraints', function () {
+      compileJSONSchema('numberAllOf3', {
+        allOf: [
+          { maximum: 30 },
+          { minimum: 20 },
+        ],
+      });
+      const root = getJSONSchema('numberAllOf3');
+      assert.isTrue(root.validate(25), '25 is between 20 and 30');
+      assert.isFalse(root.validate(35), '35 is higher then 30');
+    });
+
+    it('should validate with boolean schemas, all true', function () {
+      compileJSONSchema('booleanAllOf4', {
+        allOf: [true, true],
+      });
+      const root = getJSONSchema('booleanAllOf4');
+      assert.isTrue(root.validate('foo'), 'any value is valid');
+    });
+
+    it('should validate with boolean schemas, some false', function () {
+      compileJSONSchema('booleanAllOf5', {
+        allOf: [true, false],
+      });
+      const root = getJSONSchema('booleanAllOf5');
+      assert.isFalse(root.validate('foo'), 'any value is invalid');
+    });
+
+    it('should validate with boolean schemas, all false', function () {
+      compileJSONSchema('booleanAllOf6', {
+        allOf: [false, false],
+      });
+      const root = getJSONSchema('booleanAllOf6');
+      assert.isFalse(root.validate('foo'), 'any value is invalid');
+    });
+
+    it('should validate with one empty schema', function () {
+      compileJSONSchema('emptyAllOf1', {
+        allOf: [{}],
+      });
+      const root = getJSONSchema('emptyAllOf1');
+      assert.isTrue(root.validate(1), 'any value is valid');
+    });
+
+    it('should validate with two empty schemas', function () {
+      compileJSONSchema('emptyAllOf2', {
+        allOf: [{}, {}],
+      });
+      const root = getJSONSchema('emptyAllOf2');
+      assert.isTrue(root.validate(1), 'any value is valid');
+    });
+
+    it('should validate with first empty schemas', function () {
+      compileJSONSchema('emptyAllOf3', {
+        allOf: [
+          {},
+          { type: 'number' },
+        ],
+      });
+      const root = getJSONSchema('emptyAllOf3');
+      assert.isTrue(root.validate(1), 'number is valid');
+      assert.isFalse(root.validate('foo'), 'string is invalid');
+    });
+
+    it('should validate with last empty schemas', function () {
+      compileJSONSchema('emptyAllOf4', {
+        allOf: [
+          { type: 'number' },
+          {},
+        ],
+      });
+      const root = getJSONSchema('emptyAllOf4');
+      assert.isTrue(root.validate(1), 'number is valid');
+      assert.isFalse(root.validate('foo'), 'string is invalid');
     });
 
   });
@@ -121,6 +184,16 @@ describe('Schema Combination', function () {
       assert.isTrue(root.validate('Yes'), 'a string works');
       assert.isTrue(root.validate(42), 'a number works');
       assert.isFalse(root.validate({ 'an object': 'doesnt work' }));
+    });
+
+    // https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/master/tests/draft7/anyOf.json
+    it('should validate an integer or number of minimum 2', function () {
+      assert.isTrue(compileJSONSchema('simpleAnyOf1', {
+        anyOf: [
+          { type: 'integer' },
+          { minimum: 2 },
+        ],
+      }));
     });
   });
 
