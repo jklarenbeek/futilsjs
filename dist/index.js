@@ -4834,8 +4834,8 @@ function compileArrayChildren(schemaObj, jsonSchema) {
       compileArrayChildren);
 
     if (validate == null) return undefined;
-    return function validateContainsItem(childData, dataRoot) {
-      return validate(childData, dataRoot);
+    return function validateContainsItem(data, dataRoot) {
+      return validate(data, dataRoot);
     };
   }
 
@@ -4862,7 +4862,7 @@ function compileArrayChildren(schemaObj, jsonSchema) {
             }
           }
           if (validateContains && found === false) {
-            if (validateContains(i, obj, dataRoot) === true) {
+            if (validateContains(obj, dataRoot) === true) {
               if (validateItem == null) return true;
               found = true;
             }
