@@ -107,6 +107,8 @@ function compileRequiredProperties(schemaObj, jsonSchema, checkBounds) {
   }
 
   if (keys.length > 0) {
+    checkBounds = checkBounds || trueThat;
+
     if (ismap === true) {
       const addError = schemaObj.createMemberError(
         'required',
@@ -203,9 +205,9 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
 }
 
 export function compileObjectBasic(schemaObj, jsonSchema) {
-  const checkBounds = fallbackFn(compileCheckBounds(schemaObj, jsonSchema));
+  const checkBounds = compileCheckBounds(schemaObj, jsonSchema);
   const valProps = compileRequiredProperties(schemaObj, jsonSchema, checkBounds);
-  const valPatts = compileRequiredPatterns(schemaObj, jsonSchema, checkBounds);
+  const valPatts = compileRequiredPatterns(schemaObj, jsonSchema);
 
   if (valProps && valPatts) {
     return function validateObjectBasic(data) {

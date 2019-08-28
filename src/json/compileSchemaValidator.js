@@ -3,6 +3,7 @@ import {
   fallbackFn,
   falseThat,
   trueThat,
+  isFn,
 } from '../types/isFunctionType';
 
 import {
@@ -23,65 +24,68 @@ import { compileCombineSchema } from './compileCombineValidator';
 import { compileConditionSchema } from './compileConditionValidator';
 
 function compileSchemaBasic(schemaObj, jsonSchema) {
-  const fnFormat = fallbackFn(
-    compileFormatBasic(schemaObj, jsonSchema),
-  );
-  const fnEnum = fallbackFn(
-    compileEnumBasic(schemaObj, jsonSchema),
-  );
-  const fnNumber = fallbackFn(
-    compileNumberBasic(schemaObj, jsonSchema),
-  );
-  const fnString = fallbackFn(
-    compileStringBasic(schemaObj, jsonSchema),
-  );
-  const fnObject = fallbackFn(
-    compileObjectBasic(schemaObj, jsonSchema),
-  );
-  const fnArray = fallbackFn(
-    compileArrayBasic(schemaObj, jsonSchema),
-  );
+  const compilers = [];
+  function addCompiler(compiler) {
+    if (isFn(compiler)) compilers.push(compiler);
+  }
 
-  return function validateSchemaBasic(data, dataRoot) {
-    const vFormat = fnFormat(data, dataRoot);
-    const vEnum = fnEnum(data, dataRoot);
-    const vNumber = fnNumber(data, dataRoot);
-    const vString = fnString(data, dataRoot);
-    const vObject = fnObject(data, dataRoot);
-    const vArray = fnArray(data, dataRoot);
-    return vFormat
-      && vEnum
-      && vNumber
-      && vString
-      && vObject
-      && vArray;
-  };
+  addCompiler(compileFormatBasic(schemaObj, jsonSchema));
+  addCompiler(compileEnumBasic(schemaObj, jsonSchema));
+  addCompiler(compileNumberBasic(schemaObj, jsonSchema));
+  addCompiler(compileStringBasic(schemaObj, jsonSchema));
+  addCompiler(compileObjectBasic(schemaObj, jsonSchema));
+  addCompiler(compileArrayBasic(schemaObj, jsonSchema));
+
+  if (compilers.length === 0) return undefined;
+  if (compilers.length === 1) return compilers[0];
+  if (compilers.length === 2) {
+    const first = compilers[0];
+    const second = compilers[1];
+    return function validateSchemaBasicPair(data, dataRoot) {
+      return first(data, dataRoot) && second(data, dataRoot);
+    };
+  }
+  else {
+    return function validateSchemaBasic(data, dataRoot) {
+      for (let i = 0; i < compilers.length; ++i) {
+        const compiler = compilers[i];
+        if (compiler(data, dataRoot) === false) return false;
+      }
+      return true;
+    };
+  }
 }
 
 function compileSchemaChildren(schemaObj, jsonSchema) {
-  const fnObject = fallbackFn(
-    compileObjectChildren(schemaObj, jsonSchema),
-  );
-  const fnMap = fallbackFn(
-    compileMapChildren(schemaObj, jsonSchema),
-  );
-  const fnArray = fallbackFn(
-    compileArrayChildren(schemaObj, jsonSchema),
-  );
-  const fnSet = fallbackFn(
-    compileSetChildren(schemaObj, jsonSchema),
-  );
-  const fnTuple = fallbackFn(
-    compileTupleChildren(schemaObj, jsonSchema),
-  );
+  const compilers = [];
+  function addCompiler(compiler) {
+    if (isFn(compiler)) compilers.push(compiler);
+  }
 
-  return function validateSchemaChildren(data, dataRoot) {
-    return fnObject(data, dataRoot)
-      && fnMap(data, dataRoot)
-      && fnArray(data, dataRoot)
-      && fnSet(data, dataRoot)
-      && fnTuple(data, dataRoot);
-  };
+  addCompiler(compileObjectChildren(schemaObj, jsonSchema));
+  addCompiler(compileMapChildren(schemaObj, jsonSchema));
+  addCompiler(compileArrayChildren(schemaObj, jsonSchema));
+  addCompiler(compileSetChildren(schemaObj, jsonSchema));
+  addCompiler(compileTupleChildren(schemaObj, jsonSchema));
+
+  if (compilers.length === 0) return undefined;
+  if (compilers.length === 1) return compilers[0];
+  if (compilers.length === 2) {
+    const first = compilers[0];
+    const second = compilers[1];
+    return function validateSchemaChildrenPair(data, dataRoot) {
+      return first(data, dataRoot) && second(data, dataRoot);
+    };
+  }
+  else {
+    return function validateSchemaChildren(data, dataRoot) {
+      for (let i = 0; i < compilers.length; ++i) {
+        const compiler = compilers[i];
+        if (compiler(data, dataRoot) === false) return false;
+      }
+      return true;
+    };
+  }
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -98,26 +102,77 @@ function compileSchemaAdvanced(schemaObj, jsonSchema) {
 }
 
 export function compileSchemaObject(schemaObj, jsonSchema) {
+  const compilers = [];
+  function addCompiler(compiler) {
+    if (isFn(compiler)) compilers.push(compiler);
+  }
+
   if (jsonSchema === true) return trueThat;
   if (jsonSchema === false) return falseThat;
   if (!isStrictObjectType(jsonSchema)) {
     return falseThat;
   }
 
-  const fnType = fallbackFn(compileTypeBasic(schemaObj, jsonSchema));
+  const fnType = compileTypeBasic(schemaObj, jsonSchema);
 
-  const validateBasic = compileSchemaBasic(schemaObj, jsonSchema);
-  const validateChildren = compileSchemaChildren(schemaObj, jsonSchema);
-  const validateAdvanced = compileSchemaAdvanced(schemaObj, jsonSchema);
+  addCompiler(compileSchemaBasic(schemaObj, jsonSchema));
+  addCompiler(compileSchemaChildren(schemaObj, jsonSchema));
+  addCompiler(compileSchemaAdvanced(schemaObj, jsonSchema));
 
-  return function validateSchemaObject(data, dataRoot) {
-    // test type, nullable and required properties of schema
-    const vType = fnType(data, dataRoot);
-    if (vType === false) return false;
-    if (data === undefined) return true;
+  if (compilers.length === 0) {
+    if (fnType) return fnType;
+    return undefined;
+  }
 
-    return validateBasic(data, dataRoot)
-      && validateAdvanced(data, dataRoot)
-      && validateChildren(data, dataRoot);
-  };
+  if (compilers.length === 1) {
+    const first = compilers[0];
+    if (fnType) return function validateSchemaObjectSingle(data, dataRoot) {
+      const vType = fnType(data, dataRoot);
+      if (vType === false) return false;
+      if (data === undefined) return true;
+
+      return first(data, dataRoot);
+    };
+    return first;
+  }
+
+  if (compilers.length === 2) {
+    const first = compilers[0];
+    const second = compilers[1];
+    if (fnType) return function validateSchemaObjectTypedPair(data, dataRoot) {
+      const vType = fnType(data, dataRoot);
+      if (vType === false) return false;
+      if (data === undefined) return true;
+
+      return first(data, dataRoot) && second(data, dataRoot);
+    };
+    return function validateSchemaObjectPair(data, dataRoot) {
+      if (data === undefined) return true;
+      return first(data, dataRoot) && second(data, dataRoot);
+    };
+  }
+
+  if (compilers.length === 3) {
+    const first = compilers[0];
+    const second = compilers[1];
+    const thirth = compilers[2];
+
+    if (fnType) return function validateSchemaObjectTypedAll(data, dataRoot) {
+      const vType = fnType(data, dataRoot);
+      if (vType === false) return false;
+      if (data === undefined) return true;
+      return first(data, dataRoot)
+        && second(data, dataRoot)
+        && thirth(data, dataRoot);
+    };
+
+    return function validateSchemaObjectAll(data, dataRoot) {
+      if (data === undefined) return true;
+      return first(data, dataRoot)
+        && second(data, dataRoot)
+        && thirth(data, dataRoot);
+    };
+  }
+
+  return undefined;
 }

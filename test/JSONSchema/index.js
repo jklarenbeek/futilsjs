@@ -1,36 +1,20 @@
-/* eslint-disable import/no-named-default */
-/* eslint-disable no-console */
 import {
   compileJSONSchema,
   getJSONSchema,
   // registerDefaultFormatCompilers,
-// eslint-disable-next-line import/no-unresolved
 } from '../../src/json';
 
-const assert = {
-  isNeither: function _isNeither(value, ...rest) {
-    if (value !== true || value !== false) {
-      console.log(typeof (value), value, ...rest);
-      return true;
-    }
-    return false;
-  },
-  isTrue: function _isTrue(value, ...rest) {
-    if (!assert.isNeither(value, ...rest))
-      console.log(value === true, value, ...rest);
-    return true;
-  },
-  isFalse: function _isFalse(value, ...rest) {
-    if (!assert.isNeither(value, ...rest))
-      console.log(value === false, value, ...rest);
-    return false;
-  },
-};
+import {
+  assert,
+} from './util';
 
 // registerDefaultFormatCompilers();
 
-compileJSONSchema('arrayBoolean2', { items: false });
-
-const root = getJSONSchema('arrayBoolean2');
-assert.isFalse(root.validate([1, 'foo', true]), 'a non-empty array is invalid');
-assert.isTrue(root.validate([]), 'an empty array is valid');
+compileJSONSchema('arrayContains2', { contains: { minimum: 5 } });
+const root = getJSONSchema('arrayContains2');
+assert.isTrue(root.validate([3, 4, 5]), 'last item 5 is valid');
+assert.isTrue(root.validate([3, 4, 6]), 'last item 6 is valid');
+assert.isTrue(root.validate([3, 4, 5, 6]), 'last two items are valid');
+assert.isFalse(root.validate([2, 3, 4]), 'no matching lower items');
+assert.isFalse(root.validate([]), 'empty array is invalid');
+assert.isTrue(root.validate({}), 'not array is valid');

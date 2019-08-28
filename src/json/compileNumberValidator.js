@@ -59,10 +59,10 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
 }
 
 function compileNumberMinimum(schemaObj, jsonSchema) {
-  const min = Number(jsonSchema.minimum) || undefined;
+  const min = Number(jsonSchema.minimum) || undefined; // BUG: IGNORING BITINT TYPE!
   const emin = jsonSchema.exclusiveMinimum === true
     ? min
-    : Number(jsonSchema.exclusiveMinimum) || undefined;
+    : Number(jsonSchema.exclusiveMinimum) || undefined; // TODO: IGNORING BITINT TYPE!
 
   const isDataType = isBigIntSchema(jsonSchema)
     ? isStrictBigIntType
@@ -108,7 +108,7 @@ function compileNumberRange(schemaObj, jsonSchema) {
   const fnMax = compileNumberMaximum(schemaObj, jsonSchema);
   if (fnMin && fnMax) {
     return function numberRange(data, dataRoot) {
-      return fnMin(data, dataRoot) && fnMin(data, dataRoot);
+      return fnMin(data, dataRoot) && fnMax(data, dataRoot);
     };
   }
   else if (fnMin != null)

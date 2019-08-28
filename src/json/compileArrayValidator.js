@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable function-paren-newline */
 import {
   isArrayishType,
@@ -16,6 +17,10 @@ import {
 import {
   isArrayOrSet,
 } from '../types/isDataTypeExtra';
+
+import {
+  trueThat,
+} from '../types/isFunctionType';
 
 import {
   Array_isUnique,
@@ -100,45 +105,88 @@ export function compileArrayBasic(schemaObj, jsonSchema) {
   return bounds || unique;
 }
 
-export function compileArrayChildren(schemaObj, jsonSchema) {
-  const items = getObjectishType(jsonSchema.items);
-  const contains = getObjectishType(jsonSchema.contains);
-  const maxItems = getIntegerishType(jsonSchema.maxItems, 0);
-
-  function compileItems() {
-    if (items == null) return undefined;
-
-    const validate = schemaObj.createSingleValidator(
+function compileBooleanItems(schemaObj, jsonSchema) {
+  const items = getBooleanishType(jsonSchema.items);
+  if (items === false) {
+    const addError = schemaObj.createMemberError(
       'items',
-      items,
-      compileArrayChildren);
-    if (validate != null) {
-      return function validateItem(data, dataRoot) {
-        return validate(data, dataRoot);
-      };
-    }
+      false,
+      compileBooleanItems);
 
-    return undefined;
-  }
-
-  function compileContains() {
-    if (contains == null) return undefined;
-
-    const validate = schemaObj.createSingleValidator(
-      'contains',
-      contains,
-      compileArrayChildren);
-
-    if (validate == null) return undefined;
-    return function validateContainsItem(data, dataRoot) {
-      return validate(data, dataRoot);
+    return function validateArrayItemsFalse(data, dataRoot) {
+      if (isArrayishType(data)) {
+        if (data.length > 0) return addError(data);
+      }
+      return true;
     };
   }
+  if (items === true) {
+    return trueThat; // TODO: check spec if this is correct
+  }
+  return undefined;
+}
 
-  const validateItem = compileItems();
-  const validateContains = compileContains();
+function compileBooleanContains(schemaObj, jsonSchema) {
+  const contains = getBooleanishType(jsonSchema.contains);
+  if (contains === true) {
+    const addError = schemaObj.createMemberError(
+      'contains',
+      true,
+      compileBooleanContains);
+    return function validateArrayContainsTrue(data, dataRoot) {
+      if (isArrayishType(data)) {
+        if (data.length === 0) return addError(data);
+      }
+      return true;
+    };
+  }
+  if (contains === false) {
+    const addError = schemaObj.createMemberError(
+      'contains',
+      false,
+      compileBooleanContains);
+    return function validateArrayContainsFalse(data, dataRoot) {
+      if (isArrayishType(data)) {
+        return addError(data);
+      }
+      return true;
+    };
+  }
+  return undefined;
+}
 
-  if (validateItem || validateContains) {
+function compileSchemaItems(schemaObj, jsonSchema) {
+  const items = getObjectishType(jsonSchema.items);
+  if (items == null) return undefined;
+
+  return schemaObj.createSingleValidator(
+    'items',
+    items,
+    compileSchemaItems);
+}
+
+function compileSchemaContains(schemaObj, jsonSchema) {
+  const contains = getObjectishType(jsonSchema.contains);
+  if (contains == null) return undefined;
+
+  return schemaObj.createSingleValidator(
+    'contains',
+    contains,
+    compileSchemaContains);
+}
+
+export function compileArrayChildren(schemaObj, jsonSchema) {
+  const maxItems = getIntegerishType(jsonSchema.maxItems, 0);
+
+  const validateBoolItems = compileBooleanItems(schemaObj, jsonSchema);
+  if (validateBoolItems) return validateBoolItems;
+  const validateBoolContains = compileBooleanContains(schemaObj, jsonSchema);
+  if (validateBoolContains) return validateBoolContains;
+
+  const validateSchemaItem = compileSchemaItems(schemaObj, jsonSchema);
+  const validateSchemaContains = compileSchemaContains(schemaObj, jsonSchema);
+
+  if (validateSchemaItem || validateSchemaContains) {
     return function validateArrayChildren(data, dataRoot) {
       let valid = true;
       let found = false;
@@ -150,22 +198,22 @@ export function compileArrayChildren(schemaObj, jsonSchema) {
         for (let i = 0; i < len; ++i) {
           if (errors > 32) break;
           const obj = data[i];
-          if (validateItem) {
-            if (validateItem(obj, dataRoot) === false) {
+          if (validateSchemaItem) {
+            if (validateSchemaItem(obj, dataRoot) === false) {
               valid = false;
               errors++;
               continue;
             }
           }
-          if (validateContains && found === false) {
-            if (validateContains(obj, dataRoot) === true) {
-              if (validateItem == null) return true;
+          if (validateSchemaContains) {
+            if (found === false && validateSchemaContains(obj, dataRoot) === true) {
+              if (validateSchemaItem == null) return true;
               found = true;
             }
           }
         }
       }
-      return valid && (validateContains == null || found === true);
+      return valid && (validateSchemaContains == null || found === true);
     };
   }
   return undefined;

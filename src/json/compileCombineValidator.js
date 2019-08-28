@@ -1,5 +1,11 @@
-import { trueThat, fallbackFn, falseThat } from '../types/isFunctionType';
-import { getStrictArray } from '../types/getDataType';
+import {
+  falseThat,
+  isFn,
+} from '../types/isFunctionType';
+
+import {
+  getStrictArray,
+} from '../types/getDataType';
 
 function compileAllOf(schemaObj, jsonSchema) {
   const allOf = getStrictArray(jsonSchema.allOf);
@@ -26,9 +32,32 @@ function compileNotOf(schemaObj, jsonSchema) {
 }
 
 export function compileCombineSchema(schemaObj, jsonSchema) {
-  const fnAllOf = fallbackFn(compileAllOf(schemaObj, jsonSchema), trueThat);
-  const fnAnyOf = fallbackFn(compileAnyOf(schemaObj, jsonSchema), trueThat);
-  const fnOneOf = fallbackFn(compileOneOf(schemaObj, jsonSchema), trueThat);
-  const fnNotOf = fallbackFn(compileNotOf(schemaObj, jsonSchema), trueThat);
-  return fnAllOf && fnAnyOf && fnOneOf && fnNotOf;
+  const compilers = [];
+  function addCompiler(compiler) {
+    if (isFn(compiler)) compilers.push(compiler);
+  }
+
+  addCompiler(compileAllOf(schemaObj, jsonSchema));
+  addCompiler(compileAnyOf(schemaObj, jsonSchema));
+  addCompiler(compileOneOf(schemaObj, jsonSchema));
+  addCompiler(compileNotOf(schemaObj, jsonSchema));
+
+  if (compilers.length === 0) return undefined;
+  if (compilers.length === 1) return compilers[0];
+  if (compilers.length === 2) {
+    const first = compilers[0];
+    const second = compilers[1];
+    return function validateCombinaSchemaPair(data, dataRoot) {
+      return first(data, dataRoot) && second(data, dataRoot);
+    };
+  }
+  else {
+    return function validateCombineSchema(data, dataRoot) {
+      for (let i = 0; i < compilers.length; ++i) {
+        const compiler = compilers[i];
+        if (compiler(data, dataRoot) === false) return false;
+      }
+      return true;
+    };
+  }
 }
