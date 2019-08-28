@@ -105,13 +105,13 @@ export function compileArrayBasic(schemaObj, jsonSchema) {
   return bounds || unique;
 }
 
-function compileBooleanItems(schemaObj, jsonSchema) {
+function compileArrayItemsBoolean(schemaObj, jsonSchema) {
   const items = getBooleanishType(jsonSchema.items);
   if (items === false) {
     const addError = schemaObj.createMemberError(
       'items',
       false,
-      compileBooleanItems);
+      compileArrayItemsBoolean);
 
     return function validateArrayItemsFalse(data, dataRoot) {
       if (isArrayishType(data)) {
@@ -126,13 +126,13 @@ function compileBooleanItems(schemaObj, jsonSchema) {
   return undefined;
 }
 
-function compileBooleanContains(schemaObj, jsonSchema) {
+function compileArrayContainsBoolean(schemaObj, jsonSchema) {
   const contains = getBooleanishType(jsonSchema.contains);
   if (contains === true) {
     const addError = schemaObj.createMemberError(
       'contains',
       true,
-      compileBooleanContains);
+      compileArrayContainsBoolean);
     return function validateArrayContainsTrue(data, dataRoot) {
       if (isArrayishType(data)) {
         if (data.length === 0) return addError(data);
@@ -144,7 +144,7 @@ function compileBooleanContains(schemaObj, jsonSchema) {
     const addError = schemaObj.createMemberError(
       'contains',
       false,
-      compileBooleanContains);
+      compileArrayContainsBoolean);
     return function validateArrayContainsFalse(data, dataRoot) {
       if (isArrayishType(data)) {
         return addError(data);
@@ -155,38 +155,38 @@ function compileBooleanContains(schemaObj, jsonSchema) {
   return undefined;
 }
 
-function compileSchemaItems(schemaObj, jsonSchema) {
+function compileArrayItems(schemaObj, jsonSchema) {
   const items = getObjectishType(jsonSchema.items);
   if (items == null) return undefined;
 
   return schemaObj.createSingleValidator(
     'items',
     items,
-    compileSchemaItems);
+    compileArrayItems);
 }
 
-function compileSchemaContains(schemaObj, jsonSchema) {
+function compileArrayContains(schemaObj, jsonSchema) {
   const contains = getObjectishType(jsonSchema.contains);
   if (contains == null) return undefined;
 
   return schemaObj.createSingleValidator(
     'contains',
     contains,
-    compileSchemaContains);
+    compileArrayContains);
 }
 
 export function compileArrayChildren(schemaObj, jsonSchema) {
   const maxItems = getIntegerishType(jsonSchema.maxItems, 0);
 
-  const validateBoolItems = compileBooleanItems(schemaObj, jsonSchema);
+  const validateBoolItems = compileArrayItemsBoolean(schemaObj, jsonSchema);
   if (validateBoolItems) return validateBoolItems;
-  const validateBoolContains = compileBooleanContains(schemaObj, jsonSchema);
+  const validateBoolContains = compileArrayContainsBoolean(schemaObj, jsonSchema);
   if (validateBoolContains) return validateBoolContains;
 
-  const validateSchemaItem = compileSchemaItems(schemaObj, jsonSchema);
-  const validateSchemaContains = compileSchemaContains(schemaObj, jsonSchema);
+  const validateArrayItem = compileArrayItems(schemaObj, jsonSchema);
+  const validateArrayContains = compileArrayContains(schemaObj, jsonSchema);
 
-  if (validateSchemaItem || validateSchemaContains) {
+  if (validateArrayItem || validateArrayContains) {
     return function validateArrayChildren(data, dataRoot) {
       if (isArrayishType(data)) {
         let valid = true;
@@ -198,21 +198,21 @@ export function compileArrayChildren(schemaObj, jsonSchema) {
         for (let i = 0; i < len; ++i) {
           if (errors > 32) break;
           const obj = data[i];
-          if (validateSchemaItem) {
-            if (validateSchemaItem(obj, dataRoot) === false) {
+          if (validateArrayItem) {
+            if (validateArrayItem(obj, dataRoot) === false) {
               valid = false;
               errors++;
               continue;
             }
           }
-          if (validateSchemaContains) {
-            if (found === false && validateSchemaContains(obj, dataRoot) === true) {
-              if (validateSchemaItem == null) return true;
+          if (validateArrayContains) {
+            if (found === false && validateArrayContains(obj, dataRoot) === true) {
+              if (validateArrayItem == null) return true;
               found = true;
             }
           }
         }
-        return valid && (validateSchemaContains == null || found === true);
+        return valid && (validateArrayContains == null || found === true);
       }
       return true;
     };
