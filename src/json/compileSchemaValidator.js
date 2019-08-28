@@ -1,6 +1,5 @@
 /* eslint-disable function-paren-newline */
 import {
-  fallbackFn,
   falseThat,
   trueThat,
   isFn,
@@ -17,9 +16,6 @@ import { compileNumberBasic } from './compileNumberValidator';
 import { compileStringBasic } from './compileStringValidator';
 import { compileObjectBasic, compileObjectChildren } from './compileObjectValidator';
 import { compileArrayBasic, compileArrayChildren } from './compileArrayValidator';
-import { compileMapChildren } from './compileMapValidator';
-import { compileSetChildren } from './compileSetValidator';
-import { compileTupleChildren } from './compileTupleValidator';
 import { compileCombineSchema } from './compileCombineValidator';
 import { compileConditionSchema } from './compileConditionValidator';
 
@@ -63,10 +59,7 @@ function compileSchemaChildren(schemaObj, jsonSchema) {
   }
 
   addCompiler(compileObjectChildren(schemaObj, jsonSchema));
-  addCompiler(compileMapChildren(schemaObj, jsonSchema));
   addCompiler(compileArrayChildren(schemaObj, jsonSchema));
-  addCompiler(compileSetChildren(schemaObj, jsonSchema));
-  addCompiler(compileTupleChildren(schemaObj, jsonSchema));
 
   if (compilers.length === 0) return undefined;
   if (compilers.length === 1) return compilers[0];

@@ -2,6 +2,7 @@ import {
   isStrictStringType,
   isStrictArrayType,
   isObjectishType,
+  isStrictIntegerType,
 } from '../types/isDataType';
 
 import {
@@ -150,7 +151,8 @@ class SchemaObject {
   createPairValidator(member, key, child, ...rest) {
     const self = this;
     const valid = member instanceof SchemaMember
-      && isStrictStringType(key)
+      && (isStrictStringType(key)
+        || isStrictIntegerType(key))
       && isObjectishType(child);
     if (!valid) return undefined;
 

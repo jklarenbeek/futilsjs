@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* eslint-disable padded-blocks */
 /* eslint-disable func-names */
 /* eslint-env mocha */
@@ -195,7 +196,7 @@ describe('Schema Array Type', function () {
         ],
       });
 
-      const root = getJSONSchema('tupleAddItem1');
+      const root = getJSONSchema('tupleAddItems1');
       assert.isTrue(root.validate([1600, 'Pennsylvania', 'Avenue', 'NW']), 'valid address');
       assert.isFalse(root.validate([24, 'Sussex', 'Drive']), 'invalid value at item 3');
       assert.isFalse(root.validate(['Palais de l\'Élysée']), 'missing street number');
@@ -215,7 +216,7 @@ describe('Schema Array Type', function () {
         additionalItems: false,
       });
 
-      const root = getJSONSchema('tupleAddItem2');
+      const root = getJSONSchema('tupleAddItems2');
       assert.isTrue(root.validate([1600, 'Pennsylvania', 'Avenue', 'NW']), 'valid address');
       assert.isTrue(root.validate([1600, 'Pennsylvania', 'Avenue']), 'not all fields are necessary');
       assert.isFalse(root.validate([1600, 'Pennsylvania', 'Avenue', 'NW', 'Washington']), 'do not allow additional items');
@@ -233,7 +234,7 @@ describe('Schema Array Type', function () {
         additionalItems: { type: 'string' },
       });
 
-      const root = getJSONSchema('tupleAddItem3');
+      const root = getJSONSchema('tupleAddItems3');
       assert.isTrue(root.validate([1600, 'Pennsylvania', 'Avenue', 'NW', 'Washington']), 'additional string items are ok');
       assert.isFalse(root.validate([1600, 'Pennsylvania', 'Avenue', 'NW', 20500]), 'but nothing else');
     });

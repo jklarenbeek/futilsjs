@@ -10,11 +10,19 @@ import {
 
 // registerDefaultFormatCompilers();
 
-compileJSONSchema('arrayContains2', { contains: { minimum: 5 } });
-const root = getJSONSchema('arrayContains2');
-assert.isTrue(root.validate([3, 4, 5]), 'last item 5 is valid');
-assert.isTrue(root.validate([3, 4, 6]), 'last item 6 is valid');
-assert.isTrue(root.validate([3, 4, 5, 6]), 'last two items are valid');
-assert.isFalse(root.validate([2, 3, 4]), 'no matching lower items');
-assert.isFalse(root.validate([]), 'empty array is invalid');
-assert.isTrue(root.validate({}), 'not array is valid');
+compileJSONSchema('tupleAddItems1', {
+  type: 'array',
+  items: [
+    { type: 'number' },
+    { type: 'string' },
+    { type: 'string', enum: ['Street', 'Avenue', 'Boulevard'] },
+    { type: 'string', enum: ['NW', 'NE', 'SW', 'SE'] },
+  ],
+});
+
+const root = getJSONSchema('tupleAddItem1');
+assert.isTrue(root.validate([1600, 'Pennsylvania', 'Avenue', 'NW']), 'valid address');
+assert.isFalse(root.validate([24, 'Sussex', 'Drive']), 'invalid value at item 3');
+assert.isFalse(root.validate(['Palais de l\'Élysée']), 'missing street number');
+assert.isTrue(root.validate([10, 'Downing', 'Street']), 'does not need all items');
+assert.isTrue(root.validate([1600, 'Pennsylvania', 'Avenue', 'NW', 'Washington']), 'additionalItems is default true');

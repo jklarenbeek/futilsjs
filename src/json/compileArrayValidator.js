@@ -8,10 +8,12 @@ import {
   getObjectishType,
   getIntegerishType,
   getBooleanishType,
+  getStrictArray,
+  getStrictArrayMinItems,
 } from '../types/getDataType';
 
 import {
-  getArrayOrSetLength,
+  getArrayOrSetLength, getBoolOrObject,
 } from '../types/getDataTypeExtra';
 
 import {
@@ -20,6 +22,7 @@ import {
 
 import {
   trueThat,
+  falseThat,
 } from '../types/isFunctionType';
 
 import {
@@ -165,6 +168,53 @@ function compileArrayItems(schemaObj, jsonSchema) {
     compileArrayItems);
 }
 
+function compileTupleItems(schemaObj, jsonSchema) {
+  const items = getStrictArrayMinItems(jsonSchema.items, 1); // TODO: possible bug?
+  if (items == null) return undefined;
+
+  const additional = getBoolOrObject(jsonSchema.additionalItems, true);
+
+  const member = schemaObj.createMember('items', compileTupleItems);
+  const validators = new Array(items.length);
+  for (let i = 0; i < items.length; ++i) {
+    const item = items[i];
+    if (item === true) validators[i] = trueThat;
+    else if (item === false) validators[i] = falseThat;
+    else {
+      const validator = schemaObj.createPairValidator(member, i, item);
+      validators[i] = validator;
+    }
+  }
+
+  if (additional === true || additional === false) {
+    return function validateTupleItemBool(data, dataRoot, i) {
+      if (i < validators.length) {
+        const validator = validators[i];
+        if (validator != null) {
+          return validator(data, dataRoot);
+        }
+        return true; // TODO: if a validator is not present, we return true?
+      }
+      return additional;
+    };
+  }
+
+  const validateAdditional = schemaObj.createSingleValidator(
+    'additionalItems',
+    additional,
+    compileTupleItems);
+
+  return function validateTupleItemSchema(data, dataRoot, i) {
+    if (i < validators.length) {
+      const validator = validators[i];
+      if (validator != null) {
+        return validator(data, dataRoot);
+      }
+    }
+    return validateAdditional(data, dataRoot);
+  };
+}
+
 function compileArrayContains(schemaObj, jsonSchema) {
   const contains = getObjectishType(jsonSchema.contains);
   if (contains == null) return undefined;
@@ -176,43 +226,44 @@ function compileArrayContains(schemaObj, jsonSchema) {
 }
 
 export function compileArrayChildren(schemaObj, jsonSchema) {
-  const maxItems = getIntegerishType(jsonSchema.maxItems, 0);
-
   const validateBoolItems = compileArrayItemsBoolean(schemaObj, jsonSchema);
   if (validateBoolItems) return validateBoolItems;
   const validateBoolContains = compileArrayContainsBoolean(schemaObj, jsonSchema);
   if (validateBoolContains) return validateBoolContains;
 
-  const validateArrayItem = compileArrayItems(schemaObj, jsonSchema);
+  const validateArrayItem = compileArrayItems(schemaObj, jsonSchema)
+    || compileTupleItems(schemaObj, jsonSchema);
   const validateArrayContains = compileArrayContains(schemaObj, jsonSchema);
+  const maxItems = getIntegerishType(jsonSchema.maxItems, 0);
 
   if (validateArrayItem || validateArrayContains) {
     return function validateArrayChildren(data, dataRoot) {
       if (isArrayishType(data)) {
         let valid = true;
-        let found = false;
+        let contains = false;
         let errors = 0;
         const len = maxItems > 0
           ? Math.min(maxItems, data.length)
           : data.length;
+
         for (let i = 0; i < len; ++i) {
           if (errors > 32) break;
           const obj = data[i];
           if (validateArrayItem) {
-            if (validateArrayItem(obj, dataRoot) === false) {
+            if (validateArrayItem(obj, dataRoot, i) === false) {
               valid = false;
               errors++;
               continue;
             }
           }
           if (validateArrayContains) {
-            if (found === false && validateArrayContains(obj, dataRoot) === true) {
+            if (contains === false && validateArrayContains(obj, dataRoot) === true) {
               if (validateArrayItem == null) return true;
-              found = true;
+              contains = true;
             }
           }
         }
-        return valid && (validateArrayContains == null || found === true);
+        return valid && (validateArrayContains == null || contains === true);
       }
       return true;
     };
