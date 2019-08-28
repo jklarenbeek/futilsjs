@@ -188,10 +188,10 @@ export function compileArrayChildren(schemaObj, jsonSchema) {
 
   if (validateSchemaItem || validateSchemaContains) {
     return function validateArrayChildren(data, dataRoot) {
-      let valid = true;
-      let found = false;
       if (isArrayishType(data)) {
-        let errors = 32;
+        let valid = true;
+        let found = false;
+        let errors = 0;
         const len = maxItems > 0
           ? Math.min(maxItems, data.length)
           : data.length;
@@ -212,8 +212,9 @@ export function compileArrayChildren(schemaObj, jsonSchema) {
             }
           }
         }
+        return valid && (validateSchemaContains == null || found === true);
       }
-      return valid && (validateSchemaContains == null || found === true);
+      return true;
     };
   }
   return undefined;
