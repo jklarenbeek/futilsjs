@@ -95,9 +95,9 @@ function compileSchemaAdvanced(schemaObj, jsonSchema) {
 }
 
 export function compileSchemaObject(schemaObj, jsonSchema) {
-  const compilers = [];
-  function addCompiler(compiler) {
-    if (isFn(compiler)) compilers.push(compiler);
+  const validators = [];
+  function addCompiler(validator) {
+    if (isFn(validator)) validators.push(validator);
   }
 
   if (jsonSchema === true) return trueThat;
@@ -112,47 +112,45 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
   addCompiler(compileSchemaChildren(schemaObj, jsonSchema));
   addCompiler(compileSchemaAdvanced(schemaObj, jsonSchema));
 
-  if (compilers.length === 0) {
+  if (validators.length === 0) {
     if (fnType) return fnType;
     return undefined;
   }
 
-  if (compilers.length === 1) {
-    const first = compilers[0];
+  if (validators.length === 1) {
+    const first = validators[0];
     if (fnType) return function validateSchemaObjectSingle(data, dataRoot) {
-      const vType = fnType(data, dataRoot);
-      if (vType === false) return false;
+      if (fnType(data, dataRoot) === false) return false;
+      // we do not continue if undefined
       if (data === undefined) return true;
-
       return first(data, dataRoot);
     };
+
     return first;
   }
 
-  if (compilers.length === 2) {
-    const first = compilers[0];
-    const second = compilers[1];
+  if (validators.length === 2) {
+    const first = validators[0];
+    const second = validators[1];
     if (fnType) return function validateSchemaObjectTypedPair(data, dataRoot) {
-      const vType = fnType(data, dataRoot);
-      if (vType === false) return false;
+      if (fnType(data, dataRoot) === false) return false;
       if (data === undefined) return true;
-
       return first(data, dataRoot) && second(data, dataRoot);
     };
+
     return function validateSchemaObjectPair(data, dataRoot) {
       if (data === undefined) return true;
       return first(data, dataRoot) && second(data, dataRoot);
     };
   }
 
-  if (compilers.length === 3) {
-    const first = compilers[0];
-    const second = compilers[1];
-    const thirth = compilers[2];
+  if (validators.length === 3) {
+    const first = validators[0];
+    const second = validators[1];
+    const thirth = validators[2];
 
     if (fnType) return function validateSchemaObjectTypedAll(data, dataRoot) {
-      const vType = fnType(data, dataRoot);
-      if (vType === false) return false;
+      if (fnType(data, dataRoot) === false) return false;
       if (data === undefined) return true;
       return first(data, dataRoot)
         && second(data, dataRoot)

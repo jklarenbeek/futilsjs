@@ -58,6 +58,10 @@ export function isStrictStringType(data) {
 }
 isStrictStringType.typeName = 'string';
 
+export function isStrictNullValue(data) {
+  return data === null;
+}
+
 export function isStrictObjectType(data) {
   return data != null
     && typeof data === 'object'

@@ -6,10 +6,10 @@ import { assert } from 'chai';
 import {
   compileJSONSchema,
   getJSONSchema,
-  registerDefaultFormatCompilers,
+  // registerDefaultFormatCompilers,
 } from '../src/json';
 
-registerDefaultFormatCompilers();
+// registerDefaultFormatCompilers();
 
 // https://json-schema.org/understanding-json-schema/reference/type.html
 
@@ -130,6 +130,7 @@ describe('#types()', function () {
       assert.isFalse(root.validate('This is not valid'), 'not a string type');
     });
   });
+
   context('validate required types', function () {
 
     it('should validate a required number', function () {
@@ -189,6 +190,21 @@ describe('#types()', function () {
   });
 
   context('validate nullable types', function () {
+    it('should validate a simple null type', function () {
+      assert.isTrue(compileJSONSchema('nullableType1', { type: 'null' }));
+      const root = getJSONSchema('nullableType1');
+      assert.isFalse(root.validate(0), 'zero is not null');
+      assert.isFalse(root.validate(1), 'an integer is not null');
+      assert.isFalse(root.validate(Math.PI), 'a float is not null');
+      assert.isFalse(root.validate('foobar'), 'string is not null');
+      assert.isFalse(root.validate(''), 'an empty string is not null');
+      assert.isFalse(root.validate({}), 'an object is not null');
+      assert.isFalse(root.validate([]), 'an array is not null');
+      assert.isFalse(root.validate(true), 'boolean true is not null');
+      assert.isFalse(root.validate(false), 'boolean false is not null');
+      assert.isTrue(root.validate(null), 'null equals null');
+    });
+
     it('should validate multi type string or number', function () {
       compileJSONSchema('nullableTypeArray1', { type: ['number', 'string', 'null'] });
 

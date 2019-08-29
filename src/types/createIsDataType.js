@@ -4,11 +4,12 @@ import {
   isStrictBigIntType,
   isStrictNumberType,
   isStrictStringType,
-  isStrictArrayType,
-  isArrayishType,
+  isStrictNullValue,
   isStrictObjectType,
   isObjectishType,
   isStrictObjectOfType,
+  isStrictArrayType,
+  isArrayishType,
 } from './isDataType';
 
 import {
@@ -35,8 +36,12 @@ export function createIsStrictDataType(type, format, isstrict = false) {
   else if (type === 'tuple') {
     return isStrictArrayType;
   }
+  else if (type === 'regex') {
+    return createIsStrictObjectOfType(RegExp);
+  }
   else {
     switch (type) {
+      case 'null': return isStrictNullValue;
       case 'boolean': return isStrictBooleanType;
       case 'integer': return isStrictIntegerType;
       case 'bigint': return isStrictBigIntType;
