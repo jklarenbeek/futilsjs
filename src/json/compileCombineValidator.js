@@ -66,7 +66,33 @@ function compileAnyOf(schemaObj, jsonSchema) {
 function compileOneOf(schemaObj, jsonSchema) {
   const oneOf = getStrictArray(jsonSchema.oneOf);
   if (oneOf == null) return undefined;
-  return falseThat;
+
+  const member = schemaObj.createMember('oneOf', compileOneOf);
+  const validators = [];
+  for (let i = 0; i < oneOf.length; ++i) {
+    const child = oneOf[i];
+    if (child === true)
+      validators.push(trueThat);
+    else if (child === false)
+      validators.push(falseThat);
+    else {
+      const validator = schemaObj.createPairValidator(member, i, child);
+      if (isFn(validator))
+        validators.push(validator);
+    }
+  }
+
+  return function validateOneOf(data, dataRoot) { // TODO: addError??
+    let found = false;
+    for (let i = 0; i < validators.length; ++i) {
+      const validator = validators[i];
+      if (validator(data, dataRoot) === true) {
+        if (found === true) return false;
+        found = true;
+      }
+    }
+    return found;
+  };
 }
 
 function compileNotOf(schemaObj, jsonSchema) {

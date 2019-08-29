@@ -9,12 +9,12 @@ export const assert = {
   },
   isTrue: function _isTrue(value, ...rest) {
     if (!assert.isNeither(value, ...rest))
-      console.log((value === true), value, ...rest);
+      console.log('should be true', value, ...rest);
     return true;
   },
   isFalse: function _isFalse(value, ...rest) {
     if (!assert.isNeither(value, ...rest))
-      console.log((value === false), value, ...rest);
+      console.log('should be false', value, ...rest);
     return false;
   },
 };

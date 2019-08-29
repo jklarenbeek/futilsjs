@@ -284,14 +284,19 @@ describe('Schema Combination', function () {
     it('should validate nested anyOf to check symantics', function () {
       assert.isTrue(compileJSONSchema('nestedAnyOf1', {
         anyOf: [
-          { type: 'number' },
-          { },
+          {
+            anyOf: [{ type: 'null' }],
+          },
         ],
       }), 'compiling');
 
       const root = getJSONSchema('nestedAnyOf1');
+      assert.isTrue(root.validate(undefined), 'undefined is valid');
       assert.isTrue(root.validate(null), 'null is valid');
-      assert.isFalse(root.validate(1234), 'anything non-null is invalid');
+      assert.isFalse(root.validate(1234), 'anything non-null and number is invalid');
+      assert.isFalse(root.validate('foo'), 'anything non-null and string is invalid');
+      assert.isFalse(root.validate(['foo']), 'anything non-null and array is invalid');
+      assert.isFalse(root.validate({ foo: 'baz' }), 'anything non-null and object is invalid');
 
     });
   });
@@ -312,6 +317,120 @@ describe('Schema Combination', function () {
       assert.isFalse(root.validate(2), '2 is not a multiple of 5 or 3');
       assert.isFalse(root.validate(15), 'multiple of 5 and 3 is rejected');
 
+    });
+
+    it('should validate or a integer or any above 2', function () {
+      assert.isTrue(compileJSONSchema('numbersOneOf1', {
+        oneOf: [
+          { type: 'integer' },
+          { minimum: 2 },
+        ],
+      }));
+
+      const root = getJSONSchema('numbersOneOf1');
+      assert.isTrue(root.validate(1), 'one is an integer');
+      assert.isTrue(root.validate(2.5), 'two point five >= two');
+      assert.isFalse(root.validate(3), 'both schemas are invalid');
+      assert.isFalse(root.validate(1.5), 'neither schema is valid');
+    });
+
+    it('should validate with a base schema', function () {
+      assert.isTrue(compileJSONSchema('baseOneOf1', {
+        type: 'string',
+        oneOf: [
+          { minLength: 2 },
+          { maxLength: 4 },
+        ],
+      }));
+
+      const root = getJSONSchema('baseOneOf1');
+      assert.isFalse(root.validate(3), 'mismatch base schema');
+      assert.isTrue(root.validate('foobar'), 'one oneOf schema is valid');
+      assert.isFalse(root.validate('foo'), 'both oneOf schemas cannot be valid');
+    });
+
+    it('should validate with boolean schemas, all true', function () {
+      assert.isTrue(compileJSONSchema('booleanOneOf1', {
+        oneOf: [true, true, true],
+      }), 'compiling');
+      const root = getJSONSchema('booleanOneOf1');
+      assert.isTrue(root.validate('foo'), 'any value is invalid');
+    });
+
+    it('should validate with boolean schemas, some false', function () {
+      assert.isTrue(compileJSONSchema('booleanOneOf2', {
+        oneOf: [true, true, false],
+      }));
+      const root = getJSONSchema('booleanOneOf2');
+      assert.isFalse(root.validate('foo'), 'any value is invalid');
+    });
+
+    it('should validate with boolean schemas, most false', function () {
+      assert.isTrue(compileJSONSchema('booleanOneOf3', {
+        oneOf: [true, false, false],
+      }));
+      const root = getJSONSchema('booleanOneOf3');
+      assert.isTrue(root.validate('foo'), 'any value is valid');
+    });
+
+    it('should validate with boolean schemas, all false', function () {
+      assert.isTrue(compileJSONSchema('booleanOneOf4', {
+        oneOf: [false, false, false],
+      }), 'compiling');
+      const root = getJSONSchema('booleanOneOf4');
+      assert.isFalse(root.validate('foo'), 'any value is invalid');
+    });
+
+    it('should validate complex types', function () {
+      assert.isTrue(compileJSONSchema('complexOneOf1', {
+        oneOf: [{
+          properties: {
+            bar: { type: 'integer' },
+          },
+          required: ['bar'],
+        },
+        {
+          properties: {
+            foo: { type: 'string' },
+          },
+          required: ['foo'],
+        }],
+      }));
+
+      const root = getJSONSchema('complexOneOf1');
+      assert.isTrue(root.validate({ bar: 2 }), 'first oneOf valid (complex)');
+      assert.isTrue(root.validate({ foo: 'baz' }), 'second oneOf valid (complex)');
+      assert.isFalse(root.validate({ foo: 'baz', bar: 2 }), 'both oneOf are invalid (complex)');
+      assert.isFalse(root.validate({ foo: 2, bar: 'quux' }), 'neither oneOf are valid');
+    });
+
+    it('should validate oneOf with one empty schema', function () {
+      assert.isTrue(compileJSONSchema('emptyOneOf1', {
+        anyOf: [
+          { type: 'number' },
+          { },
+        ],
+      }), 'compiling');
+
+      const root = getJSONSchema('emptyOneOf1');
+      assert.isTrue(root.validate('foobar'), 'string is valid');
+      assert.isFalse(root.validate(1234), 'both oneOf is invalid');
+    });
+
+    it('should validate oneOf with required', function () {
+      assert.isTrue(compileJSONSchema('requiredOneOf1', {
+        type: 'object',
+        oneOf: [
+          { required: ['foo', 'bar'] },
+          { required: ['foo', 'baz'] },
+        ],
+      }));
+
+      const root = getJSONSchema('requiredOneOf1');
+      assert.isFalse(root.validate({ bar: 2 }), 'one property is both invalid');
+      assert.isTrue(root.validate({ foo: 1, bar: 2 }), 'first oneOf valid');
+      assert.isTrue(root.validate({ foo: 3, baz: 4 }), 'second oneOf valid');
+      assert.isFalse(root.validate({ foo: 1, bar: 2, baz: 3 }), 'both oneOf match is invalid');
     });
   });
 

@@ -106,6 +106,8 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
     return falseThat;
   }
 
+  if (Object.keys(jsonSchema).length === 0) return trueThat;
+
   const fnType = compileTypeBasic(schemaObj, jsonSchema);
 
   addCompiler(compileSchemaBasic(schemaObj, jsonSchema));

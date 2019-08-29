@@ -10,13 +10,16 @@ import {
 
 // registerDefaultFormatCompilers();
 
-compileJSONSchema('nullableTypeArray1', { type: ['number', 'string', 'null'] });
+assert.isTrue(compileJSONSchema('emptyAnyOf1', {
+  anyOf: [
+    { type: 'number' },
+    { },
+  ],
+}), 'compiling');
 
-const root = getJSONSchema('nullableTypeArray1');
-assert.isTrue(root.validate(undefined), 'undefined is always true!');
-assert.isTrue(root.validate(null), 'null is not a number or string');
-assert.isTrue(root.validate(42), 'validates an integer');
-assert.isTrue(root.validate(Math.PI), 'validates a number');
-assert.isTrue(root.validate('Math.PI'), 'validates a string');
-assert.isFalse(root.validate([42, '42']), 'does not validate an array');
-assert.isFalse(root.validate({}), 'does not validate an object');
+const root = getJSONSchema('emptyAnyOf1');
+assert.isTrue(root.validate(undefined), 'undefined is valid');
+assert.isTrue(root.validate(null), 'null is valid');
+assert.isTrue(root.validate('foobar'), 'string is valid');
+assert.isTrue(root.validate(1234), 'number is valid');
+assert.isTrue(root.validate({ foo: 'bar' }), 'object is valid');
