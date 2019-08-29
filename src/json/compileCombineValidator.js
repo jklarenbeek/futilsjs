@@ -1,6 +1,7 @@
 import {
   falseThat,
   isFn,
+  trueThat,
 } from '../types/isFunctionType';
 
 import {
@@ -10,7 +11,28 @@ import {
 function compileAllOf(schemaObj, jsonSchema) {
   const allOf = getStrictArray(jsonSchema.allOf);
   if (allOf == null) return undefined;
-  return falseThat;
+
+  const member = schemaObj.createMember('allOf', compileAllOf);
+  const validators = [];
+  for (let i = 0; i < allOf.length; ++i) {
+    const child = allOf[i];
+    if (child === true) validators[i] = trueThat;
+    else if (child === false) validators[i] = falseThat;
+    else {
+      const validator = schemaObj.createPairValidator(member, i, child);
+      validators[i] = validator;
+    }
+  }
+
+  return function validateItemAllOf(data, dataRoot) {
+    if (data !== undefined) {
+      for (let i = 0; i < validators.length; ++i) {
+        const validator = validators[i];
+        if (validator && validator(data, dataRoot) === false) return false;
+      }
+    }
+    return true;
+  };
 }
 
 function compileAnyOf(schemaObj, jsonSchema) {

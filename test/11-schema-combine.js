@@ -12,7 +12,7 @@ import {
 describe('Schema Combination', function () {
   describe('#allOf()', function () {
     // https://json-schema.org/understanding-json-schema/reference/combining.html
-    it('should  be all or nothing string size', function () {
+    it('should  be string with maxLength 5', function () {
       compileJSONSchema('combineAllOf1', {
         allOf: [
           { type: 'string' },
@@ -23,9 +23,10 @@ describe('Schema Combination', function () {
       const root = getJSONSchema('combineAllOf1');
       assert.isTrue(root.validate('short'), 'some short value');
       assert.isFalse(root.validate('too long'), 'something to long');
+      assert.isFalse(root.validate(42), 'a number is invalid');
     });
 
-    it('should be multiple types', function () {
+    it('should be an invalid string and number', function () {
       compileJSONSchema('combineAllOf2', {
         allOf: [
           { type: 'string' },
@@ -37,7 +38,7 @@ describe('Schema Combination', function () {
       assert.isFalse(root.validate('Yes Way'), 'a string will not validate');
       assert.isFalse(root.validate(42), 'a number will not validate');
       assert.isFalse(root.validate([]), 'an array will not validate');
-      assert.isFalse(root.Validate({}), 'an object will not validate either');
+      assert.isFalse(root.validate({}), 'an object will not validate either');
     });
 
     // https://github.com/json-schema-org/JSON-Schema-Test-Suite/blob/master/tests/draft7/allOf.json
