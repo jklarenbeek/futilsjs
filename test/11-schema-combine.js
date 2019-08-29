@@ -174,12 +174,12 @@ describe('Schema Combination', function () {
 
   describe('#anyOf()', function () {
     it('should be valid against any (one or more) of the given subschemas.', function () {
-      compileJSONSchema('combineAnyOf1', {
+      assert.isTrue(compileJSONSchema('combineAnyOf1', {
         anyOf: [
           { type: 'string' },
           { type: 'number' },
         ],
-      });
+      }), 'compiling');
 
       const root = getJSONSchema('combineAnyOf1');
       assert.isTrue(root.validate('Yes'), 'a string works');
@@ -194,7 +194,105 @@ describe('Schema Combination', function () {
           { type: 'integer' },
           { minimum: 2 },
         ],
+      }), 'compiling');
+
+      const root = getJSONSchema('simpleAnyOf1');
+      assert.isTrue(root.validate(1), 'first anyOf is valid');
+      assert.isTrue(root.validate(2.5), 'second anyOf is valid');
+      assert.isTrue(root.validate(3), 'both anyOf are valid');
+      assert.isFalse(root.validate(1.5), 'neither anyOf is valid');
+    });
+
+    it('should validate anyOf with base schema', function () {
+      assert.isTrue(compileJSONSchema('baseAnyOf1', {
+        type: 'string',
+        anyOf: [
+          { maxLength: 2 },
+          { minLength: 4 },
+        ],
+      }), 'compiling');
+
+      const root = getJSONSchema('baseAnyOf1');
+      assert.isFalse(root.validate(3), 'mismatch base schema');
+      assert.isTrue(root.validate('foobar'), 'one anyOf is valid');
+      assert.isFalse(root.validate('foo'), 'both anyOf are invalid');
+    });
+
+    it('should validate with boolean schemas, all true', function () {
+      assert.isTrue(compileJSONSchema('booleanAnyOf1', {
+        anyOf: [true, true],
+      }), 'compiling');
+      const root = getJSONSchema('booleanAnyOf1');
+      assert.isTrue(root.validate('foo'), 'any value is valid');
+    });
+
+    it('should validate with boolean schemas, some false', function () {
+      assert.isTrue(compileJSONSchema('booleanAnyOf2', {
+        anyOf: [true, false],
       }));
+      const root = getJSONSchema('booleanAnyOf2');
+      assert.isTrue(root.validate('foo'), 'any value is valid');
+    });
+
+    it('should validate with boolean schemas, all false', function () {
+      assert.isTrue(compileJSONSchema('booleanAnyOf3', {
+        anyOf: [false, false],
+      }), 'compiling');
+      const root = getJSONSchema('booleanAnyOf3');
+      assert.isFalse(root.validate('foo'), 'any value is invalid');
+    });
+
+    it('should validate anyOf complex types', function () {
+      assert.isTrue(compileJSONSchema('complexAnyOf1', {
+        anyOf: [
+          {
+            properties: {
+              bar: { type: 'integer' },
+            },
+            required: ['bar'],
+          },
+          {
+            properties: {
+              foo: { type: 'string' },
+            },
+            required: ['foo'],
+          },
+        ],
+      }), 'compiling');
+
+      const root = getJSONSchema('complexAnyOf1');
+      assert.isTrue(root.validate({ bar: 2 }), 'first anyOf valid (complex)');
+      assert.isTrue(root.validate({ foo: 'baz' }), 'second anyOf valid (complex)');
+      assert.isTrue(root.validate({ foo: 'baz', bar: 2 }), 'both anyOf valid (complex)');
+      assert.isFalse(root.validate({ foo: 2, bar: 'quux' }), 'neither anyOf valid (complex)');
+
+    });
+
+    it('should validate anyOf with one empty schema', function () {
+      assert.isTrue(compileJSONSchema('emptyAnyOf1', {
+        anyOf: [
+          { type: 'number' },
+          { },
+        ],
+      }), 'compiling');
+
+      const root = getJSONSchema('emptyAnyOf1');
+      assert.isTrue(root.validate('foobar'), 'string is valid');
+      assert.isTrue(root.validate(1234), 'number is valid');
+    });
+
+    it('should validate nested anyOf to check symantics', function () {
+      assert.isTrue(compileJSONSchema('nestedAnyOf1', {
+        anyOf: [
+          { type: 'number' },
+          { },
+        ],
+      }), 'compiling');
+
+      const root = getJSONSchema('nestedAnyOf1');
+      assert.isTrue(root.validate(null), 'null is valid');
+      assert.isFalse(root.validate(1234), 'anything non-null is invalid');
+
     });
   });
 

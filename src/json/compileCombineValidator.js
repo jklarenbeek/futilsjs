@@ -24,7 +24,7 @@ function compileAllOf(schemaObj, jsonSchema) {
     }
   }
 
-  return function validateItemAllOf(data, dataRoot) {
+  return function validateAllOf(data, dataRoot) {
     if (data !== undefined) {
       for (let i = 0; i < validators.length; ++i) {
         const validator = validators[i];
@@ -38,7 +38,29 @@ function compileAllOf(schemaObj, jsonSchema) {
 function compileAnyOf(schemaObj, jsonSchema) {
   const anyOf = getStrictArray(jsonSchema.anyOf);
   if (anyOf == null) return undefined;
-  return falseThat;
+
+  const member = schemaObj.createMember('anyOf', compileAnyOf);
+  const validators = [];
+  for (let i = 0; i < anyOf.length; ++i) {
+    const child = anyOf[i];
+    if (child === true) validators[i] = trueThat;
+    else if (child === false) validators[i] = falseThat;
+    else {
+      const validator = schemaObj.createPairValidator(member, i, child);
+      validators[i] = validator;
+    }
+  }
+
+  return function validateAnyOf(data, dataRoot) {
+    if (data !== undefined) {
+      for (let i = 0; i < validators.length; ++i) {
+        const validator = validators[i];
+        if (validator && validator(data, dataRoot) === true) return true;
+      }
+      return false;
+    }
+    return true;
+  };
 }
 
 function compileOneOf(schemaObj, jsonSchema) {

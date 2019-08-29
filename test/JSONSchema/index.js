@@ -10,8 +10,13 @@ import {
 
 // registerDefaultFormatCompilers();
 
-compileJSONSchema('emptyAllOf1', {
-  allOf: [{}],
-});
-const root = getJSONSchema('emptyAllOf1');
-assert.isTrue(root.validate(1), 'any value is valid');
+assert.isTrue(compileJSONSchema('emptyAnyOf1', {
+  anyOf: [
+    { type: 'number' },
+    { },
+  ],
+}), 'compiling');
+
+const root = getJSONSchema('emptyAnyOf1');
+assert.isTrue(root.validate('foobar'), 'string is valid');
+assert.isTrue(root.validate(1234), 'number is valid');
