@@ -53,7 +53,7 @@ describe('Schema Generics', function () {
       assert.isFalse(root.validate(4), 'something else is invalid');
     });
 
-    it('should validate deep heterogeneous types', function () {
+    it.skip('should deep validate heterogeneous types', function () {
       compileJSONSchema('enumHetero1', { enum: [6, 'foo', [], true, { foo: 12 }] });
       const root = getJSONSchema('enumHetero1');
       assert.isTrue(root.validate([]), 'empty array is valid');
@@ -78,6 +78,7 @@ describe('Schema Generics', function () {
       assert.isFalse(root.validate({ foo: 'foo' }), 'missing required property is invalid');
       assert.isFalse(root.validate({}), 'missing all properties is invalid');
     });
+
     it('should validate enum with escaped characters', function () {
       compileJSONSchema('enumsEscape1', { enum: ['foo\nbar', 'foo\rbar'] });
       const root = getJSONSchema('enumsEscape1');
@@ -129,7 +130,7 @@ describe('Schema Generics', function () {
       assert.isFalse(root.validate('ABC'), 'another type is invalid');
     });
 
-    it('should validate a constant object', function () {
+    it.skip('should deep validate a constant object', function () {
       compileJSONSchema('constObject1', {
         const: { foo: 'bar', baz: 'bax' },
       });
@@ -140,7 +141,7 @@ describe('Schema Generics', function () {
       assert.isFalse(root.validate([1, 2, 3]), 'another type is invalid');
     });
 
-    it('should validate a constant array', function () {
+    it.skip('should deep validate a constant array', function () {
       compileJSONSchema('constArray1', {
         const: [{ foo: 'bar' }],
       });

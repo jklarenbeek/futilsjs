@@ -9,7 +9,7 @@ import {
   getJSONSchema,
 } from '../src/json';
 
-describe('Schema References', function () {
+describe.skip('Schema References', function () {
   context('#allOf()', function () {
     // https://json-schema.org/understanding-json-schema/reference/combining.html
     it('should be a type of inheritance 3a', function () {

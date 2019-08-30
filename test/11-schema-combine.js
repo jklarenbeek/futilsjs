@@ -9,7 +9,7 @@ import {
   getJSONSchema,
 } from '../src/json';
 
-describe('Schema Combination', function () {
+describe('Schema Combinations', function () {
   describe('#allOf()', function () {
     // https://json-schema.org/understanding-json-schema/reference/combining.html
     it('should  be string with maxLength 5', function () {

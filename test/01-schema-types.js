@@ -13,8 +13,8 @@ import {
 
 // https://json-schema.org/understanding-json-schema/reference/type.html
 
-describe('#types()', function () {
-  context('validate non-nullable and non-required types', function () {
+describe('JSON Schema Types', function () {
+  describe('#types()', function () {
     it('should validate number types', function () {
       compileJSONSchema('typesNumber1', { type: 'number' });
 
@@ -131,7 +131,7 @@ describe('#types()', function () {
     });
   });
 
-  context('validate required types', function () {
+  describe('#required()', function () {
 
     it('should validate a required number', function () {
       compileJSONSchema('requiredNumber1', { type: 'number', required: true });
@@ -189,7 +189,7 @@ describe('#types()', function () {
 
   });
 
-  context('validate nullable types', function () {
+  describe('#nullable()', function () {
     it('should validate a simple null type', function () {
       assert.isTrue(compileJSONSchema('nullableType1', { type: 'null' }));
       const root = getJSONSchema('nullableType1');
