@@ -3127,6 +3127,10 @@ function isStrictStringType(data) {
 }
 isStrictStringType.typeName = 'string';
 
+function isStrictNullValue(data) {
+  return data === null;
+}
+
 function isStrictObjectType(data) {
   return data != null
     && typeof data === 'object'
@@ -3329,6 +3333,24 @@ function getStringOrArray(obj, def) {
   return isStringOrArray(obj) ? obj : def;
 }
 
+function getArrayUnique(obj, def) {
+  return isStrictArrayType(obj)
+    ? Array_getUnique(obj)
+    : isStrictObjectOfType(obj, Set)
+      ? Array.from(obj)
+      : def;
+}
+
+function getStringOrArrayUnique(obj, def) {
+  return isStrictStringType(obj)
+    ? obj
+    : isStrictArrayType(obj)
+      ? Array_getUnique(obj)
+      : isStrictObjectOfType(obj, Set)
+        ? Array.from(obj)
+        : def;
+}
+
 function getArrayOrSetLength(data) {
   return data.constructor === Set
     ? data.size
@@ -3363,8 +3385,12 @@ function createIsStrictDataType(type, format, isstrict = false) {
   else if (type === 'tuple') {
     return isStrictArrayType;
   }
+  else if (type === 'regex') {
+    return createIsStrictObjectOfType(RegExp);
+  }
   else {
     switch (type) {
+      case 'null': return isStrictNullValue;
       case 'boolean': return isStrictBooleanType;
       case 'integer': return isStrictIntegerType;
       case 'bigint': return isStrictBigIntType;
@@ -3428,73 +3454,86 @@ const performance$1 = isBrowser
     },
   };
 
-function compileType(schemaObj, jsonSchema) {
-  const type = getStringOrArray(jsonSchema.type);
-  const nullable = getBooleanishType(jsonSchema.nullable);
+function compileStringType(schemaObj, jsonSchema) {
+  const type = getStrictString(jsonSchema.type);
+  if (type == null) return undefined;
 
-  if (isStrictStringType(type)) {
-    const isStrictDataType = createIsStrictDataType(type);
-    if (isStrictDataType) {
-      const addError = schemaObj.createMemberError('type', type, compileType, 'string');
-      if (nullable != null) schemaObj.createMemberError('nullable', nullable, compileType, 'string');
+  const isDataType = createIsStrictDataType(type);
+  if (!isDataType) return undefined;
 
-      if (nullable === true) {
-        return function validateNullableType(data) {
-          const valid = data == null ? true : isStrictDataType(data);
-          if (valid) return true;
-          return addError(data);
-        };
-      }
-      else {
-        return isStrictDataType;
-      }
+  const addError = schemaObj.createMemberError('type', type, compileStringType);
+  if (!addError) return undefined;
+
+  return function validateTypeSimple(data) {
+    return isDataType(data) ? true : addError(data);
+  };
+}
+
+function compileArrayType(schemaObj, jsonSchema) {
+  const type = getArrayUnique(jsonSchema.type);
+  if (type == null) return undefined;
+
+  // collect all testable data types
+  const types = [];
+  const names = [];
+  for (let i = 0; i < type.length; ++i) {
+    const tp = type[i];
+    const cb = createIsStrictDataType(tp);
+    if (cb) {
+      types.push(cb);
+      names.push(tp);
     }
   }
-  else if (isStrictArrayType(type)) {
-    const types = [];
-    let isnullable = nullable || false;
-    for (let i = 0; i < type.length; ++i) {
-      const tp = type[i];
-      if (tp === 'null') { isnullable = true; continue; }
-      const cb = createIsStrictDataType(tp);
-      if (cb) types.push(cb);
-    }
-    if (types.length > 0) {
-      const addError = schemaObj.createMemberError('type', type, compileType, 'array');
-      if (isnullable === true) {
-        return function validateNullableTypes(data) {
-          if (data == null) return true;
-          for (let i = 0; i < types.length; ++i) {
-            if (types[i](data) === true) return true;
-          }
-          return addError(data);
-        };
-      }
-      else {
-        return function validateNotNullableTypes(data) {
-          for (let i = 0; i < types.length; ++i) {
-            if (types[i](data) === true) return true;
-          }
-          return addError(data);
-        };
-      }
-    }
-  }
-  else if (nullable === false) {
-    const addError = schemaObj.createMemberError('nullable', nullable, compileType);
-    return function validateNotNullable(data) {
-      return data == null
-        ? addError(data)
-        : true;
+
+  // if non has been found exit
+  if (names.length === 0) return undefined;
+
+  // if one has been found create a validator
+  if (names.length === 1) {
+    const addError = schemaObj.createMemberError('type', names[0], compileArrayType);
+    if (!addError) return undefined;
+    const dt1 = types[0];
+    return function validateArrayOfTypeOne(data) {
+      return dt1(data) ? true : addError(data);
     };
   }
-
-  return undefined;
+  else if (names.length === 2) {
+    const addError = schemaObj.createMemberError('type,', names, compileArrayType);
+    if (!addError) return undefined;
+    const dt1 = types[0];
+    const dt2 = types[1];
+    return function validateArrayOfTypeTwo(data) {
+      return dt1(data) || dt2(data) ? true : addError(data);
+    };
+  }
+  else if (names.length === 3) {
+    const addError = schemaObj.createMemberError('type,', names, compileArrayType);
+    if (!addError) return undefined;
+    const dt1 = types[0];
+    const dt2 = types[1];
+    const dt3 = types[2];
+    return function validateArrayOfTypeThree(data) {
+      return dt1(data) || dt2(data) || dt3(data) ? true : addError(data);
+    };
+  }
+  else {
+    const addError = schemaObj.createMemberError('type', names, compileArrayType);
+    if (!addError) return undefined;
+    return function validateArrayOfTypeAll(data) {
+      for (let i = 0; i < types.length; ++i) {
+        if (types[i](data) === true) return true;
+      }
+      return addError(data);
+    };
+  }
 }
 
 function compileTypeBasic(schemaObj, jsonSchema) {
+  const fnType = compileStringType(schemaObj, jsonSchema)
+    || compileArrayType(schemaObj, jsonSchema);
   const required = getBoolOrArray(jsonSchema.required, false);
-  const fnType = compileType(schemaObj, jsonSchema);
+  const nullable = getBooleanishType(jsonSchema.nullable);
+
   if (required === false) {
     if (fnType) {
       return function validateTypeBasic(data) {
@@ -3502,23 +3541,30 @@ function compileTypeBasic(schemaObj, jsonSchema) {
         return fnType(data);
       };
     }
+    return undefined;
   }
   else if (fnType) {
     const addError = schemaObj.createMemberError('required', required, compileTypeBasic);
+    if (!addError) return undefined;
     return function validateRequiredType(data) {
       if (data === undefined) return addError(data);
       return fnType(data);
     };
   }
-  else {
-    const addError = schemaObj.createMemberError('required', required, compileTypeBasic);
-    return function validateRequiredData(data) {
-      if (data === undefined) return addError(data);
+  else if (nullable === false) {
+    const addError = schemaObj.createMemberError(['nullable', 'required'], [nullable, required], compileTypeBasic);
+    return function validateRequiredNonNullableData(data) {
+      if (data === undefined) return addError('required', data);
+      if (data === null) return addError('nullable', data);
       return true;
     };
   }
-
-  return undefined;
+  else {
+    const addError = schemaObj.createMemberError('required', required, compileTypeBasic);
+    return function validateRequiredNullableData(data) {
+      return data !== undefined ? true : addError(data);
+    };
+  }
 }
 
 //#region number definitions
@@ -4996,31 +5042,123 @@ function compileArrayChildren(schemaObj, jsonSchema) {
 function compileAllOf(schemaObj, jsonSchema) {
   const allOf = getStrictArray(jsonSchema.allOf);
   if (allOf == null) return undefined;
-  return falseThat;
+
+  const member = schemaObj.createMember('allOf', compileAllOf);
+  const validators = [];
+  for (let i = 0; i < allOf.length; ++i) {
+    const child = allOf[i];
+    if (child === true)
+      validators.push(trueThat);
+    else if (child === false)
+      validators.push(falseThat);
+    else {
+      const validator = schemaObj.createPairValidator(member, i, child);
+      if (isFn(validator))
+        validators.push(validator);
+    }
+  }
+
+  if (validators.length === 0) return undefined;
+
+  return function validateAllOf(data, dataRoot) { // TODO: addError??
+    if (data !== undefined) {
+      for (let i = 0; i < validators.length; ++i) {
+        const validator = validators[i];
+        if (validator(data, dataRoot) === false) return false;
+      }
+    }
+    return true;
+  };
 }
 
 function compileAnyOf(schemaObj, jsonSchema) {
   const anyOf = getStrictArray(jsonSchema.anyOf);
   if (anyOf == null) return undefined;
-  return falseThat;
+
+  const member = schemaObj.createMember('anyOf', compileAnyOf);
+  const validators = [];
+  for (let i = 0; i < anyOf.length; ++i) {
+    const child = anyOf[i];
+    if (child === true)
+      validators.push(trueThat);
+    else if (child === false)
+      validators.push(falseThat);
+    else {
+      const validator = schemaObj.createPairValidator(member, i, child);
+      if (isFn(validator))
+        validators.push(validator);
+    }
+  }
+
+  if (validators.length === 0) return undefined;
+
+  return function validateAnyOf(data, dataRoot) { // TODO: addError??
+    if (data !== undefined) {
+      for (let i = 0; i < validators.length; ++i) {
+        const validator = validators[i];
+        if (validator(data, dataRoot) === true) return true;
+      }
+      return false;
+    }
+    return true;
+  };
 }
 
 function compileOneOf(schemaObj, jsonSchema) {
   const oneOf = getStrictArray(jsonSchema.oneOf);
   if (oneOf == null) return undefined;
-  return falseThat;
+
+  const member = schemaObj.createMember('oneOf', compileOneOf);
+  const validators = [];
+  for (let i = 0; i < oneOf.length; ++i) {
+    const child = oneOf[i];
+    if (child === true)
+      validators.push(trueThat);
+    else if (child === false)
+      validators.push(falseThat);
+    else {
+      const validator = schemaObj.createPairValidator(member, i, child);
+      if (isFn(validator))
+        validators.push(validator);
+    }
+  }
+
+  if (validators.length === 0) return undefined;
+
+  return function validateOneOf(data, dataRoot) { // TODO: addError??
+    let found = false;
+    for (let i = 0; i < validators.length; ++i) {
+      const validator = validators[i];
+      if (validator(data, dataRoot) === true) {
+        if (found === true) return false;
+        found = true;
+      } // TODO: else how to silent this error?
+    }
+    return found;
+  };
 }
 
 function compileNotOf(schemaObj, jsonSchema) {
-  const notOf = getStrictArray(jsonSchema.not);
+  const notOf = getBoolOrObject(jsonSchema.not);
   if (notOf == null) return undefined;
-  return falseThat;
+  if (notOf === true) return falseThat;
+  if (notOf === false) return trueThat;
+
+  const validate = schemaObj.createSingleValidator('not', notOf, compileNotOf);
+  if (!validate) return undefined;
+
+  return function validateNotOf(data, dataRoot) { // TODO: addError??
+    if (data === undefined) return true;
+    return validate(data, dataRoot) === false; // TODO: howto silent this error???
+    // NOTE: we can push the context on schemaObj = schemaObj.pushSchemaContext()?
+  };
 }
 
 function compileCombineSchema(schemaObj, jsonSchema) {
   const compilers = [];
   function addCompiler(compiler) {
-    if (isFn(compiler)) compilers.push(compiler);
+    if (isFn(compiler))
+      compilers.push(compiler);
   }
 
   addCompiler(compileAllOf(schemaObj, jsonSchema));
@@ -5134,9 +5272,9 @@ function compileSchemaAdvanced(schemaObj, jsonSchema) {
 }
 
 function compileSchemaObject(schemaObj, jsonSchema) {
-  const compilers = [];
-  function addCompiler(compiler) {
-    if (isFn(compiler)) compilers.push(compiler);
+  const validators = [];
+  function addCompiler(validator) {
+    if (isFn(validator)) validators.push(validator);
   }
 
   if (jsonSchema === true) return trueThat;
@@ -5145,53 +5283,53 @@ function compileSchemaObject(schemaObj, jsonSchema) {
     return falseThat;
   }
 
+  if (Object.keys(jsonSchema).length === 0) return trueThat;
+
   const fnType = compileTypeBasic(schemaObj, jsonSchema);
 
   addCompiler(compileSchemaBasic(schemaObj, jsonSchema));
   addCompiler(compileSchemaChildren(schemaObj, jsonSchema));
   addCompiler(compileSchemaAdvanced(schemaObj, jsonSchema));
 
-  if (compilers.length === 0) {
+  if (validators.length === 0) {
     if (fnType) return fnType;
     return undefined;
   }
 
-  if (compilers.length === 1) {
-    const first = compilers[0];
+  if (validators.length === 1) {
+    const first = validators[0];
     if (fnType) return function validateSchemaObjectSingle(data, dataRoot) {
-      const vType = fnType(data, dataRoot);
-      if (vType === false) return false;
+      if (fnType(data, dataRoot) === false) return false;
+      // we do not continue if undefined
       if (data === undefined) return true;
-
       return first(data, dataRoot);
     };
+
     return first;
   }
 
-  if (compilers.length === 2) {
-    const first = compilers[0];
-    const second = compilers[1];
+  if (validators.length === 2) {
+    const first = validators[0];
+    const second = validators[1];
     if (fnType) return function validateSchemaObjectTypedPair(data, dataRoot) {
-      const vType = fnType(data, dataRoot);
-      if (vType === false) return false;
+      if (fnType(data, dataRoot) === false) return false;
       if (data === undefined) return true;
-
       return first(data, dataRoot) && second(data, dataRoot);
     };
+
     return function validateSchemaObjectPair(data, dataRoot) {
       if (data === undefined) return true;
       return first(data, dataRoot) && second(data, dataRoot);
     };
   }
 
-  if (compilers.length === 3) {
-    const first = compilers[0];
-    const second = compilers[1];
-    const thirth = compilers[2];
+  if (validators.length === 3) {
+    const first = validators[0];
+    const second = validators[1];
+    const thirth = validators[2];
 
     if (fnType) return function validateSchemaObjectTypedAll(data, dataRoot) {
-      const vType = fnType(data, dataRoot);
-      if (vType === false) return false;
+      if (fnType(data, dataRoot) === false) return false;
       if (data === undefined) return true;
       return first(data, dataRoot)
         && second(data, dataRoot)
@@ -5399,5 +5537,5 @@ function getJSONSchema(baseUri) {
   return undefined;
 }
 
-export { VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, collapseCssClass, collapseToString, compileJSONSchema, copyAttributes, createIsStrictDataType, createIsStrictObjectOfType, createStorageCache, def_vec2f64, def_vec2i32, def_vec3f64, base$1 as f64, fallbackFn, falseThat, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, math$1 as fm64, getArrayMinItems, getArrayOrSetLength, getArrayishType, getBoolOrArray, getBoolOrNumber, getBoolOrObject, getBooleanishType, getIntegerishType, getJSONSchema, getNumberishType, getObjectishType, getSanitizedPrimitive, getStrictArray, getStrictArrayMinItems, getStrictBoolean, getStrictInteger, getStrictNumber, getStrictObject, getStrictString, getStringOrArray, getStringOrObject, getVNodeAttr, getVNodeKey, getVNodeName, h, hasCssClass, base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isArrayOrSet, isArrayishType, isBoolOrArray, isBoolOrNumber, isBoolOrObject, isBooleanishType, isFn, isFnEx, isIntegerishType, isNumberishType, isObjectOrMap, isObjectishType, isPrimitiveType, isPrimitiveTypeEx, isStrictArrayType, isStrictBigIntType, isStrictBooleanType, isStrictIntegerType, isStrictNumberType, isStrictObjectOfType, isStrictObjectType, isStrictStringType, isStrictTypedArray, isStringOrArray, isStringOrDate, isStringOrObject, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, registerDefaultFormatCompilers, registerFormatCompiler, removeCssClass, shape as s2f64, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, trueThat, undefThat, vec2$1 as v2f64, vec2 as v2i32, vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_add, vec3f64_adds, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_dot, vec3f64_iadd, vec3f64_iadds, vec3f64_idiv, vec3f64_idivs, vec3f64_imul, vec3f64_imuls, vec3f64_isub, vec3f64_isubs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_mul, vec3f64_muls, vec3f64_new, vec3f64_sub, vec3f64_subs, vec3f64_unit, workletState, wrapVN };
+export { VN, VNode, addCssClass, app, circle2f64, circle2f64_POINTS, collapseCssClass, collapseToString, compileJSONSchema, copyAttributes, createIsStrictDataType, createIsStrictObjectOfType, createStorageCache, def_vec2f64, def_vec2i32, def_vec3f64, base$1 as f64, fallbackFn, falseThat, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, math$1 as fm64, getArrayMinItems, getArrayOrSetLength, getArrayUnique, getArrayishType, getBoolOrArray, getBoolOrNumber, getBoolOrObject, getBooleanishType, getIntegerishType, getJSONSchema, getNumberishType, getObjectishType, getSanitizedPrimitive, getStrictArray, getStrictArrayMinItems, getStrictBoolean, getStrictInteger, getStrictNumber, getStrictObject, getStrictString, getStringOrArray, getStringOrArrayUnique, getStringOrObject, getVNodeAttr, getVNodeKey, getVNodeName, h, hasCssClass, base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isArrayOrSet, isArrayishType, isBoolOrArray, isBoolOrNumber, isBoolOrObject, isBooleanishType, isFn, isFnEx, isIntegerishType, isNumberishType, isObjectOrMap, isObjectishType, isPrimitiveType, isPrimitiveTypeEx, isStrictArrayType, isStrictBigIntType, isStrictBooleanType, isStrictIntegerType, isStrictNullValue, isStrictNumberType, isStrictObjectOfType, isStrictObjectType, isStrictStringType, isStrictTypedArray, isStringOrArray, isStringOrDate, isStringOrObject, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, registerDefaultFormatCompilers, registerFormatCompiler, removeCssClass, shape as s2f64, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, trueThat, undefThat, vec2$1 as v2f64, vec2 as v2i32, vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_add, vec3f64_adds, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_dot, vec3f64_iadd, vec3f64_iadds, vec3f64_idiv, vec3f64_idivs, vec3f64_imul, vec3f64_imuls, vec3f64_isub, vec3f64_isubs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_mul, vec3f64_muls, vec3f64_new, vec3f64_sub, vec3f64_subs, vec3f64_unit, workletState, wrapVN };
 //# sourceMappingURL=index.js.map
