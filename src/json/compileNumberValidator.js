@@ -13,11 +13,21 @@ import {
   isBigIntSchema,
 } from './isSchemaType';
 
+function getNumberExclusiveBound(inclusive, exclusive) {
+  const includes = Number.isNaN(Number(inclusive))
+    ? undefined
+    : Number(inclusive);
+  const excludes = exclusive === true
+    ? includes
+    : Number.isNaN(Number(exclusive))
+      ? undefined
+      : Number(exclusive);
+  return excludes;
+}
+
 function compileNumberMaximum(schemaObj, jsonSchema) {
-  const max = Number(jsonSchema.maximum) || undefined;
-  const emax = jsonSchema.exclusiveMaximum === true
-    ? max
-    : Number(jsonSchema.exclusiveMaximum) || undefined;
+  const max = getNumberishType(jsonSchema.maximum) || undefined;
+  const emax = getNumberExclusiveBound(max, jsonSchema.exclusiveMaximum);
 
   const isDataType = isBigIntSchema(jsonSchema)
     ? isStrictBigIntType
@@ -25,7 +35,7 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
       ? isStrictIntegerType
       : isStrictNumberType;
 
-  if (emax) {
+  if (emax != null) {
     const addError = schemaObj.createMemberError(
       'exclusiveMaximum',
       emax,
@@ -40,7 +50,7 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
       return true;
     };
   }
-  else if (max) {
+  else if (max != null) {
     const addError = schemaObj.createMemberError(
       'maximum',
       max,
@@ -59,10 +69,8 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
 }
 
 function compileNumberMinimum(schemaObj, jsonSchema) {
-  const min = Number(jsonSchema.minimum) || undefined; // BUG: IGNORING BITINT TYPE!
-  const emin = jsonSchema.exclusiveMinimum === true
-    ? min
-    : Number(jsonSchema.exclusiveMinimum) || undefined; // TODO: IGNORING BITINT TYPE!
+  const min = getNumberishType(jsonSchema.minimum); // BUG: IGNORING BITINT TYPE!
+  const emin = getNumberExclusiveBound(min, jsonSchema.exclusiveMinimum);
 
   const isDataType = isBigIntSchema(jsonSchema)
     ? isStrictBigIntType
@@ -71,7 +79,7 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
       : isStrictNumberType;
   if (!isDataType) return undefined;
 
-  if (emin) {
+  if (emin != null) {
     const addError = schemaObj.createMemberError(
       'exclusiveMinimum',
       emin,
@@ -86,7 +94,7 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
       return true;
     };
   }
-  else if (min) {
+  else if (min != null) {
     const addError = schemaObj.createMemberError(
       'minimum',
       min,

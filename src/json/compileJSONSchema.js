@@ -1,7 +1,6 @@
 import {
   isStrictStringType,
   isStrictArrayType,
-  isObjectishType,
   isStrictIntegerType,
 } from '../types/isDataType';
 
@@ -24,6 +23,10 @@ import {
 import {
   JSONPointer_concatPath,
 } from './pointer';
+
+import {
+  isBoolOrObject,
+} from '../types/isDataTypeExtra';
 
 class SchemaError {
   constructor(timeStamp, member, key, value, rest) {
@@ -135,17 +138,17 @@ class SchemaObject {
 
   createSingleValidator(key, child, ...rest) {
     const self = this;
-    if (isStrictStringType(key)) {
-      const childObj = new SchemaObject(
-        self.schemaRoot,
-        JSONPointer_concatPath(self.schemaPath, key),
-        rest,
-      );
-      const validator = compileSchemaObject(childObj, child);
-      childObj.validateFn = validator;
-      return validator;
-    }
-    return undefined;
+    if (!isStrictStringType(key)) return undefined;
+    if (!isBoolOrObject(child)) return undefined;
+
+    const childObj = new SchemaObject(
+      self.schemaRoot,
+      JSONPointer_concatPath(self.schemaPath, key),
+      rest,
+    );
+    const validator = compileSchemaObject(childObj, child);
+    childObj.validateFn = validator;
+    return validator;
   }
 
   createPairValidator(member, key, child, ...rest) {
@@ -153,7 +156,7 @@ class SchemaObject {
     const valid = member instanceof SchemaMember
       && (isStrictStringType(key)
         || isStrictIntegerType(key))
-      && isObjectishType(child);
+      && isBoolOrObject(child);
     if (!valid) return undefined;
 
     const childObj = new SchemaObject(

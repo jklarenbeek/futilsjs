@@ -49,7 +49,7 @@ export function isStrictNumberType(data) {
 isStrictNumberType.typeName = 'number';
 
 export function isNumberishType(data) {
-  return (Number(data) || false) !== false;
+  return (Number(data) || data === 0 || false) !== false;
 }
 isNumberishType.typeName = 'number';
 

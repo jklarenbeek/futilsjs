@@ -1,10 +1,30 @@
-import { falseThat } from '../types/isFunctionType';
-import { getObjectishType } from '../types/getDataType';
+import {
+  fallbackFn,
+} from '../types/isFunctionType';
+
+import {
+  getObjectishType,
+} from '../types/getDataType';
 
 export function compileConditionSchema(schemaObj, jsonSchema) {
   const jsif = getObjectishType(jsonSchema.if);
   const jsthen = getObjectishType(jsonSchema.then);
   const jselse = getObjectishType(jsonSchema.else);
-  if (jsif == null && jsthen == null && jselse == null) return undefined;
-  return falseThat;
+  if (jsif == null) return undefined;
+  if (jsthen == null && jselse == null) return undefined;
+
+  const validateIf = schemaObj.createSingleValidator('if', jsif, compileConditionSchema);
+  const tmpThen = schemaObj.createSingleValidator('then', jsthen, compileConditionSchema);
+  const tmpElse = schemaObj.createSingleValidator('else', jselse, compileConditionSchema);
+  if (validateIf == null) return undefined;
+  if (tmpThen == null && tmpElse == null) return undefined;
+
+  const validateThen = fallbackFn(tmpThen);
+  const validateElse = fallbackFn(tmpElse);
+  return function validateCondition(data, dataRoot) {
+    if (validateIf(data))
+      return validateThen(data, dataRoot);
+    else
+      return validateElse(data, dataRoot);
+  };
 }

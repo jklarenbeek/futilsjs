@@ -13,8 +13,9 @@ import {
 
 describe('Schema Conditionals', function () {
   describe('#if()', function () {
-    it.skip('should not be a very scalable postal code', function () {
-      compileJSONSchema('conditionIf1', {
+    // https://json-schema.org/understanding-json-schema/reference/conditionals.html
+    it('should not be a very scalable postal code', function () {
+      assert.isTrue(compileJSONSchema('conditionIf1', {
         type: 'object',
         properties: {
           street_address: {
@@ -33,7 +34,7 @@ describe('Schema Conditionals', function () {
         else: {
           properties: { postal_code: { pattern: '[A-Z][0-9][A-Z] [0-9][A-Z][0-9]' } },
         },
-      });
+      }), 'compiling');
 
       const root = getJSONSchema('conditionIf1');
       assert.isTrue(root.validate({
@@ -52,8 +53,9 @@ describe('Schema Conditionals', function () {
         postal_code: '10000',
       }), 'an invalid postal code for canada');
     });
-    it.skip('should be a better scalable postal code', function () {
-      compileJSONSchema('conditionIf2', {
+
+    it('should be a better scalable postal code', function () {
+      assert.isTrue(compileJSONSchema('conditionIf2', {
         type: 'object',
         properties: {
           street_address: {
@@ -89,7 +91,7 @@ describe('Schema Conditionals', function () {
             },
           },
         ],
-      });
+      }), 'compiling');
 
       const root = getJSONSchema('conditionIf2');
       assert.isTrue(root.validate({
@@ -112,6 +114,42 @@ describe('Schema Conditionals', function () {
         country: 'Canada',
         postal_code: '10000',
       }), 'an invalid canadian postal code');
+    });
+
+    it('should validate without the else keyword', function () {
+      assert.isTrue(compileJSONSchema('withoutIf1', {
+        if: { exclusiveMaximum: 0 },
+        then: { minimum: -10 },
+      }), 'compiling');
+
+      const root = getJSONSchema('withoutIf1');
+      assert.isTrue(root.validate(-1), 'valid through then');
+      assert.isFalse(root.validate(-100), 'invalid through then');
+      assert.isTrue(root.validate(3), 'valid when if test fails');
+    });
+
+    it('should validate without the then keyword', function () {
+      assert.isTrue(compileJSONSchema('withoutIf2', {
+        if: { exclusiveMaximum: 0 },
+        else: { multipleOf: 2 },
+      }));
+      const root = getJSONSchema('withoutIf2');
+      assert.isTrue(root.validate(-1), 'valid when if test passes');
+      assert.isTrue(root.validate(4), 'valid through else');
+      assert.isFalse(root.validate(3), 'invalid through else');
+    });
+
+    it('should validate against the correct branch', function () {
+      assert.isTrue(compileJSONSchema('branchIf1', {
+        if: { exclusiveMaximum: 0 },
+        then: { minimum: -10 },
+        else: { multipleOf: 2 },
+      }), 'compiling');
+      const root = getJSONSchema('branchIf1');
+      assert.isTrue(root.validate(-1), 'valid through then');
+      assert.isFalse(root.validate(-100), 'invalid through then');
+      assert.isTrue(root.validate(4), 'valid through else');
+      assert.isFalse(root.validate(3), 'invalid through else');
     });
   });
 });
