@@ -10,7 +10,7 @@
   "scripts": {
     "build": "rollup -c",
     "schema": "parcel ./test/JSONSchema/index.html",
-    "test": "mocha --require @babel/register \"test/*.js\""
+    "test": "nyc mocha --require @babel/register \"test/*.js\""
   },
   "keywords": [
     "javascript",
@@ -47,6 +47,7 @@
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-react": "^7.14.3",
     "mocha": "^6.2.0",
+    "nyc": "^14.1.1",
     "rollup": "^1.18.0",
     "rollup-plugin-eslint": "^7.0.0"
   },
