@@ -8,6 +8,10 @@ import {
   getStrictArray,
 } from '../types/getDataType';
 
+import {
+  getBoolOrObject,
+} from '../types/getDataTypeExtra';
+
 function compileAllOf(schemaObj, jsonSchema) {
   const allOf = getStrictArray(jsonSchema.allOf);
   if (allOf == null) return undefined;
@@ -16,19 +20,24 @@ function compileAllOf(schemaObj, jsonSchema) {
   const validators = [];
   for (let i = 0; i < allOf.length; ++i) {
     const child = allOf[i];
-    if (child === true) validators[i] = trueThat;
-    else if (child === false) validators[i] = falseThat;
+    if (child === true)
+      validators.push(trueThat);
+    else if (child === false)
+      validators.push(falseThat);
     else {
       const validator = schemaObj.createPairValidator(member, i, child);
-      validators[i] = validator;
+      if (isFn(validator))
+        validators.push(validator);
     }
   }
 
-  return function validateAllOf(data, dataRoot) {
+  if (validators.length === 0) return undefined;
+
+  return function validateAllOf(data, dataRoot) { // TODO: addError??
     if (data !== undefined) {
       for (let i = 0; i < validators.length; ++i) {
         const validator = validators[i];
-        if (validator && validator(data, dataRoot) === false) return false;
+        if (validator(data, dataRoot) === false) return false;
       }
     }
     return true;
@@ -43,19 +52,24 @@ function compileAnyOf(schemaObj, jsonSchema) {
   const validators = [];
   for (let i = 0; i < anyOf.length; ++i) {
     const child = anyOf[i];
-    if (child === true) validators[i] = trueThat;
-    else if (child === false) validators[i] = falseThat;
+    if (child === true)
+      validators.push(trueThat);
+    else if (child === false)
+      validators.push(falseThat);
     else {
       const validator = schemaObj.createPairValidator(member, i, child);
-      validators[i] = validator;
+      if (isFn(validator))
+        validators.push(validator);
     }
   }
 
-  return function validateAnyOf(data, dataRoot) {
+  if (validators.length === 0) return undefined;
+
+  return function validateAnyOf(data, dataRoot) { // TODO: addError??
     if (data !== undefined) {
       for (let i = 0; i < validators.length; ++i) {
         const validator = validators[i];
-        if (validator && validator(data, dataRoot) === true) return true;
+        if (validator(data, dataRoot) === true) return true;
       }
       return false;
     }
@@ -82,6 +96,8 @@ function compileOneOf(schemaObj, jsonSchema) {
     }
   }
 
+  if (validators.length === 0) return undefined;
+
   return function validateOneOf(data, dataRoot) { // TODO: addError??
     let found = false;
     for (let i = 0; i < validators.length; ++i) {
@@ -89,22 +105,33 @@ function compileOneOf(schemaObj, jsonSchema) {
       if (validator(data, dataRoot) === true) {
         if (found === true) return false;
         found = true;
-      }
+      } // TODO: else how to silent this error?
     }
     return found;
   };
 }
 
 function compileNotOf(schemaObj, jsonSchema) {
-  const notOf = getStrictArray(jsonSchema.not);
+  const notOf = getBoolOrObject(jsonSchema.not);
   if (notOf == null) return undefined;
-  return falseThat;
+  if (notOf === true) return falseThat;
+  if (notOf === false) return trueThat;
+
+  const validate = schemaObj.createSingleValidator('not', notOf, compileNotOf);
+  if (!validate) return undefined;
+
+  return function validateNotOf(data, dataRoot) { // TODO: addError??
+    if (data === undefined) return true;
+    return validate(data, dataRoot) === false; // TODO: howto silent this error???
+    // NOTE: we can push the context on schemaObj = schemaObj.pushSchemaContext()?
+  };
 }
 
 export function compileCombineSchema(schemaObj, jsonSchema) {
   const compilers = [];
   function addCompiler(compiler) {
-    if (isFn(compiler)) compilers.push(compiler);
+    if (isFn(compiler))
+      compilers.push(compiler);
   }
 
   addCompiler(compileAllOf(schemaObj, jsonSchema));

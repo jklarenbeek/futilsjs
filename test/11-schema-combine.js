@@ -354,7 +354,7 @@ describe('Schema Combination', function () {
         oneOf: [true, true, true],
       }), 'compiling');
       const root = getJSONSchema('booleanOneOf1');
-      assert.isTrue(root.validate('foo'), 'any value is invalid');
+      assert.isFalse(root.validate('foo'), 'any value is invalid');
     });
 
     it('should validate with boolean schemas, some false', function () {
@@ -406,7 +406,7 @@ describe('Schema Combination', function () {
 
     it('should validate oneOf with one empty schema', function () {
       assert.isTrue(compileJSONSchema('emptyOneOf1', {
-        anyOf: [
+        oneOf: [
           { type: 'number' },
           { },
         ],
@@ -443,7 +443,75 @@ describe('Schema Combination', function () {
       const root = getJSONSchema('combineNotOf1');
       assert.isTrue(root.validate(42), 'validates against a number');
       assert.isTrue(root.validate({ key: 'value' }), 'validates against an object');
-      assert.isFalse(root.validate('this is a string'), 'failes against a string');
+      assert.isFalse(root.validate('this is a string'), 'fails against a string');
+    });
+
+    it('should not validate integer types', function () {
+      assert.isTrue(compileJSONSchema('noIntegerNot1', {
+        not: { type: 'integer' },
+      }), 'compiling');
+
+      const root = getJSONSchema('noIntegerNot1');
+      assert.isTrue(root.validate('foo'), 'a string is valid');
+      assert.isFalse(root.validate(1), 'cannot allow an integer');
+    });
+
+    it('should not validate integer and boolean types', function () {
+      assert.isTrue(compileJSONSchema('noMultiTypeNot1', {
+        not: { type: ['integer', 'boolean'] },
+      }), 'compiling');
+
+      const root = getJSONSchema('noMultiTypeNot1');
+      assert.isTrue(root.validate(undefined), 'undefined is allowed (questionable)');
+      assert.isTrue(root.validate(null), 'null is allowed');
+      assert.isTrue(root.validate('foo'), 'string is neither boolean nor string');
+      assert.isFalse(root.validate(1), 'integer is not allowed');
+      assert.isFalse(root.validate(true), 'boolean is not allowed');
+      assert.isTrue(root.validate(Math.PI), 'validates for a float like Math.PI');
+    });
+
+    it('should not allow objects with property foo of type string', function () {
+      assert.isTrue(compileJSONSchema('objectNot1', {
+        not: {
+          type: 'object',
+          properties: {
+            foo: { type: 'string' },
+          },
+        },
+      }), 'compiling');
+
+      const root = getJSONSchema('objectNot1');
+      assert.isTrue(root.validate(1), 'numbers are allowed');
+      assert.isTrue(root.validate({ foo: 5 }), 'property foo with numbers is allowed');
+      assert.isFalse(root.validate({ foo: 'bar' }), 'property foo with strings is invalid');
+    });
+
+    it('should not allow forbidden properties', function () {
+      assert.isTrue(compileJSONSchema('forbiddenNot1', {
+        properties: {
+          foo: { not: {} },
+        },
+      }), 'compiling');
+
+      const root = getJSONSchema('forbiddenNot1');
+      assert.isFalse(root.validate({ foo: 1, bar: 2 }), 'foo cannot be present');
+      assert.isTrue(root.validate({ bar: 3, baz: 4 }), 'foo is not present');
+    });
+
+    it('should not validate with boolean schema true', function () {
+      assert.isTrue(compileJSONSchema('booleanNot1', {
+        not: true,
+      }), 'compiling');
+      const root = getJSONSchema('booleanNot1');
+      assert.isFalse(root.validate('foo'), 'any value is invalid');
+    });
+
+    it('should validate with boolean schema false', function () {
+      assert.isTrue(compileJSONSchema('booleanNot2', {
+        not: false,
+      }), 'compiling');
+      const root = getJSONSchema('booleanNot2');
+      assert.isTrue(root.validate('foo'), 'any value is valid');
     });
   });
 });
