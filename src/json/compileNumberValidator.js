@@ -69,6 +69,7 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
     : isIntegerSchema(jsonSchema)
       ? isStrictIntegerType
       : isStrictNumberType;
+  if (!isDataType) return undefined;
 
   if (emin) {
     const addError = schemaObj.createMemberError(
