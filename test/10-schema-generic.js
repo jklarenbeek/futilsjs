@@ -130,7 +130,7 @@ describe('Schema Generics', function () {
       assert.isFalse(root.validate('ABC'), 'another type is invalid');
     });
 
-    it.skip('should deep validate a constant object', function () {
+    it('should deep validate a constant object', function () {
       compileJSONSchema('constObject1', {
         const: { foo: 'bar', baz: 'bax' },
       });
@@ -141,7 +141,7 @@ describe('Schema Generics', function () {
       assert.isFalse(root.validate([1, 2, 3]), 'another type is invalid');
     });
 
-    it.skip('should deep validate a constant array', function () {
+    it('should deep validate a constant array', function () {
       compileJSONSchema('constArray1', {
         const: [{ foo: 'bar' }],
       });

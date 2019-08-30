@@ -1,3 +1,8 @@
+import { isStrictArrayType, isStrictObjectOfType, isStrictTypedArray, isPrimitiveType, isPrimitiveTypeEx } from "../types/isDataType";
+import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from "constants";
+import { isPrimitive } from "util";
+import { deepEqual } from "assert";
+
 /* eslint-disable prefer-rest-params */
 
 export function getObjectAllKeys(obj) {
@@ -43,6 +48,45 @@ export function getObjectCountItems(obj) {
 
 export function isObjectEmpty(obj) {
   return getObjectCountItems(obj) === 0;
+}
+
+export function deepEquals(target, source) {
+  if (target === source) return true;
+  if (target == null) return false;
+  if (source == null) return false;
+  const tgt = typeof target;
+  const tsr = typeof source;
+  if (tgt !== tsr) return false;
+
+  if (isPrimitiveTypeEx(tgt)) return false;
+  if (target.constructor !== source.constructor) return false;
+
+  if (isStrictArrayType(target)) {
+    if (target.length !== source.length) return false;
+    for (let i = 0; i < target.length; ++i) {
+      if (deepEquals(target[i], source[i]) === false) return false;
+    }
+    return true;
+  }
+  else if (isStrictObjectOfType(target, Map)) {
+    if (target.size !== source.size) return false;
+    for (const [key, value] of target) {
+      if (source.has(key) === false) return false;
+      if (deepEqual(value, source[key]) === false) return false;
+    }
+    return true;
+  }
+  else if (isStrictObjectOfType(target, Set)) {
+    if (target.size !== source.size) return false;
+    for (const value of target) {
+      if (source.has(value) === false) return false;
+    }
+    return true;
+  }
+  // else if (isStrictTypedArray(target)) {
+
+  // }
+  return false;
 }
 
 export function cloneObject(target, source) {

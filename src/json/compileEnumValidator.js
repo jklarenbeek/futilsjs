@@ -2,20 +2,30 @@
 import {
   getArrayMinItems,
 } from '../types/getDataTypeExtra';
+import { isPrimitiveType } from '../types/isDataType';
+
+import {
+  deepEquals,
+} from '../helpers/Object';
 
 function compileConst(schemaObj, jsonSchema) {
   const constant = jsonSchema.const;
   if (constant === undefined) return undefined;
 
-  const addError = schemaObj.createMemberError(
-    'const',
-    constant,
-    compileConst,
-  );
-  return function validateConst(data, dataRoot) {
-    if (data !== constant) return addError(data);
-    return true;
-  };
+  if (isPrimitiveType(constant)) {
+    const addError = schemaObj.createMemberError('const', constant, compileConst);
+    return function validatePrimitiveConst(data, dataRoot) {
+      if (data !== constant) return addError(data);
+      return true;
+    };
+  }
+  else {
+    const addError = schemaObj.createMemberError('const', constant, compileConst);
+    return function validatePrimitiveConst(data, dataRoot) {
+      if (deepEquals(constant, data) === false) return addError(data);
+      return true;
+    };
+  }
 }
 
 function compileEnumSimple(enums, schemaObj) {
