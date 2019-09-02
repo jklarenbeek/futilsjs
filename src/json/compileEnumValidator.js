@@ -28,20 +28,50 @@ function compileConst(schemaObj, jsonSchema) {
   }
 }
 
-function compileEnumSimple(enums, schemaObj) {
+function compileEnum(schemaObj, enums) {
+  let hasObjects = false;
+  for (let i = 0; i < enums.length; ++i) {
+    const e = enums[i];
+    if (e != null && typeof e === 'object') {
+      hasObjects = true;
+      break;
+    }
+  }
+
   const addError = schemaObj.createMemberError(
     'enum',
     enums,
     compileEnumBasic,
   );
-  return function validateEnumSimple(data, dataRoot) {
-    if (data != null && typeof data !== 'object') {
-      if (!enums.includes(data)) {
-        return addError(data);
+
+  if (hasObjects === false) {
+    return function validateEnumSimple(data, dataRoot) {
+      if (data !== undefined) {
+        if (!enums.includes(data)) {
+          return addError(data);
+        }
       }
-    }
-    return true;
-  };
+      return true;
+    };
+  }
+  else {
+    return function validateEnumDeep(data, dataRoot) {
+      if (data !== undefined) {
+        if (data !== null && typeof data === 'object') {
+          for (let i = 0; i < enums.length; ++i) {
+            const constant = enums[i];
+            if (equalsDeep(constant, data) === true)
+              return true;
+          }
+          return addError(data);
+        }
+        else if (!enums.includes(data)) {
+          return addError(data);
+        }
+      }
+      return true;
+    };
+  }
 }
 
 export function compileEnumBasic(schemaObj, jsonSchema) {
@@ -49,5 +79,5 @@ export function compileEnumBasic(schemaObj, jsonSchema) {
   if (validateConst) return validateConst;
   const enums = getArrayMinItems(jsonSchema.enum, 1);
   if (enums == null) return undefined;
-  return compileEnumSimple(enums, schemaObj);
+  return compileEnum(schemaObj, enums);
 }

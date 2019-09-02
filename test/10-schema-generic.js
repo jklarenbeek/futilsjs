@@ -53,7 +53,7 @@ describe('Schema Generics', function () {
       assert.isFalse(root.validate(4), 'something else is invalid');
     });
 
-    it.skip('should deep validate heterogeneous types', function () {
+    it('should deep validate heterogeneous types', function () {
       compileJSONSchema('enumHetero1', { enum: [6, 'foo', [], true, { foo: 12 }] });
       const root = getJSONSchema('enumHetero1');
       assert.isTrue(root.validate([]), 'empty array is valid');
