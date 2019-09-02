@@ -5,7 +5,7 @@ import {
 import { isPrimitiveType } from '../types/isDataType';
 
 import {
-  deepEquals,
+  equalsDeep,
 } from '../helpers/Object';
 
 function compileConst(schemaObj, jsonSchema) {
@@ -22,7 +22,7 @@ function compileConst(schemaObj, jsonSchema) {
   else {
     const addError = schemaObj.createMemberError('const', constant, compileConst);
     return function validatePrimitiveConst(data, dataRoot) {
-      if (deepEquals(constant, data) === false) return addError(data);
+      if (equalsDeep(constant, data) === false) return addError(data);
       return true;
     };
   }
