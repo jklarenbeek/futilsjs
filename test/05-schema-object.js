@@ -326,5 +326,95 @@ describe('Schema Object Type', function () {
       );
 
     });
+
+    it('should validate simple dependencies', function () {
+      assert.isTrue(compileJSONSchema('dependent1', {
+        dependencies: { bar: ['foo'] },
+      }), 'compiling');
+      const root = getJSONSchema('dependent1');
+      assert.isTrue(root.validate({}), 'neither');
+      assert.isTrue(root.validate({ foo: 1 }), 'nondependent');
+      assert.isTrue(root.validate({ foo: 1, bar: 2 }), 'with dependency');
+      assert.isFalse(root.validate({ bar: 2 }), 'missing dependency');
+      assert.isTrue(root.validate(['bar']), 'ignores array');
+      assert.isTrue(root.validate('foobar'), 'ignores string');
+      assert.isTrue(root.validate(12), 'ignores numbers');
+    });
+
+    it('should validate with an empty array dependency', function () {
+      assert.isTrue(compileJSONSchema('dependent2', {
+        dependencies: { bar: [] },
+      }), 'compiling');
+      const root = getJSONSchema('dependent2');
+      assert.isTrue(root.validate({}), 'neither');
+      assert.isTrue(root.validate({ bar: 2 }), 'object with one property');
+    });
+
+    it('should validate with multiple dependencies', function () {
+      assert.isTrue(compileJSONSchema('dependencies1', {
+        dependencies: { quux: ['foo', 'bar'] },
+      }), 'compiling');
+      const root = getJSONSchema('dependencies1');
+      assert.isTrue(root.validate({}), 'neither');
+      assert.isTrue(root.validate({ foo: 1, bar: 2 }), 'nondependent');
+      assert.isTrue(root.validate({ foo: 1, bar: 2, quux: 3 }), 'with dependencies');
+      assert.isFalse(root.validate({ foo: 1, quux: 3 }), 'missing bar dependency');
+      assert.isFalse(root.validate({ bar: 1, quux: 3 }), 'missing foo dependency');
+      assert.isFalse(root.validate({ quux: 3 }), 'missing both dependencies');
+    });
+
+    it('should validate with multiple subschemas', function () {
+      assert.isTrue(compileJSONSchema('dependencies2', {
+        dependencies: {
+          bar: {
+            properties: {
+              foo: { type: 'integer' },
+              bar: { type: 'integer' },
+            },
+          },
+        },
+      }), 'compiling');
+      const root = getJSONSchema('dependencies2');
+      assert.isTrue(root.validate({ foo: 1, bar: 2 }), 'both properties are valid types');
+      assert.isTrue(root.validate({ foo: 'quux' }), 'no dependency');
+      assert.isFalse(root.validate({ foo: 'quux', bar: 2 }), 'wrong foo dependency');
+      assert.isFalse(root.validate({ foo: 2, bar: 'quux' }, 'wrong bar dependency'));
+      assert.isFalse(root.validate({ foo: 'quux', bar: 'quux' }, 'wrong dependencies'));
+    });
+
+    it('should validate with boolean subschemas', function () {
+      assert.isTrue(compileJSONSchema('dependencies3', {
+        dependencies: {
+          foo: true,
+          bar: false,
+        },
+      }), 'compiling');
+      const root = getJSONSchema('dependencies3');
+      assert.isTrue(root.validate({ foo: 1 }), 'object with property having schema true is valid');
+      assert.isFalse(root.validate({ bar: 2 }), 'object with property having schema false is invalid');
+      assert.isFalse(root.validate({ foo: 1, bar: 2 }), 'object with both boolean properties is invalid');
+      assert.isTrue(root.validate({}), 'empty object is valid');
+    });
+
+    it('should validate dependencies with escape characters', function () {
+      assert.isTrue(compileJSONSchema('dependencies4', {
+        dependencies: {
+          'foo\nbar': ['foo\rbar'],
+          'foo\tbar': {
+            minProperties: 4,
+          },
+          'foo\'bar': { required: ['foo\"bar'] },
+          'foo\"bar': ['foo\'bar'],
+        },
+      }), 'compiling');
+      const root = getJSONSchema('dependencies4');
+      assert.isTrue(root.validate({ 'foo\nbar': 1, 'foo\rbar': 2 }), 'object 1 is valid');
+      assert.isTrue(root.validate({ 'foo\nbar': 1, a: 2, b: 3, c: 4 }), 'object 2 is valid');
+      assert.isTrue(root.validate({ 'foo\'bar': 1, 'foo\"bar': 2 }), 'object 3 is valid');
+      assert.isFalse(root.validate({ 'foo\nbar': 1, foo: 2 }), 'object 1 is invalid');
+      assert.isFalse(root.validate({ 'foo\tbar': 1, a: 2 }), 'object 2 is invalid');
+      assert.isFalse(root.validate({ 'foo\'bar': 1 }), 'object 3 is invalid');
+      assert.isFalse(root.validate({ 'foo\"bar': 2 }), 'object 4 is invalid');
+    });
   });
 });
