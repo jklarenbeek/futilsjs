@@ -1,3 +1,4 @@
+/* eslint-disable valid-typeof */
 import {
   isStrictBigIntType,
   isStrictIntegerType,
@@ -12,6 +13,22 @@ import {
   isIntegerSchema,
   isBigIntSchema,
 } from './isSchemaType';
+
+function getBigIntExclusiveBound(inclusive, exclusive) {
+  const includes = typeof inclusive === 'bigint'
+    ? inclusive
+    : Number.isNaN(Number(inclusive))
+      ? undefined
+      : BigInt(Number(inclusive));
+  const excludes = exclusive === true
+    ? includes
+    : typeof exclusive === 'bigint'
+      ? exclusive
+      : Number.isNaN(Number(exclusive))
+        ? undefined
+        : BigInt(Number(exclusive));
+  return excludes;
+}
 
 function getNumberExclusiveBound(inclusive, exclusive) {
   const includes = Number.isNaN(Number(inclusive))
