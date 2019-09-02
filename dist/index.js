@@ -2668,18 +2668,226 @@ function wrapVN(name, type) {
   // return (attr, children) => h(name, attr, children);
 }
 
-/* eslint-disable prefer-rest-params */
+function isPrimitiveTypeEx(typeString) {
+  // primitives: boolean = 1, integer = 32, float = 64, bigint = 0, letter = 16
+  // complex: struct, array, string, map
+  return typeString === 'integer'
+    || typeString === 'number'
+    || typeString === 'string'
+    || typeString === 'bigint'
+    || typeString === 'boolean';
+}
+
+function isPrimitiveType(obj) {
+  return obj != null && isPrimitiveTypeEx(typeof obj);
+}
+
+function isStrictBooleanType(data) {
+  return data === false || data === true;
+}
+isStrictBooleanType.typeName = 'boolean';
+
+function isBooleanishType(data) {
+  return data === true
+    || data === false
+    || data === 'true'
+    || data === 'false';
+  // || data === 0
+  // || data === 1;
+}
+isBooleanishType.typeName = 'boolean';
+
+function isStrictIntegerType(data) {
+  return Number.isInteger(data);
+}
+isStrictIntegerType.typeName = 'integer';
+
+function isIntegerishType(data) {
+  return Number.isInteger(Number(data));
+}
+isIntegerishType.typeName = 'integer';
+
+function isStrictBigIntType(data) {
+  // eslint-disable-next-line valid-typeof
+  return typeof data === 'bigint';
+}
+isStrictBigIntType.typeName = 'bigint';
+
+function isStrictNumberType(data) {
+  return typeof data === 'number';
+}
+isStrictNumberType.typeName = 'number';
+
+function isNumberishType(data) {
+  return Number.isNaN(Number(data)) === false;
+  // return (Number(data) || data === 0 || false) !== false;
+}
+isNumberishType.typeName = 'number';
+
+function isStrictStringType(data) {
+  return typeof data === 'string';
+}
+isStrictStringType.typeName = 'string';
+
+function isStrictNullValue(data) {
+  return data === null;
+}
+
+function isStrictObjectType(data) {
+  return data != null
+    && typeof data === 'object'
+    && !(data instanceof Array
+      || data.constructor === Map
+      || data.constructor === Set
+      || data.constructor === Int8Array
+      || data.constructor === Uint8Array
+      || data.constructor === Uint8ClampedArray
+      || data.constructor === Int16Array
+      || data.constructor === Uint16Array
+      || data.constructor === Int32Array
+      || data.constructor === Uint32Array
+      // eslint-disable-next-line no-undef
+      || data.constructor === BigInt64Array
+      // eslint-disable-next-line no-undef
+      || data.constructor === BigUint64Array
+    );
+}
+isStrictObjectOfType.typeName = 'object';
+
+function isObjectishType(data) {
+  return data != null
+    && typeof data === 'object'
+    && !(data.constructor === Array
+      || data.constructor === Map
+      || data.constructor === Set);
+}
+isObjectishType.typeName = 'object';
+
+function isStrictObjectOfType(data, fn) {
+  return data != null && data.constructor === fn;
+}
+isStrictObjectOfType.typeName = 'object';
+
+function isStrictArrayType(data) {
+  return data != null
+    && data.constructor === Array;
+}
+isStrictArrayType.typeName = 'array';
+
+function isStrictTypedArray(data) {
+  return data != null
+    && (data.constructor === Int8Array
+    || data.constructor === Uint8Array
+    || data.constructor === Uint8ClampedArray
+    || data.constructor === Int16Array
+    || data.constructor === Uint16Array
+    || data.constructor === Int32Array
+    || data.constructor === Uint32Array
+    // eslint-disable-next-line no-undef
+    || data.constructor === BigInt64Array
+    // eslint-disable-next-line no-undef
+    || data.constructor === BigUint64Array);
+}
+isStrictTypedArray.typeName = 'array';
+
+function isArrayishType(data) {
+  return data != null
+    && (data instanceof Array
+    || isStrictTypedArray(data));
+}
+isArrayishType.typeName = 'array';
+
+// isStrictNumberType(string type) return bool {
+//   return ['integer', 'float', 'boolean']
+//     includes type;
+// }
+// operator bool includes(array<string> source, string type);
+
+// isObjectishType(string type) return bool {
+//  return type != null
+//    && ['Array', 'Set', 'Map'] includes type
+// }
+
+function equalsDeep(target, source) {
+  if (target === source) return true;
+  if (target == null) return false;
+  if (source == null) return false;
+  if (target === false || source === false) return false;
+  if (target === true || source === true) return false;
+
+  if (typeof target === 'function') {
+    if (typeof source === 'function')
+      return (target.toString() === source.toString());
+    else
+      return false;
+  }
+
+  if (typeof target !== 'object') return false;
+
+  if (target.constructor !== source.constructor) return false;
+
+  if (target.constructor === Object) {
+    const tks = Object.keys(target);
+    const sks = Object.keys(source);
+    if (tks.length !== sks.length) return false;
+    for (let i = 0; i < tks.length; ++i) {
+      const key = tks[i];
+      if (equalsDeep(target[key], source[key]) === false) return false;
+    }
+    return true;
+  }
+
+  if (target.constructor === Array) {
+    if (target.length !== source.length) return false;
+    for (let i = 0; i < target.length; ++i) {
+      if (equalsDeep(target[i], source[i]) === false) return false;
+    }
+    return true;
+  }
+
+  if (target.constructor === Map) {
+    if (target.size !== source.size) return false;
+    for (const [key, value] of target) {
+      if (source.has(key) === false) return false;
+      if (equalsDeep(value, source[key]) === false) return false;
+    }
+    return true;
+  }
+
+  if (target.constructor === Set) {
+    if (target.size !== source.size) return false;
+    for (const value of target) {
+      if (source.has(value) === false) return false;
+    }
+    return true;
+  }
+
+  if (target.constructor === RegExp) {
+    return target.toString() === source.toString();
+  }
+
+  if (isStrictTypedArray(target)) {
+    if (target.length !== source.length) return false;
+    for (let i = 0; i < target.length; ++i) {
+      if (target[i] !== source[i]) return false;
+    }
+    return true;
+  }
+
+  // we could test for instance of Array, Map and Set in order
+  // to differentiate between types of equality.. but we dont.
+  const tkeys = Object.keys(target);
+  const skeys = Object.keys(source);
+  if (tkeys.length !== skeys.length) return false;
+  if (tkeys.length === 0) return true;
+  for (let i = 0; i < tkeys.length; ++i) {
+    const key = tkeys[i];
+    if (equalsDeep(target[key], source[key]) === false) return false;
+  }
+  return true;
+}
 
 function cloneObject(target, source) {
-  // const out = {};
-
-  // for (const t in target) {
-  //   if (target.hasOwnProperty(t)) out[t] = target[t];
-  // }
-  // for (const s in source) {
-  //   if (source.hasOwnProperty(s)) out[s] = source[s];
-  // }
-  // return out;
   return { ...target, ...source };
 }
 
@@ -3066,145 +3274,6 @@ function app(state, actions, view, container) {
     return element;
   }
 }
-
-function isPrimitiveTypeEx(typeString) {
-  // primitives: boolean = 1, integer = 32, float = 64, bigint = 0, letter = 16
-  // complex: struct, array, string, map
-  return typeString === 'integer'
-    || typeString === 'number'
-    || typeString === 'string'
-    || typeString === 'bigint'
-    || typeString === 'boolean';
-}
-
-function isPrimitiveType(obj) {
-  return obj != null && isPrimitiveTypeEx(typeof obj);
-}
-
-function isStrictBooleanType(data) {
-  return data === false || data === true;
-}
-isStrictBooleanType.typeName = 'boolean';
-
-function isBooleanishType(data) {
-  return data === true
-    || data === false
-    || data === 'true'
-    || data === 'false';
-  // || data === 0
-  // || data === 1;
-}
-isBooleanishType.typeName = 'boolean';
-
-function isStrictIntegerType(data) {
-  return Number.isInteger(data);
-}
-isStrictIntegerType.typeName = 'integer';
-
-function isIntegerishType(data) {
-  return Number.isInteger(Number(data));
-}
-isIntegerishType.typeName = 'integer';
-
-function isStrictBigIntType(data) {
-  // eslint-disable-next-line valid-typeof
-  return typeof data === 'bigint';
-}
-isStrictBigIntType.typeName = 'bigint';
-
-function isStrictNumberType(data) {
-  return typeof data === 'number';
-}
-isStrictNumberType.typeName = 'number';
-
-function isNumberishType(data) {
-  return (Number(data) || false) !== false;
-}
-isNumberishType.typeName = 'number';
-
-function isStrictStringType(data) {
-  return typeof data === 'string';
-}
-isStrictStringType.typeName = 'string';
-
-function isStrictNullValue(data) {
-  return data === null;
-}
-
-function isStrictObjectType(data) {
-  return data != null
-    && typeof data === 'object'
-    && !(data instanceof Array
-      || data.constructor === Map
-      || data.constructor === Set
-      || data.constructor === Int8Array
-      || data.constructor === Uint8Array
-      || data.constructor === Uint8ClampedArray
-      || data.constructor === Int16Array
-      || data.constructor === Uint16Array
-      || data.constructor === Int32Array
-      || data.constructor === Uint32Array
-      // eslint-disable-next-line no-undef
-      || data.constructor === BigInt64Array
-      // eslint-disable-next-line no-undef
-      || data.constructor === BigUint64Array
-    );
-}
-isStrictObjectOfType.typeName = 'object';
-
-function isObjectishType(data) {
-  return data != null
-    && typeof data === 'object'
-    && !(data.constructor === Array
-      || data.constructor === Map
-      || data.constructor === Set);
-}
-isObjectishType.typeName = 'object';
-
-function isStrictObjectOfType(data, fn) {
-  return data != null && data.constructor === fn;
-}
-isStrictObjectOfType.typeName = 'object';
-
-function isStrictArrayType(data) {
-  return data != null
-    && data.constructor === Array;
-}
-isStrictArrayType.typeName = 'array';
-
-function isStrictTypedArray(data) {
-  return data != null
-    && (data.constructor === Int8Array
-    || data.constructor === Uint8Array
-    || data.constructor === Uint8ClampedArray
-    || data.constructor === Int16Array
-    || data.constructor === Uint16Array
-    || data.constructor === Int32Array
-    || data.constructor === Uint32Array
-    // eslint-disable-next-line no-undef
-    || data.constructor === BigInt64Array
-    // eslint-disable-next-line no-undef
-    || data.constructor === BigUint64Array);
-}
-isStrictTypedArray.typeName = 'array';
-
-function isArrayishType(data) {
-  return data != null
-    && (data instanceof Array
-    || isStrictTypedArray(data));
-}
-isArrayishType.typeName = 'array';
-
-// isStrictNumberType(string type) return bool {
-//   return ['integer', 'float', 'boolean']
-//     includes type;
-// }
-// operator bool includes(array<string> source, string type);
-
-// isObjectishType(string type) return bool {
-//  return type != null
-//    && ['Array', 'Set', 'Map'] includes type
-// }
 
 function isBoolOrNumber(obj) {
   return (obj === true || obj === false)
@@ -4007,31 +4076,66 @@ function compileConst(schemaObj, jsonSchema) {
   const constant = jsonSchema.const;
   if (constant === undefined) return undefined;
 
-  const addError = schemaObj.createMemberError(
-    'const',
-    constant,
-    compileConst,
-  );
-  return function validateConst(data, dataRoot) {
-    if (data !== constant) return addError(data);
-    return true;
-  };
+  if (isPrimitiveType(constant)) {
+    const addError = schemaObj.createMemberError('const', constant, compileConst);
+    return function validatePrimitiveConst(data, dataRoot) {
+      if (data !== constant) return addError(data);
+      return true;
+    };
+  }
+  else {
+    const addError = schemaObj.createMemberError('const', constant, compileConst);
+    return function validatePrimitiveConst(data, dataRoot) {
+      if (equalsDeep(constant, data) === false) return addError(data);
+      return true;
+    };
+  }
 }
 
-function compileEnumSimple(enums, schemaObj) {
+function compileEnum(schemaObj, enums) {
+  let hasObjects = false;
+  for (let i = 0; i < enums.length; ++i) {
+    const e = enums[i];
+    if (e != null && typeof e === 'object') {
+      hasObjects = true;
+      break;
+    }
+  }
+
   const addError = schemaObj.createMemberError(
     'enum',
     enums,
     compileEnumBasic,
   );
-  return function validateEnumSimple(data, dataRoot) {
-    if (data != null && typeof data !== 'object') {
-      if (!enums.includes(data)) {
-        return addError(data);
+
+  if (hasObjects === false) {
+    return function validateEnumSimple(data, dataRoot) {
+      if (data !== undefined) {
+        if (!enums.includes(data)) {
+          return addError(data);
+        }
       }
-    }
-    return true;
-  };
+      return true;
+    };
+  }
+  else {
+    return function validateEnumDeep(data, dataRoot) {
+      if (data !== undefined) {
+        if (data !== null && typeof data === 'object') {
+          for (let i = 0; i < enums.length; ++i) {
+            const constant = enums[i];
+            if (equalsDeep(constant, data) === true)
+              return true;
+          }
+          return addError(data);
+        }
+        else if (!enums.includes(data)) {
+          return addError(data);
+        }
+      }
+      return true;
+    };
+  }
 }
 
 function compileEnumBasic(schemaObj, jsonSchema) {
@@ -4039,148 +4143,123 @@ function compileEnumBasic(schemaObj, jsonSchema) {
   if (validateConst) return validateConst;
   const enums = getArrayMinItems(jsonSchema.enum, 1);
   if (enums == null) return undefined;
-  return compileEnumSimple(enums, schemaObj);
+  return compileEnum(schemaObj, enums);
 }
 
-function isOfSchemaType(schema, type) {
-  if (type == null) return false;
-  if (schema.type === type) return true;
-  if (schema.type.constructor === Array) {
-    return schema.type.includes(type);
-  }
-  return false;
-}
+/* eslint-disable valid-typeof */
 
-function isOfStrictSchemaType(schema, type) {
-  if (type == null) return false;
-  if (schema.type == null) return false;
-  if (schema.type === type) return true;
-  if (schema.type.constructor === Array && schema.type.length <= 2)
-    return schema.type.includes('null') && schema.type.includes(type);
-  return false;
-}
-
-function isUnkownSchema(schema) {
-  return (schema.type == null
-    && schema.properties == null
-    && schema.patternProperties == null
-    && schema.additionalProperties == null
-    && schema.items == null
-    && schema.contains == null
-    && schema.additionalItems == null);
-}
-function isIntegerSchema(schema) {
-  const isknown = isOfStrictSchemaType(schema, 'integer');
-  const isformat = typeof schema.format === 'string'
-    && integerFormats[schema.format] != null;
-
-  const isconst = Number.isInteger(Number(schema.const));
-  const isdeflt = Number.isInteger(Number(schema.default));
-
-  const isvalid = isUnkownSchema(schema) && (isconst || isdeflt);
-
-  return isknown || isformat || isvalid;
-}
-function isBigIntSchema(schema) {
-  const isknown = isOfStrictSchemaType(schema, 'bigint')
-    || isOfStrictSchemaType(schema, 'biginteger');
-
-  const isformat = typeof schema.format === 'string'
-    && bigIntFormats[schema.format] != null;
-
-  const isvalid = isUnkownSchema(schema)
-    // eslint-disable-next-line valid-typeof
-    && (typeof schema.const === 'bigint' || typeof schema.default === 'bigint');
-
-  return isknown || isformat || isvalid;
+function getNumberExclusiveBound(inclusive, exclusive) {
+  const includes = isStrictBigIntType(inclusive)
+    ? inclusive
+    : getNumberishType(inclusive);
+  const excludes = exclusive === true
+    ? includes
+    : isStrictBigIntType(exclusive)
+      ? exclusive
+      : getNumberishType(exclusive);
+  return (excludes !== undefined)
+    ? [undefined, excludes]
+    : [includes, undefined];
 }
 
 function compileNumberMaximum(schemaObj, jsonSchema) {
-  const max = Number(jsonSchema.maximum) || undefined;
-  const emax = jsonSchema.exclusiveMaximum === true
-    ? max
-    : Number(jsonSchema.exclusiveMaximum) || undefined;
+  const [max, emax] = getNumberExclusiveBound(
+    jsonSchema.maximum,
+    jsonSchema.exclusiveMaximum,
+  );
 
-  const isDataType = isBigIntSchema(jsonSchema)
-    ? isStrictBigIntType
-    : isIntegerSchema(jsonSchema)
-      ? isStrictIntegerType
-      : isStrictNumberType;
-
-  if (emax) {
+  if (emax != null) {
     const addError = schemaObj.createMemberError(
       'exclusiveMaximum',
       emax,
       compileNumberMaximum,
     );
-    return function exclusiveMaximum(data) {
-      if (isDataType(data)) {
-        const valid = data < emax;
-        if (!valid) addError(data);
-        return valid;
-      }
-      return true;
-    };
+    if (isStrictBigIntType(emax)) {
+      return function exclusiveMaximumBigInt(data) {
+        return (isStrictBigIntType(data) || isStrictNumberType(data)) // are we forgiving?
+          ? data < emax ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
+    else {
+      return function exclusiveMaximum(data) {
+        return isStrictNumberType(data)
+          ? data < emax ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
   }
-  else if (max) {
+  else if (max != null) {
     const addError = schemaObj.createMemberError(
       'maximum',
       max,
       compileNumberMaximum,
     );
-    return function maximum(data) {
-      if (isDataType(data)) {
-        const valid = data <= max;
-        if (!valid) addError(data);
-        return valid;
-      }
-      return true;
-    };
+    if (isStrictBigIntType(max)) {
+      return function maximumBigInt(data) {
+        return (isStrictBigIntType(data) || isStrictNumberType(data)) // are we that forgiving?
+          ? data <= max ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
+    else {
+      return function maximum(data) {
+        return isStrictNumberType(data)
+          ? data <= max ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
   }
   return undefined;
 }
 
 function compileNumberMinimum(schemaObj, jsonSchema) {
-  const min = Number(jsonSchema.minimum) || undefined; // BUG: IGNORING BITINT TYPE!
-  const emin = jsonSchema.exclusiveMinimum === true
-    ? min
-    : Number(jsonSchema.exclusiveMinimum) || undefined; // TODO: IGNORING BITINT TYPE!
+  const [min, emin] = getNumberExclusiveBound(
+    jsonSchema.minimum,
+    jsonSchema.exclusiveMinimum,
+  );
 
-  const isDataType = isBigIntSchema(jsonSchema)
-    ? isStrictBigIntType
-    : isIntegerSchema(jsonSchema)
-      ? isStrictIntegerType
-      : isStrictNumberType;
-
-  if (emin) {
+  if (emin != null) {
     const addError = schemaObj.createMemberError(
       'exclusiveMinimum',
       emin,
       compileNumberMinimum,
     );
-    return function exclusiveMinimum(data) {
-      if (isDataType(data)) {
-        const valid = data > emin;
-        if (!valid) addError(data);
-        return valid;
-      }
-      return true;
-    };
+    if (isStrictBigIntType(emin)) {
+      return function exclusiveMinimumBigInt(data) {
+        return (isStrictBigIntType(data) || isStrictNumberType(data))
+          ? data > emin ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
+    else {
+      return function exclusiveMinimum(data) {
+        return isStrictNumberType(data)
+          ? data > emin ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
   }
-  else if (min) {
+  else if (min != null) {
     const addError = schemaObj.createMemberError(
       'minimum',
       min,
       compileNumberMinimum,
     );
-    return function minimum(data) {
-      if (isDataType(data)) {
-        const valid = data >= min;
-        if (!valid) addError(data);
-        return valid;
-      }
-      return true;
-    };
+    if (isStrictBigIntType(min)) {
+      return function minimumBigInt(data) {
+        return (isStrictBigIntType(data) || isStrictNumberType(data))
+          ? data >= min ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
+    else {
+      return function minimum(data) {
+        return isStrictNumberType(data)
+          ? data >= min ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
   }
   return undefined;
 }
@@ -4201,76 +4280,44 @@ function compileNumberRange(schemaObj, jsonSchema) {
 }
 
 function compileNumberMultipleOf(schemaObj, jsonSchema) {
-  const mulOf = getNumberishType(jsonSchema.multipleOf);
-  // we compare against bigint too! javascript is awesome!
-  // eslint-disable-next-line eqeqeq
-  if (mulOf && mulOf != 0) {
-    if (Number.isInteger(mulOf)) {
-      const addError = schemaObj.createMemberError(
-        'multipleOf',
-        mulOf,
-        compileNumberMultipleOf,
-        'integer',
-      );
-      if (isIntegerSchema(jsonSchema)) {
-        return function multipleOfInteger(data) {
-          if (Number.isInteger(data)) {
-            const valid = (data % mulOf) === 0;
-            if (!valid) addError(data);
-            return valid;
-          }
-          return true;
-        };
+  const mulOf = isStrictBigIntType(jsonSchema.multipleOf)
+    ? jsonSchema.multipleOf
+    : getNumberishType(jsonSchema.multipleOf);
+
+  if (mulOf == null) return undefined;
+
+  const addError = schemaObj.createMemberError(
+    'multipleOf',
+    mulOf,
+    compileNumberMultipleOf,
+  );
+  if (addError == null) return undefined;
+
+  if (isStrictBigIntType(mulOf)) {
+    return function multipleOfBigInt(data) {
+      if (isStrictBigIntType(data)) {
+        return data % mulOf === BigInt(0)
+          ? true
+          : addError(data);
       }
-      else {
-        return function multipleOfIntAsNumber(data) {
-          if (typeof data === 'number') {
-            const valid = Number.isInteger(data / mulOf);
-            if (!valid) addError(data);
-            return valid;
-          }
-          return true;
-        };
+      if (isStrictNumberType(data)) {
+        return data % Number(mulOf) === 0
+          ? true
+          : addError(data);
       }
-    }
-    else if (isBigIntSchema(jsonSchema)) {
-      const mf = BigInt(mulOf);
-      const addError = schemaObj.createMemberError(
-        'multipleOf',
-        mf,
-        compileNumberMultipleOf,
-        'bigint',
-      );
-      return function multipleOfBigInt(data) {
-        // eslint-disable-next-line valid-typeof
-        if (typeof data === 'bigint') {
-          // we compare against bigint too! javascript is awesome!
-          // eslint-disable-next-line eqeqeq
-          const valid = (data % mf) == 0;
-          if (!valid) addError(data);
-          return valid;
-        }
-        return true;
-      };
-    }
-    else {
-      const addError = schemaObj.createMemberError(
-        'multipleOf',
-        mulOf,
-        compileNumberMultipleOf,
-        'number',
-      );
-      return function multipleOfNumber(data) {
-        if (typeof data === 'number') {
-          const valid = Number.isInteger(Number(data) / mulOf);
-          if (!valid) addError(data);
-          return valid;
-        }
-        return true;
-      };
-    }
+      return true;
+    };
   }
-  return undefined;
+  else {
+    return function multipleOf(data) {
+      if (isStrictNumberType(data)) {
+        return data % mulOf === 0
+          ? true
+          : addError(data);
+      }
+      return true;
+    };
+  }
 }
 
 function compileNumberBasic(schemaObj, jsonSchema) {
@@ -4281,13 +4328,7 @@ function compileNumberBasic(schemaObj, jsonSchema) {
       return fnRange(data) && fnMulOf(data);
     };
   }
-  else if (fnRange) {
-    return fnRange;
-  }
-  else if (fnMulOf) {
-    return fnMulOf;
-  }
-  return undefined;
+  return fnRange || fnMulOf;
 }
 
 /* eslint-disable eqeqeq */
@@ -4397,6 +4438,15 @@ function compileStringBasic(schemaObj, jsonSchema) {
   else if (fnLength) return fnLength;
   else if (fnPattern) return fnPattern;
   else return undefined;
+}
+
+function isOfSchemaType(schema, type) {
+  if (type == null) return false;
+  if (schema.type === type) return true;
+  if (schema.type.constructor === Array) {
+    return schema.type.includes(type);
+  }
+  return false;
 }
 
 /* eslint-disable function-paren-newline */
@@ -5190,8 +5240,23 @@ function compileConditionSchema(schemaObj, jsonSchema) {
   const jsif = getObjectishType(jsonSchema.if);
   const jsthen = getObjectishType(jsonSchema.then);
   const jselse = getObjectishType(jsonSchema.else);
-  if (jsif == null && jsthen == null && jselse == null) return undefined;
-  return falseThat;
+  if (jsif == null) return undefined;
+  if (jsthen == null && jselse == null) return undefined;
+
+  const validateIf = schemaObj.createSingleValidator('if', jsif, compileConditionSchema);
+  const tmpThen = schemaObj.createSingleValidator('then', jsthen, compileConditionSchema);
+  const tmpElse = schemaObj.createSingleValidator('else', jselse, compileConditionSchema);
+  if (validateIf == null) return undefined;
+  if (tmpThen == null && tmpElse == null) return undefined;
+
+  const validateThen = fallbackFn(tmpThen);
+  const validateElse = fallbackFn(tmpElse);
+  return function validateCondition(data, dataRoot) {
+    if (validateIf(data))
+      return validateThen(data, dataRoot);
+    else
+      return validateElse(data, dataRoot);
+  };
 }
 
 /* eslint-disable function-paren-newline */
@@ -5467,17 +5532,17 @@ class SchemaObject {
 
   createSingleValidator(key, child, ...rest) {
     const self = this;
-    if (isStrictStringType(key)) {
-      const childObj = new SchemaObject(
-        self.schemaRoot,
-        JSONPointer_concatPath(self.schemaPath, key),
-        rest,
-      );
-      const validator = compileSchemaObject(childObj, child);
-      childObj.validateFn = validator;
-      return validator;
-    }
-    return undefined;
+    if (!isStrictStringType(key)) return undefined;
+    if (!isBoolOrObject(child)) return undefined;
+
+    const childObj = new SchemaObject(
+      self.schemaRoot,
+      JSONPointer_concatPath(self.schemaPath, key),
+      rest,
+    );
+    const validator = compileSchemaObject(childObj, child);
+    childObj.validateFn = validator;
+    return validator;
   }
 
   createPairValidator(member, key, child, ...rest) {
@@ -5485,7 +5550,7 @@ class SchemaObject {
     const valid = member instanceof SchemaMember
       && (isStrictStringType(key)
         || isStrictIntegerType(key))
-      && isObjectishType(child);
+      && isBoolOrObject(child);
     if (!valid) return undefined;
 
     const childObj = new SchemaObject(
