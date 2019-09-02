@@ -49,7 +49,8 @@ export function isStrictNumberType(data) {
 isStrictNumberType.typeName = 'number';
 
 export function isNumberishType(data) {
-  return (Number(data) || data === 0 || false) !== false;
+  return Number.isNaN(Number(data)) === false;
+  // return (Number(data) || data === 0 || false) !== false;
 }
 isNumberishType.typeName = 'number';
 

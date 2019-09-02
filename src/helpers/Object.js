@@ -188,7 +188,7 @@ export function cloneDeep(target) {
     tobj[tk] = cloneDeep(target[tk]);
   }
   // TODO: change prototype of new object to target!
-  
+
   return tobj;
 }
 

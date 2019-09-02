@@ -10,12 +10,12 @@ import {
 
 // registerDefaultFormatCompilers();
 
-compileJSONSchema('integerBasic1', { type: 'integer' });
+compileJSONSchema('bigintMulOf1', { multipleOf: BigInt(2) });
 
-const root = getJSONSchema('integerBasic1');
-assert.isTrue(root.validate(42), 'validates an integer');
-assert.isTrue(root.validate(-1), 'validates a negative integer');
-assert.isFalse(root.validate(Math.PI), 'not validates a float');
-assert.isTrue(root.validate('42'), 'not validates a string');
-assert.isFalse(root.validate({}), 'does not validate an object');
-assert.isFalse(root.validate([]), 'does not validate an array');
+const root = getJSONSchema('bigintMulOf1');
+assert.isTrue(root.validate(BigInt(10)), 'ten is multipleOf 2');
+assert.isTrue(root.validate(10), 'forgive ten is a multipleOf 2 aswell');
+assert.isFalse(root.validate(BigInt(7)), 'seven is not a multipleOf 2');
+assert.isFalse(root.validate(7), 'forgive seven is not a multipleOf 2');
+assert.isTrue(root.validate('7'), 'ignores a number string');
+assert.isTrue(root.validate('foo'), 'ignores NaN string');

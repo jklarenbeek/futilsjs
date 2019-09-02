@@ -1,7 +1,6 @@
 /* eslint-disable valid-typeof */
 import {
   isStrictBigIntType,
-  isStrictIntegerType,
   isStrictNumberType,
 } from '../types/isDataType';
 
@@ -9,48 +8,25 @@ import {
   getNumberishType,
 } from '../types/getDataType';
 
-import {
-  isIntegerSchema,
-  isBigIntSchema,
-} from './isSchemaType';
-
-function getBigIntExclusiveBound(inclusive, exclusive) {
-  const includes = typeof inclusive === 'bigint'
-    ? inclusive
-    : Number.isNaN(Number(inclusive))
-      ? undefined
-      : BigInt(Number(inclusive));
-  const excludes = exclusive === true
-    ? includes
-    : typeof exclusive === 'bigint'
-      ? exclusive
-      : Number.isNaN(Number(exclusive))
-        ? undefined
-        : BigInt(Number(exclusive));
-  return excludes;
-}
-
 function getNumberExclusiveBound(inclusive, exclusive) {
-  const includes = Number.isNaN(Number(inclusive))
-    ? undefined
-    : Number(inclusive);
+  const includes = isStrictBigIntType(inclusive)
+    ? inclusive
+    : getNumberishType(inclusive);
   const excludes = exclusive === true
     ? includes
-    : Number.isNaN(Number(exclusive))
-      ? undefined
-      : Number(exclusive);
-  return excludes;
+    : isStrictBigIntType(exclusive)
+      ? exclusive
+      : getNumberishType(exclusive);
+  return (excludes !== undefined)
+    ? [undefined, excludes]
+    : [includes, undefined];
 }
 
 function compileNumberMaximum(schemaObj, jsonSchema) {
-  const max = getNumberishType(jsonSchema.maximum) || undefined;
-  const emax = getNumberExclusiveBound(max, jsonSchema.exclusiveMaximum);
-
-  const isDataType = isBigIntSchema(jsonSchema)
-    ? isStrictBigIntType
-    : isIntegerSchema(jsonSchema)
-      ? isStrictIntegerType
-      : isStrictNumberType;
+  const [max, emax] = getNumberExclusiveBound(
+    jsonSchema.maximum,
+    jsonSchema.exclusiveMaximum,
+  );
 
   if (emax != null) {
     const addError = schemaObj.createMemberError(
@@ -58,14 +34,20 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
       emax,
       compileNumberMaximum,
     );
-    return function exclusiveMaximum(data) {
-      if (isDataType(data)) {
-        const valid = data < emax;
-        if (!valid) addError(data);
-        return valid;
-      }
-      return true;
-    };
+    if (isStrictBigIntType(emax)) {
+      return function exclusiveMaximumBigInt(data) {
+        return (isStrictBigIntType(data) || isStrictNumberType(data)) // are we forgiving?
+          ? data < emax ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
+    else {
+      return function exclusiveMaximum(data) {
+        return isStrictNumberType(data)
+          ? data < emax ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
   }
   else if (max != null) {
     const addError = schemaObj.createMemberError(
@@ -73,28 +55,29 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
       max,
       compileNumberMaximum,
     );
-    return function maximum(data) {
-      if (isDataType(data)) {
-        const valid = data <= max;
-        if (!valid) addError(data);
-        return valid;
-      }
-      return true;
-    };
+    if (isStrictBigIntType(max)) {
+      return function maximumBigInt(data) {
+        return (isStrictBigIntType(data) || isStrictNumberType(data)) // are we that forgiving?
+          ? data <= max ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
+    else {
+      return function maximum(data) {
+        return isStrictNumberType(data)
+          ? data <= max ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
   }
   return undefined;
 }
 
 function compileNumberMinimum(schemaObj, jsonSchema) {
-  const min = getNumberishType(jsonSchema.minimum); // BUG: IGNORING BITINT TYPE!
-  const emin = getNumberExclusiveBound(min, jsonSchema.exclusiveMinimum);
-
-  const isDataType = isBigIntSchema(jsonSchema)
-    ? isStrictBigIntType
-    : isIntegerSchema(jsonSchema)
-      ? isStrictIntegerType
-      : isStrictNumberType;
-  if (!isDataType) return undefined;
+  const [min, emin] = getNumberExclusiveBound(
+    jsonSchema.minimum,
+    jsonSchema.exclusiveMinimum,
+  );
 
   if (emin != null) {
     const addError = schemaObj.createMemberError(
@@ -102,14 +85,20 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
       emin,
       compileNumberMinimum,
     );
-    return function exclusiveMinimum(data) {
-      if (isDataType(data)) {
-        const valid = data > emin;
-        if (!valid) addError(data);
-        return valid;
-      }
-      return true;
-    };
+    if (isStrictBigIntType(emin)) {
+      return function exclusiveMinimumBigInt(data) {
+        return (isStrictBigIntType(data) || isStrictNumberType(data))
+          ? data > emin ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
+    else {
+      return function exclusiveMinimum(data) {
+        return isStrictNumberType(data)
+          ? data > emin ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
   }
   else if (min != null) {
     const addError = schemaObj.createMemberError(
@@ -117,14 +106,20 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
       min,
       compileNumberMinimum,
     );
-    return function minimum(data) {
-      if (isDataType(data)) {
-        const valid = data >= min;
-        if (!valid) addError(data);
-        return valid;
-      }
-      return true;
-    };
+    if (isStrictBigIntType(min)) {
+      return function minimumBigInt(data) {
+        return (isStrictBigIntType(data) || isStrictNumberType(data))
+          ? data >= min ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
+    else {
+      return function minimum(data) {
+        return isStrictNumberType(data)
+          ? data >= min ? true : addError(data)
+          : true; // other type, ignore
+      };
+    }
   }
   return undefined;
 }
@@ -145,76 +140,44 @@ function compileNumberRange(schemaObj, jsonSchema) {
 }
 
 function compileNumberMultipleOf(schemaObj, jsonSchema) {
-  const mulOf = getNumberishType(jsonSchema.multipleOf);
-  // we compare against bigint too! javascript is awesome!
-  // eslint-disable-next-line eqeqeq
-  if (mulOf && mulOf != 0) {
-    if (Number.isInteger(mulOf)) {
-      const addError = schemaObj.createMemberError(
-        'multipleOf',
-        mulOf,
-        compileNumberMultipleOf,
-        'integer',
-      );
-      if (isIntegerSchema(jsonSchema)) {
-        return function multipleOfInteger(data) {
-          if (Number.isInteger(data)) {
-            const valid = (data % mulOf) === 0;
-            if (!valid) addError(data);
-            return valid;
-          }
-          return true;
-        };
+  const mulOf = isStrictBigIntType(jsonSchema.multipleOf)
+    ? jsonSchema.multipleOf
+    : getNumberishType(jsonSchema.multipleOf);
+
+  if (mulOf == null) return undefined;
+
+  const addError = schemaObj.createMemberError(
+    'multipleOf',
+    mulOf,
+    compileNumberMultipleOf,
+  );
+  if (addError == null) return undefined;
+
+  if (isStrictBigIntType(mulOf)) {
+    return function multipleOfBigInt(data) {
+      if (isStrictBigIntType(data)) {
+        return data % mulOf === BigInt(0)
+          ? true
+          : addError(data);
       }
-      else {
-        return function multipleOfIntAsNumber(data) {
-          if (typeof data === 'number') {
-            const valid = Number.isInteger(data / mulOf);
-            if (!valid) addError(data);
-            return valid;
-          }
-          return true;
-        };
+      if (isStrictNumberType(data)) {
+        return data % Number(mulOf) === 0
+          ? true
+          : addError(data);
       }
-    }
-    else if (isBigIntSchema(jsonSchema)) {
-      const mf = BigInt(mulOf);
-      const addError = schemaObj.createMemberError(
-        'multipleOf',
-        mf,
-        compileNumberMultipleOf,
-        'bigint',
-      );
-      return function multipleOfBigInt(data) {
-        // eslint-disable-next-line valid-typeof
-        if (typeof data === 'bigint') {
-          // we compare against bigint too! javascript is awesome!
-          // eslint-disable-next-line eqeqeq
-          const valid = (data % mf) == 0;
-          if (!valid) addError(data);
-          return valid;
-        }
-        return true;
-      };
-    }
-    else {
-      const addError = schemaObj.createMemberError(
-        'multipleOf',
-        mulOf,
-        compileNumberMultipleOf,
-        'number',
-      );
-      return function multipleOfNumber(data) {
-        if (typeof data === 'number') {
-          const valid = Number.isInteger(Number(data) / mulOf);
-          if (!valid) addError(data);
-          return valid;
-        }
-        return true;
-      };
-    }
+      return true;
+    };
   }
-  return undefined;
+  else {
+    return function multipleOf(data) {
+      if (isStrictNumberType(data)) {
+        return data % mulOf === 0
+          ? true
+          : addError(data);
+      }
+      return true;
+    };
+  }
 }
 
 export function compileNumberBasic(schemaObj, jsonSchema) {
@@ -225,11 +188,5 @@ export function compileNumberBasic(schemaObj, jsonSchema) {
       return fnRange(data) && fnMulOf(data);
     };
   }
-  else if (fnRange) {
-    return fnRange;
-  }
-  else if (fnMulOf) {
-    return fnMulOf;
-  }
-  return undefined;
+  return fnRange || fnMulOf;
 }
