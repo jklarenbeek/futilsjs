@@ -62,3 +62,11 @@ export function getArrayMinItems(obj, len, def) {
     ? obj
     : def;
 }
+
+export function getMapOfArray(obj, def) {
+  if (obj.constructor === Map)
+    return obj;
+  if (isStrictArrayType(obj))
+    return new Map(obj);
+  return def;
+}

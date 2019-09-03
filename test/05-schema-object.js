@@ -288,7 +288,6 @@ describe('Schema Object Type', function () {
         properties: {
           name: { type: 'string' },
           credit_card: { type: 'number' },
-          billing_address: { type: 'string' },
         },
         required: ['name'],
         dependencies: {
