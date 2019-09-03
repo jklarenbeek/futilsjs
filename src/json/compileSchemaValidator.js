@@ -2,14 +2,27 @@
 import {
   falseThat,
   trueThat,
-  isFn,
+  addFunctionToArray,
 } from '../types/isFunctionType';
 
 import {
   isStrictObjectType,
 } from '../types/isDataType';
 
-import { compileTypeBasic } from './compileTypeValidator';
+import {
+  getBooleanishType,
+  getStrictString,
+} from '../types/getDataType';
+
+import {
+  getBoolOrArray,
+  getArrayUnique,
+} from '../types/getDataTypeExtra';
+
+import {
+  createIsStrictDataType,
+} from '../types/createIsDataType';
+
 import { compileFormatBasic } from './compileFormatValidator';
 import { compileEnumBasic } from './compileEnumValidator';
 import { compileNumberBasic } from './compileNumberValidator';
@@ -19,130 +32,216 @@ import { compileArrayBasic, compileArrayChildren } from './compileArrayValidator
 import { compileCombineSchema } from './compileCombineValidator';
 import { compileConditionSchema } from './compileConditionValidator';
 
-function compileSchemaBasic(schemaObj, jsonSchema) {
-  const compilers = [];
-  function addCompiler(compiler) {
-    if (isFn(compiler)) compilers.push(compiler);
+function compileStringType(schemaObj, jsonSchema) {
+  const type = getStrictString(jsonSchema.type);
+  if (type == null) return undefined;
+
+  const isDataType = createIsStrictDataType(type);
+  if (!isDataType) return undefined;
+
+  const addError = schemaObj.createMemberError('type', type, compileStringType);
+  if (!addError) return undefined;
+
+  return function validateTypeSimple(data) {
+    return isDataType(data) ? true : addError(data);
+  };
+}
+
+function compileArrayType(schemaObj, jsonSchema) {
+  const type = getArrayUnique(jsonSchema.type);
+  if (type == null) return undefined;
+
+  // collect all testable data types
+  const types = [];
+  const names = [];
+  for (let i = 0; i < type.length; ++i) {
+    const tp = type[i];
+    const cb = createIsStrictDataType(tp);
+    if (cb) {
+      types.push(cb);
+      names.push(tp);
+    }
   }
 
-  addCompiler(compileFormatBasic(schemaObj, jsonSchema));
-  addCompiler(compileEnumBasic(schemaObj, jsonSchema));
-  addCompiler(compileNumberBasic(schemaObj, jsonSchema));
-  addCompiler(compileStringBasic(schemaObj, jsonSchema));
-  addCompiler(compileObjectBasic(schemaObj, jsonSchema));
-  addCompiler(compileArrayBasic(schemaObj, jsonSchema));
+  // if non has been found exit
+  if (names.length === 0) return undefined;
 
-  if (compilers.length === 0) return undefined;
-  if (compilers.length === 1) return compilers[0];
-  if (compilers.length === 2) {
-    const first = compilers[0];
-    const second = compilers[1];
-    return function validateSchemaBasicPair(data, dataRoot) {
-      return first(data, dataRoot) && second(data, dataRoot);
+  // if one has been found create a validator
+  if (names.length === 1) {
+    const addError = schemaObj.createMemberError('type', names[0], compileArrayType);
+    if (!addError) return undefined;
+    const dt1 = types[0];
+    return function validateArrayOfTypeOne(data) {
+      return dt1(data) ? true : addError(data);
+    };
+  }
+  else if (names.length === 2) {
+    const addError = schemaObj.createMemberError('type,', names, compileArrayType);
+    if (!addError) return undefined;
+    const dt1 = types[0];
+    const dt2 = types[1];
+    return function validateArrayOfTypeTwo(data) {
+      return dt1(data) || dt2(data) ? true : addError(data);
+    };
+  }
+  else if (names.length === 3) {
+    const addError = schemaObj.createMemberError('type,', names, compileArrayType);
+    if (!addError) return undefined;
+    const dt1 = types[0];
+    const dt2 = types[1];
+    const dt3 = types[2];
+    return function validateArrayOfTypeThree(data) {
+      return dt1(data) || dt2(data) || dt3(data) ? true : addError(data);
     };
   }
   else {
-    return function validateSchemaBasic(data, dataRoot) {
-      for (let i = 0; i < compilers.length; ++i) {
-        const compiler = compilers[i];
-        if (compiler(data, dataRoot) === false) return false;
+    const addError = schemaObj.createMemberError('type', names, compileArrayType);
+    if (!addError) return undefined;
+    return function validateArrayOfTypeAll(data) {
+      for (let i = 0; i < types.length; ++i) {
+        if (types[i](data) === true) return true;
       }
-      return true;
+      return addError(data);
     };
   }
 }
 
-function compileSchemaChildren(schemaObj, jsonSchema) {
-  const compilers = [];
-  function addCompiler(compiler) {
-    if (isFn(compiler)) compilers.push(compiler);
+function compileTypeBasic(schemaObj, jsonSchema) {
+  const fnType = compileStringType(schemaObj, jsonSchema)
+    || compileArrayType(schemaObj, jsonSchema);
+
+  const required = getBoolOrArray(jsonSchema.required, false);
+  const nullable = getBooleanishType(jsonSchema.nullable);
+
+  const addRequiredError = required !== false
+    ? schemaObj.createMemberError(
+      'required',
+      true,
+      compileTypeBasic)
+    : undefined;
+
+  const addNullableError = nullable != null
+    ? schemaObj.createMemberError(
+      'nullable',
+      nullable,
+      compileTypeBasic)
+    : undefined;
+
+  if (addRequiredError == null) {
+    if (fnType) {
+      if (addNullableError != null) {
+        return function validateTypeNullable(data) {
+          if (data === undefined) return true;
+          if (data === null) return nullable
+            ? true
+            : addNullableError(data);
+          return fnType(data);
+        };
+      }
+
+      return function validateTypeBasic(data) {
+        if (data === undefined) return true;
+        return fnType(data);
+      };
+    }
+
+    if (addNullableError != null) {
+      return function validateNotNullable(data) {
+        if (data === null) return nullable
+          ? true
+          : addNullableError(data);
+        return true;
+      };
+    }
+
+    return undefined;
   }
 
-  addCompiler(compileObjectChildren(schemaObj, jsonSchema));
-  addCompiler(compileArrayChildren(schemaObj, jsonSchema));
+  if (fnType) {
+    if (addNullableError != null) {
+      return function validateRequiredTypeNullable(data) {
+        if (data === undefined) return addRequiredError(data);
+        if (data === null) return nullable
+          ? true
+          : addNullableError(data);
+        return fnType(data);
+      };
+    }
 
-  if (compilers.length === 0) return undefined;
-  if (compilers.length === 1) return compilers[0];
-  if (compilers.length === 2) {
-    const first = compilers[0];
-    const second = compilers[1];
-    return function validateSchemaChildrenPair(data, dataRoot) {
-      return first(data, dataRoot) && second(data, dataRoot);
+    return function validateRequiredType(data) {
+      if (data === undefined) return addRequiredError(data);
+      return fnType(data);
     };
   }
-  else {
-    return function validateSchemaChildren(data, dataRoot) {
-      for (let i = 0; i < compilers.length; ++i) {
-        const compiler = compilers[i];
-        if (compiler(data, dataRoot) === false) return false;
-      }
+
+  if (addNullableError != null) {
+    return function validateRequiredNonNullableData(data) {
+      if (data === undefined) return addRequiredError(data);
+      if (data === null) return nullable
+        ? true
+        : addNullableError(data);
       return true;
     };
   }
-}
 
-// eslint-disable-next-line no-unused-vars
-function compileSchemaAdvanced(schemaObj, jsonSchema) {
-  const fnCombine = compileCombineSchema(schemaObj, jsonSchema);
-  const fnCondition = compileConditionSchema(schemaObj, jsonSchema);
-
-  if (fnCombine && fnCondition) {
-    return function validateAdvandedSchema(data, dataRoot) {
-      return fnCombine(data, dataRoot) && fnCondition(data, dataRoot);
-    };
-  }
-  return fnCombine || fnCondition;
+  return function validateRequiredNullableData(data) {
+    return data !== undefined ? true : addRequiredError(data);
+  };
 }
 
 export function compileSchemaObject(schemaObj, jsonSchema) {
-  const validators = [];
-  function addCompiler(validator) {
-    if (isFn(validator)) validators.push(validator);
-  }
-
   if (jsonSchema === true) return trueThat;
   if (jsonSchema === false) return falseThat;
-  if (!isStrictObjectType(jsonSchema)) {
-    return falseThat;
-  }
-
+  if (!isStrictObjectType(jsonSchema)) return falseThat;
   if (Object.keys(jsonSchema).length === 0) return trueThat;
 
   const fnType = compileTypeBasic(schemaObj, jsonSchema);
 
-  addCompiler(compileSchemaBasic(schemaObj, jsonSchema));
-  addCompiler(compileSchemaChildren(schemaObj, jsonSchema));
-  addCompiler(compileSchemaAdvanced(schemaObj, jsonSchema));
+  const validators = [];
+  addFunctionToArray(validators, compileFormatBasic(schemaObj, jsonSchema));
+  addFunctionToArray(validators, compileEnumBasic(schemaObj, jsonSchema));
+  addFunctionToArray(validators, compileNumberBasic(schemaObj, jsonSchema));
+  addFunctionToArray(validators, compileStringBasic(schemaObj, jsonSchema));
+  addFunctionToArray(validators, compileObjectBasic(schemaObj, jsonSchema));
+  addFunctionToArray(validators, compileArrayBasic(schemaObj, jsonSchema));
 
-  if (validators.length === 0) {
-    if (fnType) return fnType;
-    return undefined;
-  }
+  addFunctionToArray(validators, compileObjectChildren(schemaObj, jsonSchema));
+  addFunctionToArray(validators, compileArrayChildren(schemaObj, jsonSchema));
+
+  addFunctionToArray(validators, compileCombineSchema(schemaObj, jsonSchema));
+  addFunctionToArray(validators, compileConditionSchema(schemaObj, jsonSchema));
+
+  if (validators.length === 0) return fnType
+    || trueThat; // same as empty schema
 
   if (validators.length === 1) {
     const first = validators[0];
-    if (fnType) return function validateSchemaObjectSingle(data, dataRoot) {
+    if (fnType != null) return function validateSingleSchemaObjectTyped(data, dataRoot) {
       if (fnType(data, dataRoot) === false) return false;
-      // we do not continue if undefined
-      if (data === undefined) return true;
+      if (data == null) return true;
       return first(data, dataRoot);
     };
 
-    return first;
+    return function validateSingleSchemaObject(data, dataRoot) {
+      if (data == null) return true;
+      return first(data, dataRoot);
+    };
   }
 
   if (validators.length === 2) {
     const first = validators[0];
     const second = validators[1];
-    if (fnType) return function validateSchemaObjectTypedPair(data, dataRoot) {
+    if (fnType != null) return function validatePairSchemaObjectTyped(data, dataRoot) {
       if (fnType(data, dataRoot) === false) return false;
-      if (data === undefined) return true;
-      return first(data, dataRoot) && second(data, dataRoot);
+      if (data == null) return true;
+      return first(data, dataRoot)
+        && second(data, dataRoot);
     };
 
-    return function validateSchemaObjectPair(data, dataRoot) {
-      if (data === undefined) return true;
-      return first(data, dataRoot) && second(data, dataRoot);
+    return function validatePairSchemaObject(data, dataRoot) {
+      if (data == null) return true;
+      return first(data, dataRoot)
+        && second(data, dataRoot);
     };
   }
 
@@ -151,21 +250,60 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
     const second = validators[1];
     const thirth = validators[2];
 
-    if (fnType) return function validateSchemaObjectTypedAll(data, dataRoot) {
+    if (fnType != null) return function validateTernarySchemaObjectTyped(data, dataRoot) {
       if (fnType(data, dataRoot) === false) return false;
-      if (data === undefined) return true;
+      if (data == null) return true;
       return first(data, dataRoot)
         && second(data, dataRoot)
         && thirth(data, dataRoot);
     };
 
-    return function validateSchemaObjectAll(data, dataRoot) {
-      if (data === undefined) return true;
+    return function validateTernarySchemaObject(data, dataRoot) {
+      if (data == null) return true;
       return first(data, dataRoot)
         && second(data, dataRoot)
         && thirth(data, dataRoot);
     };
   }
 
-  return undefined;
+  if (validators.length === 4) {
+    const first = validators[0];
+    const second = validators[1];
+    const thirth = validators[2];
+    const fourth = validators[3];
+
+    if (fnType != null) return function validateSchemaObjectTypedQuaternary(data, dataRoot) {
+      if (fnType(data, dataRoot) === false) return false;
+      if (data == null) return true;
+      return first(data, dataRoot)
+        && second(data, dataRoot)
+        && thirth(data, dataRoot)
+        && fourth(data, dataRoot);
+    };
+
+    return function validateSchemaObjectQuaternary(data, dataRoot) {
+      if (data == null) return true;
+      return first(data, dataRoot)
+        && second(data, dataRoot)
+        && thirth(data, dataRoot)
+        && fourth(data, dataRoot);
+    };
+  }
+
+  if (fnType != null) return function validateAllSchemaObjectTyped(data, dataRoot) {
+    if (fnType(data, dataRoot) === false) return false;
+    if (data == null) return true;
+    for (let i = 0; i < validators.length; ++i) {
+      if (validators[i](data, dataRoot) === false) return false;
+    }
+    return true;
+  };
+
+  return function validateAllSchemaObject(data, dataRoot) {
+    if (data == null) return true;
+    for (let i = 0; i < validators.length; ++i) {
+      if (validators[i](data, dataRoot) === false) return false;
+    }
+    return true;
+  };
 }

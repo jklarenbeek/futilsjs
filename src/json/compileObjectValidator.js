@@ -6,7 +6,6 @@ import {
 // eslint-disable-next-line import/no-cycle
 import {
   isObjectishType,
-  isStrictBooleanType,
 } from '../types/isDataType';
 
 import {
@@ -25,12 +24,7 @@ import {
   undefThat,
   trueThat,
   isFn,
-  falseThat,
 } from '../types/isFunctionType';
-
-import {
-  isOfSchemaType,
-} from './isSchemaType';
 
 function compileCheckBounds(schemaObj, jsonSchema) {
   // get the defined lower and upper bounds of an array.
@@ -82,12 +76,12 @@ function compileDefaultPropertyBounds(checkBounds) {
   return function propertyBounds(data) {
     if (data == null) return true;
     if (typeof data !== 'object') return true;
-    if (data.constructor === Map) {
+    if (data.constructor === Array
+      || data.constructor === Set) return true;
+    if (data.constructor === Map)
       return checkBounds(data.size);
-    }
-    else {
+    else
       return checkBounds(Object.keys(data).length);
-    }
   };
 }
 
@@ -98,7 +92,7 @@ function compileRequiredProperties(schemaObj, jsonSchema, checkBounds) {
   const mapProps = getMapOfArray(jsonSchema.properties);
   const objProps = getObjectishType(jsonSchema.properties);
 
-  const keys = required.length !== 0
+  const requiredKeys = required.length !== 0
     ? required
     : mapProps != null
       ? Array.from(mapProps.keys())
@@ -106,7 +100,7 @@ function compileRequiredProperties(schemaObj, jsonSchema, checkBounds) {
         ? Object.keys(objProps)
         : [];
 
-  if (keys.length === 0) return undefined;
+  if (requiredKeys.length === 0) return undefined;
 
   checkBounds = checkBounds || trueThat;
 
@@ -119,20 +113,23 @@ function compileRequiredProperties(schemaObj, jsonSchema, checkBounds) {
   return function requiredProperties(data) {
     if (data == null) return true;
     if (typeof data !== 'object') return true;
+    if (data.constructor === Array
+      || data.constructor === Set) return true;
+
     let valid = true;
     if (data.constructor === Map) {
-      for (let i = 0; i < keys.length; ++i) {
-        if (data.has(keys[i]) === false) {
-          valid = addError(keys[i], data);
+      for (let i = 0; i < requiredKeys.length; ++i) {
+        if (data.has(requiredKeys[i]) === false) {
+          valid = addError(requiredKeys[i], data);
         }
       }
       return checkBounds(data.size) && valid;
     }
 
     const dataKeys = Object.keys(data);
-    for (let i = 0; i < keys.length; ++i) {
-      if (dataKeys.includes(keys[i]) === false) {
-        valid = addError(keys[i], data);
+    for (let i = 0; i < requiredKeys.length; ++i) {
+      if (dataKeys.includes(requiredKeys[i]) === false) {
+        valid = addError(requiredKeys[i], data);
       }
     }
     return checkBounds(dataKeys.length) && valid;
@@ -160,6 +157,8 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
   return function patternRequired(data) {
     if (data == null) return true;
     if (typeof data !== 'object') return true;
+    if (data.constructor === Array
+      || data.constructor === Set) return true;
 
     const dataKeys = data.constructor === Map
       ? Array.from(data.keys())
@@ -190,23 +189,19 @@ export function compileObjectBasic(schemaObj, jsonSchema) {
     || compileDefaultPropertyBounds(checkBounds);
   const valPatts = compileRequiredPatterns(schemaObj, jsonSchema);
 
-  if (valProps && valPatts) {
-    return function validateObjectBasic(data) {
-      return valProps(data) && valPatts(data);
-    };
-  }
-
-  return valProps || valPatts;
+  return [
+    valProps,
+    valPatts,
+  ];
 }
 
-function compilePropertyNames(schemaObj, jsonSchema) {
-  const propNames = getObjectishType(jsonSchema.propertyNames);
+function compileObjectPropertyNames(schemaObj, propNames) {
   if (propNames == null) return undefined;
 
   const validator = schemaObj.createSingleValidator(
     'propertyNames',
     propNames,
-    compilePropertyNames);
+    compileObjectPropertyNames);
   if (validator == null) return undefined;
 
   return function validatePropertyName(key) {
@@ -214,33 +209,30 @@ function compilePropertyNames(schemaObj, jsonSchema) {
   };
 }
 
-function compilePropertyItem(schemaObj, jsonSchema) {
-  const properties = getObjectishType(jsonSchema.properties);
+function createObjectPropertyValidators(schemaObj, properties) {
   if (properties == null) return undefined;
 
   const keys = Object.keys(properties);
   if (keys.length === 0) return undefined;
 
-  const member = schemaObj.createMember('properties', compilePropertyItem);
+  const member = schemaObj.createMember('properties', compileObjectPropertyItem);
   if (member == null) return undefined;
 
   const children = {};
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
     const child = properties[key];
-    if (child === true)
-      children[key] = trueThat;
-    else if (child === false)
-      children[key] = falseThat;
-    else if (isObjectishType(child)) {
-      const validator = schemaObj.createPairValidator(member, key, child);
-      if (validator != null)
-        children[key] = validator;
-    }
-    else
-      children[key] = falseThat;
+    const validator = schemaObj.createPairValidator(member, key, child);
+    if (validator != null)
+      children[key] = validator;
   }
-  if (Object.keys(children).length === 0) return undefined;
+  return (Object.keys(children).length > 0)
+    ? children
+    : undefined;
+}
+
+function compileObjectPropertyItem(children) {
+  if (children == null) return undefined;
 
   return function validatePropertyItem(key, data, dataRoot) {
     const validator = children[key];
@@ -250,184 +242,164 @@ function compilePropertyItem(schemaObj, jsonSchema) {
   };
 }
 
-function compileMapValueItem(schemaObj, jsonSchema) {
-  const properties = getMapOfArray(jsonSchema.properties);
-  if (properties == null) return undefined;
-  if (properties.size === 0) return undefined;
+function compileObjectPatternItem(schemaObj, entries) {
+  if (entries == null) return undefined;
 
-  const member = schemaObj.createMember('properties', compileMapValueItem);
+  const entryKeys = Object.keys(entries);
+  if (entryKeys.length === 0) return undefined;
+
+  const patterns = {};
+  for (let i = 0; i < entryKeys.length; ++i) {
+    const key = entryKeys[i];
+    const pattern = String_createRegExp(key);
+    if (pattern != null)
+      patterns[key] = pattern;
+  }
+
+  const patternKeys = Object.keys(patterns);
+  if (patternKeys.length === 0) return undefined;
+
+  const member = schemaObj.createMember('patternProperties', compileObjectPatternItem);
   if (member == null) return undefined;
 
-  const children = new Map();
-  for (const [key, child] of properties) {
-    if (child === true)
-      children.set(key, trueThat);
-    else if (child === false)
-      children.set(key, falseThat);
-    else if (!isObjectishType(value))
-      children.set(key, falseThat); // we return false on schema error
-    else {
-      const validator = schemaObject.createPairValidator(member, key, value);
-      if (validator != null)
-        children.set(key, validator);
-    }
-    if (children.size === 0) return undefined;
+  const validators = {};
+  for (let i = 0; i < patternKeys.length; ++i) {
+    const key = patternKeys[i];
+    const child = entries[key];
+    const validator = schemaObj.createPairValidator(member, key, child);
+    if (validator != null)
+      validators[key] = validator;
+  }
 
-    return function validateMapValueItem(key, data, dataRoot) {
-      const validator = children.get(key);
-      if (validator == null) return undefined;
-      return data.constructor === Map
-        ? validator(data.get(key), dataRoot)
-        : validator(data[key], dataRoot);
-    }
-}
+  const validatorKeys = Object.keys(validators);
+  if (validatorKeys.length === 0) return undefined;
 
-function compilePatternItem(schemaObj, jsonSchema) {
-  const patterns = getObjectishType(jsonSchema.patternProperties);
-  if (patterns == null) return undefined;
-
-  const keys = Object.keys(patterns);
-  if (keys.length > 0) {
-    const regs = {};
-    const props = {};
-
-    const member = schemaObj.createMember('patternProperties', compilePatternItem);
-    for (let i = 0; i < keys.length; ++i) {
-      const key = keys[i];
-      const rxp = String_createRegExp(key);
-      if (rxp != null) {
-        const child = patterns[key];
-        const validator = schemaObj.createPairValidator(member, key, child);
-        if (validator != null) {
-          regs[key] = rxp;
-          props[key] = validator;
-        }
+  return function validatePatternItem(propertyKey, data, dataRoot) {
+    for (let i = 0; i < validatorKeys.length; ++i) {
+      const key = validatorKeys[i];
+      const pattern = patterns[key];
+      if (pattern.test(propertyKey)) {
+        const validate = validators[key];
+        return validate(data[propertyKey], dataRoot);
       }
     }
-
-    const regKeys = Object.keys(regs);
-    if (regKeys.length > 0) {
-      return function validatePatternItem(key, data, dataRoot) {
-        for (let i = 0; i < regKeys.length; ++i) {
-          const rky = regKeys[i];
-          const rxp = regs[rky];
-          if (rxp.test(key)) {
-            const validate = props[rky];
-            return validate(data[key], dataRoot);
-          }
-        }
-        return undefined;
-      };
-    }
-  }
-  return undefined;
+    return undefined;
+  };
 }
 
-function compileAdditionalItem(schemaObj, jsonSchema) {
-  const additional = getBoolOrObject(jsonSchema.additionalProperties, true);
+function compileObjectAdditionalProperty(schemaObj, additional) {
+  if (additional === true) return undefined;
+
   if (additional === false) {
     const addError = schemaObj.createMemberError(
       'additionalProperties',
       false,
-      compileAdditionalItem);
+      compileObjectAdditionalProperty);
+    if (addError == null) return undefined;
+
     // eslint-disable-next-line no-unused-vars
     return function noAdditionalProperties(dataKey, data, dataRoot) {
       return addError(dataKey, data);
     };
   }
-  if (additional !== true) {
-    const validate = schemaObj.createSingleValidator(
-      'additionalProperties',
-      additional,
-      compileAdditionalItem);
-    if (validate != null) {
-      return function validateAdditionalItem(key, data, dataRoot) {
-        return validate(data[key], dataRoot);
-      };
-    }
-  }
 
-  return undefined;
+  const validator = schemaObj.createSingleValidator(
+    'additionalProperties',
+    additional,
+    compileObjectAdditionalProperty);
+  if (validator == null) return undefined;
+
+  return function validateAdditionalProperty(key, data, dataRoot) {
+    return validator(data[key], dataRoot);
+  };
 }
 
 export function compileObjectChildren(schemaObj, jsonSchema) {
-  const propNames = getObjectishType(jsonSchema.propertyNames);
   const properties = getObjectishType(jsonSchema.properties);
-  const patterns = getObjectishType(jsonSchema.patternProperties);
-  const additional = getBoolOrObject(jsonSchema.additionalProperties, true);
+  const ptrnProps = getObjectishType(jsonSchema.patternProperties);
+  const propNames = getObjectishType(jsonSchema.propertyNames);
+  const addlProps = getBoolOrObject(jsonSchema.additionalProperties, true);
 
-  if (propNames == null && properties == null && patterns == null && additional === true)
-    return undefined;
+  const validatorChildren = createObjectPropertyValidators(schemaObj, properties);
+  const patternValidator = compileObjectPatternItem(schemaObj, ptrnProps);
+  const nameValidator = compileObjectPropertyNames(schemaObj, propNames);
+  const additionalValidator = compileObjectAdditionalProperty(schemaObj, addlProps);
 
-  // make sure we are not part of a map!
-  if (!isStrictBooleanType(additional)) {
-    if (properties == null && patterns == null) {
-      if (isOfSchemaType(jsonSchema, 'map')) return undefined;
-    }
-  }
+  if (patternValidator == null
+    && nameValidator == null
+    && additionalValidator == null) {
+    if (validatorChildren == null) return undefined;
 
-  // eslint-disable-next-line no-constant-condition
-  if (true) {
-    const validateName = fallbackFn(
-      compilePropertyNames(schemaObj, jsonSchema),
-      trueThat,
-    );
-    const validateProperty = fallbackFn(
-      compilePropertyItem(schemaObj, jsonSchema),
-      undefThat,
-    );
-    const validatePattern = fallbackFn(
-      compilePatternItem(schemaObj, jsonSchema),
-      undefThat,
-    );
-    const validateAdditional = fallbackFn(
-      compileAdditionalItem(schemaObj, jsonSchema),
-      trueThat,
-    );
-
-    return function validateObjectChildren(data, dataRoot) {
-      let valid = true;
+    const childrenKeys = Object.keys(validatorChildren);
+    return function validateProperties(data, dataRoot) {
       if (isObjectishType(data)) {
         const dataKeys = Object.keys(data);
-        let errors = 0;
-        for (let i = 0; i < dataKeys.length; ++i) {
-          if (errors > 32) break;
-          const dataKey = dataKeys[i];
-          if (validateName(dataKey) === false) {
-            valid = false;
-            continue;
+        if (dataKeys.length === 0) return true;
+        let valid = true;
+        for (let i = 0; i < childrenKeys.length; ++i) {
+          const key = childrenKeys[i];
+          if (dataKeys.includes(key)) {
+            const validator = validatorChildren[key];
+            valid = validator(data[key], dataRoot) && valid;
           }
+        }
+        return valid;
+      }
+      return true;
+    };
+  }
 
-          let result = validateProperty(dataKey, data, dataRoot);
-          if (result != null) {
-            dataKeys[i] = result;
-            if (result === false) {
-              valid = false;
-              errors++;
-            }
-            continue;
-          }
+  const propertyValidator = compileObjectPropertyItem(validatorChildren);
 
-          result = validatePattern(dataKey, data, dataRoot);
-          if (result != null) {
-            dataKeys[i] = result;
-            if (result === false) {
-              valid = false;
-              errors++;
-            }
-            continue;
-          }
+  const validateProperty = fallbackFn(propertyValidator, undefThat);
+  const validatePattern = fallbackFn(patternValidator, undefThat);
+  const validateName = fallbackFn(nameValidator, trueThat);
+  const validateAdditional = fallbackFn(additionalValidator, trueThat);
 
-          result = validateAdditional(dataKey, data, dataRoot);
+  return function validateObjectChildren(data, dataRoot) {
+    if (isObjectishType(data)) {
+      const dataKeys = Object.keys(data);
+      let valid = true;
+      let errors = 0;
+      for (let i = 0; i < dataKeys.length; ++i) {
+        if (errors > 32) break; // TODO: get max list errors from config
+        const dataKey = dataKeys[i];
+
+        let result = validateProperty(dataKey, data, dataRoot);
+        if (result != null) {
           dataKeys[i] = result;
           if (result === false) {
             valid = false;
             errors++;
           }
+          continue;
+        }
+
+        result = validatePattern(dataKey, data, dataRoot);
+        if (result != null) {
+          dataKeys[i] = result;
+          if (result === false) {
+            valid = false;
+            errors++;
+          }
+          continue;
+        }
+
+        if (validateName(dataKey) === false) {
+          valid = false;
+          errors++;
+          continue;
+        }
+
+        result = validateAdditional(dataKey, data, dataRoot);
+        dataKeys[i] = result;
+        if (result === false) {
+          valid = false;
+          errors++;
         }
       }
       return valid;
-    };
-  }
-  return undefined;
+    }
+    return true;
+  };
 }

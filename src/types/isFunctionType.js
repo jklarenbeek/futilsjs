@@ -28,3 +28,16 @@ export function fallbackFn(compiled, fallback = trueThat) {
     ? fallback
     : trueThat;
 }
+
+export function addFunctionToArray(arr = [], fn) {
+  if (fn == null) return arr;
+  if (isFn(fn))
+    arr.push(fn);
+  else if (fn.constructor === Array) {
+    for (let i = 0; i < fn.length; ++i) {
+      if (isFn(fn[i]))
+        arr.push(fn[i]);
+    }
+  }
+  return arr;
+}
