@@ -1,10 +1,11 @@
 
 let random_seed = Math.random() * Number.MAX_SAFE_INTEGER;
 const random_precision = 10000 + Math.random() * 10000;
-export function random() {
+export function random_fast1() {
   const x = Math.sin(random_seed++) * random_precision;
   return x - Math.floor(x);
 }
+export const random = random_fast1;
 
 const uuid1_formatStr = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
 const uuid1_formatLen = uuid1_formatStr.split(/[xy]/).length;
