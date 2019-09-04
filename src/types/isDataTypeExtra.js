@@ -37,12 +37,11 @@ export function isArrayOrSet(data) {
       || data.constructor === Set));
 }
 
-export function isObjectOrMap(data) {
-  return (data != null)
-    && (data.constructor === Map
-      || (data.constructor !== Array
-        && data.constructor !== Set
-        && typeof data === 'object'));
+export function isMapOrObjectish(data) {
+  return !(data == null
+    || typeof data !== 'object'
+    || data.constructor === Array
+    || data.constructor === Set);
 }
 
 export function isStringOrDate(data) {

@@ -9,6 +9,10 @@ import {
 } from '../types/isDataType';
 
 import {
+  isMapOrObjectish,
+} from '../types/isDataTypeExtra';
+
+import {
   getObjectishType,
   getIntegerishType,
   getStrictArray,
@@ -27,11 +31,8 @@ import {
 } from '../types/isFunctionType';
 
 function compileCheckBounds(schemaObj, jsonSchema) {
-  // get the defined lower and upper bounds of an array.
-  const minprops = getIntegerishType(jsonSchema.minProperties);
-  const maxprops = getIntegerishType(jsonSchema.maxProperties);
-
   function compileMaxProperties() {
+    const maxprops = getIntegerishType(jsonSchema.maxProperties);
     if (!(maxprops > 0)) return undefined;
 
     const addError = schemaObj.createMemberError(
@@ -48,6 +49,7 @@ function compileCheckBounds(schemaObj, jsonSchema) {
   }
 
   function compileMinProperties() {
+    const minprops = getIntegerishType(jsonSchema.minProperties);
     if (!(minprops > 0)) return undefined;
 
     const addError = schemaObj.createMemberError(
@@ -76,14 +78,11 @@ function compileCheckBounds(schemaObj, jsonSchema) {
 function compileDefaultPropertyBounds(checkBounds) {
   if (!isFn(checkBounds)) return undefined;
   return function propertyBounds(data) {
-    if (data == null) return true;
-    if (typeof data !== 'object') return true;
-    if (data.constructor === Array
-      || data.constructor === Set) return true;
-    if (data.constructor === Map)
-      return checkBounds(data.size);
-    else
-      return checkBounds(Object.keys(data).length);
+    return !isMapOrObjectish(data)
+      ? true
+      : data.constructor === Map
+        ? checkBounds(data.size)
+        : checkBounds(Object.keys(data).length);
   };
 }
 
@@ -113,10 +112,7 @@ function compileRequiredProperties(schemaObj, jsonSchema, checkBounds) {
   if (addError == null) return undefined;
 
   return function requiredProperties(data) {
-    if (data == null) return true;
-    if (typeof data !== 'object') return true;
-    if (data.constructor === Array
-      || data.constructor === Set) return true;
+    if (!isMapOrObjectish(data)) return true;
 
     let valid = true;
     if (data.constructor === Map) {
@@ -157,10 +153,7 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
   if (addError == null) return undefined;
 
   return function patternRequired(data) {
-    if (data == null) return true;
-    if (typeof data !== 'object') return true;
-    if (data.constructor === Array
-      || data.constructor === Set) return true;
+    if (!isMapOrObjectish(data)) return true;
 
     const dataKeys = data.constructor === Map
       ? Array.from(data.keys())
