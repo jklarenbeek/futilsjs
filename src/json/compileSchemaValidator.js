@@ -32,14 +32,14 @@ import { compileArrayBasic, compileArrayChildren } from './compileArrayValidator
 import { compileCombineSchema } from './compileCombineValidator';
 import { compileConditionSchema } from './compileConditionValidator';
 
-function compileStringType(schemaObj, jsonSchema) {
+function compileTypeSimple(schemaObj, jsonSchema) {
   const type = getStrictString(jsonSchema.type);
   if (type == null) return undefined;
 
   const isDataType = createIsStrictDataType(type);
   if (!isDataType) return undefined;
 
-  const addError = schemaObj.createMemberError('type', type, compileStringType);
+  const addError = schemaObj.createMemberError('type', type, compileTypeSimple);
   if (!addError) return undefined;
 
   return function validateTypeSimple(data) {
@@ -47,57 +47,52 @@ function compileStringType(schemaObj, jsonSchema) {
   };
 }
 
-function compileArrayType(schemaObj, jsonSchema) {
-  const type = getArrayUnique(jsonSchema.type);
-  if (type == null) return undefined;
+function compileTypeArray(schemaObj, jsonSchema) {
+  const schemaType = getArrayUnique(jsonSchema.type);
+  if (schemaType == null) return undefined;
 
   // collect all testable data types
   const types = [];
   const names = [];
-  for (let i = 0; i < type.length; ++i) {
-    const tp = type[i];
-    const cb = createIsStrictDataType(tp);
-    if (cb) {
-      types.push(cb);
-      names.push(tp);
+  for (let i = 0; i < schemaType.length; ++i) {
+    const type = schemaType[i];
+    const callback = createIsStrictDataType(type);
+    if (callback) {
+      types.push(callback);
+      names.push(type);
     }
   }
 
   // if non has been found exit
-  if (names.length === 0) return undefined;
+  if (types.length === 0) return undefined;
+
+  const addError = schemaObj.createMemberError('type', names, compileTypeArray);
+  if (!addError) return undefined;
 
   // if one has been found create a validator
-  if (names.length === 1) {
-    const addError = schemaObj.createMemberError('type', names[0], compileArrayType);
-    if (!addError) return undefined;
-    const dt1 = types[0];
-    return function validateArrayOfTypeOne(data) {
-      return dt1(data) ? true : addError(data);
+  if (types.length === 1) {
+    const one = types[0];
+    return function validateOneType(data) {
+      return one(data) ? true : addError(data);
     };
   }
-  else if (names.length === 2) {
-    const addError = schemaObj.createMemberError('type,', names, compileArrayType);
-    if (!addError) return undefined;
-    const dt1 = types[0];
-    const dt2 = types[1];
-    return function validateArrayOfTypeTwo(data) {
-      return dt1(data) || dt2(data) ? true : addError(data);
+  else if (types.length === 2) {
+    const one = types[0];
+    const two = types[1];
+    return function validateTwoTypes(data) {
+      return one(data) || two(data) ? true : addError(data);
     };
   }
-  else if (names.length === 3) {
-    const addError = schemaObj.createMemberError('type,', names, compileArrayType);
-    if (!addError) return undefined;
-    const dt1 = types[0];
-    const dt2 = types[1];
-    const dt3 = types[2];
-    return function validateArrayOfTypeThree(data) {
-      return dt1(data) || dt2(data) || dt3(data) ? true : addError(data);
+  else if (types.length === 3) {
+    const one = types[0];
+    const two = types[1];
+    const three = types[2];
+    return function validateThreeTypes(data) {
+      return one(data) || two(data) || three(data) ? true : addError(data);
     };
   }
   else {
-    const addError = schemaObj.createMemberError('type', names, compileArrayType);
-    if (!addError) return undefined;
-    return function validateArrayOfTypeAll(data) {
+    return function validateAllTypes(data) {
       for (let i = 0; i < types.length; ++i) {
         if (types[i](data) === true) return true;
       }
@@ -107,8 +102,8 @@ function compileArrayType(schemaObj, jsonSchema) {
 }
 
 function compileTypeBasic(schemaObj, jsonSchema) {
-  const fnType = compileStringType(schemaObj, jsonSchema)
-    || compileArrayType(schemaObj, jsonSchema);
+  const fnType = compileTypeSimple(schemaObj, jsonSchema)
+    || compileTypeArray(schemaObj, jsonSchema);
 
   const required = getBoolOrArray(jsonSchema.required, false);
   const nullable = getBooleanishType(jsonSchema.nullable);
@@ -272,7 +267,7 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
     const thirth = validators[2];
     const fourth = validators[3];
 
-    if (fnType != null) return function validateSchemaObjectTypedQuaternary(data, dataRoot) {
+    if (fnType != null) return function validateQuaternarySchemaObjectTyped(data, dataRoot) {
       if (fnType(data, dataRoot) === false) return false;
       if (data == null) return true;
       return first(data, dataRoot)
@@ -281,7 +276,7 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
         && fourth(data, dataRoot);
     };
 
-    return function validateSchemaObjectQuaternary(data, dataRoot) {
+    return function validateQuaternarySchemaObject(data, dataRoot) {
       if (data == null) return true;
       return first(data, dataRoot)
         && second(data, dataRoot)

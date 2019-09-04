@@ -32,7 +32,7 @@ function compileCheckBounds(schemaObj, jsonSchema) {
   const maxprops = getIntegerishType(jsonSchema.maxProperties);
 
   function compileMaxProperties() {
-    if (maxprops === 0) return undefined;
+    if (!(maxprops > 0)) return undefined;
 
     const addError = schemaObj.createMemberError(
       'maxProperties',
@@ -46,8 +46,9 @@ function compileCheckBounds(schemaObj, jsonSchema) {
         : addError(length);
     };
   }
+
   function compileMinProperties() {
-    if (minprops === 0) return undefined;
+    if (!(minprops > 0)) return undefined;
 
     const addError = schemaObj.createMemberError(
       'minProperties',
@@ -61,6 +62,7 @@ function compileCheckBounds(schemaObj, jsonSchema) {
         : addError(length);
     };
   }
+
   const xp = compileMaxProperties();
   const mp = compileMinProperties();
   if (xp && mp) {
@@ -185,13 +187,11 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
 
 export function compileObjectBasic(schemaObj, jsonSchema) {
   const checkBounds = compileCheckBounds(schemaObj, jsonSchema);
-  const valProps = compileRequiredProperties(schemaObj, jsonSchema, checkBounds)
-    || compileDefaultPropertyBounds(checkBounds);
-  const valPatts = compileRequiredPatterns(schemaObj, jsonSchema);
 
   return [
-    valProps,
-    valPatts,
+    compileRequiredProperties(schemaObj, jsonSchema, checkBounds)
+      || compileDefaultPropertyBounds(checkBounds),
+    compileRequiredPatterns(schemaObj, jsonSchema),
   ];
 }
 
@@ -204,9 +204,7 @@ function compileObjectPropertyNames(schemaObj, propNames) {
     compileObjectPropertyNames);
   if (validator == null) return undefined;
 
-  return function validatePropertyName(key) {
-    return validator(key);
-  };
+  return validator;
 }
 
 function createObjectPropertyValidators(schemaObj, properties) {
@@ -386,6 +384,7 @@ export function compileObjectChildren(schemaObj, jsonSchema) {
         }
 
         if (validateName(dataKey) === false) {
+          dataKeys[i] = false;
           valid = false;
           errors++;
           continue;
