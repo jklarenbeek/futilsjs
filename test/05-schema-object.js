@@ -195,7 +195,7 @@ describe('Schema Object Type', function () {
     });
   });
 
-  describe('#objectDependencies()', function () {
+  describe.skip('#objectDependencies()', function () {
     it.skip('should validate dependencies 1a', function () {
       compileJSONSchema('objectDeps1a', {
         type: 'object',
