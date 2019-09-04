@@ -29,104 +29,89 @@ import {
   Array_isUnique,
 } from '../helpers/Array';
 
-function compileArrayBounds(schemaObj, jsonSchema) {
+function compileMinItems(schemaObj, jsonSchema) {
   const min = getIntegerishType(jsonSchema.minItems);
+  if (!(min > 0)) return undefined;
+
+  const addError = schemaObj.createMemberError(
+    'minItems',
+    min,
+    compileMinItems);
+  if (addError == null) return undefined;
+
+  return function minItems(data) {
+    return !isArrayOrSet(data)
+      ? true
+      : getArrayOrSetLength(data) >= min
+        ? true
+        : addError(data);
+  };
+}
+
+function compileMaxItems(schemaObj, jsonSchema) {
   const max = getIntegerishType(jsonSchema.maxItems);
+  if (!(max > 0)) return undefined;
 
-  function compileMinItems() {
-    if (min > 0) {
-      const addError = schemaObj.createMemberError(
-        'minItems',
-        min,
-        compileArrayBasic);
-      return function minItems(data) {
-        if (!isArrayOrSet(data)) { return true; }
-        const len = getArrayOrSetLength(data);
-        const valid = len >= min;
-        if (!valid) addError(data);
-        return valid;
-      };
-    }
-    return undefined;
-  }
+  const addError = schemaObj.createMemberError(
+    'maxItems',
+    max,
+    compileMaxItems);
+  if (addError == null) return undefined;
 
-  function compileMaxItems() {
-    if (max > 0) {
-      const addError = schemaObj.createMemberError(
-        'maxItems',
-        max,
-        compileArrayBasic);
-      return function maxItems(data) {
-        if (!isArrayOrSet(data)) { return true; }
-        const len = getArrayOrSetLength(data);
-        const valid = len <= max;
-        if (!valid) addError(data);
-        return valid;
-      };
-    }
-    return undefined;
-  }
-
-  const minItems = compileMinItems();
-  const maxItems = compileMaxItems();
-  if (minItems && maxItems) {
-    return function checkArrayBounds(data, dataRoot) {
-      return minItems(data, dataRoot) && maxItems(data, dataRoot);
-    };
-  }
-  return minItems || maxItems;
+  return function maxItems(data) {
+    return !isArrayOrSet(data)
+      ? true
+      : getArrayOrSetLength(data) <= max
+        ? true
+        : addError(data);
+  };
 }
 
 function compileArrayUniqueness(schemaObj, jsonSchema) {
   const unique = getBooleanishType(jsonSchema.uniqueItems);
-  if (unique === true) {
-    const addError = schemaObj.createMemberError(
-      'uniqueItems',
-      unique,
-      compileArrayUniqueness);
-    // eslint-disable-next-line no-unused-vars
-    return function validateUniqueItems(data, dataRoot) {
-      if (isArrayishType(data)) {
-        if (!Array_isUnique(data)) {
-          return addError(data);
-        }
-      }
-      return true;
-    };
-  }
-  return undefined;
+  if (unique !== true) return undefined;
+
+  const addError = schemaObj.createMemberError(
+    'uniqueItems',
+    unique,
+    compileArrayUniqueness);
+  if (addError == null) return undefined;
+
+  return function validateUniqueItems(data) {
+    return !isArrayishType(data)
+      ? true
+      : Array_isUnique(data)
+        ? true
+        : addError(data);
+  };
 }
 
 export function compileArrayBasic(schemaObj, jsonSchema) {
-  const bounds = compileArrayBounds(schemaObj, jsonSchema);
-  const unique = compileArrayUniqueness(schemaObj, jsonSchema);
-  if (bounds && unique) {
-    return function validateArrayBasic(data, dataRoot) {
-      return bounds(data, dataRoot) && unique(data, dataRoot);
-    };
-  }
-  return bounds || unique;
+  return [
+    compileMinItems(schemaObj, jsonSchema),
+    compileMaxItems(schemaObj, jsonSchema),
+    compileArrayUniqueness(schemaObj, jsonSchema),
+  ];
 }
 
 function compileArrayItemsBoolean(schemaObj, jsonSchema) {
   const items = getBooleanishType(jsonSchema.items);
-  if (items === false) {
-    const addError = schemaObj.createMemberError(
-      'items',
-      false,
-      compileArrayItemsBoolean);
+  if (items === true) return trueThat;
+  if (items !== false) return undefined;
 
-    return function validateArrayItemsFalse(data, dataRoot) {
-      if (isArrayishType(data)) {
-        if (data.length > 0) return addError(data);
-      }
-      return true;
-    };
-  }
-  if (items === true) {
-    return trueThat; // TODO: check spec if this is correct
-  }
-  return undefined;
+  const addError = schemaObj.createMemberError(
+    'items',
+    false,
+    compileArrayItemsBoolean);
+  if (addError == null) return undefined;
+
+  return function validateArrayItemsFalse(data) {
+    return !isArrayishType(data)
+      ? true
+      : data.length === 0
+        ? true
+        : addError(data);
+  };
 }
 
 function compileArrayContainsBoolean(schemaObj, jsonSchema) {
@@ -136,11 +121,14 @@ function compileArrayContainsBoolean(schemaObj, jsonSchema) {
       'contains',
       true,
       compileArrayContainsBoolean);
+    if (addError == null) return undefined;
+
     return function validateArrayContainsTrue(data, dataRoot) {
-      if (isArrayishType(data)) {
-        if (data.length === 0) return addError(data);
-      }
-      return true;
+      return !isArrayishType(data)
+        ? true
+        : data.length > 0
+          ? true
+          : addError(data);
     };
   }
   if (contains === false) {
@@ -148,11 +136,12 @@ function compileArrayContainsBoolean(schemaObj, jsonSchema) {
       'contains',
       false,
       compileArrayContainsBoolean);
+    if (addError == null) return undefined;
+
     return function validateArrayContainsFalse(data, dataRoot) {
-      if (isArrayishType(data)) {
-        return addError(data);
-      }
-      return true;
+      return !isArrayishType(data)
+        ? true
+        : addError(data);
     };
   }
   return undefined;
@@ -225,48 +214,52 @@ function compileArrayContains(schemaObj, jsonSchema) {
     compileArrayContains);
 }
 
-export function compileArrayChildren(schemaObj, jsonSchema) {
-  const validateBoolItems = compileArrayItemsBoolean(schemaObj, jsonSchema);
-  if (validateBoolItems) return validateBoolItems;
-  const validateBoolContains = compileArrayContainsBoolean(schemaObj, jsonSchema);
-  if (validateBoolContains) return validateBoolContains;
-
-  const validateArrayItem = compileArrayItems(schemaObj, jsonSchema)
+function compileArrayChildValidators(schemaObj, jsonSchema) {
+  const validateItem = compileArrayItems(schemaObj, jsonSchema)
     || compileTupleItems(schemaObj, jsonSchema);
-  const validateArrayContains = compileArrayContains(schemaObj, jsonSchema);
+  const validateContains = compileArrayContains(schemaObj, jsonSchema);
+  if (validateItem == null
+    && validateContains == null)
+    return undefined;
+
   const maxItems = getIntegerishType(jsonSchema.maxItems, 0);
 
-  if (validateArrayItem || validateArrayContains) {
-    return function validateArrayChildren(data, dataRoot) {
-      if (isArrayishType(data)) {
-        let valid = true;
-        let contains = false;
-        let errors = 0;
-        const len = maxItems > 0
-          ? Math.min(maxItems, data.length)
-          : data.length;
+  return function validateArrayChildren(data, dataRoot) {
+    if (isArrayishType(data)) {
+      let valid = true;
+      let contains = false;
+      let errors = 0;
+      const len = maxItems > 0
+        ? Math.min(maxItems, data.length)
+        : data.length;
 
-        for (let i = 0; i < len; ++i) {
-          if (errors > 32) break;
-          const obj = data[i];
-          if (validateArrayItem) {
-            if (validateArrayItem(obj, dataRoot, i) === false) {
-              valid = false;
-              errors++;
-              continue;
-            }
-          }
-          if (validateArrayContains) {
-            if (contains === false && validateArrayContains(obj, dataRoot) === true) {
-              if (validateArrayItem == null) return true;
-              contains = true;
-            }
+      for (let i = 0; i < len; ++i) {
+        if (errors > 32) break;
+        const obj = data[i];
+        if (validateItem) {
+          if (validateItem(obj, dataRoot, i) === false) {
+            valid = false;
+            errors++;
+            continue;
           }
         }
-        return valid && (validateArrayContains == null || contains === true);
+        if (validateContains) {
+          if (contains === false && validateContains(obj, dataRoot) === true) {
+            if (validateItem == null) return true;
+            contains = true;
+          }
+        }
       }
-      return true;
-    };
-  }
-  return undefined;
+      return valid && (validateContains == null || contains === true);
+    }
+    return true;
+  };
+}
+
+export function compileArrayChildren(schemaObj, jsonSchema) {
+  return [
+    compileArrayItemsBoolean(schemaObj, jsonSchema),
+    compileArrayContainsBoolean(schemaObj, jsonSchema),
+    compileArrayChildValidators(schemaObj, jsonSchema),
+  ];
 }

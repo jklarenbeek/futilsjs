@@ -513,5 +513,38 @@ describe('Schema Combinations', function () {
       const root = getJSONSchema('booleanNot2');
       assert.isTrue(root.validate('foo'), 'any value is valid');
     });
+
+    it('all should be equivalent to contains', function () {
+      // https://ajv.js.org/keywords.html#contains
+      assert.isTrue(compileJSONSchema('containsNot1', {
+        allOf: [
+          {
+            type: 'array',
+            contains: {
+              type: 'number',
+            },
+          },
+          {
+            not: {
+              type: 'array',
+              items: { not: { type: 'integer' } },
+            },
+          },
+        ],
+      }), 'compiling');
+      const root = getJSONSchema('containsNot1');
+      assert.isTrue(root.validate(undefined), 'undefined is true');
+      assert.isFalse(root.validate(null), 'null is not allowed');
+      assert.isFalse(root.validate({}), 'object is invalid');
+      assert.isFalse(root.validate(new Map([['a', 1]])), 'map is invalid');
+      assert.isFalse(root.validate('validate this'), 'string is invalid');
+      assert.isFalse(root.validate([]), 'an empty array is invalid');
+      assert.isTrue(root.validate([1]), 'A single number is valid');
+      assert.isTrue(root.validate([1, 2, 3, 4, 5]), 'All numbers is also okay');
+      assert.isTrue(root.validate([1, 'foo']), 'a single number as first item is valid');
+      assert.isTrue(root.validate(['life', 'universe', 'everything', 42]), 'A single number is enough to make this pass');
+      assert.isFalse(root.validate(['life', 'universe', 'everything', 'forty-two']), 'But if we have no number, it fails');
+
+    });
   });
 });

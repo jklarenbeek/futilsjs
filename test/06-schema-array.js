@@ -106,17 +106,46 @@ describe('Schema Array Type', function () {
   });
 
   describe('#arrayContains()', function () {
+    it('can contain number to validate', function () {
+      compileJSONSchema('arrayContainsNumber1a', {
+        contains: {
+          type: 'number',
+        },
+      });
+      const root = getJSONSchema('arrayContainsNumber1a');
+      assert.isTrue(root.validate(undefined), 'undefined is true');
+      assert.isTrue(root.validate(null), 'null is valid');
+      assert.isTrue(root.validate({}), 'object is ignored');
+      assert.isTrue(root.validate(new Map([['a', 1]])), 'map is ignored');
+      assert.isTrue(root.validate('validate this'), 'string is ignored');
+      assert.isFalse(root.validate([]), 'an empty array is invalid');
+      assert.isTrue(root.validate([1]), 'A single number is valid');
+      assert.isTrue(root.validate([1, 2, 3, 4, 5]), 'All numbers is also okay');
+      assert.isTrue(root.validate([1, 'foo']), 'a single number as first item is valid');
+      assert.isTrue(root.validate(['life', 'universe', 'everything', 42]), 'A single number is enough to make this pass');
+      assert.isFalse(root.validate(['life', 'universe', 'everything', 'forty-two']), 'But if we have no number, it fails');
+      // assert.isFalse(root.validate({ '0': 'invalid', length: 1 }), 'Javascript pseudo array is valid');
+    });
+
     it('should contain number to validate', function () {
-      compileJSONSchema('arrayContains1', {
+      compileJSONSchema('arrayContainsNumber1b', {
         type: 'array',
         contains: {
           type: 'number',
         },
       });
-      const root = getJSONSchema('arrayContains1');
-      assert.isTrue(root.validate(['life', 'universe', 'everything', 42]), 'A single “number” is enough to make this pass');
+      const root = getJSONSchema('arrayContainsNumber1b');
+      assert.isTrue(root.validate(undefined), 'undefined is true');
+      assert.isFalse(root.validate(null), 'null is not allowed');
+      assert.isFalse(root.validate({}), 'object is invalid');
+      assert.isFalse(root.validate(new Map([['a', 1]])), 'map is invalid');
+      assert.isFalse(root.validate('validate this'), 'string is invalid');
+      assert.isFalse(root.validate([]), 'an empty array is invalid');
+      assert.isTrue(root.validate([1]), 'A single number is valid');
+      assert.isTrue(root.validate([1, 2, 3, 4, 5]), 'All numbers is also okay');
+      assert.isTrue(root.validate([1, 'foo']), 'a single number as first item is valid');
+      assert.isTrue(root.validate(['life', 'universe', 'everything', 42]), 'A single number is enough to make this pass');
       assert.isFalse(root.validate(['life', 'universe', 'everything', 'forty-two']), 'But if we have no number, it fails');
-      assert.isTrue(root.validate([1, 2, 3, 4, 5]), 'All numbers is, of course, also okay');
       // assert.isFalse(root.validate({ '0': 'invalid', length: 1 }), 'Javascript pseudo array is valid');
     });
 
