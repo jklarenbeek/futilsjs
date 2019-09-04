@@ -187,7 +187,6 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
 
 export function compileObjectBasic(schemaObj, jsonSchema) {
   const checkBounds = compileCheckBounds(schemaObj, jsonSchema);
-
   return [
     compileRequiredProperties(schemaObj, jsonSchema, checkBounds)
       || compileDefaultPropertyBounds(checkBounds),
@@ -365,7 +364,6 @@ export function compileObjectChildren(schemaObj, jsonSchema) {
 
         let result = validateProperty(dataKey, data, dataRoot);
         if (result != null) {
-          dataKeys[i] = result;
           if (result === false) {
             valid = false;
             errors++;
@@ -375,7 +373,6 @@ export function compileObjectChildren(schemaObj, jsonSchema) {
 
         result = validatePattern(dataKey, data, dataRoot);
         if (result != null) {
-          dataKeys[i] = result;
           if (result === false) {
             valid = false;
             errors++;
@@ -384,14 +381,12 @@ export function compileObjectChildren(schemaObj, jsonSchema) {
         }
 
         if (validateName(dataKey) === false) {
-          dataKeys[i] = false;
           valid = false;
           errors++;
           continue;
         }
 
         result = validateAdditional(dataKey, data, dataRoot);
-        dataKeys[i] = result;
         if (result === false) {
           valid = false;
           errors++;
