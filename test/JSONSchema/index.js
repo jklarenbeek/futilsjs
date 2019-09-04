@@ -10,33 +10,16 @@ import {
 
 // registerDefaultFormatCompilers();
 
-compileJSONSchema('objectBasic1', { type: 'object' });
+assert.isTrue(compileJSONSchema('requiredOneOf1', {
+  type: 'object',
+  oneOf: [
+    { required: ['foo', 'bar'] },
+    { required: ['foo', 'baz'] },
+  ],
+}));
 
-const testObj1 = {
-  key: 'value',
-  another_key: 'another_value',
-};
-
-const testObj2 = {
-  Sun: 1.9891e30,
-  Jupiter: 1.8986e27,
-  Saturn: 5.6846e26,
-  Neptune: 10.243e25,
-  Uranus: 8.6810e25,
-  Earth: 5.9736e24,
-  Venus: 4.8685e24,
-  Mars: 6.4185e23,
-  Mercury: 3.3022e23,
-  Moon: 7.349e22,
-  Pluto: 1.25e22,
-};
-
-const root = getJSONSchema('objectBasic1');
-assert.isTrue(root.validate(undefined), 'undefined is always true!');
-assert.isFalse(root.validate(null), 'not validates null!');
-assert.isTrue(root.validate({}), 'validates an empty object literal');
-assert.isTrue(root.validate(testObj1), 'validates a simple object with strings');
-assert.isTrue(root.validate(testObj2), 'validates a simple object with numbers');
-assert.isFalse(root.validate(2.99792458e8), 'not validates a float literal');
-assert.isFalse(root.validate('Is Not Valid'), 'not validates a string');
-assert.isFalse(root.validate(['is', 'not', 'an', 'object']), 'not validates an array');
+const root = getJSONSchema('requiredOneOf1');
+assert.isFalse(root.validate({ bar: 2 }), 'one property is both invalid');
+assert.isTrue(root.validate({ foo: 1, bar: 2 }), 'first oneOf valid');
+assert.isTrue(root.validate({ foo: 3, baz: 4 }), 'second oneOf valid');
+assert.isFalse(root.validate({ foo: 1, bar: 2, baz: 3 }), 'both oneOf match is invalid');
