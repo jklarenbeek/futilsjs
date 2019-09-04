@@ -37,7 +37,7 @@ export function isArrayOrSet(data) {
       || data.constructor === Set));
 }
 
-export function isMapOrObjectish(data) {
+export function isMapOrObject(data) {
   return !(data == null
     || typeof data !== 'object'
     || data.constructor === Array

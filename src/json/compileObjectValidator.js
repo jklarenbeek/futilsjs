@@ -9,7 +9,7 @@ import {
 } from '../types/isDataType';
 
 import {
-  isMapOrObjectish,
+  isMapOrObject,
 } from '../types/isDataTypeExtra';
 
 import {
@@ -78,7 +78,7 @@ function compileCheckBounds(schemaObj, jsonSchema) {
 function compileDefaultPropertyBounds(checkBounds) {
   if (!isFn(checkBounds)) return undefined;
   return function propertyBounds(data) {
-    return !isMapOrObjectish(data)
+    return !isMapOrObject(data)
       ? true
       : data.constructor === Map
         ? checkBounds(data.size)
@@ -112,7 +112,7 @@ function compileRequiredProperties(schemaObj, jsonSchema, checkBounds) {
   if (addError == null) return undefined;
 
   return function requiredProperties(data) {
-    if (!isMapOrObjectish(data)) return true;
+    if (!isMapOrObject(data)) return true;
 
     let valid = true;
     if (data.constructor === Map) {
@@ -153,7 +153,7 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
   if (addError == null) return undefined;
 
   return function patternRequired(data) {
-    if (!isMapOrObjectish(data)) return true;
+    if (!isMapOrObject(data)) return true;
 
     const dataKeys = data.constructor === Map
       ? Array.from(data.keys())
