@@ -23,9 +23,14 @@ export function String_byteCount(str) {
   return encodeURI(str).split(/%(?:u[0-9A-F]{2})?[0-9A-F]{2}|./).length - 1;
 }
 
-export function String_createRegExp(pattern) {
+export function String_createRegExp(pattern, force = false) {
   try {
     if (pattern != null) {
+      if (pattern.constructor === RegExp) {
+        return force === true
+          ? new RegExp(pattern)
+          : pattern;
+      }
       if (pattern.constructor === String) {
         if (pattern[0] === '/') {
           const e = pattern.lastIndexOf('/');
@@ -39,9 +44,6 @@ export function String_createRegExp(pattern) {
       }
       if (pattern.constructor === Array && pattern.length > 1) {
         return new RegExp(pattern[0], pattern[1]);
-      }
-      if (pattern.constructor === RegExp) {
-        return pattern;
       }
     }
     return undefined;
