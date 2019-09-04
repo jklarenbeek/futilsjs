@@ -37,14 +37,18 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
     if (isStrictBigIntType(emax)) {
       return function exclusiveMaximumBigInt(data) {
         return (isStrictBigIntType(data) || isStrictNumberType(data)) // are we forgiving?
-          ? data < emax ? true : addError(data)
+          ? data < emax
+            ? true
+            : addError(data)
           : true; // other type, ignore
       };
     }
     else {
       return function exclusiveMaximum(data) {
         return isStrictNumberType(data)
-          ? data < emax ? true : addError(data)
+          ? data < emax
+            ? true
+            : addError(data)
           : true; // other type, ignore
       };
     }
@@ -58,14 +62,18 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
     if (isStrictBigIntType(max)) {
       return function maximumBigInt(data) {
         return (isStrictBigIntType(data) || isStrictNumberType(data)) // are we that forgiving?
-          ? data <= max ? true : addError(data)
+          ? data <= max
+            ? true
+            : addError(data)
           : true; // other type, ignore
       };
     }
     else {
       return function maximum(data) {
         return isStrictNumberType(data)
-          ? data <= max ? true : addError(data)
+          ? data <= max
+            ? true
+            : addError(data)
           : true; // other type, ignore
       };
     }
@@ -88,14 +96,18 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
     if (isStrictBigIntType(emin)) {
       return function exclusiveMinimumBigInt(data) {
         return (isStrictBigIntType(data) || isStrictNumberType(data))
-          ? data > emin ? true : addError(data)
+          ? data > emin
+            ? true
+            : addError(data)
           : true; // other type, ignore
       };
     }
     else {
       return function exclusiveMinimum(data) {
         return isStrictNumberType(data)
-          ? data > emin ? true : addError(data)
+          ? data > emin
+            ? true
+            : addError(data)
           : true; // other type, ignore
       };
     }
@@ -109,33 +121,22 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
     if (isStrictBigIntType(min)) {
       return function minimumBigInt(data) {
         return (isStrictBigIntType(data) || isStrictNumberType(data))
-          ? data >= min ? true : addError(data)
+          ? data >= min
+            ? true
+            : addError(data)
           : true; // other type, ignore
       };
     }
     else {
       return function minimum(data) {
         return isStrictNumberType(data)
-          ? data >= min ? true : addError(data)
+          ? data >= min
+            ? true
+            : addError(data)
           : true; // other type, ignore
       };
     }
   }
-  return undefined;
-}
-
-function compileNumberRange(schemaObj, jsonSchema) {
-  const fnMin = compileNumberMinimum(schemaObj, jsonSchema);
-  const fnMax = compileNumberMaximum(schemaObj, jsonSchema);
-  if (fnMin && fnMax) {
-    return function numberRange(data, dataRoot) {
-      return fnMin(data, dataRoot) && fnMax(data, dataRoot);
-    };
-  }
-  else if (fnMin != null)
-    return fnMin;
-  else if (fnMax != null)
-    return fnMax;
   return undefined;
 }
 
@@ -155,38 +156,32 @@ function compileNumberMultipleOf(schemaObj, jsonSchema) {
 
   if (isStrictBigIntType(mulOf)) {
     return function multipleOfBigInt(data) {
-      if (isStrictBigIntType(data)) {
-        return data % mulOf === BigInt(0)
+      return isStrictBigIntType(data)
+        ? data % mulOf === BigInt(0)
           ? true
-          : addError(data);
-      }
-      if (isStrictNumberType(data)) {
-        return data % Number(mulOf) === 0
-          ? true
-          : addError(data);
-      }
-      return true;
+          : addError(data)
+        : isStrictNumberType(data)
+          ? data % Number(mulOf) === 0
+            ? true
+            : addError(data)
+          : true;
     };
   }
   else {
     return function multipleOf(data) {
-      if (isStrictNumberType(data)) {
-        return data % mulOf === 0
+      return isStrictNumberType(data)
+        ? data % mulOf === 0
           ? true
-          : addError(data);
-      }
-      return true;
+          : addError(data)
+        : true;
     };
   }
 }
 
 export function compileNumberBasic(schemaObj, jsonSchema) {
-  const fnRange = compileNumberRange(schemaObj, jsonSchema);
-  const fnMulOf = compileNumberMultipleOf(schemaObj, jsonSchema);
-  if (fnRange && fnMulOf) {
-    return function validateNumberBasic(data) {
-      return fnRange(data) && fnMulOf(data);
-    };
-  }
-  return fnRange || fnMulOf;
+  return [
+    compileNumberMinimum(schemaObj, jsonSchema),
+    compileNumberMaximum(schemaObj, jsonSchema),
+    compileNumberMultipleOf(schemaObj, jsonSchema),
+  ];
 }
