@@ -9,11 +9,8 @@ import {
   isArrayType,
   isObjectType,
   isObjectOrMapType,
+  isBoolOrObjectType,
 } from '../types/core';
-
-import {
-  isBoolOrObject,
-} from '../types/isDataTypeExtra';
 
 import {
   getObjectishType,
@@ -228,7 +225,7 @@ function compileDependencies(schemaObj, jsonSchema) {
       const validator = compileDependencyArray(schemaObj, member, key, item);
       if (validator != null) validators[key] = validator;
     }
-    else if (isBoolOrObject(item)) {
+    else if (isBoolOrObjectType(item)) {
       const validator = schemaObj.createPairValidator(member, key, item, compileDependencies);
       if (validator != null) validators[key] = validator;
     }

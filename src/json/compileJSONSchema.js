@@ -5,6 +5,7 @@ import {
 import {
   isStringType,
   isArrayType,
+  isBoolOrObjectType,
 } from '../types/core';
 
 import {
@@ -27,9 +28,6 @@ import {
   JSONPointer_concatPath,
 } from './pointer';
 
-import {
-  isBoolOrObject,
-} from '../types/isDataTypeExtra';
 
 class SchemaError {
   constructor(timeStamp, member, key, value, rest) {
@@ -159,7 +157,7 @@ class SchemaObject {
   createSingleValidator(key, child, ...rest) {
     const self = this;
     if (!isStringType(key)) return undefined;
-    if (!isBoolOrObject(child)) return undefined;
+    if (!isBoolOrObjectType(child)) return undefined;
 
     const childObj = new SchemaObject(
       self.schemaRoot,
@@ -176,7 +174,7 @@ class SchemaObject {
     const valid = member instanceof SchemaMember
       && (isStringType(key)
         || isStrictIntegerType(key))
-      && isBoolOrObject(child);
+      && isBoolOrObjectType(child);
     if (!valid) return undefined;
 
     const childObj = new SchemaObject(
