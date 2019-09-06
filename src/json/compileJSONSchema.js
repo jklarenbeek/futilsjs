@@ -6,8 +6,8 @@ import {
 } from '../types/core';
 
 import {
-  getStrictString,
-} from '../types/getDataType';
+  getStringType,
+} from '../types/getters';
 
 import {
   falseThat,
@@ -197,7 +197,7 @@ class SchemaMember {
 const registeredDocuments = {};
 
 export function compileJSONSchema(baseUri, json) {
-  baseUri = getStrictString(baseUri, '');
+  baseUri = getStringType(baseUri, '');
   // TODO: test if valid baseUri
   if (registeredDocuments.hasOwnProperty(baseUri)) {
     return false;
@@ -216,7 +216,7 @@ export function compileJSONSchema(baseUri, json) {
 }
 
 export function getJSONSchema(baseUri) {
-  baseUri = getStrictString(baseUri, '');
+  baseUri = getStringType(baseUri, '');
   if (registeredDocuments.hasOwnProperty(baseUri)) {
     return registeredDocuments[baseUri];
   }

@@ -5,6 +5,7 @@ import {
 
 import {
   getBoolishType,
+  getStringType,
 } from '../types/getters';
 
 import {
@@ -12,10 +13,6 @@ import {
   trueThat,
   addFunctionToArray,
 } from '../types/functions';
-
-import {
-  getStrictString,
-} from '../types/getDataType';
 
 import {
   getBoolOrArray,
@@ -36,7 +33,7 @@ import { compileCombineSchema } from './compileCombineValidator';
 import { compileConditionSchema } from './compileConditionValidator';
 
 function compileTypeSimple(schemaObj, jsonSchema) {
-  const type = getStrictString(jsonSchema.type);
+  const type = getStringType(jsonSchema.type);
   if (type == null) return undefined;
 
   const isDataType = createIsStrictDataType(type);
