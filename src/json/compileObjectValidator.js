@@ -12,16 +12,13 @@ import {
   getIntishType,
   getArrayType,
   getObjectType,
+  getMapOfArrayType,
   getBoolOrObjectType,
 } from '../types/getters';
 
 import {
   String_createRegExp,
 } from '../types/strings';
-
-import {
-  getMapOfArray,
-} from '../types/getDataTypeExtra';
 
 import {
   fallbackFn,
@@ -89,7 +86,7 @@ function compileRequiredProperties(schemaObj, jsonSchema, checkBounds) {
   const required = getArrayType(jsonSchema.required);
   if (required == null) return undefined;
 
-  const mapProps = getMapOfArray(jsonSchema.properties);
+  const mapProps = getMapOfArrayType(jsonSchema.properties);
   const objProps = getObjectType(jsonSchema.properties);
 
   const requiredKeys = required.length !== 0
