@@ -5,18 +5,18 @@ import {
 } from '../types/core';
 
 import {
-  getNumberishType,
-} from '../types/getDataType';
+  getNumbishType,
+} from '../types/getters';
 
 function getNumberExclusiveBound(inclusive, exclusive) {
   const includes = isBigIntType(inclusive)
     ? inclusive
-    : getNumberishType(inclusive);
+    : getNumbishType(inclusive);
   const excludes = exclusive === true
     ? includes
     : isBigIntType(exclusive)
       ? exclusive
-      : getNumberishType(exclusive);
+      : getNumbishType(exclusive);
   return (excludes !== undefined)
     ? [undefined, excludes]
     : [includes, undefined];
@@ -143,7 +143,7 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
 function compileNumberMultipleOf(schemaObj, jsonSchema) {
   const mulOf = isBigIntType(jsonSchema.multipleOf)
     ? jsonSchema.multipleOf
-    : getNumberishType(jsonSchema.multipleOf);
+    : getNumbishType(jsonSchema.multipleOf);
 
   if (mulOf == null) return undefined;
 
