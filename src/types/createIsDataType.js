@@ -1,5 +1,4 @@
 import {
-  isArrayishType,
 } from './isDataType';
 
 import {
@@ -12,6 +11,7 @@ import {
   isBigIntType,
   isStringType,
   isArrayType,
+  isArrayTyped,
   isObjectType,
   isObjectTyped,
   isSetType,
@@ -28,7 +28,7 @@ export function createIsStrictDataType(type, format, isstrict = false) {
   else if (type === 'array') {
     return isstrict
       ? isArrayType
-      : isArrayishType;
+      : isArrayTyped;
   }
   else if (type === 'set') {
     return isSetType;

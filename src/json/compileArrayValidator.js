@@ -1,8 +1,13 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable function-paren-newline */
 import {
-  isArrayishType,
-} from '../types/isDataType';
+  isArrayTyped,
+} from '../types/core';
+
+import {
+  trueThat,
+  falseThat,
+} from '../types/functions';
 
 import {
   getObjectishType,
@@ -19,11 +24,6 @@ import {
 import {
   isArrayOrSet,
 } from '../types/isDataTypeExtra';
-
-import {
-  trueThat,
-  falseThat,
-} from '../types/functions';
 
 import {
   Array_isUnique,
@@ -78,7 +78,7 @@ function compileArrayUniqueness(schemaObj, jsonSchema) {
   if (addError == null) return undefined;
 
   return function validateUniqueItems(data) {
-    return !isArrayishType(data)
+    return !isArrayTyped(data)
       ? true
       : Array_isUnique(data)
         ? true
@@ -106,7 +106,7 @@ function compileArrayItemsBoolean(schemaObj, jsonSchema) {
   if (addError == null) return undefined;
 
   return function validateArrayItemsFalse(data) {
-    return !isArrayishType(data)
+    return !isArrayTyped(data)
       ? true
       : data.length === 0
         ? true
@@ -124,7 +124,7 @@ function compileArrayContainsBoolean(schemaObj, jsonSchema) {
     if (addError == null) return undefined;
 
     return function validateArrayContainsTrue(data, dataRoot) {
-      return !isArrayishType(data)
+      return !isArrayTyped(data)
         ? true
         : data.length > 0
           ? true
@@ -139,7 +139,7 @@ function compileArrayContainsBoolean(schemaObj, jsonSchema) {
     if (addError == null) return undefined;
 
     return function validateArrayContainsFalse(data, dataRoot) {
-      return !isArrayishType(data)
+      return !isArrayTyped(data)
         ? true
         : addError(data);
     };
@@ -225,7 +225,7 @@ function compileArrayChildValidators(schemaObj, jsonSchema) {
   const maxItems = getIntegerishType(jsonSchema.maxItems, 0);
 
   return function validateArrayChildren(data, dataRoot) {
-    if (isArrayishType(data)) {
+    if (isArrayTyped(data)) {
       let valid = true;
       let contains = false;
       let errors = 0;
