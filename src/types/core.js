@@ -78,10 +78,6 @@ export function isStringType(data) {
 //#endregion
 
 //#region array and set
-export function isArrayType(data) {
-  return isObjectOfType(data, Array);
-}
-
 export function isTypedArray(data) {
   return data != null
     && (data.constructor === Int8Array
@@ -95,6 +91,10 @@ export function isTypedArray(data) {
       || data.constructor === BigInt64Array
       // eslint-disable-next-line no-undef
       || data.constructor === BigUint64Array);
+}
+
+export function isArrayType(data) {
+  return isObjectOfType(data, Array);
 }
 
 export function isArrayTyped(data) {

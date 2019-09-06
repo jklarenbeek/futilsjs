@@ -12,7 +12,7 @@ import {
   getIntishType,
   getArrayType,
   getObjectType,
-  getMapOfArrayType,
+  getMapTypeOfArray,
   getBoolOrObjectType,
 } from '../types/getters';
 
@@ -86,7 +86,7 @@ function compileRequiredProperties(schemaObj, jsonSchema, checkBounds) {
   const required = getArrayType(jsonSchema.required);
   if (required == null) return undefined;
 
-  const mapProps = getMapOfArrayType(jsonSchema.properties);
+  const mapProps = getMapTypeOfArray(jsonSchema.properties);
   const objProps = getObjectType(jsonSchema.properties);
 
   const requiredKeys = required.length !== 0

@@ -7,7 +7,7 @@ import {
   getBoolishType,
   getStringType,
   getBoolOrArrayTyped,
-  getArrayOfSetType,
+  getArrayTypeOfSet,
 } from '../types/getters';
 
 import {
@@ -44,7 +44,7 @@ function compileTypeSimple(schemaObj, jsonSchema) {
 }
 
 function compileTypeArray(schemaObj, jsonSchema) {
-  const schemaType = getArrayOfSetType(jsonSchema.type);
+  const schemaType = getArrayTypeOfSet(jsonSchema.type);
   if (schemaType == null) return undefined;
 
   // collect all testable data types
