@@ -1,7 +1,4 @@
 import {
-} from './isDataType';
-
-import {
   isFn,
   isNullValue,
   isObjectOfType,
