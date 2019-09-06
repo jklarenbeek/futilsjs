@@ -27,7 +27,7 @@ import {
   fallbackFn,
   undefThat,
   trueThat,
-} from '../types/isFunctionType';
+} from '../types/functions';
 
 function compileCheckBounds(schemaObj, jsonSchema) {
   function compileMaxProperties() {

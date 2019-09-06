@@ -23,7 +23,7 @@ import {
 import {
   trueThat,
   falseThat,
-} from '../types/isFunctionType';
+} from '../types/functions';
 
 import {
   Array_isUnique,

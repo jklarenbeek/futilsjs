@@ -3,7 +3,7 @@ import {
   falseThat,
   trueThat,
   addFunctionToArray,
-} from '../types/isFunctionType';
+} from '../types/functions';
 
 import {
   isStrictObjectType,

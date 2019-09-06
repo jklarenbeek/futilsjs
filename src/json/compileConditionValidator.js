@@ -1,6 +1,6 @@
 import {
   fallbackFn,
-} from '../types/isFunctionType';
+} from '../types/functions';
 
 import {
   getObjectishType,

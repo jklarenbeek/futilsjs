@@ -30,7 +30,7 @@ export * from './types/isDataType';
 export * from './types/isDataTypeExtra';
 export * from './types/getDataType';
 export * from './types/getDataTypeExtra';
-export * from './types/isFunctionType';
+export * from './types/functions';
 export * from './types/createIsDataType';
 
 export * from './json/index';

@@ -1,8 +1,11 @@
 import {
   falseThat,
-  isFn,
   trueThat,
-} from '../types/isFunctionType';
+} from '../types/functions';
+
+import {
+  isFn,
+} from '../types/core';
 
 import {
   getStrictArray,

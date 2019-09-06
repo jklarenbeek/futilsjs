@@ -11,7 +11,7 @@ import {
 
 import {
   falseThat,
-} from '../types/function';
+} from '../types/functions';
 
 import {
   performance,
