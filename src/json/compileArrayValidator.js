@@ -2,6 +2,7 @@
 /* eslint-disable function-paren-newline */
 import {
   isArrayTyped,
+  isArrayOrSetTyped,
 } from '../types/core';
 
 import {
@@ -22,12 +23,8 @@ import {
 } from '../types/getDataTypeExtra';
 
 import {
-  isArrayOrSet,
-} from '../types/isDataTypeExtra';
-
-import {
-  Array_isUnique,
-} from '../helpers/Array';
+  isUniqueArray,
+} from '../types/arrays';
 
 function compileMinItems(schemaObj, jsonSchema) {
   const min = getIntegerishType(jsonSchema.minItems);
@@ -40,7 +37,7 @@ function compileMinItems(schemaObj, jsonSchema) {
   if (addError == null) return undefined;
 
   return function minItems(data) {
-    return !isArrayOrSet(data)
+    return !isArrayOrSetTyped(data)
       ? true
       : getArrayOrSetLength(data) >= min
         ? true
@@ -59,7 +56,7 @@ function compileMaxItems(schemaObj, jsonSchema) {
   if (addError == null) return undefined;
 
   return function maxItems(data) {
-    return !isArrayOrSet(data)
+    return !isArrayOrSetTyped(data)
       ? true
       : getArrayOrSetLength(data) <= max
         ? true
@@ -80,7 +77,7 @@ function compileArrayUniqueness(schemaObj, jsonSchema) {
   return function validateUniqueItems(data) {
     return !isArrayTyped(data)
       ? true
-      : Array_isUnique(data)
+      : isUniqueArray(data)
         ? true
         : addError(data);
   };
