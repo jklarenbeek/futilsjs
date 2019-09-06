@@ -6,6 +6,7 @@ import {
 import {
   getBoolishType,
   getStringType,
+  getBoolOrArrayTyped,
 } from '../types/getters';
 
 import {
@@ -15,7 +16,6 @@ import {
 } from '../types/functions';
 
 import {
-  getBoolOrArray,
   getArrayUnique,
 } from '../types/getDataTypeExtra';
 
@@ -113,7 +113,7 @@ function compileTypeBasic(schemaObj, jsonSchema) {
   const fnType = compileTypeSimple(schemaObj, jsonSchema)
     || compileTypeArray(schemaObj, jsonSchema);
 
-  const required = getBoolOrArray(jsonSchema.required, false);
+  const required = getBoolOrArrayTyped(jsonSchema.required, false);
   const nullable = getBoolishType(jsonSchema.nullable);
 
   const addRequiredError = required !== false
