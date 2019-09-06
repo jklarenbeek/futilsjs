@@ -9,6 +9,7 @@ import {
   getBoolishType,
   getIntishType,
   getArrayTypeMinItems,
+  getArrayOrSetTypeLength,
   getObjectType,
   getBoolOrObjectType,
 } from '../types/getters';
@@ -17,10 +18,6 @@ import {
   trueThat,
   falseThat,
 } from '../types/functions';
-
-import {
-  getArrayOrSetLength,
-} from '../types/getDataTypeExtra';
 
 import {
   isUniqueArray,
@@ -39,7 +36,7 @@ function compileMinItems(schemaObj, jsonSchema) {
   return function minItems(data) {
     return !isArrayOrSetTyped(data)
       ? true
-      : getArrayOrSetLength(data) >= min
+      : getArrayOrSetTypeLength(data) >= min
         ? true
         : addError(data);
   };
@@ -58,7 +55,7 @@ function compileMaxItems(schemaObj, jsonSchema) {
   return function maxItems(data) {
     return !isArrayOrSetTyped(data)
       ? true
-      : getArrayOrSetLength(data) <= max
+      : getArrayOrSetTypeLength(data) <= max
         ? true
         : addError(data);
   };
