@@ -7,6 +7,7 @@ import {
   getBoolishType,
   getStringType,
   getBoolOrArrayTyped,
+  getArrayOfSetType,
 } from '../types/getters';
 
 import {
@@ -14,10 +15,6 @@ import {
   trueThat,
   addFunctionToArray,
 } from '../types/functions';
-
-import {
-  getArrayUnique,
-} from '../types/getDataTypeExtra';
 
 import {
   createIsStrictDataType,
@@ -50,7 +47,7 @@ function compileTypeSimple(schemaObj, jsonSchema) {
 }
 
 function compileTypeArray(schemaObj, jsonSchema) {
-  const schemaType = getArrayUnique(jsonSchema.type);
+  const schemaType = getArrayOfSetType(jsonSchema.type);
   if (schemaType == null) return undefined;
 
   // collect all testable data types
