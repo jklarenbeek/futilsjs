@@ -1,3 +1,5 @@
+import { isFn } from './core';
+
 export function trueThat(whatever = true) {
   const that = true;
   return whatever === true || that;
