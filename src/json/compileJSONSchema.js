@@ -15,7 +15,7 @@ import {
 
 import {
   performance,
-} from '../helpers/performance';
+} from '../types/perf';
 
 import {
   compileSchemaObject,
