@@ -8,10 +8,11 @@ import {
   isFn,
   isArrayType,
   isObjectType,
+  isObjectOrMapType,
 } from '../types/core';
 
 import {
-  isMapOrObject, isBoolOrObject,
+  isBoolOrObject,
 } from '../types/isDataTypeExtra';
 
 import {
@@ -79,7 +80,7 @@ function compileCheckBounds(schemaObj, jsonSchema) {
 function compileDefaultPropertyBounds(checkBounds) {
   if (!isFn(checkBounds)) return undefined;
   return function propertyBounds(data) {
-    return !isMapOrObject(data)
+    return !isObjectOrMapType(data)
       ? true
       : data.constructor === Map
         ? checkBounds(data.size)
@@ -113,7 +114,7 @@ function compileRequiredProperties(schemaObj, jsonSchema, checkBounds) {
   if (addError == null) return undefined;
 
   return function requiredProperties(data) {
-    if (!isMapOrObject(data)) return true;
+    if (!isObjectOrMapType(data)) return true;
 
     let valid = true;
     if (data.constructor === Map) {
@@ -154,7 +155,7 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
   if (addError == null) return undefined;
 
   return function patternRequired(data) {
-    if (!isMapOrObject(data)) return true;
+    if (!isObjectOrMapType(data)) return true;
 
     const dataKeys = data.constructor === Map
       ? Array.from(data.keys())
@@ -186,7 +187,7 @@ function compileDependencyArray(schemaObj, member, key, items) {
   if (addError == null) return undefined;
 
   return function validateDependencyArray(data) {
-    if (!isMapOrObject(data)) return true;
+    if (!isObjectOrMapType(data)) return true;
     let valid = true;
     if (data.constructor === Map) {
       for (let i = 0; i < items.length; ++i) {
@@ -237,7 +238,7 @@ function compileDependencies(schemaObj, jsonSchema) {
   if (valKeys.length === 0) return undefined;
 
   return function validateDependencies(data, dataRoot) {
-    if (!isMapOrObject(data)) return true;
+    if (!isObjectOrMapType(data)) return true;
     let valid = true;
     let errors = 0;
     if (data.constructor === Map) {
