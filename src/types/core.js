@@ -1,14 +1,29 @@
 //#region core
-export function isFnEx(typeString) {
-  return typeString === 'function';
+export function isFnEx(typeName) {
+  return typeName === 'function';
 }
 
 export function isFn(obj) {
   return typeof obj === 'function';
 }
 
-export function isScalarType(data) {
-  return data != null && typeof data !== 'object' && typeof data !== 'function';
+export function isScalarTypeEx(typeName, vms = false) {
+  switch (typeName) {
+    case 'number':
+    case 'string':
+    case 'boolean':
+    case 'integer':
+    case 'bigint':
+      return true;
+    case 'regex':
+      return vms;
+    default:
+      return false;
+  }
+}
+
+export function isScalarType(data, vms = false) {
+  return data != null && isScalarTypeEx(typeof data, vms);
 }
 
 export function isComplexType(data) {

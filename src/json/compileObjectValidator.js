@@ -1,7 +1,7 @@
 /* eslint-disable function-paren-newline */
 import {
   String_createRegExp,
-} from '../helpers/String';
+} from '../types/strings';
 
 // eslint-disable-next-line import/no-cycle
 import {
