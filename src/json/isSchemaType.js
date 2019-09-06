@@ -11,8 +11,8 @@ import {
 } from '../types/core';
 
 import {
-  getBooleanishType,
-} from '../types/getDataType';
+  getBoolishType,
+} from '../types/getters';
 
 export function isOfSchemaType(schema, type) {
   if (type == null) return false;
@@ -132,7 +132,7 @@ export function isArraySchema(schema) {
 }
 export function isSetSchema(schema) {
   const isknown = isOfStrictSchemaType(schema, 'set');
-  const isunique = getBooleanishType(schema.uniqueItems, false);
+  const isunique = getBoolishType(schema.uniqueItems, false);
   return isknown || isunique;
 }
 export function isTupleSchema(schema) {

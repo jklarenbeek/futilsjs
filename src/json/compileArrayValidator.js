@@ -6,6 +6,7 @@ import {
 } from '../types/core';
 
 import {
+  getBoolishType,
   getIntishType,
   getObjectType,
   getArrayTypeMinItems,
@@ -15,10 +16,6 @@ import {
   trueThat,
   falseThat,
 } from '../types/functions';
-
-import {
-  getBooleanishType,
-} from '../types/getDataType';
 
 import {
   getArrayOrSetLength, getBoolOrObject,
@@ -67,7 +64,7 @@ function compileMaxItems(schemaObj, jsonSchema) {
 }
 
 function compileArrayUniqueness(schemaObj, jsonSchema) {
-  const unique = getBooleanishType(jsonSchema.uniqueItems);
+  const unique = getBoolishType(jsonSchema.uniqueItems);
   if (unique !== true) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler(
@@ -94,7 +91,7 @@ export function compileArrayBasic(schemaObj, jsonSchema) {
 }
 
 function compileArrayItemsBoolean(schemaObj, jsonSchema) {
-  const items = getBooleanishType(jsonSchema.items);
+  const items = getBoolishType(jsonSchema.items);
   if (items === true) return trueThat;
   if (items !== false) return undefined;
 
@@ -114,7 +111,7 @@ function compileArrayItemsBoolean(schemaObj, jsonSchema) {
 }
 
 function compileArrayContainsBoolean(schemaObj, jsonSchema) {
-  const contains = getBooleanishType(jsonSchema.contains);
+  const contains = getBoolishType(jsonSchema.contains);
   if (contains === true) {
     const addError = schemaObj.createSingleErrorHandler(
       'contains',

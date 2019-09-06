@@ -4,13 +4,16 @@ import {
 } from '../types/core';
 
 import {
+  getBoolishType,
+} from '../types/getters';
+
+import {
   falseThat,
   trueThat,
   addFunctionToArray,
 } from '../types/functions';
 
 import {
-  getBooleanishType,
   getStrictString,
 } from '../types/getDataType';
 
@@ -114,7 +117,7 @@ function compileTypeBasic(schemaObj, jsonSchema) {
     || compileTypeArray(schemaObj, jsonSchema);
 
   const required = getBoolOrArray(jsonSchema.required, false);
-  const nullable = getBooleanishType(jsonSchema.nullable);
+  const nullable = getBoolishType(jsonSchema.nullable);
 
   const addRequiredError = required !== false
     ? schemaObj.createSingleErrorHandler(
