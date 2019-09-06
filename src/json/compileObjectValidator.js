@@ -6,10 +6,11 @@ import {
 // eslint-disable-next-line import/no-cycle
 import {
   isObjectishType,
+  isStrictArrayType,
 } from '../types/isDataType';
 
 import {
-  isMapOrObject,
+  isMapOrObject, isBoolOrObject,
 } from '../types/isDataTypeExtra';
 
 import {
@@ -29,7 +30,6 @@ import {
   trueThat,
   isFn,
 } from '../types/isFunctionType';
-import { Object_forEach, getObjectAllKeys } from '../helpers/Object';
 
 function compileCheckBounds(schemaObj, jsonSchema) {
   function compileMaxProperties() {
@@ -179,13 +179,36 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
   };
 }
 
-function compileHasProperty(schemaObj, key, value) {
+function compileDependencyArray(schemaObj, member, key, items) {
+  if (items.length === 0) return undefined;
 
-  // value typeof array
-  return function validateHasProperties(data, ) {
-    data
-  }
+  const addError = schemaObj.createMemberPairError(member, key, items, compileDependencyArray);
+  if (addError == null) return undefined;
+
+  return function validateDependencyArray(data) {
+    if (!isMapOrObject(data)) return true;
+    let valid = true;
+    if (data.constructor === Map) {
+      for (let i = 0; i < items.length; ++i) {
+        if (data.has(items[i]) === false) {
+          addError(items[i]);
+          valid = false;
+        }
+      }
+    }
+    else {
+      const keys = Object.keys(data);
+      for (let i = 0; i < items.length; ++i) {
+        if (keys.includes(items[i]) === false) {
+          addError(items[i]);
+          valid = false;
+        }
+      }
+    }
+    return valid;
+  };
 }
+
 function compileDependencies(schemaObj, jsonSchema) {
   const dependencies = getObjectishType(jsonSchema.dependencies);
   if (dependencies == null) return undefined;
@@ -197,16 +220,33 @@ function compileDependencies(schemaObj, jsonSchema) {
   if (member == null) return undefined;
 
   const validators = {};
+  for (let i = 0; i < depKeys.length; ++i) {
+    const key = depKeys[i];
+    const item = dependencies[key];
+    if (isStrictArrayType(item)) {
+      const validator = compileDependencyArray(schemaObj, member, key, item);
+      if (validator != null) validators[key] = validator;
+    }
+    else if (isBoolOrObject(item)) {
+      const validator = schemaObj.createPairValidator(member, key, item, compileDependencies);
+      if (validator != null) validators[key] = validator;
+    }
+  }
+
+  const valKeys = Object.keys(validators);
+  if (valKeys.length === 0) return undefined;
+
   return function validateDependencies(data, dataRoot) {
     if (!isMapOrObject(data)) return true;
     let valid = true;
     let errors = 0;
     if (data.constructor === Map) {
-      for (let i = 0; i < depKeys.length; ++i) {
+      for (let i = 0; i < valKeys.length; ++i) {
         if (errors > 32) break;
-        const key = depKeys[0];
+        const key = valKeys[i];
         if (data.has(key)) {
-          if (validators[key](data.get(key)) === false) {
+          const validator = validators[key];
+          if (validator(data, dataRoot) === false) {
             valid = false;
             errors++;
           }
@@ -214,11 +254,12 @@ function compileDependencies(schemaObj, jsonSchema) {
       }
     }
     else {
-      for (let i = 0; i < depKeys.length; ++i) {
+      for (let i = 0; i < valKeys.length; ++i) {
         if (errors > 32) break;
-        const key = depKeys[0];
+        const key = valKeys[i];
         if (data.hasOwnProperty(key)) {
-          if (validators[key](data[key]) === false) {
+          const validator = validators[key];
+          if (validator(data, dataRoot) === false) {
             valid = false;
             errors++;
           }
@@ -226,7 +267,7 @@ function compileDependencies(schemaObj, jsonSchema) {
       }
     }
     return valid;
-  }
+  };
 }
 
 export function compileObjectBasic(schemaObj, jsonSchema) {
@@ -235,6 +276,7 @@ export function compileObjectBasic(schemaObj, jsonSchema) {
     compileRequiredProperties(schemaObj, jsonSchema, checkBounds)
       || compileDefaultPropertyBounds(checkBounds),
     compileRequiredPatterns(schemaObj, jsonSchema),
+    compileDependencies(schemaObj, jsonSchema),
   ];
 }
 

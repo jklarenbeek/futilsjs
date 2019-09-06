@@ -136,6 +136,23 @@ class SchemaObject {
     return undefined;
   }
 
+  createMemberPairError(member, key, expected, ...rest) {
+    const self = this;
+    const submember = new SchemaMember(
+      self,
+      JSONPointer_concatPath(member.memberKey, key),
+      expected,
+      rest,
+    );
+
+    if (!isStrictStringType(key)) return undefined;
+
+    self.members.push(submember.memberKey);
+    return function addErrorPair(dataKey, data, ...meta) {
+      return self.addErrorPair(submember, dataKey, data, meta);
+    };
+  }
+
   createSingleValidator(key, child, ...rest) {
     const self = this;
     if (!isStrictStringType(key)) return undefined;

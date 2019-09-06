@@ -7,10 +7,10 @@ import { assert } from 'chai';
 import {
   compileJSONSchema,
   getJSONSchema,
-  registerDefaultFormatCompilers,
+  // registerDefaultFormatCompilers,
 } from '../src/json';
 
-registerDefaultFormatCompilers();
+// registerDefaultFormatCompilers();
 
 // https://json-schema.org/understanding-json-schema/reference/object.html
 
@@ -195,8 +195,8 @@ describe('Schema Object Type', function () {
     });
   });
 
-  describe.skip('#objectDependencies()', function () {
-    it.skip('should validate dependencies 1a', function () {
+  describe('#objectDependencies()', function () {
+    it('should validate dependencies 1a', function () {
       compileJSONSchema('objectDeps1a', {
         type: 'object',
         properties: {
@@ -241,7 +241,7 @@ describe('Schema Object Type', function () {
       );
     });
 
-    it.skip('should validate dependencies 1b', function () {
+    it('should validate dependencies 1b', function () {
       compileJSONSchema('objectDeps1b', {
         type: 'object',
         properties: {
@@ -282,7 +282,7 @@ describe('Schema Object Type', function () {
 
     });
 
-    it.skip('should validate dependencies 2', function () {
+    it('should validate dependencies 2', function () {
       compileJSONSchema('objectDeps2', {
         type: 'object',
         properties: {
@@ -408,7 +408,7 @@ describe('Schema Object Type', function () {
       }), 'compiling');
       const root = getJSONSchema('dependencies4');
       assert.isTrue(root.validate({ 'foo\nbar': 1, 'foo\rbar': 2 }), 'object 1 is valid');
-      assert.isTrue(root.validate({ 'foo\nbar': 1, a: 2, b: 3, c: 4 }), 'object 2 is valid');
+      assert.isTrue(root.validate({ 'foo\tbar': 1, a: 2, b: 3, c: 4 }), 'object 2 is valid');
       assert.isTrue(root.validate({ 'foo\'bar': 1, 'foo\"bar': 2 }), 'object 3 is valid');
       assert.isFalse(root.validate({ 'foo\nbar': 1, foo: 2 }), 'object 1 is invalid');
       assert.isFalse(root.validate({ 'foo\tbar': 1, a: 2 }), 'object 2 is invalid');

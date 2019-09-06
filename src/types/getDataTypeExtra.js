@@ -52,7 +52,7 @@ export function getStringOrArrayUnique(obj, def) {
 export function getArrayOrSetLength(obj) {
   return isStrictObjectOfType(obj, Set)
     ? obj.size
-    : isArrayishType(data)
+    : isArrayishType(obj)
       ? obj.length
       : 0;
 }
