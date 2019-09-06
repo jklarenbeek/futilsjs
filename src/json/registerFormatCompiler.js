@@ -7,14 +7,8 @@ import {
   isIntegerType,
   isBigIntType,
   isStringType,
+  isStringOrDateType,
 } from '../types/core';
-
-import {
-} from '../types/isDataType';
-
-import {
-  isStringOrDate,
-} from '../types/isDataTypeExtra';
 
 //#region number definitions
 /* eslint-disable quote-props */
@@ -229,7 +223,7 @@ function compileDateFormat(schemaObj, jsonSchema) {
     function compileDateType() {
       const addError = schemaObj.createSingleErrorHandler('format', 'date', compileDateFormat);
       return function parseDate(data) {
-        if (isStringOrDate(data)) {
+        if (isStringOrDateType(data)) {
           const date = Date.parse(data) || false;
           if (date === false) return addError(
             'format',
