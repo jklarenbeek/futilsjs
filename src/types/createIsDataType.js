@@ -1,11 +1,11 @@
 import {
-  isStrictObjectOfType,
   isArrayishType,
 } from './isDataType';
 
 import {
   isFn,
   isNullValue,
+  isObjectOfType,
   isBooleanType,
   isNumberType,
   isIntegerType,
@@ -56,12 +56,12 @@ export function createIsStrictDataType(type, format, isstrict = false) {
   return undefined;
 }
 
-export function createIsStrictObjectOfType(fn) {
+export function createisObjectOfType(fn) {
   // eslint-disable-next-line no-undef-init
   let usefull = undefined;
   if (isFn(fn)) {
-    usefull = function isStrictObjectOfTypeFn(data) {
-      return isStrictObjectOfType(data, fn);
+    usefull = function isObjectOfTypeFn(data) {
+      return isObjectOfType(data, fn);
     };
   }
   else if (fn instanceof Array) {
