@@ -12,6 +12,7 @@ import {
   getIntishType,
   getArrayType,
   getObjectType,
+  getBoolOrObjectType,
 } from '../types/getters';
 
 import {
@@ -19,7 +20,6 @@ import {
 } from '../types/strings';
 
 import {
-  getBoolOrObject,
   getMapOfArray,
 } from '../types/getDataTypeExtra';
 
@@ -399,7 +399,7 @@ export function compileObjectChildren(schemaObj, jsonSchema) {
   const properties = getObjectType(jsonSchema.properties);
   const ptrnProps = getObjectType(jsonSchema.patternProperties);
   const propNames = getObjectType(jsonSchema.propertyNames);
-  const addlProps = getBoolOrObject(jsonSchema.additionalProperties, true);
+  const addlProps = getBoolOrObjectType(jsonSchema.additionalProperties, true);
 
   const validatorChildren = createObjectPropertyValidators(schemaObj, properties);
   const patternValidator = compileObjectPatternItem(schemaObj, ptrnProps);

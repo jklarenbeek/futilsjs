@@ -8,8 +8,9 @@ import {
 import {
   getBoolishType,
   getIntishType,
-  getObjectType,
   getArrayTypeMinItems,
+  getObjectType,
+  getBoolOrObjectType,
 } from '../types/getters';
 
 import {
@@ -18,7 +19,7 @@ import {
 } from '../types/functions';
 
 import {
-  getArrayOrSetLength, getBoolOrObject,
+  getArrayOrSetLength,
 } from '../types/getDataTypeExtra';
 
 import {
@@ -157,7 +158,7 @@ function compileTupleItems(schemaObj, jsonSchema) {
   const items = getArrayTypeMinItems(jsonSchema.items, 1); // TODO: possible bug?
   if (items == null) return undefined;
 
-  const additional = getBoolOrObject(jsonSchema.additionalItems, true);
+  const additional = getBoolOrObjectType(jsonSchema.additionalItems, true);
 
   const member = schemaObj.createMember('items', compileTupleItems);
   const validators = new Array(items.length);

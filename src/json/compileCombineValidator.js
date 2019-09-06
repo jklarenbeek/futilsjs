@@ -4,16 +4,13 @@ import {
 
 import {
   getArrayType,
+  getBoolOrObjectType,
 } from '../types/getters';
 
 import {
   falseThat,
   trueThat,
 } from '../types/functions';
-
-import {
-  getBoolOrObject,
-} from '../types/getDataTypeExtra';
 
 function compileAllOf(schemaObj, jsonSchema) {
   const allOf = getArrayType(jsonSchema.allOf);
@@ -115,7 +112,7 @@ function compileOneOf(schemaObj, jsonSchema) {
 }
 
 function compileNotOf(schemaObj, jsonSchema) {
-  const notOf = getBoolOrObject(jsonSchema.not);
+  const notOf = getBoolOrObjectType(jsonSchema.not);
   if (notOf == null) return undefined;
   if (notOf === true) return falseThat;
   if (notOf === false) return trueThat;
