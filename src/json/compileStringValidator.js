@@ -3,8 +3,8 @@ import {
 } from '../helpers/String';
 
 import {
-  isStrictStringType,
-} from '../types/isDataType';
+  isStringType,
+} from '../types/core';
 
 import {
   getIntegerishType,
@@ -18,7 +18,7 @@ function compileMinLength(schemaObj, jsonSchema) {
   if (addError == null) return undefined;
 
   return function validateStringMinLength(data) {
-    return isStrictStringType(data)
+    return isStringType(data)
       ? data.length >= min
         ? true
         : addError(data.length)
@@ -34,7 +34,7 @@ function compileMaxLength(schemaObj, jsonSchema) {
   if (addError == null) return undefined;
 
   return function validateStringMaxLength(data) {
-    return isStrictStringType(data)
+    return isStringType(data)
       ? data.length <= max
         ? true
         : addError(data.length)
@@ -51,7 +51,7 @@ function compileStringPattern(schemaObj, jsonSchema) {
   if (addError == null) return undefined;
 
   return function validateStringPattern(data) {
-    return isStrictStringType(data)
+    return isStringType(data)
       ? re.test(data)
         ? true
         : addError(data)

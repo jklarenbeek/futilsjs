@@ -3,7 +3,6 @@ import {
   isStrictIntegerType,
   isStrictBigIntType,
   isStrictNumberType,
-  isStrictStringType,
   isStrictNullValue,
   isStrictObjectType,
   isStrictObjectOfType,
@@ -12,6 +11,7 @@ import {
 
 import {
   isFn,
+  isStringType,
   isArrayType,
   isObjectType,
 } from './core';
@@ -46,7 +46,7 @@ export function createIsStrictDataType(type, format, isstrict = false) {
       case 'integer': return isStrictIntegerType;
       case 'bigint': return isStrictBigIntType;
       case 'number': return isStrictNumberType;
-      case 'string': return isStrictStringType;
+      case 'string': return isStringType;
       default: break;
     }
   }

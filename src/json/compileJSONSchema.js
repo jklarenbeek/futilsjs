@@ -1,9 +1,9 @@
 import {
-  isStrictStringType,
   isStrictIntegerType,
 } from '../types/isDataType';
 
 import {
+  isStringType,
   isArrayType,
 } from '../types/core';
 
@@ -123,7 +123,7 @@ class SchemaObject {
       rest,
     );
 
-    if (isStrictStringType(key)) {
+    if (isStringType(key)) {
       self.members.push(key);
       return function addErrorSingle(data, ...meta) {
         return self.addErrorSingle(member, data, meta);
@@ -148,7 +148,7 @@ class SchemaObject {
       rest,
     );
 
-    if (!isStrictStringType(key)) return undefined;
+    if (!isStringType(key)) return undefined;
 
     self.members.push(submember.memberKey);
     return function addErrorPair(dataKey, data, ...meta) {
@@ -158,7 +158,7 @@ class SchemaObject {
 
   createSingleValidator(key, child, ...rest) {
     const self = this;
-    if (!isStrictStringType(key)) return undefined;
+    if (!isStringType(key)) return undefined;
     if (!isBoolOrObject(child)) return undefined;
 
     const childObj = new SchemaObject(
@@ -174,7 +174,7 @@ class SchemaObject {
   createPairValidator(member, key, child, ...rest) {
     const self = this;
     const valid = member instanceof SchemaMember
-      && (isStrictStringType(key)
+      && (isStringType(key)
         || isStrictIntegerType(key))
       && isBoolOrObject(child);
     if (!valid) return undefined;

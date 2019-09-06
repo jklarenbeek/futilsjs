@@ -3,7 +3,10 @@ import {
 } from '../types/isFunctionType';
 
 import {
-  isStrictStringType,
+  isStringType,
+} from '../types/core';
+
+import {
   isStrictIntegerType,
   isStrictBigIntType,
   isStrictNumberType,
@@ -433,7 +436,7 @@ export function registerFormatCompiler(name, jsonSchema) {
 }
 
 export function getSchemaFormatCompiler(name) {
-  if (isStrictStringType(name))
+  if (isStringType(name))
     return registeredSchemaFormatters[name];
   else
     return undefined;

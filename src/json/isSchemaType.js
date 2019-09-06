@@ -5,13 +5,10 @@ import {
 } from './registerFormatCompiler';
 
 import {
+  isStringType,
   isArrayType,
   isObjectType,
 } from '../types/core';
-
-import {
-  isStrictStringType,
-} from '../types/isDataType';
 
 import {
   getBooleanishType,
@@ -55,7 +52,7 @@ export function isBooleanSchema(schema) {
 }
 export function isNumberSchema(schema) {
   const isknown = isOfStrictSchemaType(schema, 'number');
-  const isformat = isStrictStringType(schema.format)
+  const isformat = isStringType(schema.format)
     && floatFormats[schema.format] != null;
 
   const isconst = (Number(schema.const) || false) !== false;
