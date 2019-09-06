@@ -1,7 +1,3 @@
-import {
-  String_createRegExp,
-} from "../helpers/String";
-
 //#region core
 export function isFnEx(typeString) {
   return typeString === 'function';
@@ -57,12 +53,8 @@ export function isIntishType(data) {
 }
 
 export function isBigIntType(data) {
+  // eslint-disable-next-line valid-typeof
   return typeof data === 'bigint';
-}
-
-export function isBigIntishType(data) {
-  return isBigIntType(data)
-    || isIntishType(data);
 }
 
 export function isStringType(data) {
@@ -123,7 +115,7 @@ export function isObjectType(data) {
 
 export function isObjectTyped(data) {
   return isObjectType(data)
-    && !isTypedArray(data)
+    && !isTypedArray(data);
 }
 
 export function isMapType(data) {
@@ -147,10 +139,6 @@ export function isRegExpType(data) {
   return isObjectOfType(data, RegExp);
 }
 
-export function isRegExpishType(data) {
-  return isRegExp(data)
-    || String_createRegExp(data) != null;
-}
 //#endregion
 
 //#region mixed types

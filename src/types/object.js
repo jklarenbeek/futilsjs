@@ -1,15 +1,21 @@
-import { isComplexType, isFn, isScalarType, isBooleanType } from './core-is';
+import {
+  isScalarType,
+  isComplexType,
+  isFn,
+  isBooleanType,
+  isTypedArray,
+} from './core';
 
 export function forEachPair(obj, fn) {
   if (isComplexType(obj)) {
     if (obj.constructor === Map) {
-      for (const [k, v] of map)
-        fn(v, k, map);
+      for (const [k, v] of obj)
+        fn(v, k, obj);
     }
     else {
       const keys = Object.keys(obj);
       for (let i = 0; i < keys.length; ++i) {
-        const k = keys[i]
+        const k = keys[i];
         fn(obj[k], k, obj);
       }
     }
@@ -27,7 +33,7 @@ export function getObjectItem(obj, key) {
 export function setObjectItem(obj, key, value) {
   if (isComplexType(obj)) {
     if (obj.constructor === Map)
-      obj.set(key, value)
+      obj.set(key, value);
     else
       obj[key] = value;
   }
@@ -85,7 +91,7 @@ export function equalsDeep(target, source) {
   if (isBooleanType(source)) return false;
 
   if (isFn(target))
-      return target.toString() === source.toString();
+    return target.toString() === source.toString();
 
   if (isScalarType(target))
     return false;

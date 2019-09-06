@@ -1,11 +1,14 @@
 import {
   isScalarType,
-  isObjectOfType,
   isBooleanType,
   isNumberType,
+  isNumbishType,
   isIntegerType,
+  isIntishType,
   isStringType,
   isObjectType,
+  isObjectTyped,
+  isArrayType,
   isArrayTyped,
   isSetType,
   isBoolOrNumbishType,
@@ -16,11 +19,24 @@ import {
   isMapType,
   isObjectOrMapType,
   isObjectOrMapTyped,
-} from './core-is';
+  isBigIntType,
+} from './core';
 
-import { Array_getUnique } from '../helpers/Array';
+import {
+  getUniqueArray,
+} from './arrays';
 
 //#region scalar types
+export function getSanitizedScalar(value, defaultValue = undefined, nullable = false) {
+  return value == null
+    ? nullable
+      ? value
+      : defaultValue
+    : isScalarType(value)
+      ? value
+      : defaultValue;
+}
+
 export function getBooleanType(obj, def = undefined) {
   return isBooleanType(obj) ? obj : def;
 }
@@ -53,10 +69,14 @@ export function getStringType(obj, def) {
   return isStringType(obj) ? obj : def;
 }
 
-export function getSanitizedScalar(value, defaultValue = undefined, nullable = false) {
-  if (nullable && value == null) return value;
-  if (value == null) return defaultValue;
-  return isScalarType(value) ? value : defaultValue;
+export function getBigIntType(obj, def) {
+  return isBigIntType(obj) ? obj : def;
+}
+
+export function getBigIntishType(obj, def) {
+  return isBigIntType(obj)
+    ? obj
+    : getIntishType(obj, def);
 }
 //#endregion
 
@@ -91,26 +111,10 @@ export function getArrayOrSetType(obj, def) {
     : def;
 }
 
-export function getArrayOrSetTypeUnique(obj, def) {
-  return isArrayType(obj)
-    ? Array_getUnique(obj)
-    : isSetType(obj)
-      ? obj
-      : def;
-}
-
-export function getArrayOfSetTypeUnique(obj, def) {
-  return isArrayType(obj)
-    ? Array_getUnique(obj)
-    : isSetType(obj)
-      ? Array.from(obj)
-      : def;
-}
-
 export function getArrayOrSetTypeLength(obj) {
   return isSetType(obj)
     ? obj.size
-    : isArrayType(data)
+    : isArrayType(obj)
       ? obj.length
       : 0;
 }
@@ -121,6 +125,21 @@ export function getArrayOrSetTypeMinItems(obj, len, def) {
     : def;
 }
 
+export function getArrayOrSetTypeUnique(obj, def) {
+  return isArrayType(obj)
+    ? getUniqueArray(obj)
+    : isSetType(obj)
+      ? obj
+      : def;
+}
+
+export function getArrayOfSetTypeUnique(obj, def) {
+  return isArrayType(obj)
+    ? getUniqueArray(obj)
+    : isSetType(obj)
+      ? Array.from(obj)
+      : def;
+}
 
 //#endregion
 
@@ -180,6 +199,6 @@ export function getStringOrArrayTypedUnique(obj, def) {
   return isStringType(obj)
     ? obj
     : isArrayTyped(obj)
-      ? Array_getUnique(obj)
+      ? getUniqueArray(obj)
       : def;
 }
