@@ -6,7 +6,7 @@ import {
   isTypedArray,
 } from './core';
 
-export function forEachPair(obj, fn) {
+export function forOfObject(obj, fn) {
   if (isComplexType(obj)) {
     if (obj.constructor === Map) {
       for (const [k, v] of obj)

@@ -1,13 +1,16 @@
 /* eslint-disable function-paren-newline */
 /* eslint-disable no-unused-vars */
 import {
+  isScalarType,
+} from '../types/core';
+
+import {
   getArrayMinItems,
 } from '../types/getDataTypeExtra';
-import { isPrimitiveType } from '../types/isDataType';
 
 import {
   equalsDeep,
-} from '../helpers/Object';
+} from '../types/objects';
 
 function compileConst(schemaObj, jsonSchema) {
   const constant = jsonSchema.const;
@@ -19,7 +22,7 @@ function compileConst(schemaObj, jsonSchema) {
     compileConst);
   if (addError == null) return undefined;
 
-  if (isPrimitiveType(constant)) {
+  if (isScalarType(constant)) {
     return function validatePrimitiveConst(data, dataRoot) {
       return constant === data
         ? true

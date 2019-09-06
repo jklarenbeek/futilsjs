@@ -26,8 +26,7 @@ export * from './vnode/base';
 export * from './vnode/html';
 export * from './vnode/app';
 
-export * from './types/isDataType';
-export * from './types/isDataTypeExtra';
+export * from './types/core';
 export * from './types/getDataType';
 export * from './types/getDataTypeExtra';
 export * from './types/functions';

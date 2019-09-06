@@ -24,7 +24,7 @@
 // DEALINGS IN THE SOFTWARE.
 //
 import { collapseCssClass } from '../client/css';
-import { cloneObject } from '../helpers/Object';
+import { cloneObject } from '../types/objects';
 import { VNode, getVNodeKey } from './base';
 import { isFn } from '../types/core';
 
