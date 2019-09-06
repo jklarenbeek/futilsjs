@@ -1,8 +1,11 @@
 /* eslint-disable valid-typeof */
 import {
   isStrictBigIntType,
-  isStrictNumberType,
 } from '../types/isDataType';
+
+import {
+  isNumberType,
+} from '../types/core';
 
 import {
   getNumberishType,
@@ -36,7 +39,7 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
     );
     if (isStrictBigIntType(emax)) {
       return function exclusiveMaximumBigInt(data) {
-        return (isStrictBigIntType(data) || isStrictNumberType(data)) // are we forgiving?
+        return (isStrictBigIntType(data) || isNumberType(data)) // are we forgiving?
           ? data < emax
             ? true
             : addError(data)
@@ -45,7 +48,7 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
     }
     else {
       return function exclusiveMaximum(data) {
-        return isStrictNumberType(data)
+        return isNumberType(data)
           ? data < emax
             ? true
             : addError(data)
@@ -61,7 +64,7 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
     );
     if (isStrictBigIntType(max)) {
       return function maximumBigInt(data) {
-        return (isStrictBigIntType(data) || isStrictNumberType(data)) // are we that forgiving?
+        return (isStrictBigIntType(data) || isNumberType(data)) // are we that forgiving?
           ? data <= max
             ? true
             : addError(data)
@@ -70,7 +73,7 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
     }
     else {
       return function maximum(data) {
-        return isStrictNumberType(data)
+        return isNumberType(data)
           ? data <= max
             ? true
             : addError(data)
@@ -95,7 +98,7 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
     );
     if (isStrictBigIntType(emin)) {
       return function exclusiveMinimumBigInt(data) {
-        return (isStrictBigIntType(data) || isStrictNumberType(data))
+        return (isStrictBigIntType(data) || isNumberType(data))
           ? data > emin
             ? true
             : addError(data)
@@ -104,7 +107,7 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
     }
     else {
       return function exclusiveMinimum(data) {
-        return isStrictNumberType(data)
+        return isNumberType(data)
           ? data > emin
             ? true
             : addError(data)
@@ -120,7 +123,7 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
     );
     if (isStrictBigIntType(min)) {
       return function minimumBigInt(data) {
-        return (isStrictBigIntType(data) || isStrictNumberType(data))
+        return (isStrictBigIntType(data) || isNumberType(data))
           ? data >= min
             ? true
             : addError(data)
@@ -129,7 +132,7 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
     }
     else {
       return function minimum(data) {
-        return isStrictNumberType(data)
+        return isNumberType(data)
           ? data >= min
             ? true
             : addError(data)
@@ -160,7 +163,7 @@ function compileNumberMultipleOf(schemaObj, jsonSchema) {
         ? data % mulOf === BigInt(0)
           ? true
           : addError(data)
-        : isStrictNumberType(data)
+        : isNumberType(data)
           ? data % Number(mulOf) === 0
             ? true
             : addError(data)
@@ -169,7 +172,7 @@ function compileNumberMultipleOf(schemaObj, jsonSchema) {
   }
   else {
     return function multipleOf(data) {
-      return isStrictNumberType(data)
+      return isNumberType(data)
         ? data % mulOf === 0
           ? true
           : addError(data)

@@ -5,11 +5,11 @@ import {
 import {
   isIntegerType,
   isStringType,
+  isNumberType,
 } from '../types/core';
 
 import {
   isStrictBigIntType,
-  isStrictNumberType,
 } from '../types/isDataType';
 
 import {
@@ -276,7 +276,7 @@ export function createFormatNumberCompiler(name, format) {
         : format.type === 'bigint'
           ? isStrictBigIntType
           : format.type === 'number'
-            ? isStrictNumberType
+            ? isNumberType
             : undefined;
 
       if (isDataType) {
