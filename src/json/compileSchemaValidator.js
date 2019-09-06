@@ -14,11 +14,8 @@ import {
   falseThat,
   trueThat,
   addFunctionToArray,
+  createIsDataTypeHandler,
 } from '../types/functions';
-
-import {
-  createIsStrictDataType,
-} from '../types/createIsDataType';
 
 import { compileFormatBasic } from './compileFormatValidator';
 import { compileEnumBasic } from './compileEnumValidator';
@@ -33,7 +30,7 @@ function compileTypeSimple(schemaObj, jsonSchema) {
   const type = getStringType(jsonSchema.type);
   if (type == null) return undefined;
 
-  const isDataType = createIsStrictDataType(type);
+  const isDataType = createIsDataTypeHandler(type);
   if (!isDataType) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler('type', type, compileTypeSimple);
@@ -55,7 +52,7 @@ function compileTypeArray(schemaObj, jsonSchema) {
   const names = [];
   for (let i = 0; i < schemaType.length; ++i) {
     const type = schemaType[i];
-    const callback = createIsStrictDataType(type);
+    const callback = createIsDataTypeHandler(type);
     if (callback) {
       types.push(callback);
       names.push(type);
