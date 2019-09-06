@@ -6,6 +6,7 @@ import {
 } from '../types/core';
 
 import {
+  getIntishType,
   getObjectType,
 } from '../types/getters';
 
@@ -15,7 +16,6 @@ import {
 } from '../types/functions';
 
 import {
-  getIntegerishType,
   getBooleanishType,
   getStrictArray,
   getStrictArrayMinItems,
@@ -30,7 +30,7 @@ import {
 } from '../types/arrays';
 
 function compileMinItems(schemaObj, jsonSchema) {
-  const min = getIntegerishType(jsonSchema.minItems);
+  const min = getIntishType(jsonSchema.minItems);
   if (!(min > 0)) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler(
@@ -49,7 +49,7 @@ function compileMinItems(schemaObj, jsonSchema) {
 }
 
 function compileMaxItems(schemaObj, jsonSchema) {
-  const max = getIntegerishType(jsonSchema.maxItems);
+  const max = getIntishType(jsonSchema.maxItems);
   if (!(max > 0)) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler(
@@ -222,7 +222,7 @@ function compileArrayChildValidators(schemaObj, jsonSchema) {
     && validateContains == null)
     return undefined;
 
-  const maxItems = getIntegerishType(jsonSchema.maxItems, 0);
+  const maxItems = getIntishType(jsonSchema.maxItems, 0);
 
   return function validateArrayChildren(data, dataRoot) {
     if (isArrayTyped(data)) {

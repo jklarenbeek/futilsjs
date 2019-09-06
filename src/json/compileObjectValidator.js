@@ -9,6 +9,7 @@ import {
 } from '../types/core';
 
 import {
+  getIntishType,
   getObjectType,
 } from '../types/getters';
 
@@ -17,7 +18,6 @@ import {
 } from '../types/strings';
 
 import {
-  getIntegerishType,
   getStrictArray,
 } from '../types/getDataType';
 
@@ -34,7 +34,7 @@ import {
 
 function compileCheckBounds(schemaObj, jsonSchema) {
   function compileMaxProperties() {
-    const maxprops = getIntegerishType(jsonSchema.maxProperties);
+    const maxprops = getIntishType(jsonSchema.maxProperties);
     if (!(maxprops > 0)) return undefined;
 
     const addError = schemaObj.createSingleErrorHandler(
@@ -51,7 +51,7 @@ function compileCheckBounds(schemaObj, jsonSchema) {
   }
 
   function compileMinProperties() {
-    const minprops = getIntegerishType(jsonSchema.minProperties);
+    const minprops = getIntishType(jsonSchema.minProperties);
     if (!(minprops > 0)) return undefined;
 
     const addError = schemaObj.createSingleErrorHandler(

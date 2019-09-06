@@ -1,17 +1,17 @@
 import {
-  String_createRegExp,
-} from '../types/strings';
-
-import {
   isStringType,
 } from '../types/core';
 
 import {
-  getIntegerishType,
-} from '../types/getDataType';
+  getIntishType,
+} from '../types/getters';
+
+import {
+  String_createRegExp,
+} from '../types/strings';
 
 function compileMinLength(schemaObj, jsonSchema) {
-  const min = Math.max(getIntegerishType(jsonSchema.minLength, 0), 0);
+  const min = Math.max(getIntishType(jsonSchema.minLength, 0), 0);
   if (min === 0) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler('minLength', min, compileMinLength);
@@ -27,7 +27,7 @@ function compileMinLength(schemaObj, jsonSchema) {
 }
 
 function compileMaxLength(schemaObj, jsonSchema) {
-  const max = Math.max(getIntegerishType(jsonSchema.maxLength, 0), 0);
+  const max = Math.max(getIntishType(jsonSchema.maxLength, 0), 0);
   if (max === 0) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler('maxLength', max, compileMaxLength);
