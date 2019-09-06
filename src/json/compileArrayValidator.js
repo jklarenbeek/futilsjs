@@ -6,12 +6,15 @@ import {
 } from '../types/core';
 
 import {
+  getObjectType,
+} from '../types/getters';
+
+import {
   trueThat,
   falseThat,
 } from '../types/functions';
 
 import {
-  getObjectishType,
   getIntegerishType,
   getBooleanishType,
   getStrictArray,
@@ -145,7 +148,7 @@ function compileArrayContainsBoolean(schemaObj, jsonSchema) {
 }
 
 function compileArrayItems(schemaObj, jsonSchema) {
-  const items = getObjectishType(jsonSchema.items);
+  const items = getObjectType(jsonSchema.items);
   if (items == null) return undefined;
 
   return schemaObj.createSingleValidator(
@@ -202,7 +205,7 @@ function compileTupleItems(schemaObj, jsonSchema) {
 }
 
 function compileArrayContains(schemaObj, jsonSchema) {
-  const contains = getObjectishType(jsonSchema.contains);
+  const contains = getObjectType(jsonSchema.contains);
   if (contains == null) return undefined;
 
   return schemaObj.createSingleValidator(

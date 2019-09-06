@@ -1,8 +1,4 @@
 /* eslint-disable function-paren-newline */
-import {
-  String_createRegExp,
-} from '../types/strings';
-
 // eslint-disable-next-line import/no-cycle
 import {
   isFn,
@@ -13,7 +9,14 @@ import {
 } from '../types/core';
 
 import {
-  getObjectishType,
+  getObjectType,
+} from '../types/getters';
+
+import {
+  String_createRegExp,
+} from '../types/strings';
+
+import {
   getIntegerishType,
   getStrictArray,
 } from '../types/getDataType';
@@ -90,7 +93,7 @@ function compileRequiredProperties(schemaObj, jsonSchema, checkBounds) {
   if (required == null) return undefined;
 
   const mapProps = getMapOfArray(jsonSchema.properties);
-  const objProps = getObjectishType(jsonSchema.properties);
+  const objProps = getObjectType(jsonSchema.properties);
 
   const requiredKeys = required.length !== 0
     ? required
@@ -208,7 +211,7 @@ function compileDependencyArray(schemaObj, member, key, items) {
 }
 
 function compileDependencies(schemaObj, jsonSchema) {
-  const dependencies = getObjectishType(jsonSchema.dependencies);
+  const dependencies = getObjectType(jsonSchema.dependencies);
   if (dependencies == null) return undefined;
 
   const depKeys = Object.keys(dependencies);
@@ -396,9 +399,9 @@ function compileObjectAdditionalProperty(schemaObj, additional) {
 }
 
 export function compileObjectChildren(schemaObj, jsonSchema) {
-  const properties = getObjectishType(jsonSchema.properties);
-  const ptrnProps = getObjectishType(jsonSchema.patternProperties);
-  const propNames = getObjectishType(jsonSchema.propertyNames);
+  const properties = getObjectType(jsonSchema.properties);
+  const ptrnProps = getObjectType(jsonSchema.patternProperties);
+  const propNames = getObjectType(jsonSchema.propertyNames);
   const addlProps = getBoolOrObject(jsonSchema.additionalProperties, true);
 
   const validatorChildren = createObjectPropertyValidators(schemaObj, properties);

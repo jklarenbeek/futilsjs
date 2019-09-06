@@ -133,7 +133,7 @@ export function getArrayOrSetTypeUnique(obj, def) {
       : def;
 }
 
-export function getArrayOfSetTypeUnique(obj, def) {
+export function getArrayOfSetType(obj, def) {
   return isArrayType(obj)
     ? getUniqueArray(obj)
     : isSetType(obj)
