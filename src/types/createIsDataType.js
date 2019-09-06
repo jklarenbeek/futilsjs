@@ -1,6 +1,5 @@
 import {
   isStrictBooleanType,
-  isBigIntType,
   isStrictNullValue,
   isStrictObjectType,
   isStrictObjectOfType,
@@ -11,6 +10,7 @@ import {
   isFn,
   isNumberType,
   isIntegerType,
+  isBigIntType,
   isStringType,
   isArrayType,
   isObjectType,

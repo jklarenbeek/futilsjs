@@ -3,13 +3,13 @@ import {
 } from '../types/functions';
 
 import {
-  isIntegerType,
-  isStringType,
   isNumberType,
+  isIntegerType,
+  isBigIntType,
+  isStringType,
 } from '../types/core';
 
 import {
-  isBigIntType,
 } from '../types/isDataType';
 
 import {
