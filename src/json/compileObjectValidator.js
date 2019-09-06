@@ -10,16 +10,13 @@ import {
 
 import {
   getIntishType,
+  getArrayType,
   getObjectType,
 } from '../types/getters';
 
 import {
   String_createRegExp,
 } from '../types/strings';
-
-import {
-  getStrictArray,
-} from '../types/getDataType';
 
 import {
   getBoolOrObject,
@@ -89,7 +86,7 @@ function compileDefaultPropertyBounds(checkBounds) {
 }
 
 function compileRequiredProperties(schemaObj, jsonSchema, checkBounds) {
-  const required = getStrictArray(jsonSchema.required);
+  const required = getArrayType(jsonSchema.required);
   if (required == null) return undefined;
 
   const mapProps = getMapOfArray(jsonSchema.properties);
@@ -137,7 +134,7 @@ function compileRequiredProperties(schemaObj, jsonSchema, checkBounds) {
 }
 
 function compileRequiredPatterns(schemaObj, jsonSchema) {
-  const required = getStrictArray(jsonSchema.patternRequired);
+  const required = getArrayType(jsonSchema.patternRequired);
   if (required == null || required.length === 0) return undefined;
 
   // produce an array of regexp objects to validate members.

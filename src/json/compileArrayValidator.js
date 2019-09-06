@@ -8,6 +8,7 @@ import {
 import {
   getIntishType,
   getObjectType,
+  getArrayTypeMinItems,
 } from '../types/getters';
 
 import {
@@ -17,8 +18,6 @@ import {
 
 import {
   getBooleanishType,
-  getStrictArray,
-  getStrictArrayMinItems,
 } from '../types/getDataType';
 
 import {
@@ -158,7 +157,7 @@ function compileArrayItems(schemaObj, jsonSchema) {
 }
 
 function compileTupleItems(schemaObj, jsonSchema) {
-  const items = getStrictArrayMinItems(jsonSchema.items, 1); // TODO: possible bug?
+  const items = getArrayTypeMinItems(jsonSchema.items, 1); // TODO: possible bug?
   if (items == null) return undefined;
 
   const additional = getBoolOrObject(jsonSchema.additionalItems, true);
@@ -214,7 +213,7 @@ function compileArrayContains(schemaObj, jsonSchema) {
     compileArrayContains);
 }
 
-function compileArrayChildValidators(schemaObj, jsonSchema) {
+function compileChildValidators(schemaObj, jsonSchema) {
   const validateItem = compileArrayItems(schemaObj, jsonSchema)
     || compileTupleItems(schemaObj, jsonSchema);
   const validateContains = compileArrayContains(schemaObj, jsonSchema);
@@ -260,6 +259,6 @@ export function compileArrayChildren(schemaObj, jsonSchema) {
   return [
     compileArrayItemsBoolean(schemaObj, jsonSchema),
     compileArrayContainsBoolean(schemaObj, jsonSchema),
-    compileArrayChildValidators(schemaObj, jsonSchema),
+    compileChildValidators(schemaObj, jsonSchema),
   ];
 }

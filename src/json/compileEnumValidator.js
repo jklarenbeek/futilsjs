@@ -5,8 +5,8 @@ import {
 } from '../types/core';
 
 import {
-  getArrayMinItems,
-} from '../types/getDataTypeExtra';
+  getArrayTypeMinItems,
+} from '../types/getters';
 
 import {
   equalsDeep,
@@ -35,7 +35,7 @@ function compileConst(schemaObj, jsonSchema) {
 }
 
 function compileEnum(schemaObj, jsonSchema) {
-  const enums = getArrayMinItems(jsonSchema.enum, 1);
+  const enums = getArrayTypeMinItems(jsonSchema.enum, 1);
   if (enums == null) return undefined;
 
   let hasObjects = false;
