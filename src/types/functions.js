@@ -89,7 +89,7 @@ export function createIsDataTypeHandler(type, format, isstrict = false) {
   return undefined;
 }
 
-export function createisObjectOfType(fn) {
+export function createIsObjectOfTypeHandler(fn) {
   // eslint-disable-next-line no-undef-init
   let usefull = undefined;
   if (isFn(fn)) {
