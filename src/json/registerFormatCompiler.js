@@ -9,7 +9,7 @@ import {
 } from '../types/core';
 
 import {
-  isStrictBigIntType,
+  isBigIntType,
 } from '../types/isDataType';
 
 import {
@@ -274,7 +274,7 @@ export function createFormatNumberCompiler(name, format) {
       const isDataType = format.type === 'integer'
         ? isIntegerType
         : format.type === 'bigint'
-          ? isStrictBigIntType
+          ? isBigIntType
           : format.type === 'number'
             ? isNumberType
             : undefined;
