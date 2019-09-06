@@ -1,13 +1,13 @@
 /* eslint-disable function-paren-newline */
 import {
+  isObjectTyped,
+} from '../types/core';
+
+import {
   falseThat,
   trueThat,
   addFunctionToArray,
 } from '../types/functions';
-
-import {
-  isStrictObjectType,
-} from '../types/isDataType';
 
 import {
   getBooleanishType,
@@ -206,7 +206,7 @@ function compileTypeBasic(schemaObj, jsonSchema) {
 export function compileSchemaObject(schemaObj, jsonSchema) {
   if (jsonSchema === true) return trueThat;
   if (jsonSchema === false) return falseThat;
-  if (!isStrictObjectType(jsonSchema)) return falseThat;
+  if (!isObjectTyped(jsonSchema)) return falseThat;
   if (Object.keys(jsonSchema).length === 0) return trueThat;
 
   const fnType = compileTypeBasic(schemaObj, jsonSchema);

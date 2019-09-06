@@ -1,25 +1,28 @@
 import {
-  isStrictBooleanType,
-  isStrictNullValue,
-  isStrictObjectType,
   isStrictObjectOfType,
   isArrayishType,
 } from './isDataType';
 
 import {
   isFn,
+  isNullValue,
+  isBooleanType,
   isNumberType,
   isIntegerType,
   isBigIntType,
   isStringType,
   isArrayType,
   isObjectType,
+  isObjectTyped,
+  isSetType,
+  isMapType,
+  isRegExpType,
 } from './core';
 
 export function createIsStrictDataType(type, format, isstrict = false) {
   if (type === 'object') {
     return isstrict
-      ? isStrictObjectType
+      ? isObjectTyped
       : isObjectType;
   }
   else if (type === 'array') {
@@ -28,21 +31,21 @@ export function createIsStrictDataType(type, format, isstrict = false) {
       : isArrayishType;
   }
   else if (type === 'set') {
-    return createIsStrictObjectOfType(Set);
+    return isSetType;
   }
   else if (type === 'map') {
-    return createIsStrictObjectOfType(Map);
+    return isMapType;
   }
   else if (type === 'tuple') {
     return isArrayType;
   }
   else if (type === 'regex') {
-    return createIsStrictObjectOfType(RegExp);
+    return isRegExpType;
   }
   else {
     switch (type) {
-      case 'null': return isStrictNullValue;
-      case 'boolean': return isStrictBooleanType;
+      case 'null': return isNullValue;
+      case 'boolean': return isBooleanType;
       case 'integer': return isIntegerType;
       case 'bigint': return isBigIntType;
       case 'number': return isNumberType;
