@@ -22,18 +22,14 @@ function compileConst(schemaObj, jsonSchema) {
     compileConst);
   if (addError == null) return undefined;
 
-  if (isScalarType(constant)) {
+  if (constant === null || isScalarType(constant)) {
     return function validatePrimitiveConst(data, dataRoot) {
-      return constant === data
-        ? true
-        : addError(data);
+      return constant === data || addError(data);
     };
   }
   else {
     return function validatePrimitiveConst(data, dataRoot) {
-      return equalsDeep(constant, data)
-        ? true
-        : addError(data);
+      return equalsDeep(constant, data) || addError(data);
     };
   }
 }

@@ -1,6 +1,6 @@
 import {
   String_createRegExp,
-} from '../helpers/String';
+} from '../types/strings';
 
 import {
   isStringType,
