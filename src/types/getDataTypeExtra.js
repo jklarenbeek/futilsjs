@@ -11,7 +11,7 @@ import {
 } from './isDataTypeExtra';
 import { Array_getUnique } from '../helpers/Array';
 
-export function getBoolOrNumber(obj, def = undefined) {
+export function getBoolOrNumber(obj, def) {
   return isBoolOrNumber(obj) ? obj : def;
 }
 
@@ -49,16 +49,16 @@ export function getStringOrArrayUnique(obj, def) {
         : def;
 }
 
-export function getArrayOrSetLength(data) {
-  return data.constructor === Set
-    ? data.size
+export function getArrayOrSetLength(obj) {
+  return isStrictObjectOfType(obj, Set)
+    ? obj.size
     : isArrayishType(data)
-      ? data.length
+      ? obj.length
       : 0;
 }
 
 export function getArrayMinItems(obj, len, def) {
-  return isArrayishType(obj) && obj.length >= len
+  return getArrayOrSetLength(obj) >= len
     ? obj
     : def;
 }

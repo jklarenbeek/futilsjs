@@ -29,6 +29,7 @@ import {
   trueThat,
   isFn,
 } from '../types/isFunctionType';
+import { Object_forEach, getObjectAllKeys } from '../helpers/Object';
 
 function compileCheckBounds(schemaObj, jsonSchema) {
   function compileMaxProperties() {
@@ -176,6 +177,56 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
     }
     return valid;
   };
+}
+
+function compileHasProperty(schemaObj, key, value) {
+
+  // value typeof array
+  return function validateHasProperties(data, ) {
+    data
+  }
+}
+function compileDependencies(schemaObj, jsonSchema) {
+  const dependencies = getObjectishType(jsonSchema.dependencies);
+  if (dependencies == null) return undefined;
+
+  const depKeys = Object.keys(dependencies);
+  if (depKeys.length === 0) return undefined;
+
+  const member = schemaObj.createMember('dependencies', compileDependencies);
+  if (member == null) return undefined;
+
+  const validators = {};
+  return function validateDependencies(data, dataRoot) {
+    if (!isMapOrObject(data)) return true;
+    let valid = true;
+    let errors = 0;
+    if (data.constructor === Map) {
+      for (let i = 0; i < depKeys.length; ++i) {
+        if (errors > 32) break;
+        const key = depKeys[0];
+        if (data.has(key)) {
+          if (validators[key](data.get(key)) === false) {
+            valid = false;
+            errors++;
+          }
+        }
+      }
+    }
+    else {
+      for (let i = 0; i < depKeys.length; ++i) {
+        if (errors > 32) break;
+        const key = depKeys[0];
+        if (data.hasOwnProperty(key)) {
+          if (validators[key](data[key]) === false) {
+            valid = false;
+            errors++;
+          }
+        }
+      }
+    }
+    return valid;
+  }
 }
 
 export function compileObjectBasic(schemaObj, jsonSchema) {
