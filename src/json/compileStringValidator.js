@@ -14,7 +14,7 @@ function compileMinLength(schemaObj, jsonSchema) {
   const min = Math.max(getIntegerishType(jsonSchema.minLength, 0), 0);
   if (min === 0) return undefined;
 
-  const addError = schemaObj.createMemberError('minLength', min, compileMinLength);
+  const addError = schemaObj.createSingleErrorHandler('minLength', min, compileMinLength);
   if (addError == null) return undefined;
 
   return function validateStringMinLength(data) {
@@ -30,7 +30,7 @@ function compileMaxLength(schemaObj, jsonSchema) {
   const max = Math.max(getIntegerishType(jsonSchema.maxLength, 0), 0);
   if (max === 0) return undefined;
 
-  const addError = schemaObj.createMemberError('maxLength', max, compileMaxLength);
+  const addError = schemaObj.createSingleErrorHandler('maxLength', max, compileMaxLength);
   if (addError == null) return undefined;
 
   return function validateStringMaxLength(data) {
@@ -47,7 +47,7 @@ function compileStringPattern(schemaObj, jsonSchema) {
   const re = String_createRegExp(ptrn);
   if (re == null) return undefined;
 
-  const addError = schemaObj.createMemberError('pattern', ptrn, compileStringPattern);
+  const addError = schemaObj.createSingleErrorHandler('pattern', ptrn, compileStringPattern);
   if (addError == null) return undefined;
 
   return function validateStringPattern(data) {

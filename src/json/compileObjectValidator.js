@@ -36,7 +36,7 @@ function compileCheckBounds(schemaObj, jsonSchema) {
     const maxprops = getIntegerishType(jsonSchema.maxProperties);
     if (!(maxprops > 0)) return undefined;
 
-    const addError = schemaObj.createMemberError(
+    const addError = schemaObj.createSingleErrorHandler(
       'maxProperties',
       maxprops,
       compileMaxProperties);
@@ -53,7 +53,7 @@ function compileCheckBounds(schemaObj, jsonSchema) {
     const minprops = getIntegerishType(jsonSchema.minProperties);
     if (!(minprops > 0)) return undefined;
 
-    const addError = schemaObj.createMemberError(
+    const addError = schemaObj.createSingleErrorHandler(
       'minProperties',
       minprops,
       compileMinProperties);
@@ -106,7 +106,7 @@ function compileRequiredProperties(schemaObj, jsonSchema, checkBounds) {
 
   checkBounds = checkBounds || trueThat;
 
-  const addError = schemaObj.createMemberError(
+  const addError = schemaObj.createSingleErrorHandler(
     'requiredProperties',
     required,
     compileRequiredProperties);
@@ -147,7 +147,7 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
   }
   if (patterns.length === 0) return undefined;
 
-  const addError = schemaObj.createMemberError(
+  const addError = schemaObj.createSingleErrorHandler(
     'patternRequired',
     patterns,
     compileRequiredPatterns);
@@ -182,7 +182,7 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
 function compileDependencyArray(schemaObj, member, key, items) {
   if (items.length === 0) return undefined;
 
-  const addError = schemaObj.createMemberPairError(member, key, items, compileDependencyArray);
+  const addError = schemaObj.createPairErrorHandler(member, key, items, compileDependencyArray);
   if (addError == null) return undefined;
 
   return function validateDependencyArray(data) {
@@ -374,7 +374,7 @@ function compileObjectAdditionalProperty(schemaObj, additional) {
   if (additional === true) return undefined;
 
   if (additional === false) {
-    const addError = schemaObj.createMemberError(
+    const addError = schemaObj.createSingleErrorHandler(
       'additionalProperties',
       false,
       compileObjectAdditionalProperty);

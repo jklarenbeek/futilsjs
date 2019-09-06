@@ -39,7 +39,7 @@ function compileTypeSimple(schemaObj, jsonSchema) {
   const isDataType = createIsStrictDataType(type);
   if (!isDataType) return undefined;
 
-  const addError = schemaObj.createMemberError('type', type, compileTypeSimple);
+  const addError = schemaObj.createSingleErrorHandler('type', type, compileTypeSimple);
   if (!addError) return undefined;
 
   return function validateTypeSimple(data) {
@@ -68,7 +68,7 @@ function compileTypeArray(schemaObj, jsonSchema) {
   // if non has been found exit
   if (types.length === 0) return undefined;
 
-  const addError = schemaObj.createMemberError('type', names, compileTypeArray);
+  const addError = schemaObj.createSingleErrorHandler('type', names, compileTypeArray);
   if (!addError) return undefined;
 
   // if one has been found create a validator
@@ -117,14 +117,14 @@ function compileTypeBasic(schemaObj, jsonSchema) {
   const nullable = getBooleanishType(jsonSchema.nullable);
 
   const addRequiredError = required !== false
-    ? schemaObj.createMemberError(
+    ? schemaObj.createSingleErrorHandler(
       'required',
       true,
       compileTypeBasic)
     : undefined;
 
   const addNullableError = nullable != null
-    ? schemaObj.createMemberError(
+    ? schemaObj.createSingleErrorHandler(
       'nullable',
       nullable,
       compileTypeBasic)

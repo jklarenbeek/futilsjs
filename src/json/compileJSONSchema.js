@@ -111,7 +111,7 @@ class SchemaObject {
     return member;
   }
 
-  createMemberError(key, expected, ...rest) {
+  createSingleErrorHandler(key, expected, ...rest) {
     const self = this;
     const member = new SchemaMember(
       self,
@@ -136,7 +136,7 @@ class SchemaObject {
     return undefined;
   }
 
-  createMemberPairError(member, key, expected, ...rest) {
+  createPairErrorHandler(member, key, expected, ...rest) {
     const self = this;
     const submember = new SchemaMember(
       self,

@@ -33,7 +33,7 @@ function compileMinItems(schemaObj, jsonSchema) {
   const min = getIntegerishType(jsonSchema.minItems);
   if (!(min > 0)) return undefined;
 
-  const addError = schemaObj.createMemberError(
+  const addError = schemaObj.createSingleErrorHandler(
     'minItems',
     min,
     compileMinItems);
@@ -52,7 +52,7 @@ function compileMaxItems(schemaObj, jsonSchema) {
   const max = getIntegerishType(jsonSchema.maxItems);
   if (!(max > 0)) return undefined;
 
-  const addError = schemaObj.createMemberError(
+  const addError = schemaObj.createSingleErrorHandler(
     'maxItems',
     max,
     compileMaxItems);
@@ -71,7 +71,7 @@ function compileArrayUniqueness(schemaObj, jsonSchema) {
   const unique = getBooleanishType(jsonSchema.uniqueItems);
   if (unique !== true) return undefined;
 
-  const addError = schemaObj.createMemberError(
+  const addError = schemaObj.createSingleErrorHandler(
     'uniqueItems',
     unique,
     compileArrayUniqueness);
@@ -99,7 +99,7 @@ function compileArrayItemsBoolean(schemaObj, jsonSchema) {
   if (items === true) return trueThat;
   if (items !== false) return undefined;
 
-  const addError = schemaObj.createMemberError(
+  const addError = schemaObj.createSingleErrorHandler(
     'items',
     false,
     compileArrayItemsBoolean);
@@ -117,7 +117,7 @@ function compileArrayItemsBoolean(schemaObj, jsonSchema) {
 function compileArrayContainsBoolean(schemaObj, jsonSchema) {
   const contains = getBooleanishType(jsonSchema.contains);
   if (contains === true) {
-    const addError = schemaObj.createMemberError(
+    const addError = schemaObj.createSingleErrorHandler(
       'contains',
       true,
       compileArrayContainsBoolean);
@@ -132,7 +132,7 @@ function compileArrayContainsBoolean(schemaObj, jsonSchema) {
     };
   }
   if (contains === false) {
-    const addError = schemaObj.createMemberError(
+    const addError = schemaObj.createSingleErrorHandler(
       'contains',
       false,
       compileArrayContainsBoolean);

@@ -29,7 +29,7 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
   );
 
   if (emax != null) {
-    const addError = schemaObj.createMemberError(
+    const addError = schemaObj.createSingleErrorHandler(
       'exclusiveMaximum',
       emax,
       compileNumberMaximum,
@@ -54,7 +54,7 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
     }
   }
   else if (max != null) {
-    const addError = schemaObj.createMemberError(
+    const addError = schemaObj.createSingleErrorHandler(
       'maximum',
       max,
       compileNumberMaximum,
@@ -88,7 +88,7 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
   );
 
   if (emin != null) {
-    const addError = schemaObj.createMemberError(
+    const addError = schemaObj.createSingleErrorHandler(
       'exclusiveMinimum',
       emin,
       compileNumberMinimum,
@@ -113,7 +113,7 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
     }
   }
   else if (min != null) {
-    const addError = schemaObj.createMemberError(
+    const addError = schemaObj.createSingleErrorHandler(
       'minimum',
       min,
       compileNumberMinimum,
@@ -147,7 +147,7 @@ function compileNumberMultipleOf(schemaObj, jsonSchema) {
 
   if (mulOf == null) return undefined;
 
-  const addError = schemaObj.createMemberError(
+  const addError = schemaObj.createSingleErrorHandler(
     'multipleOf',
     mulOf,
     compileNumberMultipleOf,

@@ -13,7 +13,7 @@ function compileConst(schemaObj, jsonSchema) {
   const constant = jsonSchema.const;
   if (constant === undefined) return undefined;
 
-  const addError = schemaObj.createMemberError(
+  const addError = schemaObj.createSingleErrorHandler(
     'const',
     constant,
     compileConst);
@@ -48,7 +48,7 @@ function compileEnum(schemaObj, jsonSchema) {
     }
   }
 
-  const addError = schemaObj.createMemberError(
+  const addError = schemaObj.createSingleErrorHandler(
     'enum',
     enums,
     compileEnum);
