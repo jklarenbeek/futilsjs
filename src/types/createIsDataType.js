@@ -1,6 +1,5 @@
 import {
   isStrictBooleanType,
-  isStrictIntegerType,
   isStrictBigIntType,
   isStrictNumberType,
   isStrictNullValue,
@@ -11,6 +10,7 @@ import {
 
 import {
   isFn,
+  isIntegerType,
   isStringType,
   isArrayType,
   isObjectType,
@@ -43,7 +43,7 @@ export function createIsStrictDataType(type, format, isstrict = false) {
     switch (type) {
       case 'null': return isStrictNullValue;
       case 'boolean': return isStrictBooleanType;
-      case 'integer': return isStrictIntegerType;
+      case 'integer': return isIntegerType;
       case 'bigint': return isStrictBigIntType;
       case 'number': return isStrictNumberType;
       case 'string': return isStringType;

@@ -1,8 +1,5 @@
 import {
-  isStrictIntegerType,
-} from '../types/isDataType';
-
-import {
+  isIntegerType,
   isStringType,
   isArrayType,
   isBoolOrObjectType,
@@ -14,7 +11,7 @@ import {
 
 import {
   falseThat,
-} from '../types/isFunctionType';
+} from '../types/function';
 
 import {
   performance,
@@ -173,7 +170,7 @@ class SchemaObject {
     const self = this;
     const valid = member instanceof SchemaMember
       && (isStringType(key)
-        || isStrictIntegerType(key))
+        || isIntegerType(key))
       && isBoolOrObjectType(child);
     if (!valid) return undefined;
 

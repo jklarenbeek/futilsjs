@@ -3,11 +3,11 @@ import {
 } from '../types/isFunctionType';
 
 import {
+  isIntegerType,
   isStringType,
 } from '../types/core';
 
 import {
-  isStrictIntegerType,
   isStrictBigIntType,
   isStrictNumberType,
 } from '../types/isDataType';
@@ -272,7 +272,7 @@ export function createFormatNumberCompiler(name, format) {
       const rax = Number(format.maximum) || false;
 
       const isDataType = format.type === 'integer'
-        ? isStrictIntegerType
+        ? isIntegerType
         : format.type === 'bigint'
           ? isStrictBigIntType
           : format.type === 'number'
