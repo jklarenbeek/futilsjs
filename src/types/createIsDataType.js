@@ -6,25 +6,25 @@ import {
   isStrictStringType,
   isStrictNullValue,
   isStrictObjectType,
-  isObjectishType,
   isStrictObjectOfType,
-  isStrictArrayType,
   isArrayishType,
 } from './isDataType';
 
 import {
   isFn,
-} from './isFunctionType';
+  isArrayType,
+  isObjectType,
+} from './core';
 
 export function createIsStrictDataType(type, format, isstrict = false) {
   if (type === 'object') {
     return isstrict
       ? isStrictObjectType
-      : isObjectishType;
+      : isObjectType;
   }
   else if (type === 'array') {
     return isstrict
-      ? isStrictArrayType
+      ? isArrayType
       : isArrayishType;
   }
   else if (type === 'set') {
@@ -34,7 +34,7 @@ export function createIsStrictDataType(type, format, isstrict = false) {
     return createIsStrictObjectOfType(Map);
   }
   else if (type === 'tuple') {
-    return isStrictArrayType;
+    return isArrayType;
   }
   else if (type === 'regex') {
     return createIsStrictObjectOfType(RegExp);

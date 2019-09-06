@@ -5,9 +5,10 @@ import {
 
 // eslint-disable-next-line import/no-cycle
 import {
-  isObjectishType,
-  isStrictArrayType,
-} from '../types/isDataType';
+  isFn,
+  isArrayType,
+  isObjectType,
+} from '../types/core';
 
 import {
   isMapOrObject, isBoolOrObject,
@@ -28,7 +29,6 @@ import {
   fallbackFn,
   undefThat,
   trueThat,
-  isFn,
 } from '../types/isFunctionType';
 
 function compileCheckBounds(schemaObj, jsonSchema) {
@@ -223,7 +223,7 @@ function compileDependencies(schemaObj, jsonSchema) {
   for (let i = 0; i < depKeys.length; ++i) {
     const key = depKeys[i];
     const item = dependencies[key];
-    if (isStrictArrayType(item)) {
+    if (isArrayType(item)) {
       const validator = compileDependencyArray(schemaObj, member, key, item);
       if (validator != null) validators[key] = validator;
     }
@@ -415,7 +415,7 @@ export function compileObjectChildren(schemaObj, jsonSchema) {
 
     const childrenKeys = Object.keys(validatorChildren);
     return function validateProperties(data, dataRoot) {
-      if (isObjectishType(data)) {
+      if (isObjectType(data)) {
         const dataKeys = Object.keys(data);
         if (dataKeys.length === 0) return true;
         let valid = true;
@@ -440,7 +440,7 @@ export function compileObjectChildren(schemaObj, jsonSchema) {
   const validateAdditional = fallbackFn(additionalValidator, trueThat);
 
   return function validateObjectChildren(data, dataRoot) {
-    if (isObjectishType(data)) {
+    if (isObjectType(data)) {
       const dataKeys = Object.keys(data);
       let valid = true;
       let errors = 0;

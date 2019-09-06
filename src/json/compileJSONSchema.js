@@ -1,8 +1,11 @@
 import {
   isStrictStringType,
-  isStrictArrayType,
   isStrictIntegerType,
 } from '../types/isDataType';
+
+import {
+  isArrayType,
+} from '../types/core';
 
 import {
   getStrictString,
@@ -126,7 +129,7 @@ class SchemaObject {
         return self.addErrorSingle(member, data, meta);
       };
     }
-    else if (isStrictArrayType(key)) {
+    else if (isArrayType(key)) {
       self.members.push(...key);
       return function addErrorPair(dataKey, data, ...meta) {
         return self.addErrorPair(member, dataKey, data, meta);

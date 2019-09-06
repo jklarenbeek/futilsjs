@@ -29,8 +29,8 @@ $~/myprojectjs> npm install --save futilsjs
 This will do all the magick for you. Now you can use futilsjs by simply refering to it from your sourcecode like so:
 
 ```js
-import { isObjectishType } from 'futilsjs';
-const a = isObjectishType([]);
+import { isObjectType } from 'futilsjs';
+const a = isObjectType([]);
 console.log('an array is not a pure object ', a !== true);
 ```
 
