@@ -1,6 +1,8 @@
 
 
-import { Array_collapseShallow } from '../helpers/Array';
+import {
+  collapseShallowArray,
+} from '../types/arrays';
 import { isFn } from '../types/core';
 
 export class VNode {
@@ -27,7 +29,7 @@ export function getVNodeAttr(node) {
 
 export function VN(name, attributes, ...rest) {
   attributes = attributes || {};
-  const children = Array_collapseShallow(rest);
+  const children = collapseShallowArray(rest);
   return isFn(name)
     ? name(attributes, children)
     : new VNode(name, attributes, children);

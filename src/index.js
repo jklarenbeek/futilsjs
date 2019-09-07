@@ -31,6 +31,5 @@ export * from './types/getters';
 export * from './types/functions';
 export * from './types/objects';
 export * from './types/arrays';
-export * from './types/createIsDataType';
 
 export * from './json/index';
