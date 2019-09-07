@@ -1,42 +1,41 @@
 /* eslint-disable function-paren-newline */
 /* eslint-disable no-unused-vars */
 import {
-  getArrayMinItems,
-} from '../types/getDataTypeExtra';
-import { isPrimitiveType } from '../types/isDataType';
+  isScalarType,
+} from '../types/core';
+
+import {
+  getArrayTypeMinItems,
+} from '../types/getters';
 
 import {
   equalsDeep,
-} from '../helpers/Object';
+} from '../types/objects';
 
 function compileConst(schemaObj, jsonSchema) {
   const constant = jsonSchema.const;
   if (constant === undefined) return undefined;
 
-  const addError = schemaObj.createMemberError(
+  const addError = schemaObj.createSingleErrorHandler(
     'const',
     constant,
     compileConst);
   if (addError == null) return undefined;
 
-  if (isPrimitiveType(constant)) {
+  if (constant === null || isScalarType(constant)) {
     return function validatePrimitiveConst(data, dataRoot) {
-      return constant === data
-        ? true
-        : addError(data);
+      return constant === data || addError(data);
     };
   }
   else {
     return function validatePrimitiveConst(data, dataRoot) {
-      return equalsDeep(constant, data)
-        ? true
-        : addError(data);
+      return equalsDeep(constant, data) || addError(data);
     };
   }
 }
 
 function compileEnum(schemaObj, jsonSchema) {
-  const enums = getArrayMinItems(jsonSchema.enum, 1);
+  const enums = getArrayTypeMinItems(jsonSchema.enum, 1);
   if (enums == null) return undefined;
 
   let hasObjects = false;
@@ -48,7 +47,7 @@ function compileEnum(schemaObj, jsonSchema) {
     }
   }
 
-  const addError = schemaObj.createMemberError(
+  const addError = schemaObj.createSingleErrorHandler(
     'enum',
     enums,
     compileEnum);

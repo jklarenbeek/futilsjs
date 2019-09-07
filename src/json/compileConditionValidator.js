@@ -1,15 +1,15 @@
 import {
   fallbackFn,
-} from '../types/isFunctionType';
+} from '../types/functions';
 
 import {
-  getObjectishType,
-} from '../types/getDataType';
+  getObjectType,
+} from '../types/getters';
 
 export function compileConditionSchema(schemaObj, jsonSchema) {
-  const jsif = getObjectishType(jsonSchema.if);
-  const jsthen = getObjectishType(jsonSchema.then);
-  const jselse = getObjectishType(jsonSchema.else);
+  const jsif = getObjectType(jsonSchema.if);
+  const jsthen = getObjectType(jsonSchema.then);
+  const jselse = getObjectType(jsonSchema.else);
   if (jsif == null) return undefined;
   if (jsthen == null && jselse == null) return undefined;
 

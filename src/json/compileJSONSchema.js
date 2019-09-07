@@ -1,20 +1,21 @@
 import {
-  isStrictStringType,
-  isStrictArrayType,
-  isStrictIntegerType,
-} from '../types/isDataType';
+  isIntegerType,
+  isStringType,
+  isArrayType,
+  isBoolOrObjectType,
+} from '../types/core';
 
 import {
-  getStrictString,
-} from '../types/getDataType';
+  getStringType,
+} from '../types/getters';
 
 import {
   falseThat,
-} from '../types/isFunctionType';
+} from '../types/functions';
 
 import {
   performance,
-} from '../helpers/performance';
+} from '../types/perf';
 
 import {
   compileSchemaObject,
@@ -24,9 +25,6 @@ import {
   JSONPointer_concatPath,
 } from './pointer';
 
-import {
-  isBoolOrObject,
-} from '../types/isDataTypeExtra';
 
 class SchemaError {
   constructor(timeStamp, member, key, value, rest) {
@@ -111,7 +109,7 @@ class SchemaObject {
     return member;
   }
 
-  createMemberError(key, expected, ...rest) {
+  createSingleErrorHandler(key, expected, ...rest) {
     const self = this;
     const member = new SchemaMember(
       self,
@@ -120,13 +118,13 @@ class SchemaObject {
       rest,
     );
 
-    if (isStrictStringType(key)) {
+    if (isStringType(key)) {
       self.members.push(key);
       return function addErrorSingle(data, ...meta) {
         return self.addErrorSingle(member, data, meta);
       };
     }
-    else if (isStrictArrayType(key)) {
+    else if (isArrayType(key)) {
       self.members.push(...key);
       return function addErrorPair(dataKey, data, ...meta) {
         return self.addErrorPair(member, dataKey, data, meta);
@@ -136,10 +134,27 @@ class SchemaObject {
     return undefined;
   }
 
+  createPairErrorHandler(member, key, expected, ...rest) {
+    const self = this;
+    const submember = new SchemaMember(
+      self,
+      JSONPointer_concatPath(member.memberKey, key),
+      expected,
+      rest,
+    );
+
+    if (!isStringType(key)) return undefined;
+
+    self.members.push(submember.memberKey);
+    return function addErrorPair(dataKey, data, ...meta) {
+      return self.addErrorPair(submember, dataKey, data, meta);
+    };
+  }
+
   createSingleValidator(key, child, ...rest) {
     const self = this;
-    if (!isStrictStringType(key)) return undefined;
-    if (!isBoolOrObject(child)) return undefined;
+    if (!isStringType(key)) return undefined;
+    if (!isBoolOrObjectType(child)) return undefined;
 
     const childObj = new SchemaObject(
       self.schemaRoot,
@@ -154,9 +169,9 @@ class SchemaObject {
   createPairValidator(member, key, child, ...rest) {
     const self = this;
     const valid = member instanceof SchemaMember
-      && (isStrictStringType(key)
-        || isStrictIntegerType(key))
-      && isBoolOrObject(child);
+      && (isStringType(key)
+        || isIntegerType(key))
+      && isBoolOrObjectType(child);
     if (!valid) return undefined;
 
     const childObj = new SchemaObject(
@@ -182,7 +197,7 @@ class SchemaMember {
 const registeredDocuments = {};
 
 export function compileJSONSchema(baseUri, json) {
-  baseUri = getStrictString(baseUri, '');
+  baseUri = getStringType(baseUri, '');
   // TODO: test if valid baseUri
   if (registeredDocuments.hasOwnProperty(baseUri)) {
     return false;
@@ -201,7 +216,7 @@ export function compileJSONSchema(baseUri, json) {
 }
 
 export function getJSONSchema(baseUri) {
-  baseUri = getStrictString(baseUri, '');
+  baseUri = getStringType(baseUri, '');
   if (registeredDocuments.hasOwnProperty(baseUri)) {
     return registeredDocuments[baseUri];
   }

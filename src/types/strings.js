@@ -28,7 +28,7 @@ export function String_createRegExp(pattern, force = false) {
     if (pattern != null) {
       if (pattern.constructor === RegExp) {
         return force === true
-          ? new RegExp(pattern)
+          ? new RegExp(pattern.toString())
           : pattern;
       }
       if (pattern.constructor === String) {

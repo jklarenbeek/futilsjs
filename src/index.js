@@ -26,11 +26,10 @@ export * from './vnode/base';
 export * from './vnode/html';
 export * from './vnode/app';
 
-export * from './types/isDataType';
-export * from './types/isDataTypeExtra';
-export * from './types/getDataType';
-export * from './types/getDataTypeExtra';
-export * from './types/isFunctionType';
-export * from './types/createIsDataType';
+export * from './types/core';
+export * from './types/getters';
+export * from './types/functions';
+export * from './types/objects';
+export * from './types/arrays';
 
 export * from './json/index';

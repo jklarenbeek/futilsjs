@@ -1,24 +1,24 @@
 import {
+  isStringType,
+} from '../types/core';
+
+import {
+  getIntishType,
+} from '../types/getters';
+
+import {
   String_createRegExp,
-} from '../helpers/String';
-
-import {
-  isStrictStringType,
-} from '../types/isDataType';
-
-import {
-  getIntegerishType,
-} from '../types/getDataType';
+} from '../types/strings';
 
 function compileMinLength(schemaObj, jsonSchema) {
-  const min = Math.max(getIntegerishType(jsonSchema.minLength, 0), 0);
+  const min = Math.max(getIntishType(jsonSchema.minLength, 0), 0);
   if (min === 0) return undefined;
 
-  const addError = schemaObj.createMemberError('minLength', min, compileMinLength);
+  const addError = schemaObj.createSingleErrorHandler('minLength', min, compileMinLength);
   if (addError == null) return undefined;
 
   return function validateStringMinLength(data) {
-    return isStrictStringType(data)
+    return isStringType(data)
       ? data.length >= min
         ? true
         : addError(data.length)
@@ -27,14 +27,14 @@ function compileMinLength(schemaObj, jsonSchema) {
 }
 
 function compileMaxLength(schemaObj, jsonSchema) {
-  const max = Math.max(getIntegerishType(jsonSchema.maxLength, 0), 0);
+  const max = Math.max(getIntishType(jsonSchema.maxLength, 0), 0);
   if (max === 0) return undefined;
 
-  const addError = schemaObj.createMemberError('maxLength', max, compileMaxLength);
+  const addError = schemaObj.createSingleErrorHandler('maxLength', max, compileMaxLength);
   if (addError == null) return undefined;
 
   return function validateStringMaxLength(data) {
-    return isStrictStringType(data)
+    return isStringType(data)
       ? data.length <= max
         ? true
         : addError(data.length)
@@ -47,11 +47,11 @@ function compileStringPattern(schemaObj, jsonSchema) {
   const re = String_createRegExp(ptrn);
   if (re == null) return undefined;
 
-  const addError = schemaObj.createMemberError('pattern', ptrn, compileStringPattern);
+  const addError = schemaObj.createSingleErrorHandler('pattern', ptrn, compileStringPattern);
   if (addError == null) return undefined;
 
   return function validateStringPattern(data) {
-    return isStrictStringType(data)
+    return isStringType(data)
       ? re.test(data)
         ? true
         : addError(data)

@@ -1,49 +1,82 @@
 import {
-  isStrictTypedArray,
-} from '../types/isDataType';
+  isScalarType,
+  isComplexType,
+  isFn,
+  isBooleanType,
+  isTypedArray,
+} from './core';
 
-/* eslint-disable prefer-rest-params */
+export function forOfObject(obj, fn) {
+  if (isComplexType(obj)) {
+    if (obj.constructor === Map) {
+      for (const [k, v] of obj)
+        fn(v, k, obj);
+    }
+    else {
+      const keys = Object.keys(obj);
+      for (let i = 0; i < keys.length; ++i) {
+        const k = keys[i];
+        fn(obj[k], k, obj);
+      }
+    }
+  }
+}
+
+export function getObjectItem(obj, key) {
+  return isComplexType(obj)
+    ? obj.constructor === Map
+      ? obj.get(key)
+      : obj[key]
+    : undefined;
+}
+
+export function setObjectItem(obj, key, value) {
+  if (isComplexType(obj)) {
+    if (obj.constructor === Map)
+      obj.set(key, value);
+    else
+      obj[key] = value;
+  }
+}
 
 export function getObjectAllKeys(obj) {
-  if (obj != null && typeof obj === 'object') {
-    return Object.keys(obj);
-  }
-  return undefined;
+  return isComplexType(obj)
+    ? obj.constructor === Map
+      ? Array.from(obj.keys())
+      : Object.keys(obj)
+    : undefined;
 }
 
 export function getObjectAllValues(obj) {
-  if (obj != null && typeof obj === 'object') {
-    const keys = Object.keys(obj);
-    const arr = new Array(keys.length);
-    for (let i = 0; i < keys.length; ++i) {
-      arr[i] = obj[keys[i]];
-    }
-    return arr;
-  }
-  return undefined;
+  return isComplexType(obj)
+    ? obj.constructor === Map
+      ? Array.from(obj.values())
+      : Object.values(obj)
+    : undefined;
 }
 
 export function getObjectFirstKey(obj) {
-  if (obj != null && typeof obj === 'object') {
-    return Object.keys(obj)[0];
-  }
-  return undefined;
+  return isComplexType(obj)
+    ? obj.constructor === Map
+      ? obj.keys().next().value
+      : Object.keys(obj)[0]
+    : undefined;
 }
 
 export function getObjectFirstItem(obj) {
-  if (obj != null && typeof obj === 'object') {
-    const key = Object.keys(obj)[0];
-    if (key) return obj[key];
-  }
-  return undefined;
+  return isComplexType(obj)
+    ? obj.constructor === Map
+      ? obj.values().next().value
+      : Object.values(obj)[0]
+    : undefined;
 }
 
 export function getObjectCountItems(obj) {
-  if (obj == null) return 0;
-  if (typeof obj === 'object') {
-    return Object.keys(obj).length;
-  }
-  return 0;
+  return isComplexType(obj)
+    ? obj.constructor === Map
+      ? obj.size
+      : Object.keys(obj).length
+    : 0;
 }
 
 export function isObjectEmpty(obj) {
@@ -54,52 +87,59 @@ export function equalsDeep(target, source) {
   if (target === source) return true;
   if (target == null) return false;
   if (source == null) return false;
-  if (target === false || source === false) return false;
-  if (target === true || source === true) return false;
+  if (isBooleanType(target)) return false;
+  if (isBooleanType(source)) return false;
 
-  if (typeof target === 'function') {
-    if (typeof source === 'function')
-      return (target.toString() === source.toString());
-    else
-      return false;
-  }
+  if (isFn(target))
+    return target.toString() === source.toString();
 
-  if (typeof target !== 'object') return false;
+  if (isScalarType(target))
+    return false;
 
-  if (target.constructor !== source.constructor) return false;
+  if (target.constructor !== source.constructor)
+    return false;
 
   if (target.constructor === Object) {
     const tks = Object.keys(target);
     const sks = Object.keys(source);
-    if (tks.length !== sks.length) return false;
+    if (tks.length !== sks.length)
+      return false;
     for (let i = 0; i < tks.length; ++i) {
       const key = tks[i];
-      if (equalsDeep(target[key], source[key]) === false) return false;
+      if (!equalsDeep(target[key], source[key]))
+        return false;
     }
     return true;
   }
 
   if (target.constructor === Array) {
-    if (target.length !== source.length) return false;
+    if (target.length !== source.length)
+      return false;
     for (let i = 0; i < target.length; ++i) {
-      if (equalsDeep(target[i], source[i]) === false) return false;
+      if (!equalsDeep(target[i], source[i]))
+        return false;
     }
     return true;
   }
 
   if (target.constructor === Map) {
-    if (target.size !== source.size) return false;
+    if (target.size !== source.size)
+      return false;
     for (const [key, value] of target) {
-      if (source.has(key) === false) return false;
-      if (equalsDeep(value, source[key]) === false) return false;
+      if (source.has(key) === false)
+        return false;
+      if (!equalsDeep(value, source[key]))
+        return false;
     }
     return true;
   }
 
   if (target.constructor === Set) {
-    if (target.size !== source.size) return false;
+    if (target.size !== source.size)
+      return false;
     for (const value of target) {
-      if (source.has(value) === false) return false;
+      if (source.has(value) === false)
+        return false;
     }
     return true;
   }
@@ -108,10 +148,12 @@ export function equalsDeep(target, source) {
     return target.toString() === source.toString();
   }
 
-  if (isStrictTypedArray(target)) {
-    if (target.length !== source.length) return false;
+  if (isTypedArray(target)) {
+    if (target.length !== source.length)
+      return false;
     for (let i = 0; i < target.length; ++i) {
-      if (target[i] !== source[i]) return false;
+      if (target[i] !== source[i])
+        return false;
     }
     return true;
   }
@@ -124,7 +166,8 @@ export function equalsDeep(target, source) {
   if (tkeys.length === 0) return true;
   for (let i = 0; i < tkeys.length; ++i) {
     const key = tkeys[i];
-    if (equalsDeep(target[key], source[key]) === false) return false;
+    if (!equalsDeep(target[key], source[key]))
+      return false;
   }
   return true;
 }
@@ -133,11 +176,8 @@ export function cloneObject(target, source) {
   return { ...target, ...source };
 }
 
-export function cloneDeep(target) {
-  if (target == null) return target;
-  if (target === true || target === false) return target;
-  // if (typeof target === 'function') return target;
-  if (typeof target !== 'object') return target;
+export function cloneDeep(target, force = false) {
+  if (!isComplexType(target)) return target;
 
   if (target.constructor === Object) {
     const obj = {};
@@ -163,15 +203,16 @@ export function cloneDeep(target) {
   }
 
   if (target.constructor === Set) {
-    return new Set(target);
+    return new Set(target); // TODO neither does this
   }
 
   if (target.constructor === RegExp) {
-    // NOTE: do we really have to do this?
-    return new RegExp(target.toString());
+    return force
+      ? new RegExp(target.toString())
+      : target;
   }
 
-  if (isStrictTypedArray(target)) {
+  if (isTypedArray(target)) {
     // hmmm, isnt there a faster way?
     const arr = new target.constructor(target.length);
     for (let i = 0; i < arr.length; ++i) {
@@ -182,39 +223,17 @@ export function cloneDeep(target) {
 
   const tobj = {};
   const tks = Object.keys(target);
-  if (tks.length === 0) return target; // we don't understand this
   for (let i = 0; i < tks.length; ++i) {
     const tk = tks[i];
     tobj[tk] = cloneDeep(target[tk]);
   }
+
   // TODO: change prototype of new object to target!
 
   return tobj;
 }
 
-export function cloneDeep2(o) {
-  if (o == null || typeof o !== 'object') {
-    return o;
-  }
-
-  if (o.constructor === Array) {
-    const arr = [];
-    for (let i = 0; i < o.length; ++i) {
-      arr[i] = cloneDeep2(o[i]);
-    }
-    return arr;
-  }
-  else {
-    const obj = {};
-    const keys = Object.keys(o);
-    for (let i = 0; i < keys.length; ++i) {
-      const key = keys[i];
-      obj[i] = cloneDeep2(o[key]);
-    }
-    return obj;
-  }
-}
-
+/** obsolete */
 export function mergeObjects(target, ...rest) {
   const ln = rest.length;
 

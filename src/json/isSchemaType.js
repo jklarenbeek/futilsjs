@@ -5,14 +5,14 @@ import {
 } from './registerFormatCompiler';
 
 import {
-  isObjectishType,
-  isStrictArrayType,
-  isStrictStringType,
-} from '../types/isDataType';
+  isStringType,
+  isArrayType,
+  isObjectType,
+} from '../types/core';
 
 import {
-  getBooleanishType,
-} from '../types/getDataType';
+  getBoolishType,
+} from '../types/getters';
 
 export function isOfSchemaType(schema, type) {
   if (type == null) return false;
@@ -52,7 +52,7 @@ export function isBooleanSchema(schema) {
 }
 export function isNumberSchema(schema) {
   const isknown = isOfStrictSchemaType(schema, 'number');
-  const isformat = isStrictStringType(schema.format)
+  const isformat = isStringType(schema.format)
     && floatFormats[schema.format] != null;
 
   const isconst = (Number(schema.const) || false) !== false;
@@ -108,36 +108,36 @@ export function isPrimitiveSchema(schema) {
 export function isObjectSchema(schema) {
   const isknown = isOfStrictSchemaType(schema, 'object');
 
-  const isprops = isObjectishType(schema.properties)
-    || isObjectishType(schema.patternProperties)
-    || isObjectishType(schema.additionalProperties);
+  const isprops = isObjectType(schema.properties)
+    || isObjectType(schema.patternProperties)
+    || isObjectType(schema.additionalProperties);
 
   const isvalid = schema.type == null
-      && (isObjectishType(schema.const) || isObjectishType(schema.default));
+      && (isObjectType(schema.const) || isObjectType(schema.default));
   return isknown || isprops || isvalid;
 }
 export function isMapSchema(schema) {
   const isknown = isOfStrictSchemaType(schema, 'map');
-  const ismap = isStrictArrayType(schema.properties);
+  const ismap = isArrayType(schema.properties);
   return isknown || ismap;
 }
 export function isArraySchema(schema) {
   const isknown = isOfStrictSchemaType(schema === 'array');
-  const isitems = isObjectishType(schema.items);
-  const iscontains = isObjectishType(schema.contains);
+  const isitems = isObjectType(schema.items);
+  const iscontains = isObjectType(schema.contains);
   const isvalid = schema.type == null
-    && (isStrictArrayType(schema.const)
-      || isStrictArrayType(schema.default));
+    && (isArrayType(schema.const)
+      || isArrayType(schema.default));
   return isknown || isitems || iscontains || isvalid;
 }
 export function isSetSchema(schema) {
   const isknown = isOfStrictSchemaType(schema, 'set');
-  const isunique = getBooleanishType(schema.uniqueItems, false);
+  const isunique = getBoolishType(schema.uniqueItems, false);
   return isknown || isunique;
 }
 export function isTupleSchema(schema) {
   const isknown = isOfStrictSchemaType(schema, 'tuple');
-  const istuple = isStrictArrayType(schema.items);
+  const istuple = isArrayType(schema.items);
   const isadditional = schema.type == null
     && schema.hasOwnProperty('additionalItems');
   return isknown || istuple || isadditional;

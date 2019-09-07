@@ -1,27 +1,21 @@
 /* eslint-disable function-paren-newline */
 import {
+  isObjectTyped,
+} from '../types/core';
+
+import {
+  getBoolishType,
+  getStringType,
+  getBoolOrArrayTyped,
+  getArrayTypeOfSet,
+} from '../types/getters';
+
+import {
   falseThat,
   trueThat,
   addFunctionToArray,
-} from '../types/isFunctionType';
-
-import {
-  isStrictObjectType,
-} from '../types/isDataType';
-
-import {
-  getBooleanishType,
-  getStrictString,
-} from '../types/getDataType';
-
-import {
-  getBoolOrArray,
-  getArrayUnique,
-} from '../types/getDataTypeExtra';
-
-import {
-  createIsStrictDataType,
-} from '../types/createIsDataType';
+  createIsDataTypeHandler,
+} from '../types/functions';
 
 import { compileFormatBasic } from './compileFormatValidator';
 import { compileEnumBasic } from './compileEnumValidator';
@@ -33,13 +27,13 @@ import { compileCombineSchema } from './compileCombineValidator';
 import { compileConditionSchema } from './compileConditionValidator';
 
 function compileTypeSimple(schemaObj, jsonSchema) {
-  const type = getStrictString(jsonSchema.type);
+  const type = getStringType(jsonSchema.type);
   if (type == null) return undefined;
 
-  const isDataType = createIsStrictDataType(type);
+  const isDataType = createIsDataTypeHandler(type);
   if (!isDataType) return undefined;
 
-  const addError = schemaObj.createMemberError('type', type, compileTypeSimple);
+  const addError = schemaObj.createSingleErrorHandler('type', type, compileTypeSimple);
   if (!addError) return undefined;
 
   return function validateTypeSimple(data) {
@@ -50,7 +44,7 @@ function compileTypeSimple(schemaObj, jsonSchema) {
 }
 
 function compileTypeArray(schemaObj, jsonSchema) {
-  const schemaType = getArrayUnique(jsonSchema.type);
+  const schemaType = getArrayTypeOfSet(jsonSchema.type);
   if (schemaType == null) return undefined;
 
   // collect all testable data types
@@ -58,7 +52,7 @@ function compileTypeArray(schemaObj, jsonSchema) {
   const names = [];
   for (let i = 0; i < schemaType.length; ++i) {
     const type = schemaType[i];
-    const callback = createIsStrictDataType(type);
+    const callback = createIsDataTypeHandler(type);
     if (callback) {
       types.push(callback);
       names.push(type);
@@ -68,7 +62,7 @@ function compileTypeArray(schemaObj, jsonSchema) {
   // if non has been found exit
   if (types.length === 0) return undefined;
 
-  const addError = schemaObj.createMemberError('type', names, compileTypeArray);
+  const addError = schemaObj.createSingleErrorHandler('type', names, compileTypeArray);
   if (!addError) return undefined;
 
   // if one has been found create a validator
@@ -113,18 +107,18 @@ function compileTypeBasic(schemaObj, jsonSchema) {
   const fnType = compileTypeSimple(schemaObj, jsonSchema)
     || compileTypeArray(schemaObj, jsonSchema);
 
-  const required = getBoolOrArray(jsonSchema.required, false);
-  const nullable = getBooleanishType(jsonSchema.nullable);
+  const required = getBoolOrArrayTyped(jsonSchema.required, false);
+  const nullable = getBoolishType(jsonSchema.nullable);
 
   const addRequiredError = required !== false
-    ? schemaObj.createMemberError(
+    ? schemaObj.createSingleErrorHandler(
       'required',
       true,
       compileTypeBasic)
     : undefined;
 
   const addNullableError = nullable != null
-    ? schemaObj.createMemberError(
+    ? schemaObj.createSingleErrorHandler(
       'nullable',
       nullable,
       compileTypeBasic)
@@ -206,7 +200,7 @@ function compileTypeBasic(schemaObj, jsonSchema) {
 export function compileSchemaObject(schemaObj, jsonSchema) {
   if (jsonSchema === true) return trueThat;
   if (jsonSchema === false) return falseThat;
-  if (!isStrictObjectType(jsonSchema)) return falseThat;
+  if (!isObjectTyped(jsonSchema)) return falseThat;
   if (Object.keys(jsonSchema).length === 0) return trueThat;
 
   const fnType = compileTypeBasic(schemaObj, jsonSchema);

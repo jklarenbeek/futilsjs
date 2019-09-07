@@ -1,17 +1,10 @@
 import {
-  fallbackFn,
-} from '../types/isFunctionType';
-
-import {
-  isStrictStringType,
-  isStrictIntegerType,
-  isStrictBigIntType,
-  isStrictNumberType,
-} from '../types/isDataType';
-
-import {
-  isStringOrDate,
-} from '../types/isDataTypeExtra';
+  isNumberType,
+  isIntegerType,
+  isBigIntType,
+  isStringType,
+  isStringOrDateType,
+} from '../types/core';
 
 //#region number definitions
 /* eslint-disable quote-props */
@@ -171,87 +164,78 @@ export const dateTimeFormats = {
 
 //#region string definitions
 function compileDateFormat(schemaObj, jsonSchema) {
-  if (jsonSchema.format === 'date-time') {
-    const fmin = jsonSchema.formatMinimum;
-    const femin = jsonSchema.formatExclusiveMinimum;
-    const min = Date.parse(fmin) || undefined;
-    const emin = femin === true ? min
-      : Date.parse(femin) || undefined;
+  if (jsonSchema.format !== 'date-time')
+    return undefined;
 
-    const fmax = jsonSchema.formatMaximum;
-    const femax = jsonSchema.formatExclusiveMaximum;
-    const max = Date.parse(fmax);
-    const emax = femax === true ? max
-      : Date.parse(femax) || undefined;
+  const fmin = jsonSchema.formatMinimum;
+  const femin = jsonSchema.formatExclusiveMinimum;
+  const min = Date.parse(fmin) || undefined;
+  const emin = femin === true ? min
+    : Date.parse(femin) || undefined;
 
-    // eslint-disable-next-line no-inner-declarations
-    function compileMinimum() {
-      if (emin) {
-        const addError = schemaObj.createMemberError('formatExclusiveMinimum', emin, compileDateFormat);
-        return function formatExclusiveMinimum(date) {
-          if (!(date > emin)) return addError(date);
-          return true;
-        };
-      }
-      else if (min) {
-        const addError = schemaObj.createMemberError('formatMinimum', min, compileDateFormat);
-        return function formatMinimum(date) {
-          if (!(date >= min)) return addError(date);
-          return true;
-        };
-      }
-      return undefined;
-    }
+  const fmax = jsonSchema.formatMaximum;
+  const femax = jsonSchema.formatExclusiveMaximum;
+  const max = Date.parse(fmax);
+  const emax = femax === true ? max
+    : Date.parse(femax) || undefined;
 
-    // eslint-disable-next-line no-inner-declarations
-    function compileMaximum() {
-      if (emax) {
-        const addError = schemaObj.createMemberError('formatExclusiveMaximum', emax, compileDateFormat);
-        return function formatExclusiveMaximum(date) {
-          if (!(date < emax)) return addError(date);
-          return true;
-        };
-      }
-      else if (max) {
-        const addError = schemaObj.createMemberError('formatMaximum', max, compileDateFormat);
-        return function formatMaximum(date) {
-          if (!(date <= max)) return addError(date);
-          return true;
-        };
-      }
-      return undefined;
-    }
-
-    // eslint-disable-next-line no-inner-declarations
-    function compileDateType() {
-      const addError = schemaObj.createMemberError('format', 'date', compileDateFormat);
-      return function parseDate(data) {
-        if (isStringOrDate(data)) {
-          const date = Date.parse(data) || false;
-          if (date === false) return addError(
-            'format',
-            'date',
-            data,
-          );
-          return date;
-        }
+  // eslint-disable-next-line no-inner-declarations
+  function compileMinimum() {
+    if (emin) {
+      const addError = schemaObj.createSingleErrorHandler('formatExclusiveMinimum', emin, compileDateFormat);
+      return function formatExclusiveMinimum(date) {
+        if (!(date > emin)) return addError(date);
         return true;
       };
     }
+    else if (min) {
+      const addError = schemaObj.createSingleErrorHandler('formatMinimum', min, compileDateFormat);
+      return function formatMinimum(date) {
+        if (!(date >= min)) return addError(date);
+        return true;
+      };
+    }
+    return undefined;
+  }
 
-    const parseDate = compileDateType();
+  // eslint-disable-next-line no-inner-declarations
+  function compileMaximum() {
+    if (emax) {
+      const addError = schemaObj.createSingleErrorHandler('formatExclusiveMaximum', emax, compileDateFormat);
+      return function formatExclusiveMaximum(date) {
+        if (!(date < emax)) return addError(date);
+        return true;
+      };
+    }
+    else if (max) {
+      const addError = schemaObj.createSingleErrorHandler('formatMaximum', max, compileDateFormat);
+      return function formatMaximum(date) {
+        if (!(date <= max)) return addError(date);
+        return true;
+      };
+    }
+    return undefined;
+  }
 
-    const isMinimum = fallbackFn(compileMinimum());
-    const isMaximum = fallbackFn(compileMaximum());
-
-    return function formatDate(data) {
-      const date = parseDate(data);
-      if (date === false) return false;
-      if (date === true) return true;
-      return isMinimum(date) && isMaximum(date);
+  // eslint-disable-next-line no-inner-declarations
+  function compileDateType() {
+    const addError = schemaObj.createSingleErrorHandler('format', 'date', compileDateFormat);
+    return function validateDate(data) {
+      if (isStringOrDateType(data)) {
+        const date = Date.parse(data) || false;
+        return (date !== false)
+          ? date
+          : addError(data);
+      }
+      return true;
     };
   }
-  return undefined;
+
+  return [
+    compileDateType(),
+    compileMinimum(),
+    compileMaximum(),
+  ];
 }
 
 export const stringFormats = {
@@ -269,11 +253,11 @@ export function createFormatNumberCompiler(name, format) {
       const rax = Number(format.maximum) || false;
 
       const isDataType = format.type === 'integer'
-        ? isStrictIntegerType
+        ? isIntegerType
         : format.type === 'bigint'
-          ? isStrictBigIntType
+          ? isBigIntType
           : format.type === 'number'
-            ? isStrictNumberType
+            ? isNumberType
             : undefined;
 
       if (isDataType) {
@@ -295,7 +279,7 @@ export function createFormatNumberCompiler(name, format) {
             : _fae;
 
           if (fie && fae) {
-            const addError = schemaObj.createMemberError(
+            const addError = schemaObj.createSingleErrorHandler(
               ['formatExclusiveMinimum', 'formatExclusiveMaximum'],
               [fie, fae],
               compileFormatNumber,
@@ -307,7 +291,7 @@ export function createFormatNumberCompiler(name, format) {
             };
           }
           else if (fie && fax) {
-            const addError = schemaObj.createMemberError(
+            const addError = schemaObj.createSingleErrorHandler(
               ['formatExclusiveMinimum', 'formatMaximum'],
               [fie, fax],
               compileFormatNumber,
@@ -319,7 +303,7 @@ export function createFormatNumberCompiler(name, format) {
             };
           }
           else if (fae && fix) {
-            const addError = schemaObj.createMemberError(
+            const addError = schemaObj.createSingleErrorHandler(
               ['formatMinimum', 'formatExclusiveMaximum'],
               [fix, fae],
               compileFormatNumber,
@@ -331,7 +315,7 @@ export function createFormatNumberCompiler(name, format) {
             };
           }
           else if (fix && fax) {
-            const addError = schemaObj.createMemberError(
+            const addError = schemaObj.createSingleErrorHandler(
               ['formatMinimum', 'formatMaximum'],
               [fie, fae],
               compileFormatNumber,
@@ -343,7 +327,7 @@ export function createFormatNumberCompiler(name, format) {
             };
           }
           else if (fie) {
-            const addError = schemaObj.createMemberError(
+            const addError = schemaObj.createSingleErrorHandler(
               'formatExclusiveMinimum',
               fie,
               compileFormatNumber,
@@ -355,7 +339,7 @@ export function createFormatNumberCompiler(name, format) {
             };
           }
           else if (fae) {
-            const addError = schemaObj.createMemberError(
+            const addError = schemaObj.createSingleErrorHandler(
               'formatExclusiveMaximum',
               fae,
               compileFormatNumber,
@@ -367,7 +351,7 @@ export function createFormatNumberCompiler(name, format) {
             };
           }
           else if (fax) {
-            const addError = schemaObj.createMemberError(
+            const addError = schemaObj.createSingleErrorHandler(
               'formatMaximum',
               fax,
               compileFormatNumber,
@@ -379,7 +363,7 @@ export function createFormatNumberCompiler(name, format) {
             };
           }
           else if (fix) {
-            const addError = schemaObj.createMemberError(
+            const addError = schemaObj.createSingleErrorHandler(
               'formatMinimum',
               fix,
               compileFormatNumber,
@@ -433,7 +417,7 @@ export function registerFormatCompiler(name, jsonSchema) {
 }
 
 export function getSchemaFormatCompiler(name) {
-  if (isStrictStringType(name))
+  if (isStringType(name))
     return registeredSchemaFormatters[name];
   else
     return undefined;

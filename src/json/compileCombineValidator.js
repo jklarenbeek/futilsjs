@@ -1,19 +1,19 @@
 import {
-  falseThat,
   isFn,
+} from '../types/core';
+
+import {
+  getArrayType,
+  getBoolOrObjectType,
+} from '../types/getters';
+
+import {
+  falseThat,
   trueThat,
-} from '../types/isFunctionType';
-
-import {
-  getStrictArray,
-} from '../types/getDataType';
-
-import {
-  getBoolOrObject,
-} from '../types/getDataTypeExtra';
+} from '../types/functions';
 
 function compileAllOf(schemaObj, jsonSchema) {
-  const allOf = getStrictArray(jsonSchema.allOf);
+  const allOf = getArrayType(jsonSchema.allOf);
   if (allOf == null) return undefined;
 
   const member = schemaObj.createMember('allOf', compileAllOf);
@@ -45,7 +45,7 @@ function compileAllOf(schemaObj, jsonSchema) {
 }
 
 function compileAnyOf(schemaObj, jsonSchema) {
-  const anyOf = getStrictArray(jsonSchema.anyOf);
+  const anyOf = getArrayType(jsonSchema.anyOf);
   if (anyOf == null) return undefined;
 
   const member = schemaObj.createMember('anyOf', compileAnyOf);
@@ -78,7 +78,7 @@ function compileAnyOf(schemaObj, jsonSchema) {
 }
 
 function compileOneOf(schemaObj, jsonSchema) {
-  const oneOf = getStrictArray(jsonSchema.oneOf);
+  const oneOf = getArrayType(jsonSchema.oneOf);
   if (oneOf == null) return undefined;
 
   const member = schemaObj.createMember('oneOf', compileOneOf);
@@ -112,7 +112,7 @@ function compileOneOf(schemaObj, jsonSchema) {
 }
 
 function compileNotOf(schemaObj, jsonSchema) {
-  const notOf = getBoolOrObject(jsonSchema.not);
+  const notOf = getBoolOrObjectType(jsonSchema.not);
   if (notOf == null) return undefined;
   if (notOf === true) return falseThat;
   if (notOf === false) return trueThat;
