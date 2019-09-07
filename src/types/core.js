@@ -75,6 +75,15 @@ export function isBigIntType(data) {
 export function isStringType(data) {
   return typeof data === 'string';
 }
+
+export function isDateType(data) {
+  return isObjectOfType(data, Date);
+}
+
+export function isDateishType(data) {
+  return isDateType(data)
+    || !Number.isNaN(Date.parse(data));
+}
 //#endregion
 
 //#region array and set

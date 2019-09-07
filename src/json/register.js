@@ -1,4 +1,4 @@
-import formats from './format';
+import { getDefaultFormatCompilers } from './format/index';
 
 import {
   isNumberType,
@@ -147,10 +147,11 @@ export function createFormatNumberCompiler(name, format) {
 }
 
 export function registerDefaultFormatCompilers() {
-  const keys = Object.keys(formats);
+  const formatCompilers = getDefaultFormatCompilers();
+  const keys = Object.keys(formatCompilers);
   for (let i = 0; i < keys.length; ++i) {
     const key = keys[i];
-    const item = formats[key];
+    const item = formatCompilers[key];
     registerFormatCompiler(key, item);
   }
 }

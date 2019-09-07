@@ -1,3 +1,4 @@
+/* eslint-disable function-paren-newline */
 /* eslint-disable valid-typeof */
 import {
   isNumberType,
@@ -6,21 +7,8 @@ import {
 
 import {
   getNumbishType,
+  getNumberExclusiveBound,
 } from '../../types/getters';
-
-function getNumberExclusiveBound(inclusive, exclusive) {
-  const includes = isBigIntType(inclusive)
-    ? inclusive
-    : getNumbishType(inclusive);
-  const excludes = exclusive === true
-    ? includes
-    : isBigIntType(exclusive)
-      ? exclusive
-      : getNumbishType(exclusive);
-  return (excludes !== undefined)
-    ? [undefined, excludes]
-    : [includes, undefined];
-}
 
 function compileNumberMaximum(schemaObj, jsonSchema) {
   const [max, emax] = getNumberExclusiveBound(
@@ -32,8 +20,9 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'exclusiveMaximum',
       emax,
-      compileNumberMaximum,
-    );
+      compileNumberMaximum);
+    if (addError == null) return undefined;
+
     if (isBigIntType(emax)) {
       return function exclusiveMaximumBigInt(data) {
         return (isBigIntType(data) || isNumberType(data)) // are we forgiving?
@@ -57,8 +46,9 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'maximum',
       max,
-      compileNumberMaximum,
-    );
+      compileNumberMaximum);
+    if (addError == null) return undefined;
+
     if (isBigIntType(max)) {
       return function maximumBigInt(data) {
         return (isBigIntType(data) || isNumberType(data)) // are we that forgiving?
@@ -91,8 +81,9 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'exclusiveMinimum',
       emin,
-      compileNumberMinimum,
-    );
+      compileNumberMinimum);
+    if (addError == null) return undefined;
+
     if (isBigIntType(emin)) {
       return function exclusiveMinimumBigInt(data) {
         return (isBigIntType(data) || isNumberType(data))
@@ -116,8 +107,9 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'minimum',
       min,
-      compileNumberMinimum,
-    );
+      compileNumberMinimum);
+    if (addError == null) return undefined;
+
     if (isBigIntType(min)) {
       return function minimumBigInt(data) {
         return (isBigIntType(data) || isNumberType(data))
@@ -150,8 +142,7 @@ function compileNumberMultipleOf(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'multipleOf',
     mulOf,
-    compileNumberMultipleOf,
-  );
+    compileNumberMultipleOf);
   if (addError == null) return undefined;
 
   if (isBigIntType(mulOf)) {

@@ -20,6 +20,7 @@ import {
   isObjectOrMapType,
   isObjectOrMapTyped,
   isBigIntType,
+  isDateType,
 } from './core';
 
 import {
@@ -57,6 +58,20 @@ export function getNumbishType(obj, def = undefined) {
   return isNumbishType(obj) ? Number(obj) : def;
 }
 
+export function getNumberExclusiveBound(inclusive, exclusive) {
+  const includes = isBigIntType(inclusive)
+    ? inclusive
+    : getNumbishType(inclusive);
+  const excludes = exclusive === true
+    ? includes
+    : isBigIntType(exclusive)
+      ? exclusive
+      : getNumbishType(exclusive);
+  return (excludes !== undefined)
+    ? [undefined, excludes]
+    : [includes, undefined];
+}
+
 export function getIntegerType(obj, def = undefined) {
   return isIntegerType(obj) ? obj : def;
 }
@@ -77,6 +92,24 @@ export function getBigIntishType(obj, def = undefined) {
   return isBigIntType(obj)
     ? obj
     : getIntishType(obj, def);
+}
+
+export function getDateishType(obj, def = undefined) {
+  return isDateType(obj)
+    ? obj
+    : Number.isNaN(Date.parse(obj))
+      ? def
+      : new Date(Date.parse(obj));
+}
+
+export function getDateExclusiveBound(inclusive, exclusive) {
+  const includes = getDateishType(inclusive);
+  const excludes = exclusive === true
+    ? includes
+    : getDateishType(exclusive);
+  return (excludes !== undefined)
+    ? [undefined, excludes]
+    : [includes, undefined];
 }
 //#endregion
 

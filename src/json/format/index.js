@@ -1,5 +1,7 @@
-import { compileFormat as compileDateTime } from './date-time';
+/* eslint-disable no-console */
 
-export default {
-  'date-time': compileDateTime,
-};
+import { formatCompilers as dateTimeFormat } from './date-time';
+
+export function getDefaultFormatCompilers() {
+  return { ...dateTimeFormat };
+}
