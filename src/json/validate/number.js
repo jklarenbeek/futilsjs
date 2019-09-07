@@ -2,11 +2,11 @@
 import {
   isNumberType,
   isBigIntType,
-} from '../types/core';
+} from '../../types/core';
 
 import {
   getNumbishType,
-} from '../types/getters';
+} from '../../types/getters';
 
 function getNumberExclusiveBound(inclusive, exclusive) {
   const includes = isBigIntType(inclusive)

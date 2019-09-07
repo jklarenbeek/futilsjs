@@ -1,6 +1,6 @@
 import {
   getSchemaFormatCompiler,
-} from './registerFormatCompiler';
+} from '../register';
 
 export function compileFormatBasic(schemaObj, jsonSchema) {
   const compiler = getSchemaFormatCompiler(jsonSchema.format);

@@ -6,7 +6,7 @@ import {
   isObjectType,
   isObjectOrMapType,
   isBoolOrObjectType,
-} from '../types/core';
+} from '../../types/core';
 
 import {
   getIntishType,
@@ -14,17 +14,17 @@ import {
   getObjectType,
   getMapTypeOfArray,
   getBoolOrObjectType,
-} from '../types/getters';
+} from '../../types/getters';
 
 import {
   String_createRegExp,
-} from '../types/strings';
+} from '../../types/strings';
 
 import {
   fallbackFn,
   undefThat,
   trueThat,
-} from '../types/functions';
+} from '../../types/functions';
 
 function compileCheckBounds(schemaObj, jsonSchema) {
   function compileMaxProperties() {

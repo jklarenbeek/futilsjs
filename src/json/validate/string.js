@@ -1,14 +1,14 @@
 import {
   isStringType,
-} from '../types/core';
+} from '../../types/core';
 
 import {
   getIntishType,
-} from '../types/getters';
+} from '../../types/getters';
 
 import {
   String_createRegExp,
-} from '../types/strings';
+} from '../../types/strings';
 
 function compileMinLength(schemaObj, jsonSchema) {
   const min = Math.max(getIntishType(jsonSchema.minLength, 0), 0);

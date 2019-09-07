@@ -23,7 +23,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 //
-import { collapseCssClass } from '../client/css';
+import { collapseCssClass } from '../browser/css';
 import { cloneObject } from '../types/objects';
 import { VNode, getVNodeKey } from './base';
 import { isFn } from '../types/core';

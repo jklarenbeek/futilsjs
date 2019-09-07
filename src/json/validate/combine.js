@@ -1,16 +1,16 @@
 import {
   isFn,
-} from '../types/core';
+} from '../../types/core';
 
 import {
   getArrayType,
   getBoolOrObjectType,
-} from '../types/getters';
+} from '../../types/getters';
 
 import {
   falseThat,
   trueThat,
-} from '../types/functions';
+} from '../../types/functions';
 
 function compileAllOf(schemaObj, jsonSchema) {
   const allOf = getArrayType(jsonSchema.allOf);

@@ -1,30 +1,30 @@
 /* eslint-disable function-paren-newline */
 import {
   isObjectTyped,
-} from '../types/core';
+} from '../../types/core';
 
 import {
   getBoolishType,
   getStringType,
   getBoolOrArrayTyped,
   getArrayTypeOfSet,
-} from '../types/getters';
+} from '../../types/getters';
 
 import {
   falseThat,
   trueThat,
   addFunctionToArray,
   createIsDataTypeHandler,
-} from '../types/functions';
+} from '../../types/functions';
 
-import { compileFormatBasic } from './compileFormatValidator';
-import { compileEnumBasic } from './compileEnumValidator';
-import { compileNumberBasic } from './compileNumberValidator';
-import { compileStringBasic } from './compileStringValidator';
-import { compileObjectBasic, compileObjectChildren } from './compileObjectValidator';
-import { compileArrayBasic, compileArrayChildren } from './compileArrayValidator';
-import { compileCombineSchema } from './compileCombineValidator';
-import { compileConditionSchema } from './compileConditionValidator';
+import { compileFormatBasic } from './format';
+import { compileEnumBasic } from './enum';
+import { compileNumberBasic } from './number';
+import { compileStringBasic } from './string';
+import { compileObjectBasic, compileObjectChildren } from './object';
+import { compileArrayBasic, compileArrayChildren } from './array';
+import { compileCombineSchema } from './combine';
+import { compileConditionSchema } from './condition';
 
 function compileTypeSimple(schemaObj, jsonSchema) {
   const type = getStringType(jsonSchema.type);

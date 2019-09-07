@@ -3,7 +3,7 @@
 import {
   isArrayTyped,
   isArrayOrSetTyped,
-} from '../types/core';
+} from '../../types/core';
 
 import {
   getBoolishType,
@@ -12,16 +12,16 @@ import {
   getArrayOrSetTypeLength,
   getObjectType,
   getBoolOrObjectType,
-} from '../types/getters';
+} from '../../types/getters';
 
 import {
   trueThat,
   falseThat,
-} from '../types/functions';
+} from '../../types/functions';
 
 import {
   isUniqueArray,
-} from '../types/arrays';
+} from '../../types/arrays';
 
 function compileMinItems(schemaObj, jsonSchema) {
   const min = getIntishType(jsonSchema.minItems);

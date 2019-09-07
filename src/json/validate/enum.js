@@ -2,15 +2,15 @@
 /* eslint-disable no-unused-vars */
 import {
   isScalarType,
-} from '../types/core';
+} from '../../types/core';
 
 import {
   getArrayTypeMinItems,
-} from '../types/getters';
+} from '../../types/getters';
 
 import {
   equalsDeep,
-} from '../types/objects';
+} from '../../types/objects';
 
 function compileConst(schemaObj, jsonSchema) {
   const constant = jsonSchema.const;

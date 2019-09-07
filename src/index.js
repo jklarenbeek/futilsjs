@@ -16,20 +16,19 @@ export { default as v3f64 } from './float64/vec3';
 export * from './float64/shape';
 export { default as s2f64 } from './float64/shape';
 
-
-export * from './client/dom';
-export * from './client/css';
-export * from './client/storage';
-export * from './client/worklet';
-
-export * from './vnode/base';
-export * from './vnode/html';
-export * from './vnode/app';
-
 export * from './types/core';
 export * from './types/getters';
 export * from './types/functions';
 export * from './types/objects';
 export * from './types/arrays';
 
-export * from './json/index';
+export * from './browser/dom';
+export * from './browser/css';
+export * from './browser/storage';
+export * from './browser/worklet';
+
+export * from './vnode/base';
+export * from './vnode/html';
+export * from './vnode/app';
+
+export * from './json';

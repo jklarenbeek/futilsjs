@@ -1,10 +1,10 @@
 import {
   fallbackFn,
-} from '../types/functions';
+} from '../../types/functions';
 
 import {
   getObjectType,
-} from '../types/getters';
+} from '../../types/getters';
 
 export function compileConditionSchema(schemaObj, jsonSchema) {
   const jsif = getObjectType(jsonSchema.if);

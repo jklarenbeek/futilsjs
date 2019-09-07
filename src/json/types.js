@@ -1,8 +1,6 @@
-import {
-  integerFormats,
-  bigIntFormats,
-  floatFormats,
-} from './registerFormatCompiler';
+import { numberFormats as integerFormats } from './format/integer';
+import { numberFormats as floatFormats } from './format/float';
+import { numberFormats as bigIntFormats } from './format/bigint';
 
 import {
   isStringType,

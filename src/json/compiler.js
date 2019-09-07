@@ -19,7 +19,7 @@ import {
 
 import {
   compileSchemaObject,
-} from './compileSchemaValidator';
+} from './validate';
 
 import {
   JSONPointer_concatPath,
