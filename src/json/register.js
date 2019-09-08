@@ -1,6 +1,7 @@
 import { getDefaultFormatCompilers } from './format/index';
 
 import {
+  isComplexType,
   isNumberType,
   isIntegerType,
   isBigIntType,
@@ -8,11 +9,9 @@ import {
 } from '../types/core';
 
 export function createFormatNumberCompiler(name, format) {
-  if (format != null && format === 'object') {
+  if (isComplexType(format)) {
+    // TODO: isNumeric
     if (['integer', 'bigint', 'number'].includes(format.type)) {
-      //const rbts = getPureNumber(r.bits);
-      //const rsgn = getPureBool(r.signed);
-
       const rix = Number(format.minimum) || false;
       const rax = Number(format.maximum) || false;
 
