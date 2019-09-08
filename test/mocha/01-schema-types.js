@@ -6,10 +6,7 @@ import { assert } from 'chai';
 import {
   compileJSONSchema,
   getJSONSchema,
-  // registerDefaultFormatCompilers,
-} from '../src/json'
-
-// registerDefaultFormatCompilers();
+} from '../../src/json';
 
 // https://json-schema.org/understanding-json-schema/reference/type.html
 

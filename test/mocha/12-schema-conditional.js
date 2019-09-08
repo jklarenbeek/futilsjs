@@ -7,9 +7,7 @@ import { assert } from 'chai';
 import {
   compileJSONSchema,
   getJSONSchema,
-} from '../src/json';
-
-// https://json-schema.org/understanding-json-schema/reference/conditionals.html
+} from '../../src/json';
 
 describe('Schema Conditionals', function () {
   describe('#if()', function () {

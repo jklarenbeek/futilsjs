@@ -7,7 +7,7 @@ import { assert } from 'chai';
 import {
   compileJSONSchema,
   getJSONSchema,
-} from '../src/json';
+} from '../../src/json';
 
 describe('Schema Combinations', function () {
   describe('#allOf()', function () {

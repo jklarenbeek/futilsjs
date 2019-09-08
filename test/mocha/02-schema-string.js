@@ -7,7 +7,7 @@ import {
   compileJSONSchema,
   getJSONSchema,
   registerDefaultFormatCompilers,
-} from '../src/json';
+} from '../../src/json';
 
 registerDefaultFormatCompilers();
 

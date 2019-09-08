@@ -7,10 +7,9 @@ import { assert } from 'chai';
 import {
   compileJSONSchema,
   getJSONSchema,
-} from '../src/json';
+} from '../../src/json';
 
 describe('Schema Generics', function () {
-
   // https://json-schema.org/understanding-json-schema/reference/generic.html
   describe('#enums()', function () {
     it('should validate a string enum type', function () {
