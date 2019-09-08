@@ -224,7 +224,7 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
 
   if (validators.length === 1) {
     const first = validators[0];
-    if (fnType != null) return function validateSingleSchemaObjectTyped(data, dataRoot) {
+    if (fnType != null) return function validateSingleSchemaObjectType(data, dataRoot) {
       return fnType(data, dataRoot) === true
         ? first(data, dataRoot)
         : false;
@@ -235,7 +235,7 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
   if (validators.length === 2) {
     const first = validators[0];
     const second = validators[1];
-    if (fnType != null) return function validatePairSchemaObjectTyped(data, dataRoot) {
+    if (fnType != null) return function validatePairSchemaObjectType(data, dataRoot) {
       return fnType(data, dataRoot) === true
         ? first(data, dataRoot) && second(data, dataRoot)
         : false;
@@ -250,7 +250,7 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
     const first = validators[0];
     const second = validators[1];
     const thirth = validators[2];
-    if (fnType != null) return function validateTernarySchemaObjectTyped(data, dataRoot) {
+    if (fnType != null) return function validateTernarySchemaObjectType(data, dataRoot) {
       return fnType(data, dataRoot) === true
         ? first(data, dataRoot)
           && second(data, dataRoot)
@@ -270,7 +270,7 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
     const second = validators[1];
     const thirth = validators[2];
     const fourth = validators[3];
-    if (fnType != null) return function validateQuaternarySchemaObjectTyped(data, dataRoot) {
+    if (fnType != null) return function validateQuaternarySchemaObjectType(data, dataRoot) {
       return fnType(data, dataRoot) === true
         ? first(data, dataRoot)
           && second(data, dataRoot)
@@ -287,7 +287,7 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
     };
   }
 
-  if (fnType != null) return function validateAllSchemaObjectTyped(data, dataRoot) {
+  if (fnType != null) return function validateAllSchemaObjectType(data, dataRoot) {
     if (fnType(data, dataRoot) === false) return false;
     for (let i = 0; i < validators.length; ++i) {
       if (validators[i](data, dataRoot) === false) return false;
