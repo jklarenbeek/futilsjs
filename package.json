@@ -10,8 +10,8 @@
   "scripts": {
     "build": "rollup -c",
     "schema": "parcel ./test/JSONSchema/index.html",
-    "test": "mocha --require @babel/register \"test/*.js\"",
-    "cover": "nyc --reporter=lcov mocha --require @babel/register \"test/*.js\""
+    "test": "mocha --require @babel/register \"test/mocha/*.js\"",
+    "cover": "nyc --reporter=lcov mocha --require @babel/register \"test/mocha/*.js\""
   },
   "keywords": [
     "javascript",

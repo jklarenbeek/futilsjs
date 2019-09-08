@@ -55,7 +55,7 @@ describe('Schema String Type', function () {
   });
 
   describe('#stringFormat()', function () {
-    it('should validate a date-time format', function () {
+    it('should validate a forgiving date-time format', function () {
       compileJSONSchema('fstring1', { format: 'date-time' });
 
       const root = getJSONSchema('fstring1');
