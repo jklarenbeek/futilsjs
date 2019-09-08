@@ -3,23 +3,23 @@ import {
   isStringType,
   isArrayType,
   isBoolOrObjectType,
-} from '../types/core';
+} from '../../types/core';
 
 import {
   getStringType,
-} from '../types/getters';
+} from '../../types/getters';
 
 import {
   falseThat,
-} from '../types/functions';
+} from '../../types/functions';
 
 import {
   performance,
-} from '../types/perf';
+} from '../../types/perf';
 
 import {
   compileSchemaObject,
-} from './validate/schema';
+} from '../validate/schema';
 
 import {
   JSONPointer_concatPath,

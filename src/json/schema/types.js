@@ -1,16 +1,16 @@
-import { numberFormats as integerFormats } from './format/integer';
-import { numberFormats as floatFormats } from './format/float';
-import { numberFormats as bigIntFormats } from './format/bigint';
+import { numberFormats as integerFormats } from '../format/integer';
+import { numberFormats as floatFormats } from '../format/float';
+import { numberFormats as bigIntFormats } from '../format/bigint';
 
 import {
   isStringType,
   isArrayType,
   isObjectType,
-} from '../types/core';
+} from '../../types/core';
 
 import {
   getBoolishType,
-} from '../types/getters';
+} from '../../types/getters';
 
 export function isOfSchemaType(schema, type) {
   if (type == null) return false;

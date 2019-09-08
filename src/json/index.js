@@ -1,9 +1,9 @@
 export {
   compileJSONSchema,
   getJSONSchema,
-} from './compiler';
+} from './schema/compiler';
 
 export {
   registerDefaultFormatCompilers,
   registerFormatCompiler,
-} from './register';
+} from './schema/register';

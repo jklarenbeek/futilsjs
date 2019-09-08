@@ -1,4 +1,4 @@
-import { getDefaultFormatCompilers } from './format/index';
+import { getDefaultFormatCompilers } from '../format/index';
 
 import {
   isComplexType,
@@ -6,7 +6,7 @@ import {
   isIntegerType,
   isBigIntType,
   isStringType,
-} from '../types/core';
+} from '../../types/core';
 
 export function createFormatNumberCompiler(name, format) {
   if (isComplexType(format)) {
