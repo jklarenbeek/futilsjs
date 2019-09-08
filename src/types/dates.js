@@ -2,6 +2,11 @@ export const Date_ONE_SECOND = 1000;
 export const Date_ONE_HOUR = Date_ONE_SECOND * 60 * 60;
 export const Date_ONE_DAY = Date_ONE_HOUR * 24;
 
+export function Date_isLeapYear(year) {
+  // https://tools.ietf.org/html/rfc3339#appendix-C
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+}
+
 export function Date_trimTime(date) {
   return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
 }
@@ -9,8 +14,8 @@ export function Date_trimTime(date) {
 export function Date_daysBetween(startDate, endDate) {
   // The number of milliseconds in all UTC days (no DST)
   // A day in UTC always lasts 24 hours (unlike in other time formats)
-  const start = Date_trimTime(endDate.getDate());
-  const end = Date_trimTime(startDate.getDate());
+  const start = Date_trimTime(startDate.getDate());
+  const end = Date_trimTime(endDate.getDate());
 
   // so it's safe to divide by 24 hours
   return (start - end) / Date_ONE_DAY;
