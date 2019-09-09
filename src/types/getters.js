@@ -102,7 +102,7 @@ export function getDateishType(obj, def = undefined) {
       : new Date(Date.parse(obj));
 }
 
-export function getDateExclusiveBound(inclusive, exclusive) {
+export function getDateishExclusiveBound(inclusive, exclusive) {
   const includes = getDateishType(inclusive);
   const excludes = exclusive === true
     ? includes
@@ -119,9 +119,7 @@ export function getArrayType(obj, def = undefined) {
 }
 
 export function getArrayTypeMinItems(obj, len, def = undefined) {
-  return isArrayType(obj) && obj.length >= len
-    ? obj
-    : def;
+  return (isArrayType(obj) && obj.length >= len && obj) || def;
 }
 
 export function getArrayTyped(obj, def = undefined) {
@@ -129,9 +127,7 @@ export function getArrayTyped(obj, def = undefined) {
 }
 
 export function getArrayTypedMinItems(obj, len, def = undefined) {
-  return isArrayTyped(obj) && obj.length >= len
-    ? obj
-    : def;
+  return (isArrayTyped(obj) && obj.length >= len && obj) || def;
 }
 
 export function getSetType(obj, def = undefined) {

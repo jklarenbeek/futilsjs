@@ -1,8 +1,17 @@
 /* eslint-disable function-paren-newline */
 import {
-  getDateExclusiveBound,
+  isDateishType,
+} from '../../types/core';
+
+import {
   getDateishType,
+  getDateishExclusiveBound,
 } from '../../types/getters';
+
+import {
+  getDateOnly,
+  getTimeOnly,
+} from '../../types/dates';
 
 // dataTimeFormats
 export const numberFormats = {
@@ -92,7 +101,7 @@ export const numberFormats = {
 };
 
 function compileDateTimeMaximum(schemaObj, jsonSchema) {
-  const [max, emax] = getDateExclusiveBound(
+  const [max, emax] = getDateishExclusiveBound(
     jsonSchema.formatMaximum,
     jsonSchema.formatExclusiveMaximum,
   );
@@ -133,7 +142,7 @@ function compileDateTimeMaximum(schemaObj, jsonSchema) {
 }
 
 function compileDateTimeMinimum(schemaObj, jsonSchema) {
-  const [min, emin] = getDateExclusiveBound(
+  const [min, emin] = getDateishExclusiveBound(
     jsonSchema.formatMinimum,
     jsonSchema.formatExclusiveMinimum,
   );
@@ -174,31 +183,79 @@ function compileDateTimeMinimum(schemaObj, jsonSchema) {
   return undefined;
 }
 
-function compileDateTimeType(schemaObj, jsonSchema) {
-  const addError = schemaObj.createSingleErrorHandler(
-    'format',
-    jsonSchema.format,
-    compileDateTimeType);
-  if (addError == null) return undefined;
-
-  return function validateDateTimeType(data) {
-    return getDateishType(data) != null
-      ? true
-      : addError(data);
-  };
-}
-
 function compileDateTimeFormat(schemaObj, jsonSchema) {
   if (jsonSchema.format !== 'date-time')
     return undefined;
 
+  const addError = schemaObj.createSingleErrorHandler(
+    'format',
+    jsonSchema.format,
+    compileDateTimeFormat);
+  if (addError == null) return undefined;
+
   return [
-    compileDateTimeType(schemaObj, jsonSchema),
+    function validateDateTimeType(data) {
+      return data == null || isDateishType(data) || addError(data);
+    },
     compileDateTimeMinimum(schemaObj, jsonSchema),
     compileDateTimeMaximum(schemaObj, jsonSchema),
   ];
 }
 
+function compileDateOnlyFormat(schemaObj, jsonSchema) {
+  if (jsonSchema.format !== 'date')
+    return undefined;
+
+  const format = {
+    formatExclusiveMaximum: getDateOnly(jsonSchema.formatExclusiveMaximum),
+    formatMaximum: getDateOnly(jsonSchema.formatMaximum),
+    formatExclusiveMinimum: getDateOnly(jsonSchema.formatExclusiveMinimum),
+    formatMinimum: getDateOnly(jsonSchema.formatMinimum),
+  };
+
+  const addError = schemaObj.createSingleErrorHandler(
+    'format',
+    jsonSchema.format,
+    compileDateOnlyFormat);
+  if (addError == null) return undefined;
+
+  return [
+    function validateDateTimeType(data) {
+      return data == null || isDateishType(data) || addError(data);
+    },
+    compileDateTimeMinimum(schemaObj, format),
+    compileDateTimeMaximum(schemaObj, format),
+  ];
+}
+
+function compileTimeOnlyFormat(schemaObj, jsonSchema) {
+  if (jsonSchema.format !== 'time')
+    return undefined;
+
+  const format = {
+    formatExclusiveMaximum: getTimeOnly(jsonSchema.formatExclusiveMaximum),
+    formatMaximum: getTimeOnly(jsonSchema.formatMaximum),
+    formatExclusiveMinimum: getTimeOnly(jsonSchema.formatExclusiveMinimum),
+    formatMinimum: getTimeOnly(jsonSchema.formatMinimum),
+  };
+
+  const addError = schemaObj.createSingleErrorHandler(
+    'format',
+    jsonSchema.format,
+    compileTimeOnlyFormat);
+  if (addError == null) return undefined;
+
+  return [
+    function validateDateTimeType(data) {
+      return data == null || getTimeOnly(data) != null || addError(data);
+    },
+    compileDateTimeMinimum(schemaObj, format),
+    compileDateTimeMaximum(schemaObj, format),
+  ];
+}
+
 export const formatCompilers = {
   'date-time': compileDateTimeFormat,
+  date: compileDateOnlyFormat,
+  time: compileTimeOnlyFormat,
 };

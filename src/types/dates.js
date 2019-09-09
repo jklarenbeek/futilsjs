@@ -1,14 +1,61 @@
-export const Date_ONE_SECOND = 1000;
-export const Date_ONE_HOUR = Date_ONE_SECOND * 60 * 60;
-export const Date_ONE_DAY = Date_ONE_HOUR * 24;
+import {
+  isStringType,
+  isDateType,
+} from './core';
+
+import {
+  getDateishType,
+} from './getters';
+
+export const CONST_SECOND = 1000;
+export const CONST_HOUR = CONST_SECOND * 60 * 60;
+export const CONST_DAY = CONST_HOUR * 24;
+
+export const CONST_DATETIME_ZERO = new Date('1970-01-01-T00:00:00Z');
+export const CONST_TIME_INSERTDATE = '1970-01-01T';
+export const CONST_TIME_APPENDOFFS = '+00:00'; // TODO add timezone data
+export const CONST_DATE_APPENDTIME = 'T00:00:00' + CONST_TIME_APPENDOFFS;
+
+export function getDateOnly(value) {
+  const date = getDateishType(value);
+  return isDateType(date)
+    ? Date_trimTime(date)
+    : undefined;
+}
+
+export function getTimeOnly(value) {
+  return isStringType(value)
+    ? getDateishType(CONST_TIME_INSERTDATE + value)
+    : isDateType(value)
+      ? Date_trimDate(value)
+      : undefined;
+}
+
+export function Date_getTimezoneOffset() {
+  new Date(
+    Date.UTC(1970, 0, 1),
+  ).getTimezoneOffset();
+}
+
+export function Date_trimTime(date) {
+  return new Date(Date.UTC(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  ));
+}
+
+export function Date_trimDate(date) {
+  return new Date(1970, 0, 1,
+    date.getUTCHour(),
+    date.getUTCMinutes(),
+    date.getUTCSeconds(),
+    date.getUTCMilliseconds());
+}
 
 export function Date_isLeapYear(year) {
   // https://tools.ietf.org/html/rfc3339#appendix-C
   return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-}
-
-export function Date_trimTime(date) {
-  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 export function Date_daysBetween(startDate, endDate) {
@@ -18,16 +65,16 @@ export function Date_daysBetween(startDate, endDate) {
   const end = Date_trimTime(endDate.getDate());
 
   // so it's safe to divide by 24 hours
-  return (start - end) / Date_ONE_DAY;
+  return (start - end) / CONST_DAY;
 }
 
 export function Date_secondsBetween(startDate, endDate) {
-  return (endDate.getTime() / Date_ONE_SECOND) - (startDate.getTime() / Date_ONE_SECOND);
+  return (endDate.getTime() / CONST_SECOND) - (startDate.getTime() / CONST_SECOND);
 }
 
 
 export function Date_hoursBetween(startDate, endDate) {
-  return (endDate.getTime() / Date_ONE_HOUR) - (startDate.getTime() / Date_ONE_HOUR);
+  return (endDate.getTime() / CONST_HOUR) - (startDate.getTime() / CONST_HOUR);
 }
 
 export function Date_inBetween(value, startDate, endDate,
