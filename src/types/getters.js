@@ -58,6 +58,16 @@ export function getNumbishType(obj, def = undefined) {
   return isNumbishType(obj) ? Number(obj) : def;
 }
 
+export function getTypeExclusiveBound(getType, inclusive, exclusive) {
+  const includes = getType(inclusive);
+  const excludes = exclusive === true
+    ? includes
+    : getType(exclusive);
+  return (excludes === undefined)
+    ? [includes, undefined]
+    : [undefined, excludes];
+}
+
 export function getNumberExclusiveBound(inclusive, exclusive) {
   const includes = isBigIntType(inclusive)
     ? inclusive
@@ -94,22 +104,16 @@ export function getBigIntishType(obj, def = undefined) {
     : getIntishType(obj, def);
 }
 
+export function getDateType(obj, def = undefined) {
+  return (isDateType(obj) && obj) || def;
+}
+
 export function getDateishType(obj, def = undefined) {
   return isDateType(obj)
     ? obj
     : Number.isNaN(Date.parse(obj))
       ? def
       : new Date(Date.parse(obj));
-}
-
-export function getDateishExclusiveBound(inclusive, exclusive) {
-  const includes = getDateishType(inclusive);
-  const excludes = exclusive === true
-    ? includes
-    : getDateishType(exclusive);
-  return (excludes !== undefined)
-    ? [undefined, excludes]
-    : [includes, undefined];
 }
 //#endregion
 
