@@ -17,8 +17,8 @@ import {
 } from '../../types/getters';
 
 import {
-  String_createRegExp,
-} from '../../types/strings';
+  createRegExp,
+} from '../../types/regexp';
 
 import {
   fallbackFn,
@@ -137,7 +137,7 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
   // produce an array of regexp objects to validate members.
   const patterns = [];
   for (let i = 0; i < required.length; ++i) {
-    const pattern = String_createRegExp(required[i]);
+    const pattern = createRegExp(required[i]);
     if (pattern) patterns.push(pattern);
   }
   if (patterns.length === 0) return undefined;
@@ -329,7 +329,7 @@ function compileObjectPatternItem(schemaObj, entries) {
   const patterns = {};
   for (let i = 0; i < entryKeys.length; ++i) {
     const key = entryKeys[i];
-    const pattern = String_createRegExp(key);
+    const pattern = createRegExp(key);
     if (pattern != null)
       patterns[key] = pattern;
   }

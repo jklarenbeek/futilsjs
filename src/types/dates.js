@@ -3,8 +3,8 @@ export const CONST_SECOND = 1000;
 export const CONST_HOUR = CONST_SECOND * 60 * 60;
 export const CONST_DAY = CONST_HOUR * 24;
 
-export const CONST_DATETIME_ZERO = new Date('1970-01-01-T00:00:00Z');
-export const CONST_TIME_INSERTDATE = '1970-01-01T';
+export const CONST_DATETIME_ZERO = new Date('1970-00-01-T00:00:00Z');
+export const CONST_TIME_INSERTDATE = '1970-00-01T';
 export const CONST_TIME_APPENDOFFS = '+00:00'; // TODO add timezone data
 export const CONST_DATE_APPENDTIME = 'T00:00:00' + CONST_TIME_APPENDOFFS;
 
@@ -20,7 +20,7 @@ export const CONST_RFC3339_DAYS = Object.freeze(
 // full-date from http://tools.ietf.org/html/rfc3339#section-5.6
 export const CONST_RFC3339_REGEX_ISDATE = /^(\d\d\d\d)-([0-1]\d)-([0-3]\d)z?$/i;
 
-export function isDateRFC3339Ex(year, month, day) {
+export function isDateWith(year, month, day) {
   return month >= 1
     && month <= 12
     && day >= 1
@@ -32,7 +32,7 @@ export function isDateRFC3339Ex(year, month, day) {
 export function isDateRFC3339(str) {
   const matches = str.match(CONST_RFC3339_REGEX_ISDATE);
   return matches != null
-    && isDateRFC3339Ex(
+    && isDateWith(
       matches[1],
       matches[2],
       matches[3]);
@@ -41,7 +41,7 @@ export function isDateRFC3339(str) {
 export function getDateTypeOfRFC3339Date(str) {
   const matches = str.match(CONST_RFC3339_REGEX_ISDATE);
   return (matches != null
-    && isDateRFC3339Ex(
+    && isDateWith(
       matches[1], // year
       matches[2], // month
       matches[3]) // day
@@ -55,7 +55,7 @@ export function getDateTypeOfRFC3339Date(str) {
 // full-date from http://tools.ietf.org/html/rfc3339#section-5.6
 export const CONST_RFC3339_REGEX_ISTIME = /^(\d\d):(\d\d):(\d\d)(\.\d{3})?(z|(([+-])(\d\d):(\d\d)))$/i;
 
-export function isTimeRFC3339Ex(hrs = 0, min = 0, sec = 0, tzh = 0, tzm = 0) {
+export function isTimeWith(hrs = 0, min = 0, sec = 0, tzh = 0, tzm = 0) {
   return ((hrs === 23 && min === 59 && sec === 60)
     || (hrs >= 0 && hrs <= 23
       && min >= 0 && min <= 59
@@ -67,12 +67,24 @@ export function isTimeRFC3339Ex(hrs = 0, min = 0, sec = 0, tzh = 0, tzm = 0) {
 export function isTimeRFC3339(str) {
   const matches = str.match(CONST_RFC3339_REGEX_ISTIME);
   return matches != null
-    && isTimeRFC3339Ex(
+    && isTimeWith(
       matches[1], // hours
       matches[2], // minutes
       matches[3], // seconds
       (matches[8] | 0), // timezone hours
       (matches[9] | 0)); // timezone minutes
+}
+
+export function getDateTypeOfRFC3339Time(str) {
+  const matches = str.match(CONST_RFC3339_REGEX_ISTIME);
+  return matches != null
+    && isTimeWith(
+      matches[1], // hours
+      matches[2], // minutes
+      matches[3], // seconds
+      (matches[8] | 0), // timezone hours
+      (matches[9] | 0)) // timezone minutes
+    && new Date(Date.parse(CONST_TIME_INSERTDATE + str));
 }
 
 export function isDateTimeRFC3339(str) {
@@ -81,6 +93,13 @@ export function isDateTimeRFC3339(str) {
   return dateTime.length === 2
     && isDateRFC3339(dateTime[0])
     && isTimeRFC3339(dateTime[1]);
+}
+
+export function getDateTypeOfRFC3339DateTime(str) {
+  const dateTime = str.split(/t|\s/i);
+  const date = getDateTypeOfRFC3339Date(dateTime[0]);
+  const time = getDateTypeOfRFC3339Time(dateTime[1]);
+  return date != null && time != null && (date + time)
 }
 
 export function Date_getTimezoneOffset() {

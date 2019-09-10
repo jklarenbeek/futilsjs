@@ -1,4 +1,3 @@
-/* eslint-disable eqeqeq */
 
 export function String_byteCount(str) {
   /**
@@ -21,36 +20,6 @@ export function String_byteCount(str) {
 
   // return encodeURI(str).split(/%..|./).length - 1;
   return encodeURI(str).split(/%(?:u[0-9A-F]{2})?[0-9A-F]{2}|./).length - 1;
-}
-
-export function String_createRegExp(pattern, force = false) {
-  try {
-    if (pattern != null) {
-      if (pattern.constructor === RegExp) {
-        return force === true
-          ? new RegExp(pattern.toString())
-          : pattern;
-      }
-      if (pattern.constructor === String) {
-        if (pattern[0] === '/') {
-          const e = pattern.lastIndexOf('/');
-          if (e >= 0) {
-            const r = pattern.substring(1, e);
-            const g = pattern.substring(e + 1);
-            return new RegExp(r, g);
-          }
-        }
-        return new RegExp(pattern);
-      }
-      if (pattern.constructor === Array && pattern.length > 1) {
-        return new RegExp(pattern[0], pattern[1]);
-      }
-    }
-    return undefined;
-  }
-  catch (e) {
-    return undefined;
-  }
 }
 
 export function String_trimLeft(str, c) {
@@ -87,36 +56,35 @@ export function String_fromCamelToSnake(str) {
   throw new Error('not implemented', str);
 }
 
-
 export function Letter_isEmptyOrWhiteSpace(str, i = 0) {
   if (str == null) return true;
 
   const c = str[i]; //.chatAt(i);
-  return c == ' '
-    || c == '\f'
-    || c == '\n'
-    || c == '\t'
-    || c == '\v'
-    || c == '\u00A0'
-    || c == '\u1680​'
-    || c == '\u180e'
-    || c == '\u2000'
-    || c == '​\u2001'
-    || c == '\u2002'
-    || c == '​\u2003'
-    || c == '\u2004​'
-    || c == '\u2005'
-    || c == '\u2006'
-    || c == '\u2008'
-    || c == '​\u2009'
-    || c == '\u200a'
-    || c == '​\u2028'
-    || c == '\u2029'
-    || c == '​\u2028'
-    || c == '\u2029'
-    || c == '​\u202f'
-    || c == '\u205f'
-    || c == '​\u3000';
+  return c === ' '
+    || c === '\f'
+    || c === '\n'
+    || c === '\t'
+    || c === '\v'
+    || c === '\u00A0'
+    || c === '\u1680​'
+    || c === '\u180e'
+    || c === '\u2000'
+    || c === '​\u2001'
+    || c === '\u2002'
+    || c === '​\u2003'
+    || c === '\u2004​'
+    || c === '\u2005'
+    || c === '\u2006'
+    || c === '\u2008'
+    || c === '​\u2009'
+    || c === '\u200a'
+    || c === '​\u2028'
+    || c === '\u2029'
+    || c === '​\u2028'
+    || c === '\u2029'
+    || c === '​\u202f'
+    || c === '\u205f'
+    || c === '​\u3000';
 }
 
 export function Letter_isSymbol(str, i = 0) {

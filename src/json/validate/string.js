@@ -7,8 +7,8 @@ import {
 } from '../../types/getters';
 
 import {
-  String_createRegExp,
-} from '../../types/strings';
+  createRegExp,
+} from '../../types/regexp';
 
 function compileMinLength(schemaObj, jsonSchema) {
   const min = Math.max(getIntishType(jsonSchema.minLength, 0), 0);
@@ -44,7 +44,7 @@ function compileMaxLength(schemaObj, jsonSchema) {
 
 function compileStringPattern(schemaObj, jsonSchema) {
   const ptrn = jsonSchema.pattern;
-  const re = String_createRegExp(ptrn);
+  const re = createRegExp(ptrn);
   if (re == null) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler('pattern', ptrn, compileStringPattern);
