@@ -26,45 +26,45 @@ import {
   trueThat,
 } from '../../types/functions';
 
+function compileMaxPropertiesLength(schemaObj, jsonSchema) {
+  const maxprops = getIntishType(jsonSchema.maxProperties);
+  if (!(maxprops > 0)) return undefined;
+
+  const addError = schemaObj.createSingleErrorHandler(
+    'maxProperties',
+    maxprops,
+    compileMaxPropertiesLength);
+  if (addError == null) return undefined;
+
+  return function maxPropertiesLength(length) {
+    return length <= maxprops
+      ? true
+      : addError(length);
+  };
+}
+
+function compileMinPropertiesLength(schemaObj, jsonSchema) {
+  const minprops = getIntishType(jsonSchema.minProperties);
+  if (!(minprops > 0)) return undefined;
+
+  const addError = schemaObj.createSingleErrorHandler(
+    'minProperties',
+    minprops,
+    compileMinPropertiesLength);
+  if (addError == null) return undefined;
+
+  return function minPropertiesLength(length) {
+    return length >= minprops
+      ? true
+      : addError(length);
+  };
+}
+
 function compileCheckBounds(schemaObj, jsonSchema) {
-  function compileMaxProperties() {
-    const maxprops = getIntishType(jsonSchema.maxProperties);
-    if (!(maxprops > 0)) return undefined;
-
-    const addError = schemaObj.createSingleErrorHandler(
-      'maxProperties',
-      maxprops,
-      compileMaxProperties);
-    if (addError == null) return undefined;
-
-    return function maxProperties(length) {
-      return length <= maxprops
-        ? true
-        : addError(length);
-    };
-  }
-
-  function compileMinProperties() {
-    const minprops = getIntishType(jsonSchema.minProperties);
-    if (!(minprops > 0)) return undefined;
-
-    const addError = schemaObj.createSingleErrorHandler(
-      'minProperties',
-      minprops,
-      compileMinProperties);
-    if (addError == null) return undefined;
-
-    return function minProperties(length) {
-      return length >= minprops
-        ? true
-        : addError(length);
-    };
-  }
-
-  const xp = compileMaxProperties();
-  const mp = compileMinProperties();
+  const xp = compileMaxPropertiesLength(schemaObj, jsonSchema);
+  const mp = compileMinPropertiesLength(schemaObj, jsonSchema);
   if (xp && mp) {
-    return function checkPropertyBounds(length) {
+    return function validatePropertiesLength(length) {
       return xp(length) && mp(length);
     };
   }
@@ -73,7 +73,7 @@ function compileCheckBounds(schemaObj, jsonSchema) {
 
 function compileDefaultPropertyBounds(checkBounds) {
   if (!isFn(checkBounds)) return undefined;
-  return function propertyBounds(data) {
+  return function propertiesLengthDefault(data) {
     return !isObjectOrMapType(data)
       ? true
       : data.constructor === Map
