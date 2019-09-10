@@ -1,12 +1,4 @@
-import {
-  isStringType,
-  isDateType,
-} from './core';
-
-import {
-  getDateishType,
-} from './getters';
-
+/* eslint-disable function-paren-newline */
 export const CONST_SECOND = 1000;
 export const CONST_HOUR = CONST_SECOND * 60 * 60;
 export const CONST_DAY = CONST_HOUR * 24;
@@ -16,19 +8,79 @@ export const CONST_TIME_INSERTDATE = '1970-01-01T';
 export const CONST_TIME_APPENDOFFS = '+00:00'; // TODO add timezone data
 export const CONST_DATE_APPENDTIME = 'T00:00:00' + CONST_TIME_APPENDOFFS;
 
-export function getDateOnly(value) {
-  const date = getDateishType(value);
-  return isDateType(date)
-    ? Date_trimTime(date)
-    : undefined;
+export function isLeapYear(year) {
+  // https://tools.ietf.org/html/rfc3339#appendix-C
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 }
 
-export function getTimeOnly(value) {
-  return isStringType(value)
-    ? getDateishType(CONST_TIME_INSERTDATE + value)
-    : isDateType(value)
-      ? Date_trimDate(value)
-      : undefined;
+export const CONST_RFC3339_DAYS = Object.freeze(
+  [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+);
+
+// full-date from http://tools.ietf.org/html/rfc3339#section-5.6
+export const CONST_RFC3339_REGEX_ISDATE = /^(\d\d\d\d)-([0-1]\d)-([0-3]\d)z?$/i;
+
+export function isDateRFC3339Ex(year, month, day) {
+  return month >= 1
+    && month <= 12
+    && day >= 1
+    && day <= (month === 2 && isLeapYear(year)
+      ? 29
+      : CONST_RFC3339_DAYS[month]);
+}
+
+export function isDateRFC3339(str) {
+  const matches = str.match(CONST_RFC3339_REGEX_ISDATE);
+  return matches != null
+    && isDateRFC3339Ex(
+      matches[1],
+      matches[2],
+      matches[3]);
+}
+
+export function getDateTypeOfRFC3339Date(str) {
+  const matches = str.match(CONST_RFC3339_REGEX_ISDATE);
+  return (matches != null
+    && isDateRFC3339Ex(
+      matches[1], // year
+      matches[2], // month
+      matches[3]) // day
+    && new Date(Date.UTC(
+      matches[1], // year
+      matches[2], // month
+      matches[3])) // day
+  ) || undefined;
+}
+
+// full-date from http://tools.ietf.org/html/rfc3339#section-5.6
+export const CONST_RFC3339_REGEX_ISTIME = /^(\d\d):(\d\d):(\d\d)(\.\d{3})?(z|(([+-])(\d\d):(\d\d)))$/i;
+
+export function isTimeRFC3339Ex(hrs = 0, min = 0, sec = 0, tzh = 0, tzm = 0) {
+  return ((hrs === 23 && min === 59 && sec === 60)
+    || (hrs >= 0 && hrs <= 23
+      && min >= 0 && min <= 59
+      && sec >= 0 && sec <= 59))
+    && (tzh >= 0 && tzh <= 23
+      && tzm >= 0 && tzm <= 59);
+}
+
+export function isTimeRFC3339(str) {
+  const matches = str.match(CONST_RFC3339_REGEX_ISTIME);
+  return matches != null
+    && isTimeRFC3339Ex(
+      matches[1], // hours
+      matches[2], // minutes
+      matches[3], // seconds
+      (matches[8] | 0), // timezone hours
+      (matches[9] | 0)); // timezone minutes
+}
+
+export function isDateTimeRFC3339(str) {
+  // http://tools.ietf.org/html/rfc3339#section-5.6
+  const dateTime = str.split(/t|\s/i);
+  return dateTime.length === 2
+    && isDateRFC3339(dateTime[0])
+    && isTimeRFC3339(dateTime[1]);
 }
 
 export function Date_getTimezoneOffset() {
