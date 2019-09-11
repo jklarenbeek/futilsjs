@@ -38,6 +38,16 @@ export function getScalarNormalised(value, defaultValue = undefined, nullable = 
       : defaultValue;
 }
 
+export function getTypeExclusiveBound(getType, inclusive, exclusive) {
+  const includes = getType(inclusive);
+  const excludes = exclusive === true
+    ? includes
+    : getType(exclusive);
+  return (excludes === undefined)
+    ? [includes, undefined]
+    : [undefined, excludes];
+}
+
 export function getBooleanType(obj, def = undefined) {
   return isBooleanType(obj) ? obj : def;
 }
@@ -56,16 +66,6 @@ export function getNumberType(obj, def = undefined) {
 
 export function getNumbishType(obj, def = undefined) {
   return isNumbishType(obj) ? Number(obj) : def;
-}
-
-export function getTypeExclusiveBound(getType, inclusive, exclusive) {
-  const includes = getType(inclusive);
-  const excludes = exclusive === true
-    ? includes
-    : getType(exclusive);
-  return (excludes === undefined)
-    ? [includes, undefined]
-    : [undefined, excludes];
 }
 
 export function getNumberExclusiveBound(inclusive, exclusive) {
@@ -108,13 +108,11 @@ export function getDateType(obj, def = undefined) {
   return (isDateType(obj) && obj) || def;
 }
 
-export function getDateishType(obj, def = undefined) {
-  return isDateType(obj)
-    ? obj
-    : Number.isNaN(Date.parse(obj))
-      ? def
-      : new Date(Date.parse(obj));
+export function getDateishType(str, def = undefined) {
+  const date = Date.parse(str);
+  return !Number.isNaN(date) ? new Date(date) : def;
 }
+
 //#endregion
 
 //#region array and set types

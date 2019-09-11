@@ -1,11 +1,12 @@
+import { isStringType } from './core';
+
 /* eslint-disable function-paren-newline */
 export const CONST_TICKS_SECOND = 1000;
 export const CONST_TICKS_HOUR = CONST_TICKS_SECOND * 60 * 60;
 export const CONST_TICKS_DAY = CONST_TICKS_HOUR * 24;
 
-export const CONST_TIME_INSERTDATE = '1970-00-01T';
-export const CONST_TIME_APPENDOFFS = '+00:00'; // TODO add timezone data
-export const CONST_DATE_APPENDTIME = 'T00:00:00' + CONST_TIME_APPENDOFFS;
+export const CONST_TIME_INSERTDATE = '1970-01-01T';
+export const CONST_DATE_APPENDTIME = 'T00:00:00Z';
 
 export function isLeapYear(year) {
   // https://tools.ietf.org/html/rfc3339#appendix-C
@@ -29,26 +30,16 @@ export function isDateOnlyInRange(year, month, day) {
 }
 
 export function isDateOnlyRFC3339(str) {
-  const matches = str.match(CONST_RFC3339_REGEX_ISDATE);
-  return matches != null
-    && isDateOnlyInRange(
-      matches[1],
-      matches[2],
-      matches[3]);
+  if (!isStringType(str)) return false;
+  const m = str.match(CONST_RFC3339_REGEX_ISDATE);
+  return m != null
+    && isDateOnlyInRange(m[1], m[2], m[3]);
 }
 
 export function getDateTypeOfDateOnlyRFC3339(str, def = undefined) {
-  const matches = str.match(CONST_RFC3339_REGEX_ISDATE);
-  return (matches != null
-    && isDateOnlyInRange(
-      matches[1], // year
-      matches[2], // month
-      matches[3]) // day
-    && new Date(Date.UTC(
-      matches[1], // year
-      matches[2], // month
-      matches[3])) // day
-  ) || def;
+  return isDateOnlyRFC3339(str)
+    ? new Date(Date.parse(str))
+    : def;
 }
 
 // full-date from http://tools.ietf.org/html/rfc3339#section-5.6
@@ -64,31 +55,21 @@ export function isTimeOnlyInRange(hrs = 0, min = 0, sec = 0, tzh = 0, tzm = 0) {
 }
 
 export function isTimeOnlyRFC3339(str) {
-  const matches = str.match(CONST_RFC3339_REGEX_ISTIME);
-  return matches != null
-    && isTimeOnlyInRange(
-      matches[1], // hours
-      matches[2], // minutes
-      matches[3], // seconds
-      (matches[8] | 0), // timezone hours
-      (matches[9] | 0)); // timezone minutes
+  if (!isStringType(str)) return false;
+  const m = str.match(CONST_RFC3339_REGEX_ISTIME);
+  return m != null
+    && isTimeOnlyInRange(m[1], m[2], m[3], m[8]|0, m[9]|0);
 }
 
 export function getDateTypeOfTimeOnlyRFC3339(str, def = undefined) {
-  const matches = str.match(CONST_RFC3339_REGEX_ISTIME);
-  return (matches != null
-    && isTimeOnlyInRange(
-      matches[1], // hours
-      matches[2], // minutes
-      matches[3], // seconds
-      (matches[8] | 0), // timezone hours
-      (matches[9] | 0)) // timezone minutes
-    && new Date(Date.parse(CONST_TIME_INSERTDATE + str)))
-    || def;
+  return isTimeOnlyRFC3339(str)
+    ? new Date(Date.parse(CONST_TIME_INSERTDATE + str))
+    : def;
 }
 
 export function isDateTimeRFC3339(str) {
   // http://tools.ietf.org/html/rfc3339#section-5.6
+  if (!isStringType(str)) return false;
   const dateTime = str.split(/t|\s/i);
   return dateTime.length === 2
     && isDateOnlyRFC3339(dateTime[0])
@@ -96,10 +77,9 @@ export function isDateTimeRFC3339(str) {
 }
 
 export function getDateTypeOfDateTimeRFC3339(str, def = undefined) {
-  const dateTime = str.split(/t|\s/i);
-  const date = getDateTypeOfDateOnlyRFC3339(dateTime[0]);
-  const time = getDateTypeOfTimeOnlyRFC3339(dateTime[1]);
-  return (date != null && time != null && (date + time)) || def;
+  return isDateTimeRFC3339(str)
+    ? new Date(Date.parse(str))
+    : def;
 }
 
 export function getDateTypeTimezoneOffset() {
