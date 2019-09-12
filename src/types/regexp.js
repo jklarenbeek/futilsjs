@@ -35,17 +35,6 @@ export function isStringRegExp(str) {
   return createRegExp(str) != null;
 }
 
-/*
-alpha: expression`!.test(${'data'})`,
-alphanumeric: expression`!.test(${'data'})`,
-identifier: expression`!.test(${'data'})`,
-hexadecimal: expression`!.test(${'data'})`,
-numeric: expression`!/^[0-9]+$/.test(${'data'})`,
-'date-time': expression`isNaN(Date.parse(${'data'})) || ~${'data'}.indexOf(\'/\')`,
-uppercase: expression`${'data'} !== ${'data'}.toUpperCase()`,
-  lowercase: expression`${'data'} !== ${'data'}.toLowerCase()`,
-*/
-
 const CONST_REGEXP_ALPHA = /^[a-zA-Z]+$/;
 export function isStringAlpha(str) {
   return CONST_REGEXP_ALPHA.test(str);
