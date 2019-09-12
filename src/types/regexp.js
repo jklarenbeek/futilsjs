@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { punycode } from '../helpers/punycode';
+import { encode, ucs2encode, toASCII } from '../helpers/punycode';
 
 export function createRegExp(pattern, force = false) {
   try {
@@ -69,7 +69,8 @@ export function isStringHostname(str) {
 const CONST_REGEXP_ACEHOSTNAME = /^(?!-)(xn--)?[a-zA-Z0-9][a-zA-Z0-9-_]{0,61}[a-zA-Z0-9]{0,1}\.(?!-)(xn--)?([a-zA-Z0-9\-]{1,50}|[a-zA-Z0-9-]{1,30}\.[a-zA-Z]{2,})$/;
 export function isStringIdnHostname(str) {
   // https://stackoverflow.com/questions/47514123/domain-name-regex-including-idn-characters-c-sharp
-  return CONST_REGEXP_ACEHOSTNAME.test(punycode.encode(str));
+  const punycode = toASCII(str);
+  return CONST_REGEXP_ACEHOSTNAME.test(punycode);
 }
 
 const CONST_REGEXP_NOT_URI_FRAGMENT = /\/|:/;

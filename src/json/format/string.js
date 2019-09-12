@@ -15,6 +15,8 @@ import {
   isStringUrl,
   isStringEmail,
   isStringHostname,
+  isStringIdnEmail,
+  isStringIdnHostname,
   isStringIPv4,
   isStringIPv6,
   isStringUUID,
@@ -80,6 +82,10 @@ export const formatCompilers = {
     'email', isStringEmail),
   'hostname': createStringFormatCompiler(
     'hostname', isStringHostname),
+  'idn-email': createStringFormatCompiler(
+    'idn-email', isStringIdnEmail),
+  'idn-hostname': createStringFormatCompiler(
+    'idn-hostname', isStringIdnHostname),
   'ipv4': createStringFormatCompiler(
     'ipv4', isStringIPv4),
   'ipv6': createStringFormatCompiler(

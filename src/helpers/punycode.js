@@ -1,6 +1,8 @@
 // Copyright Mathias Bynens <https://mathiasbynens.be/>
 // https://github.com/bestiejs/punycode.js/blob/master/punycode.js
 
+export const punycodeVersion = '2.1.0';
+
 /** Highest positive signed 32-bit float value */
 const maxInt = 2147483647; // aka. 0x7FFFFFFF or 2^31-1
 
@@ -100,7 +102,7 @@ function mapDomain(string, fn) {
  * @param {String} string The Unicode input string (UCS-2).
  * @returns {Array} The new array of code points.
  */
-function ucs2decode(string) {
+export function ucs2decode(string) {
   const output = [];
   let counter = 0;
   const length = string.length;
@@ -132,7 +134,7 @@ function ucs2decode(string) {
  * @param {Array} codePoints The array of numeric code points.
  * @returns {String} The new Unicode string (UCS-2).
  */
-const ucs2encode = array => String.fromCodePoint(...array);
+export const ucs2encode = array => String.fromCodePoint(...array);
 
 /**
  * Converts a basic code point into a digit/integer.
@@ -143,7 +145,7 @@ const ucs2encode = array => String.fromCodePoint(...array);
  * representing integers) in the range `0` to `base - 1`, or `base` if
  * the code point does not represent a value.
  */
-function basicToDigit(codePoint) {
+export function basicToDigit(codePoint) {
   if (codePoint - 0x30 < 0x0A) {
     return codePoint - 0x16;
   }
@@ -167,7 +169,7 @@ function basicToDigit(codePoint) {
  * used; else, the lowercase form is used. The behavior is undefined
  * if `flag` is non-zero and `digit` has no uppercase form.
  */
-function digitToBasic(digit, flag) {
+export function digitToBasic(digit, flag) {
   //  0..25 map to ASCII a..z or A..Z
   // 26..35 map to ASCII 0..9
   return digit + 22 + 75 * (digit < 26) - ((flag !== 0) << 5);
@@ -195,7 +197,7 @@ function adapt(delta, numPoints, firstTime) {
  * @param {String} input The Punycode string of ASCII-only symbols.
  * @returns {String} The resulting string of Unicode symbols.
  */
-function decode(input) {
+export function decode(input) {
   // Don't use UCS-2.
   const output = [];
   const inputLength = input.length;
@@ -280,11 +282,11 @@ function decode(input) {
  * @param {String} input The string of Unicode symbols.
  * @returns {String} The resulting Punycode string of ASCII-only symbols.
  */
-function encode(input) {
+export function encode(str) {
   const output = [];
 
   // Convert the input in UCS-2 to an array of Unicode code points.
-  input = ucs2decode(input);
+  const input = ucs2decode(str);
 
   // Cache the length.
   const inputLength = input.length;
@@ -337,7 +339,7 @@ function encode(input) {
       if (currentValue < n && ++delta > maxInt) {
         error('overflow');
       }
-      if (currentValue == n) {
+      if (currentValue === n) {
         // Represent delta as a generalized variable-length integer.
         let q = delta;
         for (let k = base; /* no condition */; k += base) {
@@ -348,13 +350,13 @@ function encode(input) {
           const qMinusT = q - t;
           const baseMinusT = base - t;
           output.push(
-            stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
+            stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0)),
           );
           q = floor(qMinusT / baseMinusT);
         }
 
         output.push(stringFromCharCode(digitToBasic(q, 0)));
-        bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
+        bias = adapt(delta, handledCPCountPlusOne, handledCPCount === basicLength);
         delta = 0;
         ++handledCPCount;
       }
@@ -377,7 +379,7 @@ function encode(input) {
  * @returns {String} The Unicode representation of the given Punycode
  * string.
  */
-function toUnicode(input) {
+export function toUnicode(input) {
   return mapDomain(input, function iterateMapDomain(string) {
     return regexPunycode.test(string)
       ? decode(string.slice(4).toLowerCase())
@@ -396,37 +398,10 @@ function toUnicode(input) {
  * @returns {String} The Punycode representation of the given domain name or
  * email address.
  */
-function toASCII(input) {
+export function toASCII(input) {
   return mapDomain(input, function iterateMapDomain(string) {
     return regexNonASCII.test(string)
       ? 'xn--' + encode(string)
       : string;
   });
 }
-
-/*--------------------------------------------------------------------------*/
-
-/** Define the public API */
-export const punycode = {
-  /**
-   * A string representing the current Punycode.js version number.
-   * @memberOf punycode
-   * @type String
-   */
-  version: '2.1.0',
-  /**
-   * An object of methods to convert from JavaScript's internal character
-   * representation (UCS-2) to Unicode code points, and back.
-   * @see <https://mathiasbynens.be/notes/javascript-encoding>
-   * @memberOf punycode
-   * @type Object
-   */
-  ucs2: {
-    decode: ucs2decode,
-    encode: ucs2encode,
-  },
-  decode: decode,
-  encode: encode,
-  toASCII: toASCII,
-  toUnicode: toUnicode,
-};
