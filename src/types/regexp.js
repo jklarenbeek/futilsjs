@@ -34,6 +34,41 @@ export function isStringRegExp(str) {
   return createRegExp(str) != null;
 }
 
+/*
+alpha: expression`!.test(${'data'})`,
+alphanumeric: expression`!.test(${'data'})`,
+identifier: expression`!.test(${'data'})`,
+hexadecimal: expression`!.test(${'data'})`,
+numeric: expression`!/^[0-9]+$/.test(${'data'})`,
+'date-time': expression`isNaN(Date.parse(${'data'})) || ~${'data'}.indexOf(\'/\')`,
+uppercase: expression`${'data'} !== ${'data'}.toUpperCase()`,
+  lowercase: expression`${'data'} !== ${'data'}.toLowerCase()`,
+*/
+
+const CONST_REGEXP_ALPHA = /^[a-zA-Z]+$/;
+export function isStringAlpha(str) {
+  return CONST_REGEXP_ALPHA.test(str);
+}
+const CONST_REGEXP_ALPHANUMERIC = /^[a-zA-Z0-9]+$/;
+export function isStringAlphaNumeric(str) {
+  return CONST_REGEXP_ALPHANUMERIC.test(str);
+}
+
+const CONST_REGEXP_IDENTIFIER = /^[-_a-zA-Z0-9]+$/; // NOT HAPPY WITH THIS!
+export function isStringIdentier(str) {
+  return CONST_REGEXP_IDENTIFIER.test(str) && str.length <= 64;
+}
+
+const CONST_REGEXP_HEXADECIMAL = /^[a-fA-F0-9]+$/;
+export function isStringHexaDecimal(str) {
+  return CONST_REGEXP_HEXADECIMAL.test(str);
+}
+
+const CONST_REGEXP_NUMERIC = /^[0-9]+$/;
+export function isStringNumeric(str) {
+  return CONST_REGEXP_NUMERIC.test(str);
+}
+
 const CONST_REGEXP_HOSTNAME = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[-0-9a-z]{0,61}[0-9a-z])?)*$/i;
 export function isStringHostname(str) {
   // https://tools.ietf.org/html/rfc1034#section-3.5
@@ -48,9 +83,9 @@ const CONST_REGEXP_URI_FULL = /^(?:[a-z][a-z0-9+\-.]*:)(?:\/?\/(?:(?:[a-z0-9\-._
 export function isStringUri(str, full = false) {
   // http://jmrware.com/articles/2009/uri_regexp/URI_regex.html + optional protocol + required "."
   return CONST_REGEXP_NOT_URI_FRAGMENT.test(str)
-    && full === true
-    ? CONST_REGEXP_URI_FULL.test(str)
-    : CONST_REGEXP_URI_FAST.test(str);
+    && (full === true
+      ? CONST_REGEXP_URI_FULL.test(str)
+      : CONST_REGEXP_URI_FAST.test(str));
 }
 
 const CONST_REGEXP_URIREF_FAST = /^(?:(?:[a-z][a-z0-9+-.]*:)?\/?\/)?(?:[^\\\s#][^\s#]*)?(?:#[^\\\s]*)?$/i;

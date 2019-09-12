@@ -18,6 +18,11 @@ import {
   isStringIPv4,
   isStringIPv6,
   isStringUUID,
+  isStringAlpha,
+  isStringAlphaNumeric,
+  isStringIdentier,
+  isStringHexaDecimal,
+  isStringNumeric,
 } from '../../types/regexp';
 
 function createStringFormatCompiler(formatName, isFormatTest) {
@@ -31,12 +36,36 @@ function createStringFormatCompiler(formatName, isFormatTest) {
     if (addError == null) return undefined;
 
     return function validateStringFormat(data) {
-      return isStringType(data) && (isFormatTest(data) || addError(data));
+      return data == null
+        || isStringType(data)
+        && (isFormatTest(data) || addError(data));
     };
   };
 }
 
+export function isStringUpperCase(str) {
+  return str === str.toUpperCase();
+}
+
+export function isStringLowerCase(str) {
+  return str === str.toLowerCase();
+}
+
 export const formatCompilers = {
+  'alpha': createStringFormatCompiler(
+    'alpha', isStringAlpha),
+  'alphanumeric': createStringFormatCompiler(
+    'alphanumeric', isStringAlphaNumeric),
+  'identifier': createStringFormatCompiler(
+    'identifier', isStringIdentier),
+  'hexadecimal': createStringFormatCompiler(
+    'hexadecimal', isStringHexaDecimal),
+  'numeric': createStringFormatCompiler(
+    'numeric', isStringNumeric),
+  'uppercase': createStringFormatCompiler(
+    'uppercase', isStringUpperCase),
+  'lowercase': createStringFormatCompiler(
+    'lowercase', isStringLowerCase),
   'regex': createStringFormatCompiler(
     'regex', isStringRegExp),
   'uri': createStringFormatCompiler(

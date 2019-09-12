@@ -1,8 +1,11 @@
 /* eslint-disable no-console */
 
-import { formatCompilers as dateTimeFormat } from './date-time';
-import { formatCompilers as regexFormat } from './string';
+import { formatCompilers as dateTimeFormats } from './date-time';
+import { formatCompilers as stringFormats } from './string';
 
 export function getDefaultFormatCompilers() {
-  return { ...dateTimeFormat, ...regexFormat };
+  return {
+    ...dateTimeFormats,
+    ...stringFormats,
+  };
 }

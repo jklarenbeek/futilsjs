@@ -98,5 +98,64 @@ describe('Schema String Type', function () {
       assert.isFalse(root.validate('08:30:06 PST'), 'an invalid time string');
       assert.isFalse(root.validate('01:01:01,1111'), 'only RFC3339 not all of ISO 8601 are valid');
     });
+    it('should validate an email address', function () {
+      compileJSONSchema('femail1', { format: 'email' });
+      const root = getJSONSchema('femail1');
+      assert.isTrue(root.validate(undefined), 'undefined is true');
+      assert.isTrue(root.validate(null), 'null is true');
+      assert.isTrue(root.validate('john.doe@example.com'), 'a valid email address');
+      assert.isFalse(root.validate('2962'), 'an invalid email address');
+    });
+    it('should validate a hostname', function () {
+      compileJSONSchema('fhostname1', { format: 'hostname' });
+      const root = getJSONSchema('fhostname1');
+      assert.isTrue(root.validate(undefined), 'undefined is true');
+      assert.isTrue(root.validate(null), 'null is true');
+      assert.isTrue(root.validate('www.example.com'), 'a valid hostname');
+      assert.isTrue(root.validate('xn--4gbwdl.xn--wgbh1c'), 'a valid punycoded IDN hostname');
+      assert.isFalse(root.validate('-a-host-name-that-starts-with--'), 'a host name starting with an illegal character');
+      assert.isFalse(root.validate('not_a_valid_host_name'), 'a host name containing illegal characters');
+      assert.isFalse(root.validate('a-vvvvvvvvvvvvvvvveeeeeeeeeeeeeeeerrrrrrrrrrrrrrrryyyyyyyyyyyyyyyy-long-host-name-component'), 'a host name with a component too long');
+    });
+    it('should validate an idn-email address', function () {
+      compileJSONSchema('femail2', { format: 'email' });
+      const root = getJSONSchema('femail2');
+      assert.isTrue(root.validate(undefined), 'undefined is true');
+      assert.isTrue(root.validate(null), 'null is true');
+      assert.isTrue(root.validate('실례@실례.테스트'), 'a valid idn e-mail (example@example.test in Hangul)');
+      assert.isFalse(root.validate('2962'), 'an invalid idn e-mail address');
+    });
+    it('should validate internationalized hostnames', function () {
+      compileJSONSchema('fhostname2', { format: 'hostname' });
+      const root = getJSONSchema('fhostname2');
+      assert.isTrue(root.validate(undefined), 'undefined is true');
+      assert.isTrue(root.validate(null), 'null is true');
+      assert.isTrue(root.validate('실례.테스트'), 'a valid host name (example.test in Hangul)');
+      assert.isFalse(root.validate('〮실례.테스트'), 'illegal first char U+302E Hangul single dot tone mark');
+      assert.isFalse(root.validate('실〮례.테스트'), 'contains illegal char U+302E Hangul single dot tone mark');
+      assert.isFalse(root.validate('실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실실례례테스트례례례례례례례례례례례례례례례례례테스트례례례례례례례례례례례례례례례례례례례테스트례례례례례례례례례례례례테스트례례실례.테스트'), 'a host name with a component too long');
+    });
+    it('should validate an ipv4 address', function () {
+      compileJSONSchema('fipv41', { format: 'ipv4' });
+      const root = getJSONSchema('fipv41');
+      assert.isTrue(root.validate(undefined), 'undefined is true');
+      assert.isTrue(root.validate(null), 'null is true');
+      assert.isTrue(root.validate('192.168.0.1'), 'a valid IP address');
+      assert.isFalse(root.validate('127.0.0.0.1'), 'an IP address with too many components');
+      assert.isFalse(root.validate('256.256.256.256'), 'an IP address with out-of-range values');
+      assert.isFalse(root.validate('127.0'), 'an IP address without 4 components');
+      assert.isFalse(root.validate('0x7f000001'), 'an IP address as an integer');
+    });
+    it('should validate an ipv6 address', function () {
+      compileJSONSchema('fipv61', { format: 'ipv6' });
+      const root = getJSONSchema('fipv61');
+      assert.isTrue(root.validate(undefined), 'undefined is true');
+      assert.isTrue(root.validate(null), 'null is true');
+      assert.isTrue(root.validate('::1'), 'a valid IPv6 address');
+      assert.isFalse(root.validate('12345::'), 'an IPv6 address with out-of-range values');
+      assert.isFalse(root.validate('1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1'), 'an IPv6 address with too many components');
+      assert.isFalse(root.validate('::laptop'), 'an IPv6 address containing illegal characters');
+    });
+
   });
 });
