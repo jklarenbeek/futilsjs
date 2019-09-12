@@ -59,8 +59,12 @@ describe('Schema String Type', function () {
       compileJSONSchema('fdatetime1', { format: 'date-time' });
 
       const root = getJSONSchema('fdatetime1');
-      assert.isTrue(root.validate(undefined), 'undefined is true');
-      assert.isTrue(root.validate(null), 'null is true');
+      assert.isTrue(root.validate(undefined), 'ignore undefined');
+      assert.isTrue(root.validate(null), 'ignore null');
+      assert.isTrue(root.validate(true), 'ignore boolean type');
+      assert.isTrue(root.validate(1), 'ignore number type');
+      assert.isTrue(root.validate({}), 'ignore object type');
+      assert.isTrue(root.validate([]), 'ignore array type');
       assert.isTrue(root.validate('1963-06-19T08:30:06.283185Z'), 'a valid date-time string');
       assert.isTrue(root.validate('1963-06-19T08:30:06Z'), 'a valid date-time string without second fraction');
       assert.isTrue(root.validate('1937-01-01T12:00:27.87+00:20'), 'a valid date-time string with plus offset');
@@ -101,8 +105,12 @@ describe('Schema String Type', function () {
     it('should validate alpha characters only', function () {
       compileJSONSchema('falpha1', { format: 'alpha' });
       const root = getJSONSchema('falpha1');
-      assert.isTrue(root.validate(undefined), 'undefined is true');
-      assert.isTrue(root.validate(null), 'null is true');
+      assert.isTrue(root.validate(undefined), 'ignore undefined');
+      assert.isTrue(root.validate(null), 'ignore null');
+      assert.isTrue(root.validate(true), 'ignore boolean type');
+      assert.isTrue(root.validate(1), 'ignore number type');
+      assert.isTrue(root.validate({}), 'ignore object type');
+      assert.isTrue(root.validate([]), 'ignore array type');
       assert.isTrue(root.validate('bitSOCIAL'), 'a valid letters only string');
       assert.isFalse(root.validate('2962'), 'an invalid string with numbers');
       assert.isFalse(root.validate('bit2SOCIAL'), 'an invalid mixed string with one number');
@@ -166,7 +174,7 @@ describe('Schema String Type', function () {
       assert.isTrue(root.validate('0123456789abcdef'), 'an invalid string with with lowercase hexadecimal digits');
       assert.isFalse(root.validate('123-ABC/12'), 'a valid ABC string with symbols');
     });
-    it.skip('shouls validate unique identifier UUID strings', function () {
+    it.skip('should validate UUID strings (no tests)', function () {
       compileJSONSchema('fuuid1', { format: 'uuid' });
       const root = getJSONSchema('fuuid1');
       assert.isTrue(root.validate(undefined), 'undefined is true');

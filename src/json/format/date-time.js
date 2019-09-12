@@ -230,9 +230,7 @@ function compileFormatByType(name, parseType, schemaObj, jsonSchema) {
         ? addError(data)
         : true;
     }
-    else return data == null
-      || isDateType(data)
-      || addError(data);
+    else return true;
   };
 }
 

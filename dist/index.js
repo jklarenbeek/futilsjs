@@ -2746,6 +2746,16 @@ function getScalarNormalised(value, defaultValue = undefined, nullable = false) 
       : defaultValue;
 }
 
+function getTypeExclusiveBound(getType, inclusive, exclusive) {
+  const includes = getType(inclusive);
+  const excludes = exclusive === true
+    ? includes
+    : getType(exclusive);
+  return (excludes === undefined)
+    ? [includes, undefined]
+    : [undefined, excludes];
+}
+
 function getBooleanType(obj, def = undefined) {
   return isBooleanType(obj) ? obj : def;
 }
@@ -2802,23 +2812,15 @@ function getBigIntishType(obj, def = undefined) {
     : getIntishType(obj, def);
 }
 
-function getDateishType(obj, def = undefined) {
-  return isDateType(obj)
-    ? obj
-    : Number.isNaN(Date.parse(obj))
-      ? def
-      : new Date(Date.parse(obj));
+function getDateType(obj, def = undefined) {
+  return (isDateType(obj) && obj) || def;
 }
 
-function getDateishExclusiveBound(inclusive, exclusive) {
-  const includes = getDateishType(inclusive);
-  const excludes = exclusive === true
-    ? includes
-    : getDateishType(exclusive);
-  return (excludes !== undefined)
-    ? [undefined, excludes]
-    : [includes, undefined];
+function getDateishType(str, def = undefined) {
+  const date = Date.parse(str);
+  return !Number.isNaN(date) ? new Date(date) : def;
 }
+
 //#endregion
 
 //#region array and set types
@@ -4026,124 +4028,147 @@ function app(state, actions, view, container) {
 
 const CONST_TIME_INSERTDATE = '1970-01-01T';
 
-function getDateOnly(value) {
-  const date = getDateishType(value);
-  return isDateType(date)
-    ? Date_trimTime(date)
-    : undefined;
+function isLeapYear(year) {
+  // https://tools.ietf.org/html/rfc3339#appendix-C
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 }
 
-function getTimeOnly(value) {
-  return isStringType(value)
-    ? getDateishType(CONST_TIME_INSERTDATE + value)
-    : isDateType(value)
-      ? Date_trimDate(value)
-      : undefined;
+const CONST_RFC3339_DAYS = Object.freeze(
+  [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+);
+
+// full-date from http://tools.ietf.org/html/rfc3339#section-5.6
+const CONST_RFC3339_REGEX_ISDATE = /^(\d\d\d\d)-([0-1]\d)-([0-3]\d)z?$/i;
+
+function isDateOnlyInRange(year, month, day) {
+  return month >= 1
+    && month <= 12
+    && day >= 1
+    && day <= (month === 2 && isLeapYear(year)
+      ? 29
+      : CONST_RFC3339_DAYS[month]);
 }
 
-function Date_trimTime(date) {
-  return new Date(Date.UTC(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
-  ));
+function isDateOnlyRFC3339(str) {
+  if (!isStringType(str)) return false;
+  const m = str.match(CONST_RFC3339_REGEX_ISDATE);
+  return m != null
+    && isDateOnlyInRange(m[1]|0, m[2]|0, m[3]|0);
 }
 
-function Date_trimDate(date) {
-  return new Date(1970, 0, 1,
-    date.getUTCHour(),
-    date.getUTCMinutes(),
-    date.getUTCSeconds(),
-    date.getUTCMilliseconds());
+function getDateTypeOfDateOnlyRFC3339(str, def = undefined) {
+  return isDateOnlyRFC3339(str)
+    ? new Date(Date.parse(str))
+    : def;
+}
+
+// full-date from http://tools.ietf.org/html/rfc3339#section-5.6
+const CONST_RFC3339_REGEX_ISTIME = /^(\d\d):(\d\d):(\d\d)(\.\d{1,6})?(z|(([+-])(\d\d):(\d\d)))$/i;
+
+function isTimeOnlyInRange(hrs = 0, min = 0, sec = 0, tzh = 0, tzm = 0) {
+  return ((hrs === 23 && min === 59 && sec === 60)
+    || (hrs >= 0 && hrs <= 23
+      && min >= 0 && min <= 59
+      && sec >= 0 && sec <= 59))
+    && (tzh >= 0 && tzh <= 23
+      && tzm >= 0 && tzm <= 59);
+}
+
+function isTimeOnlyRFC3339(str) {
+  if (!isStringType(str)) return false;
+  const m = str.match(CONST_RFC3339_REGEX_ISTIME);
+  return m != null
+    && isTimeOnlyInRange(m[1]|0, m[2]|0, m[3]|0, m[8]|0, m[9]|0);
+}
+
+function getDateTypeOfTimeOnlyRFC3339(str, def = undefined) {
+  return isTimeOnlyRFC3339(str)
+    ? new Date(Date.parse(CONST_TIME_INSERTDATE + str))
+    : def;
+}
+
+function isDateTimeRFC3339(str) {
+  // http://tools.ietf.org/html/rfc3339#section-5.6
+  if (!isStringType(str)) return false;
+  const dateTime = str.split(/t|\s/i);
+  return dateTime.length === 2
+    && isDateOnlyRFC3339(dateTime[0])
+    && isTimeOnlyRFC3339(dateTime[1]);
+}
+
+function getDateTypeOfDateTimeRFC3339(str, def = undefined) {
+  return isDateTimeRFC3339(str)
+    ? new Date(Date.parse(str))
+    : def;
 }
 
 /* eslint-disable function-paren-newline */
 
-function compileDateTimeMaximum(schemaObj, jsonSchema) {
-  const [max, emax] = getDateishExclusiveBound(
-    jsonSchema.formatMaximum,
-    jsonSchema.formatExclusiveMaximum,
-  );
-
-  if (emax != null) {
-    const addError = schemaObj.createSingleErrorHandler(
-      'formatExclusiveMaximum',
-      emax,
-      compileDateTimeMaximum);
-    if (addError == null) return undefined;
-
-    return function formatDateTimeExclusiveMaximum(data) {
-      const date = getDateishType(data);
-      return date == null
-        ? true
-        : date < emax
-          ? true
-          : addError(data);
-    };
-  }
-  else if (max != null) {
-    const addError = schemaObj.createSingleErrorHandler(
-      'formatMaximum',
-      max,
-      compileDateTimeMaximum);
-    if (addError == null) return undefined;
-
-    return function formatDateTimeMaximum(data) {
-      const date = getDateishType(data);
-      return date == null
-        ? true
-        : date <= max
-          ? true
-          : addError(data);
-    };
-  }
-  return undefined;
-}
-
-function compileDateTimeMinimum(schemaObj, jsonSchema) {
-  const [min, emin] = getDateishExclusiveBound(
+function compileFormatMinimumByType(parseType, schemaObj, jsonSchema) {
+  const [min, emin] = getTypeExclusiveBound(
+    parseType,
     jsonSchema.formatMinimum,
-    jsonSchema.formatExclusiveMinimum,
-  );
+    jsonSchema.formatExclusiveMinimum);
 
   if (emin != null) {
     const addError = schemaObj.createSingleErrorHandler(
       'formatExclusiveMinimum',
       emin,
-      compileDateTimeMinimum);
+      parseType);
     if (addError == null) return undefined;
 
-    return function formatDateTimeExclusiveMinimum(data) {
-      const date = getDateishType(data);
-      return date == null
-        ? true
-        : data > emin
-          ? true
-          : addError(data);
+    return function isFormatExclusiveMinimum(data) {
+      return (data != null && data > emin) || addError(data);
     };
   }
   else if (min) {
     const addError = schemaObj.createSingleErrorHandler(
       'formatMinimum',
       min,
-      compileDateTimeMinimum);
+      parseType);
     if (addError == null) return undefined;
 
-    return function formatDateTimeMinimum(data) {
-      const date = getDateishType(data);
-      return date == null
-        ? true
-        : data >= min
-          ? true
-          : addError(data);
+    return function isFormatMinimum(data) {
+      return (data != null && data >= min) || addError(data);
     };
   }
 
   return undefined;
 }
 
-function compileDateTimeFormat(schemaObj, jsonSchema) {
-  if (jsonSchema.format !== 'date-time')
+function compileFormatMaximumByType(parseType, schemaObj, jsonSchema) {
+  const [max, emax] = getTypeExclusiveBound(
+    parseType,
+    jsonSchema.formatMaximum,
+    jsonSchema.formatExclusiveMaximum);
+
+  if (emax != null) {
+    const addError = schemaObj.createSingleErrorHandler(
+      'formatExclusiveMaximum',
+      emax,
+      parseType);
+    if (addError == null) return undefined;
+
+    return function isFormatExclusiveMaximum(data) {
+      return (data != null && data < emax) || addError(data);
+    };
+  }
+  else if (max != null) {
+    const addError = schemaObj.createSingleErrorHandler(
+      'formatMaximum',
+      max,
+      parseType);
+    if (addError == null) return undefined;
+
+    return function isFormatMaximum(data) {
+      return (data != null && data <= max) || addError(data);
+    };
+  }
+  return undefined;
+}
+
+function compileFormatByType(name, parseType, schemaObj, jsonSchema) {
+  if (jsonSchema.format !== name)
     return undefined;
 
   const addError = schemaObj.createSingleErrorHandler(
@@ -4152,65 +4177,88 @@ function compileDateTimeFormat(schemaObj, jsonSchema) {
     compileDateTimeFormat);
   if (addError == null) return undefined;
 
-  return [
-    function validateDateTimeType(data) {
-      return data == null || isDateishType(data) || addError(data);
-    },
-    compileDateTimeMinimum(schemaObj, jsonSchema),
-    compileDateTimeMaximum(schemaObj, jsonSchema),
-  ];
+  const validateMin = compileFormatMinimumByType(
+    parseType,
+    schemaObj,
+    jsonSchema);
+  const validateMax = compileFormatMaximumByType(
+    parseType,
+    schemaObj,
+    jsonSchema);
+
+  if (validateMin != null && validateMax != null) {
+    return function validateFormatBetween(data) {
+      if (isStringType(data)) {
+        const date = parseType(data);
+        return date == null
+          ? addError(data)
+          : validateMin(date)
+            && validateMax(date);
+      }
+      else if (isDateType(data))
+        return validateMin(data)
+          && validateMax(data);
+      else
+        return data == null;
+    };
+  }
+  if (validateMin != null) {
+    return function validateFormatMinimum(data) {
+      if (isStringType(data)) {
+        const date = parseType(data);
+        return date == null
+          ? addError(data)
+          : validateMin(date);
+      }
+      else if (isDateType(data))
+        return validateMin(data);
+      else
+        return data == null;
+    };
+  }
+  if (validateMax != null) {
+    return function validateFormatMaximum(data) {
+      if (isStringType(data))
+        return validateMax(parseType(data));
+      else if (isDateType(data))
+        return validateMax(data);
+      return true;
+    };
+  }
+
+  return function validateDateTime(data) {
+    if (isStringType(data)) {
+      const date = parseType(data);
+      return date == null
+        ? addError(data)
+        : true;
+    }
+    else return true;
+  };
+}
+
+function compileDateTimeFormat(schemaObj, jsonSchema) {
+  return compileFormatByType(
+    'date-time',
+    getDateTypeOfDateTimeRFC3339,
+    schemaObj,
+    jsonSchema);
 }
 
 function compileDateOnlyFormat(schemaObj, jsonSchema) {
-  if (jsonSchema.format !== 'date')
-    return undefined;
-
-  const format = {
-    formatExclusiveMaximum: getDateOnly(jsonSchema.formatExclusiveMaximum),
-    formatMaximum: getDateOnly(jsonSchema.formatMaximum),
-    formatExclusiveMinimum: getDateOnly(jsonSchema.formatExclusiveMinimum),
-    formatMinimum: getDateOnly(jsonSchema.formatMinimum),
-  };
-
-  const addError = schemaObj.createSingleErrorHandler(
-    'format',
-    jsonSchema.format,
-    compileDateOnlyFormat);
-  if (addError == null) return undefined;
-
-  return [
-    function validateDateTimeType(data) {
-      return data == null || isDateishType(data) || addError(data);
-    },
-    compileDateTimeMinimum(schemaObj, format),
-    compileDateTimeMaximum(schemaObj, format),
-  ];
+  return compileFormatByType(
+    'date',
+    getDateTypeOfDateOnlyRFC3339,
+    schemaObj,
+    jsonSchema);
 }
 
 function compileTimeOnlyFormat(schemaObj, jsonSchema) {
-  if (jsonSchema.format !== 'time')
-    return undefined;
-
-  const format = {
-    formatExclusiveMaximum: getTimeOnly(jsonSchema.formatExclusiveMaximum),
-    formatMaximum: getTimeOnly(jsonSchema.formatMaximum),
-    formatExclusiveMinimum: getTimeOnly(jsonSchema.formatExclusiveMinimum),
-    formatMinimum: getTimeOnly(jsonSchema.formatMinimum),
-  };
-
-  const addError = schemaObj.createSingleErrorHandler(
-    'format',
-    jsonSchema.format,
-    compileTimeOnlyFormat);
-  if (addError == null) return undefined;
-
-  return [
-    function validateDateTimeType(data) {
-      return data == null || getTimeOnly(data) != null || addError(data);
-    },
-    compileDateTimeMinimum(schemaObj, format),
-    compileDateTimeMaximum(schemaObj, format),
-  ];
+  return compileFormatByType(
+    'time',
+    getDateTypeOfTimeOnlyRFC3339,
+    schemaObj,
+    jsonSchema);
 }
 
 const formatCompilers = {
@@ -4219,10 +4267,518 @@ const formatCompilers = {
   time: compileTimeOnlyFormat,
 };
 
+// Copyright Mathias Bynens <https://mathiasbynens.be/>
+
+/** Highest positive signed 32-bit float value */
+const maxInt = 2147483647; // aka. 0x7FFFFFFF or 2^31-1
+
+/** Bootstring parameters */
+const base$2 = 36;
+const tMin = 1;
+const tMax = 26;
+const skew = 38;
+const damp = 700;
+const initialBias = 72;
+const initialN = 128; // 0x80
+const delimiter = '-'; // '\x2D'
+const regexNonASCII = /[^\0-\x7E]/; // non-ASCII chars
+const regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g; // RFC 3490 separators
+
+/** Error messages */
+const errors = {
+  // eslint-disable-next-line quote-props
+  'overflow': 'Overflow: input needs wider integers to process',
+  'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
+  'invalid-input': 'Invalid input',
+};
+
+/** Convenience shortcuts */
+const baseMinusTMin = base$2 - tMin;
+const floor = Math.floor;
+const stringFromCharCode = String.fromCharCode;
+
+/*--------------------------------------------------------------------------*/
+
+/**
+ * A generic error utility function.
+ * @private
+ * @param {String} type The error type.
+ * @returns {Error} Throws a `RangeError` with the applicable error message.
+ */
+function error(type) {
+  throw new RangeError(errors[type]);
+}
+
+/**
+ * A generic `Array#map` utility function.
+ * @private
+ * @param {Array} array The array to iterate over.
+ * @param {Function} callback The function that gets called for every array
+ * item.
+ * @returns {Array} A new array of values returned by the callback function.
+ */
+function map(array, fn) {
+  const result = [];
+  let length = array.length;
+  while (length--) {
+    result[length] = fn(array[length]);
+  }
+  return result;
+}
+
+/**
+ * A simple `Array#map`-like wrapper to work with domain name strings or email
+ * addresses.
+ * @private
+ * @param {String} domain The domain name or email address.
+ * @param {Function} callback The function that gets called for every
+ * character.
+ * @returns {Array} A new string of characters returned by the callback
+ * function.
+ */
+function mapDomain(string, fn) {
+  const parts = string.split('@');
+  let result = '';
+  if (parts.length > 1) {
+    // In email addresses, only the domain name should be punycoded. Leave
+    // the local part (i.e. everything up to `@`) intact.
+    result = parts[0] + '@';
+    string = parts[1];
+  }
+  // Avoid `split(regex)` for IE8 compatibility. See #17.
+  string = string.replace(regexSeparators, '\x2E');
+  const labels = string.split('.');
+  const encoded = map(labels, fn).join('.');
+  return result + encoded;
+}
+
+/**
+ * Creates an array containing the numeric code points of each Unicode
+ * character in the string. While JavaScript uses UCS-2 internally,
+ * this function will convert a pair of surrogate halves (each of which
+ * UCS-2 exposes as separate characters) into a single code point,
+ * matching UTF-16.
+ * @see `punycode.ucs2.encode`
+ * @see <https://mathiasbynens.be/notes/javascript-encoding>
+ * @memberOf punycode.ucs2
+ * @name decode
+ * @param {String} string The Unicode input string (UCS-2).
+ * @returns {Array} The new array of code points.
+ */
+function ucs2decode(string) {
+  const output = [];
+  let counter = 0;
+  const length = string.length;
+  while (counter < length) {
+    const value = string.charCodeAt(counter++);
+    if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
+      // It's a high surrogate, and there is a next character.
+      const extra = string.charCodeAt(counter++);
+      if ((extra & 0xFC00) === 0xDC00) { // Low surrogate.
+        output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
+      } else {
+        // It's an unmatched surrogate; only append this code unit, in case the
+        // next code unit is the high surrogate of a surrogate pair.
+        output.push(value);
+        counter--;
+      }
+    } else {
+      output.push(value);
+    }
+  }
+  return output;
+}
+
+/**
+ * Converts a digit/integer into a basic code point.
+ * @see `basicToDigit()`
+ * @private
+ * @param {Number} digit The numeric value of a basic code point.
+ * @returns {Number} The basic code point whose value (when used for
+ * representing integers) is `digit`, which needs to be in the range
+ * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
+ * used; else, the lowercase form is used. The behavior is undefined
+ * if `flag` is non-zero and `digit` has no uppercase form.
+ */
+function digitToBasic(digit, flag) {
+  //  0..25 map to ASCII a..z or A..Z
+  // 26..35 map to ASCII 0..9
+  return digit + 22 + 75 * (digit < 26) - ((flag !== 0) << 5);
+}
+
+/**
+ * Bias adaptation function as per section 3.4 of RFC 3492.
+ * https://tools.ietf.org/html/rfc3492#section-3.4
+ * @private
+ */
+function adapt(delta, numPoints, firstTime) {
+  let k = 0;
+  delta = firstTime ? floor(delta / damp) : delta >> 1;
+  delta += floor(delta / numPoints);
+  for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base$2) {
+    delta = floor(delta / baseMinusTMin);
+  }
+  return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
+}
+
+/**
+ * Converts a string of Unicode symbols (e.g. a domain name label) to a
+ * Punycode string of ASCII-only symbols.
+ * @memberOf punycode
+ * @param {String} input The string of Unicode symbols.
+ * @returns {String} The resulting Punycode string of ASCII-only symbols.
+ */
+function encode(str) {
+  const output = [];
+
+  // Convert the input in UCS-2 to an array of Unicode code points.
+  const input = ucs2decode(str);
+
+  // Cache the length.
+  const inputLength = input.length;
+
+  // Initialize the state.
+  let n = initialN;
+  let delta = 0;
+  let bias = initialBias;
+
+  // Handle the basic code points.
+  for (const currentValue of input) {
+    if (currentValue < 0x80) {
+      output.push(stringFromCharCode(currentValue));
+    }
+  }
+
+  const basicLength = output.length;
+  let handledCPCount = basicLength;
+
+  // `handledCPCount` is the number of code points that have been handled;
+  // `basicLength` is the number of basic code points.
+
+  // Finish the basic string with a delimiter unless it's empty.
+  if (basicLength) {
+    output.push(delimiter);
+  }
+
+  // Main encoding loop:
+  while (handledCPCount < inputLength) {
+    // All non-basic code points < n have been handled already. Find the next
+    // larger one:
+    let m = maxInt;
+    for (const currentValue of input) {
+      if (currentValue >= n && currentValue < m) {
+        m = currentValue;
+      }
+    }
+
+    // Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
+    // but guard against overflow.
+    const handledCPCountPlusOne = handledCPCount + 1;
+    if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
+      error('overflow');
+    }
+
+    delta += (m - n) * handledCPCountPlusOne;
+    n = m;
+
+    for (const currentValue of input) {
+      if (currentValue < n && ++delta > maxInt) {
+        error('overflow');
+      }
+      if (currentValue === n) {
+        // Represent delta as a generalized variable-length integer.
+        let q = delta;
+        for (let k = base$2; /* no condition */; k += base$2) {
+          const t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+          if (q < t) {
+            break;
+          }
+          const qMinusT = q - t;
+          const baseMinusT = base$2 - t;
+          output.push(
+            stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0)),
+          );
+          q = floor(qMinusT / baseMinusT);
+        }
+
+        output.push(stringFromCharCode(digitToBasic(q, 0)));
+        bias = adapt(delta, handledCPCountPlusOne, handledCPCount === basicLength);
+        delta = 0;
+        ++handledCPCount;
+      }
+    }
+
+    ++delta;
+    ++n;
+  }
+  return output.join('');
+}
+
+/**
+ * Converts a Unicode string representing a domain name or an email address to
+ * Punycode. Only the non-ASCII parts of the domain name will be converted,
+ * i.e. it doesn't matter if you call it with a domain that's already in
+ * ASCII.
+ * @memberOf punycode
+ * @param {String} input The domain name or email address to convert, as a
+ * Unicode string.
+ * @returns {String} The Punycode representation of the given domain name or
+ * email address.
+ */
+function toASCII(input) {
+  return mapDomain(input, function iterateMapDomain(string) {
+    return regexNonASCII.test(string)
+      ? 'xn--' + encode(string)
+      : string;
+  });
+}
+
+/* eslint-disable max-len */
+
+function createRegExp(pattern, force = false) {
+  try {
+    if (pattern != null) {
+      if (pattern.constructor === RegExp) {
+        return force === true
+          ? new RegExp(pattern.toString())
+          : pattern;
+      }
+      if (pattern.constructor === String) {
+        if (pattern[0] === '/') {
+          const e = pattern.lastIndexOf('/');
+          if (e >= 0) {
+            const r = pattern.substring(1, e);
+            const g = pattern.substring(e + 1);
+            return new RegExp(r, g);
+          }
+        }
+        return new RegExp(pattern);
+      }
+      if (pattern.constructor === Array && pattern.length > 1) {
+        return new RegExp(pattern[0], pattern[1]);
+      }
+    }
+    return undefined;
+  }
+  catch (e) {
+    return undefined;
+  }
+}
+
+function isStringRegExp(str) {
+  return createRegExp(str) != null;
+}
+
+const CONST_REGEXP_ALPHA = /^[a-zA-Z]+$/;
+function isStringAlpha(str) {
+  return CONST_REGEXP_ALPHA.test(str);
+}
+const CONST_REGEXP_ALPHANUMERIC = /^[a-zA-Z0-9]+$/;
+function isStringAlphaNumeric(str) {
+  return CONST_REGEXP_ALPHANUMERIC.test(str);
+}
+
+const CONST_REGEXP_IDENTIFIER = /^[-_a-zA-Z0-9]+$/; // NOT HAPPY WITH THIS!
+function isStringIdentier(str) {
+  return CONST_REGEXP_IDENTIFIER.test(str) && str.length <= 64;
+}
+
+const CONST_REGEXP_HEXADECIMAL = /^[a-fA-F0-9]+$/;
+function isStringHexaDecimal(str) {
+  return CONST_REGEXP_HEXADECIMAL.test(str);
+}
+
+const CONST_REGEXP_NUMERIC = /^[0-9]+$/;
+function isStringNumeric(str) {
+  return CONST_REGEXP_NUMERIC.test(str);
+}
+
+const CONST_REGEXP_HOSTNAME = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[-0-9a-z]{0,61}[0-9a-z])?)*$/i;
+function isStringHostname(str) {
+  // https://tools.ietf.org/html/rfc1034#section-3.5
+  // https://tools.ietf.org/html/rfc1123#section-2
+  return str.length <= 255 && CONST_REGEXP_HOSTNAME.test(str);
+}
+
+const CONST_REGEXP_ACEHOSTNAME = /^(?!-)(xn--)?[a-zA-Z0-9][a-zA-Z0-9-_]{0,61}[a-zA-Z0-9]{0,1}\.(?!-)(xn--)?([a-zA-Z0-9\-]{1,50}|[a-zA-Z0-9-]{1,30}\.[a-zA-Z]{2,})$/;
+function isStringIdnHostname(str) {
+  // https://stackoverflow.com/questions/47514123/domain-name-regex-including-idn-characters-c-sharp
+  const punycode = toASCII(str);
+  return CONST_REGEXP_ACEHOSTNAME.test(punycode);
+}
+
+const CONST_REGEXP_NOT_URI_FRAGMENT = /\/|:/;
+// uri: https://github.com/mafintosh/is-my-json-valid/blob/master/formats.js
+const CONST_REGEXP_URI_FAST = /^(?:[a-z][a-z0-9+-.]*:)(?:\/?\/)?[^\s]*$/i;
+const CONST_REGEXP_URI_FULL = /^(?:[a-z][a-z0-9+\-.]*:)(?:\/?\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:]|%[0-9a-f]{2})*@)?(?:\[(?:(?:(?:(?:[0-9a-f]{1,4}:){6}|::(?:[0-9a-f]{1,4}:){5}|(?:[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){4}|(?:(?:[0-9a-f]{1,4}:){0,1}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){3}|(?:(?:[0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){2}|(?:(?:[0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:|(?:(?:[0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::)(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))|(?:(?:[0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(?:(?:[0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::)|[Vv][0-9a-f]+\.[a-z0-9\-._~!$&'()*+,;=:]+)\]|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)|(?:[a-z0-9\-._~!$&'()*+,;=]|%[0-9a-f]{2})*)(?::\d*)?(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*|\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*)?|(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*)(?:\?(?:[a-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9a-f]{2})*)?(?:#(?:[a-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9a-f]{2})*)?$/i;
+function isStringUri(str, full = false) {
+  // http://jmrware.com/articles/2009/uri_regexp/URI_regex.html + optional protocol + required "."
+  return CONST_REGEXP_NOT_URI_FRAGMENT.test(str)
+    && (full === true
+      ? CONST_REGEXP_URI_FULL.test(str)
+      : CONST_REGEXP_URI_FAST.test(str));
+}
+
+const CONST_REGEXP_URIREF_FAST = /^(?:(?:[a-z][a-z0-9+-.]*:)?\/?\/)?(?:[^\\\s#][^\s#]*)?(?:#[^\\\s]*)?$/i;
+const CONST_REGEXP_URIREF_FULL = /^(?:[a-z][a-z0-9+\-.]*:)?(?:\/?\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:]|%[0-9a-f]{2})*@)?(?:\[(?:(?:(?:(?:[0-9a-f]{1,4}:){6}|::(?:[0-9a-f]{1,4}:){5}|(?:[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){4}|(?:(?:[0-9a-f]{1,4}:){0,1}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){3}|(?:(?:[0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){2}|(?:(?:[0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:|(?:(?:[0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::)(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))|(?:(?:[0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(?:(?:[0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::)|[Vv][0-9a-f]+\.[a-z0-9\-._~!$&'()*+,;=:]+)\]|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)|(?:[a-z0-9\-._~!$&'"()*+,;=]|%[0-9a-f]{2})*)(?::\d*)?(?:\/(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})*)*|\/(?:(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})*)*)?|(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})*)*)?(?:\?(?:[a-z0-9\-._~!$&'"()*+,;=:@/?]|%[0-9a-f]{2})*)?(?:#(?:[a-z0-9\-._~!$&'"()*+,;=:@/?]|%[0-9a-f]{2})*)?$/i;
+function isStringUriRef(str, full = false) {
+  return full === true
+    ? CONST_REGEXP_URIREF_FULL.test(str)
+    : CONST_REGEXP_URIREF_FAST.test(str);
+}
+
+// uri-template: https://tools.ietf.org/html/rfc6570
+// eslint-disable-next-line no-control-regex
+const CONST_REGEXP_URITEMPLATE = /^(?:(?:[^\x00-\x20"'<>%\\^`{|}]|%[0-9a-f]{2})|\{[+#./;?&=,!@|]?(?:[a-z0-9_]|%[0-9a-f]{2})+(?::[1-9][0-9]{0,3}|\*)?(?:,(?:[a-z0-9_]|%[0-9a-f]{2})+(?::[1-9][0-9]{0,3}|\*)?)*\})*$/i;
+function isStringUriTemplate(str) {
+  return CONST_REGEXP_URITEMPLATE.test(str);
+}
+
+// For the source: https://gist.github.com/dperini/729294
+// For test cases: https://mathiasbynens.be/demo/url-regex
+// @todo Delete current URL in favour of the commented out URL rule when this issue is fixed https://github.com/eslint/eslint/issues/7983.
+// URL = /^(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@)?(?:(?!10(?:\.\d{1,3}){3})(?!127(?:\.\d{1,3}){3})(?!169\.254(?:\.\d{1,3}){2})(?!192\.168(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u{00a1}-\u{ffff}0-9]+-?)*[a-z\u{00a1}-\u{ffff}0-9]+)(?:\.(?:[a-z\u{00a1}-\u{ffff}0-9]+-?)*[a-z\u{00a1}-\u{ffff}0-9]+)*(?:\.(?:[a-z\u{00a1}-\u{ffff}]{2,})))(?::\d{2,5})?(?:\/[^\s]*)?$/iu;
+// eslint-disable-next-line no-control-regex
+const CONST_REGEXP_URL = /^(?:(?:http[s\u017F]?|ftp):\/\/)(?:(?:[\0-\x08\x0E-\x1F!-\x9F\xA1-\u167F\u1681-\u1FFF\u200B-\u2027\u202A-\u202E\u2030-\u205E\u2060-\u2FFF\u3001-\uD7FF\uE000-\uFEFE\uFF00-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+(?::(?:[\0-\x08\x0E-\x1F!-\x9F\xA1-\u167F\u1681-\u1FFF\u200B-\u2027\u202A-\u202E\u2030-\u205E\u2060-\u2FFF\u3001-\uD7FF\uE000-\uFEFE\uFF00-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])*)?@)?(?:(?!10(?:\.[0-9]{1,3}){3})(?!127(?:\.[0-9]{1,3}){3})(?!169\.254(?:\.[0-9]{1,3}){2})(?!192\.168(?:\.[0-9]{1,3}){2})(?!172\.(?:1[6-9]|2[0-9]|3[01])(?:\.[0-9]{1,3}){2})(?:[1-9][0-9]?|1[0-9][0-9]|2[01][0-9]|22[0-3])(?:\.(?:1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])){2}(?:\.(?:[1-9][0-9]?|1[0-9][0-9]|2[0-4][0-9]|25[0-4]))|(?:(?:(?:[0-9KSa-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+-?)*(?:[0-9KSa-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+)(?:\.(?:(?:[0-9KSa-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+-?)*(?:[0-9KSa-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+)*(?:\.(?:(?:[KSa-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]){2,})))(?::[0-9]{2,5})?(?:\/(?:[\0-\x08\x0E-\x1F!-\x9F\xA1-\u167F\u1681-\u1FFF\u200B-\u2027\u202A-\u202E\u2030-\u205E\u2060-\u2FFF\u3001-\uD7FF\uE000-\uFEFE\uFF00-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])*)?$/i;
+function isStringUrl(str) {
+  return CONST_REGEXP_URL.test(str);
+}
+
+// email (sources from jsen validator):
+// http://stackoverflow.com/questions/201323/using-a-regular-expression-to-validate-an-email-address#answer-8829363
+// http://www.w3.org/TR/html5/forms.html#valid-e-mail-address (search for 'willful violation')
+const CONST_REGEXP_EMAIL_FAST = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/i;
+const CONST_REGEXP_EMAIL_FULL = /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i;
+function isStringEmail(str, full = false) {
+  return full === true
+    && CONST_REGEXP_EMAIL_FULL.test(str)
+    || CONST_REGEXP_EMAIL_FAST.test(str);
+}
+
+const CONST_REGEXP_IDNEMAIL = /^[^@]+@[^@]+\.[^@]+$/;
+function isStringIdnEmail(str) {
+  return CONST_REGEXP_IDNEMAIL.test(str);
+}
+
+// optimized https://www.safaribooksonline.com/library/view/regular-expressions-cookbook/9780596802837/ch07s16.html
+const CONST_REGEXP_IPV4 = /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/;
+function isStringIPv4(str) {
+  return CONST_REGEXP_IPV4.test(str);
+}
+
+// optimized http://stackoverflow.com/questions/53497/regular-expression-that-matches-valid-ipv6-addresses
+const CONST_REGEXP_IPV6 = /^\s*(?:(?:(?:[0-9a-f]{1,4}:){7}(?:[0-9a-f]{1,4}|:))|(?:(?:[0-9a-f]{1,4}:){6}(?::[0-9a-f]{1,4}|(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(?:(?:[0-9a-f]{1,4}:){5}(?:(?:(?::[0-9a-f]{1,4}){1,2})|:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(?:(?:[0-9a-f]{1,4}:){4}(?:(?:(?::[0-9a-f]{1,4}){1,3})|(?:(?::[0-9a-f]{1,4})?:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(?:(?:[0-9a-f]{1,4}:){3}(?:(?:(?::[0-9a-f]{1,4}){1,4})|(?:(?::[0-9a-f]{1,4}){0,2}:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(?:(?:[0-9a-f]{1,4}:){2}(?:(?:(?::[0-9a-f]{1,4}){1,5})|(?:(?::[0-9a-f]{1,4}){0,3}:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(?:(?:[0-9a-f]{1,4}:){1}(?:(?:(?::[0-9a-f]{1,4}){1,6})|(?:(?::[0-9a-f]{1,4}){0,4}:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(?::(?:(?:(?::[0-9a-f]{1,4}){1,7})|(?:(?::[0-9a-f]{1,4}){0,5}:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(?:%.+)?\s*$/i;
+function isStringIPv6(str) {
+  return CONST_REGEXP_IPV6.test(str);
+}
+
+// uuid: http://tools.ietf.org/html/rfc4122
+const CONST_REGEXP_UUID = /^(?:urn:uuid:)?[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
+function isStringUUID(str) {
+  return CONST_REGEXP_UUID.test(str);
+}
+
+// JSON-pointer: https://tools.ietf.org/html/rfc6901
+const CONST_REGEXP_JSON_POINTER = /^(?:\/(?:[^~/]|~0|~1)*)*$/;
+function isStringJSONPointer(str) {
+  return CONST_REGEXP_JSON_POINTER.test(str);
+}
+
+// uri fragment: https://tools.ietf.org/html/rfc3986#appendix-A
+const CONST_REGEXP_JSON_POINTER_URI_FRAGMENT = /^#(?:\/(?:[a-z0-9_\-.!$&'()*+,;:=@]|%[0-9a-f]{2}|~0|~1)*)*$/i;
+function isStringJSONPointerUriFragment(str) {
+  return CONST_REGEXP_JSON_POINTER_URI_FRAGMENT.test(str);
+}
+
+// relative JSON-pointer: http://tools.ietf.org/html/draft-luff-relative-json-pointer-00
+const CONST_REGEXP_RELATIVE_JSON_POINTER = /^(?:0|[1-9][0-9]*)(?:#|(?:\/(?:[^~/]|~0|~1)*)*)$/;
+function isStringRelativeJSONPointer(str) {
+  return CONST_REGEXP_RELATIVE_JSON_POINTER.test(str);
+}
+
+/* eslint-disable function-paren-newline */
+
+function createStringFormatCompiler(formatName, isFormatTest) {
+  return function compileStringFormat(schemaObj, jsonSchema) {
+    if (jsonSchema.format !== formatName) return undefined;
+
+    const addError = schemaObj.createSingleErrorHandler(
+      'format',
+      formatName,
+    );
+    if (addError == null) return undefined;
+
+    return function validateStringFormat(data) {
+      return isStringType(data)
+        ? isFormatTest(data)
+          || addError(data)
+        : true;
+    };
+  };
+}
+
+function isStringUpperCase(str) {
+  return str === str.toUpperCase();
+}
+
+function isStringLowerCase(str) {
+  return str === str.toLowerCase();
+}
+
+const formatCompilers$1 = {
+  'alpha': createStringFormatCompiler(
+    'alpha', isStringAlpha),
+  'alphanumeric': createStringFormatCompiler(
+    'alphanumeric', isStringAlphaNumeric),
+  'identifier': createStringFormatCompiler(
+    'identifier', isStringIdentier),
+  'hexadecimal': createStringFormatCompiler(
+    'hexadecimal', isStringHexaDecimal),
+  'numeric': createStringFormatCompiler(
+    'numeric', isStringNumeric),
+  'uppercase': createStringFormatCompiler(
+    'uppercase', isStringUpperCase),
+  'lowercase': createStringFormatCompiler(
+    'lowercase', isStringLowerCase),
+  'regex': createStringFormatCompiler(
+    'regex', isStringRegExp),
+  'uri': createStringFormatCompiler(
+    'uri', isStringUri),
+  'uri-reference': createStringFormatCompiler(
+    'uri-reference', isStringUriRef),
+  'uri-template': createStringFormatCompiler(
+    'uri-template', isStringUriTemplate),
+  'url': createStringFormatCompiler(
+    'url', isStringUrl),
+  'email': createStringFormatCompiler(
+    'email', isStringEmail),
+  'hostname': createStringFormatCompiler(
+    'hostname', isStringHostname),
+  'idn-email': createStringFormatCompiler(
+    'idn-email', isStringIdnEmail),
+  'idn-hostname': createStringFormatCompiler(
+    'idn-hostname', isStringIdnHostname),
+  'ipv4': createStringFormatCompiler(
+    'ipv4', isStringIPv4),
+  'ipv6': createStringFormatCompiler(
+    'ipv6', isStringIPv6),
+  'uuid': createStringFormatCompiler(
+    'uuid', isStringUUID),
+  'json-pointer': createStringFormatCompiler(
+    'json-pointer', isStringJSONPointer),
+  'json-pointer-uri-fragment': createStringFormatCompiler(
+    'json-pointer-uri-fragment', isStringJSONPointerUriFragment),
+  'relative-json-pointer': createStringFormatCompiler(
+    'relative-json-pointer', isStringRelativeJSONPointer),
+};
+
 /* eslint-disable no-console */
 
 function getDefaultFormatCompilers() {
-  return { ...formatCompilers };
+  return {
+    ...formatCompilers,
+    ...formatCompilers$1,
+  };
 }
 
 function createFormatNumberCompiler(name, format) {
@@ -4399,11 +4955,12 @@ function getSchemaFormatCompiler(name) {
 }
 
 function compileFormatBasic(schemaObj, jsonSchema) {
+  if (!isStringType(jsonSchema.format)) return undefined;
   const compiler = getSchemaFormatCompiler(jsonSchema.format);
-  if (compiler) {
+  if (compiler)
     return compiler(schemaObj, jsonSchema);
-  }
-  return undefined;
+  else
+    return falseThat;
 }
 
 /* eslint-disable function-paren-newline */
@@ -4651,38 +5208,6 @@ function compileNumberBasic(schemaObj, jsonSchema) {
   ];
 }
 
-/* eslint-disable eqeqeq */
-
-function String_createRegExp(pattern, force = false) {
-  try {
-    if (pattern != null) {
-      if (pattern.constructor === RegExp) {
-        return force === true
-          ? new RegExp(pattern.toString())
-          : pattern;
-      }
-      if (pattern.constructor === String) {
-        if (pattern[0] === '/') {
-          const e = pattern.lastIndexOf('/');
-          if (e >= 0) {
-            const r = pattern.substring(1, e);
-            const g = pattern.substring(e + 1);
-            return new RegExp(r, g);
-          }
-        }
-        return new RegExp(pattern);
-      }
-      if (pattern.constructor === Array && pattern.length > 1) {
-        return new RegExp(pattern[0], pattern[1]);
-      }
-    }
-    return undefined;
-  }
-  catch (e) {
-    return undefined;
-  }
-}
-
 function compileMinLength(schemaObj, jsonSchema) {
   const min = Math.max(getIntishType(jsonSchema.minLength, 0), 0);
   if (min === 0) return undefined;
@@ -4717,7 +5242,7 @@ function compileMaxLength(schemaObj, jsonSchema) {
 
 function compileStringPattern(schemaObj, jsonSchema) {
   const ptrn = jsonSchema.pattern;
-  const re = String_createRegExp(ptrn);
+  const re = createRegExp(ptrn);
   if (re == null) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler('pattern', ptrn, compileStringPattern);
@@ -4742,45 +5267,45 @@ function compileStringBasic(schemaObj, jsonSchema) {
 
 /* eslint-disable function-paren-newline */
 
+function compileMaxPropertiesLength(schemaObj, jsonSchema) {
+  const maxprops = getIntishType(jsonSchema.maxProperties);
+  if (!(maxprops > 0)) return undefined;
+
+  const addError = schemaObj.createSingleErrorHandler(
+    'maxProperties',
+    maxprops,
+    compileMaxPropertiesLength);
+  if (addError == null) return undefined;
+
+  return function maxPropertiesLength(length) {
+    return length <= maxprops
+      ? true
+      : addError(length);
+  };
+}
+
+function compileMinPropertiesLength(schemaObj, jsonSchema) {
+  const minprops = getIntishType(jsonSchema.minProperties);
+  if (!(minprops > 0)) return undefined;
+
+  const addError = schemaObj.createSingleErrorHandler(
+    'minProperties',
+    minprops,
+    compileMinPropertiesLength);
+  if (addError == null) return undefined;
+
+  return function minPropertiesLength(length) {
+    return length >= minprops
+      ? true
+      : addError(length);
+  };
+}
+
 function compileCheckBounds(schemaObj, jsonSchema) {
-  function compileMaxProperties() {
-    const maxprops = getIntishType(jsonSchema.maxProperties);
-    if (!(maxprops > 0)) return undefined;
-
-    const addError = schemaObj.createSingleErrorHandler(
-      'maxProperties',
-      maxprops,
-      compileMaxProperties);
-    if (addError == null) return undefined;
-
-    return function maxProperties(length) {
-      return length <= maxprops
-        ? true
-        : addError(length);
-    };
-  }
-
-  function compileMinProperties() {
-    const minprops = getIntishType(jsonSchema.minProperties);
-    if (!(minprops > 0)) return undefined;
-
-    const addError = schemaObj.createSingleErrorHandler(
-      'minProperties',
-      minprops,
-      compileMinProperties);
-    if (addError == null) return undefined;
-
-    return function minProperties(length) {
-      return length >= minprops
-        ? true
-        : addError(length);
-    };
-  }
-
-  const xp = compileMaxProperties();
-  const mp = compileMinProperties();
+  const xp = compileMaxPropertiesLength(schemaObj, jsonSchema);
+  const mp = compileMinPropertiesLength(schemaObj, jsonSchema);
   if (xp && mp) {
-    return function checkPropertyBounds(length) {
+    return function validatePropertiesLength(length) {
       return xp(length) && mp(length);
     };
   }
@@ -4789,7 +5314,7 @@ function compileCheckBounds(schemaObj, jsonSchema) {
 
 function compileDefaultPropertyBounds(checkBounds) {
   if (!isFn(checkBounds)) return undefined;
-  return function propertyBounds(data) {
+  return function propertiesLengthDefault(data) {
     return !isObjectOrMapType(data)
       ? true
       : data.constructor === Map
@@ -4853,7 +5378,7 @@ function compileRequiredPatterns(schemaObj, jsonSchema) {
   // produce an array of regexp objects to validate members.
   const patterns = [];
   for (let i = 0; i < required.length; ++i) {
-    const pattern = String_createRegExp(required[i]);
+    const pattern = createRegExp(required[i]);
     if (pattern) patterns.push(pattern);
   }
   if (patterns.length === 0) return undefined;
@@ -5045,7 +5570,7 @@ function compileObjectPatternItem(schemaObj, entries) {
   const patterns = {};
   for (let i = 0; i < entryKeys.length; ++i) {
     const key = entryKeys[i];
-    const pattern = String_createRegExp(key);
+    const pattern = createRegExp(key);
     if (pattern != null)
       patterns[key] = pattern;
   }
@@ -6334,5 +6859,5 @@ function getJSONSchema(baseUri) {
   return undefined;
 }
 
-export { VN, VNode, addCssClass, addFunctionToArray, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseShallowArray, collapseToString, compileJSONSchema, copyAttributes, createIsDataTypeHandler, createIsObjectOfTypeHandler, createStorageCache, def_vec2f64, def_vec2i32, def_vec3f64, equalsDeep, base$1 as f64, fallbackFn, falseThat, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, math$1 as fm64, forEachItem, forOfObject, getArrayOrSetType, getArrayOrSetTypeLength, getArrayOrSetTypeMinItems, getArrayOrSetTypeUnique, getArrayType, getArrayTypeMinItems, getArrayTypeOfSet, getArrayTyped, getArrayTypedMinItems, getBigIntType, getBigIntishType, getBoolOrArrayTyped, getBoolOrNumbishType, getBoolOrObjectType, getBooleanType, getBoolishType, getDateishExclusiveBound, getDateishType, getFastIntersectArray, getIntegerType, getIntersectArray, getIntishType, getJSONSchema, getMapType, getMapTypeOfArray, getNumberExclusiveBound, getNumberType, getNumbishType, getObjectAllKeys, getObjectAllValues, getObjectCountItems, getObjectFirstItem, getObjectFirstKey, getObjectItem, getObjectOrMapType, getObjectOrMapTyped, getObjectType, getObjectTyped, getScalarNormalised, getSetType, getSetTypeOfArray, getStringOrArrayTyped, getStringOrArrayTypedUnique, getStringOrObjectType, getStringType, getUniqueArray, getVNodeAttr, getVNodeKey, getVNodeName, h, hasCssClass, base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isArrayOrSetType, isArrayOrSetTyped, isArrayType, isArrayTyped, isBigIntType, isBoolOrArrayTyped, isBoolOrNumbishType, isBoolOrObjectType, isBooleanType, isBoolishType, isComplexType, isDateType, isDateishType, isEveryItem, isFn, isFnEx, isIntegerType, isIntishType, isMapType, isNullValue, isNumberType$1 as isNumberType, isNumbishType, isObjectEmpty, isObjectOfType, isObjectOrMapType, isObjectOrMapTyped, isObjectType, isObjectTyped, isRegExpType, isScalarType, isScalarTypeEx, isSetType, isStringOrArrayTyped, isStringOrDateType, isStringOrObjectType, isStringType, isTypedArray, isUniqueArray, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, mergeUniqueArray, math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, registerDefaultFormatCompilers, registerFormatCompiler, removeCssClass, shape as s2f64, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, setObjectItem, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, trueThat, undefThat, vec2$1 as v2f64, vec2 as v2i32, vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_add, vec3f64_adds, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_dot, vec3f64_iadd, vec3f64_iadds, vec3f64_idiv, vec3f64_idivs, vec3f64_imul, vec3f64_imuls, vec3f64_isub, vec3f64_isubs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_mul, vec3f64_muls, vec3f64_new, vec3f64_sub, vec3f64_subs, vec3f64_unit, workletState, wrapVN };
+export { VN, VNode, addCssClass, addFunctionToArray, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseShallowArray, collapseToString, compileJSONSchema, copyAttributes, createIsDataTypeHandler, createIsObjectOfTypeHandler, createStorageCache, def_vec2f64, def_vec2i32, def_vec3f64, equalsDeep, base$1 as f64, fallbackFn, falseThat, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, math$1 as fm64, forEachItem, forOfObject, getArrayOrSetType, getArrayOrSetTypeLength, getArrayOrSetTypeMinItems, getArrayOrSetTypeUnique, getArrayType, getArrayTypeMinItems, getArrayTypeOfSet, getArrayTyped, getArrayTypedMinItems, getBigIntType, getBigIntishType, getBoolOrArrayTyped, getBoolOrNumbishType, getBoolOrObjectType, getBooleanType, getBoolishType, getDateType, getDateishType, getFastIntersectArray, getIntegerType, getIntersectArray, getIntishType, getJSONSchema, getMapType, getMapTypeOfArray, getNumberExclusiveBound, getNumberType, getNumbishType, getObjectAllKeys, getObjectAllValues, getObjectCountItems, getObjectFirstItem, getObjectFirstKey, getObjectItem, getObjectOrMapType, getObjectOrMapTyped, getObjectType, getObjectTyped, getScalarNormalised, getSetType, getSetTypeOfArray, getStringOrArrayTyped, getStringOrArrayTypedUnique, getStringOrObjectType, getStringType, getTypeExclusiveBound, getUniqueArray, getVNodeAttr, getVNodeKey, getVNodeName, h, hasCssClass, base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isArrayOrSetType, isArrayOrSetTyped, isArrayType, isArrayTyped, isBigIntType, isBoolOrArrayTyped, isBoolOrNumbishType, isBoolOrObjectType, isBooleanType, isBoolishType, isComplexType, isDateType, isDateishType, isEveryItem, isFn, isFnEx, isIntegerType, isIntishType, isMapType, isNullValue, isNumberType$1 as isNumberType, isNumbishType, isObjectEmpty, isObjectOfType, isObjectOrMapType, isObjectOrMapTyped, isObjectType, isObjectTyped, isRegExpType, isScalarType, isScalarTypeEx, isSetType, isStringOrArrayTyped, isStringOrDateType, isStringOrObjectType, isStringType, isTypedArray, isUniqueArray, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, mergeUniqueArray, math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, registerDefaultFormatCompilers, registerFormatCompiler, removeCssClass, shape as s2f64, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, setObjectItem, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, trueThat, undefThat, vec2$1 as v2f64, vec2 as v2i32, vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_add, vec3f64_adds, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_dot, vec3f64_iadd, vec3f64_iadds, vec3f64_idiv, vec3f64_idivs, vec3f64_imul, vec3f64_imuls, vec3f64_isub, vec3f64_isubs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_mul, vec3f64_muls, vec3f64_new, vec3f64_sub, vec3f64_subs, vec3f64_unit, workletState, wrapVN };
 //# sourceMappingURL=index.js.map

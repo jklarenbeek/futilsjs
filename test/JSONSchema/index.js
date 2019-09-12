@@ -10,16 +10,21 @@ import {
 
 registerDefaultFormatCompilers();
 
-compileJSONSchema('firi1', { format: 'iri' });
-const root = getJSONSchema('firi1');
-assert.isTrue(root.validate(undefined), 'undefined is true');
-assert.isTrue(root.validate(null), 'null is true');
-assert.isTrue(root.validate('http://ƒøø.ßår/?∂éœ=πîx#πîüx'), 'a valid IRI with anchor tag');
-assert.isTrue(root.validate('http://ƒøø.com/blah_(wîkïpédiå)_blah#ßité-1'), 'a valid IRI with anchor tag and parantheses');
-assert.isTrue(root.validate('http://ƒøø.ßår/?q=Test%20URL-encoded%20stuff'), 'a valid IRI with URL-encoded stuff');
-assert.isTrue(root.validate('http://-.~_!$&\'()*+,;=:%40:80%2f::::::@example.com'), 'a valid IRI with many special characters');
-assert.isTrue(root.validate('http://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]'), 'a valid IRI based on IPv6');
-assert.isFalse(root.validate('http://2001:0db8:85a3:0000:0000:8a2e:0370:7334'), 'an invalid IRI based on IPv6');
-assert.isFalse(root.validate('/abc'), 'an invalid relative IRI Reference');
-assert.isFalse(root.validate('\\\\WINDOWS\\filëßåré'), 'an invalid IRI');
-assert.isFalse(root.validate('âππ'), 'an invalid IRI though valid IRI reference');
+compileJSONSchema('fdatetime1', { format: 'date-time' });
+const root = getJSONSchema('fdatetime1');
+assert.isTrue(root.validate(undefined), 'ignore undefined');
+assert.isTrue(root.validate(null), 'ignore null');
+assert.isTrue(root.validate(true), 'ignore boolean type');
+assert.isTrue(root.validate(1), 'ignore number type');
+assert.isTrue(root.validate({}), 'ignore object type');
+assert.isTrue(root.validate([]), 'ignore array type');
+assert.isTrue(root.validate('1963-06-19T08:30:06.283185Z'), 'a valid date-time string');
+assert.isTrue(root.validate('1963-06-19T08:30:06Z'), 'a valid date-time string without second fraction');
+assert.isTrue(root.validate('1937-01-01T12:00:27.87+00:20'), 'a valid date-time string with plus offset');
+assert.isTrue(root.validate('1990-12-31T15:59:50.123-08:00'), 'a valid date-time string with minus offset');
+assert.isFalse(root.validate('1990-02-31T15:59:60.123-08:00'), 'an invalid day in date-time string');
+assert.isFalse(root.validate('1990-12-31T15:59:60-24:00'), 'an invalid offset in date-time string');
+assert.isFalse(root.validate('06/19/1963 08:30:06 PST'), 'an invalid date-time string');
+// assert.isTrue(root.validate('06/19/1963 08:30:06 PST'), 'a local date-time string');
+assert.isTrue(root.validate('1963-06-19t08:30:06.283185z'), 'case-insensitive T and Z');
+assert.isFalse(root.validate('2013-350T01:01:01'), 'only RFC3339 not all of ISO 8601 are valid');

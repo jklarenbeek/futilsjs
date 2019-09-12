@@ -38,9 +38,10 @@ function createStringFormatCompiler(formatName, isFormatTest) {
     if (addError == null) return undefined;
 
     return function validateStringFormat(data) {
-      return data == null
-        || isStringType(data)
-        && (isFormatTest(data) || addError(data));
+      return isStringType(data)
+        ? isFormatTest(data)
+          || addError(data)
+        : true;
     };
   };
 }
