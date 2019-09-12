@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { encode, ucs2encode, toASCII } from '../helpers/punycode';
+import { toASCII } from '../helpers/punycode';
 
 export function createRegExp(pattern, force = false) {
   try {
