@@ -118,7 +118,7 @@ describe('Schema String Type', function () {
       assert.isFalse(root.validate('a-vvvvvvvvvvvvvvvveeeeeeeeeeeeeeeerrrrrrrrrrrrrrrryyyyyyyyyyyyyyyy-long-host-name-component'), 'a host name with a component too long');
     });
     it('should validate an idn-email address', function () {
-      compileJSONSchema('femail2', { format: 'email' });
+      compileJSONSchema('femail2', { format: 'idn-email' });
       const root = getJSONSchema('femail2');
       assert.isTrue(root.validate(undefined), 'undefined is true');
       assert.isTrue(root.validate(null), 'null is true');
@@ -126,7 +126,7 @@ describe('Schema String Type', function () {
       assert.isFalse(root.validate('2962'), 'an invalid idn e-mail address');
     });
     it('should validate internationalized hostnames', function () {
-      compileJSONSchema('fhostname2', { format: 'hostname' });
+      compileJSONSchema('fhostname2', { format: 'idn-hostname' });
       const root = getJSONSchema('fhostname2');
       assert.isTrue(root.validate(undefined), 'undefined is true');
       assert.isTrue(root.validate(null), 'null is true');

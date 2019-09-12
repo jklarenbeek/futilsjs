@@ -1,4 +1,5 @@
 /* eslint-disable max-len */
+import { punycode } from '../helpers/punycode';
 
 export function createRegExp(pattern, force = false) {
   try {
@@ -76,6 +77,12 @@ export function isStringHostname(str) {
   return str.length <= 255 && CONST_REGEXP_HOSTNAME.test(str);
 }
 
+const CONST_REGEXP_ACEHOSTNAME = /^(?!-)(xn--)?[a-zA-Z0-9][a-zA-Z0-9-_]{0,61}[a-zA-Z0-9]{0,1}\.(?!-)(xn--)?([a-zA-Z0-9\-]{1,50}|[a-zA-Z0-9-]{1,30}\.[a-zA-Z]{2,})$/;
+export function isStringIdnHostname(str) {
+  // https://stackoverflow.com/questions/47514123/domain-name-regex-including-idn-characters-c-sharp
+  return CONST_REGEXP_ACEHOSTNAME.test(punycode.encode(str));
+}
+
 const CONST_REGEXP_NOT_URI_FRAGMENT = /\/|:/;
 // uri: https://github.com/mafintosh/is-my-json-valid/blob/master/formats.js
 const CONST_REGEXP_URI_FAST = /^(?:[a-z][a-z0-9+-.]*:)(?:\/?\/)?[^\s]*$/i;
@@ -122,6 +129,11 @@ export function isStringEmail(str, full = false) {
   return full === true
     && CONST_REGEXP_EMAIL_FULL.test(str)
     || CONST_REGEXP_EMAIL_FAST.test(str);
+}
+
+const CONST_REGEXP_IDNEMAIL = /^[^@]+@[^@]+\.[^@]+$/;
+export function isStringIdnEmail(str) {
+  return CONST_REGEXP_IDNEMAIL.test(str);
 }
 
 // optimized https://www.safaribooksonline.com/library/view/regular-expressions-cookbook/9780596802837/ch07s16.html
