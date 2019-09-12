@@ -33,7 +33,7 @@ export function isDateOnlyRFC3339(str) {
   if (!isStringType(str)) return false;
   const m = str.match(CONST_RFC3339_REGEX_ISDATE);
   return m != null
-    && isDateOnlyInRange(m[1], m[2], m[3]);
+    && isDateOnlyInRange(m[1]|0, m[2]|0, m[3]|0);
 }
 
 export function getDateTypeOfDateOnlyRFC3339(str, def = undefined) {
@@ -43,7 +43,7 @@ export function getDateTypeOfDateOnlyRFC3339(str, def = undefined) {
 }
 
 // full-date from http://tools.ietf.org/html/rfc3339#section-5.6
-export const CONST_RFC3339_REGEX_ISTIME = /^(\d\d):(\d\d):(\d\d)(\.\d{3})?(z|(([+-])(\d\d):(\d\d)))$/i;
+export const CONST_RFC3339_REGEX_ISTIME = /^(\d\d):(\d\d):(\d\d)(\.\d{1,6})?(z|(([+-])(\d\d):(\d\d)))$/i;
 
 export function isTimeOnlyInRange(hrs = 0, min = 0, sec = 0, tzh = 0, tzm = 0) {
   return ((hrs === 23 && min === 59 && sec === 60)
@@ -58,7 +58,7 @@ export function isTimeOnlyRFC3339(str) {
   if (!isStringType(str)) return false;
   const m = str.match(CONST_RFC3339_REGEX_ISTIME);
   return m != null
-    && isTimeOnlyInRange(m[1], m[2], m[3], m[8]|0, m[9]|0);
+    && isTimeOnlyInRange(m[1]|0, m[2]|0, m[3]|0, m[8]|0, m[9]|0);
 }
 
 export function getDateTypeOfTimeOnlyRFC3339(str, def = undefined) {

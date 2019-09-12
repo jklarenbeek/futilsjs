@@ -55,35 +55,46 @@ describe('Schema String Type', function () {
   });
 
   describe('#stringFormat()', function () {
-    it('should validate a forgiving date-time format', function () {
+    it('should validate a RFC3339 date-time format', function () {
       compileJSONSchema('fdatetime1', { format: 'date-time' });
 
       const root = getJSONSchema('fdatetime1');
+      assert.isTrue(root.validate(undefined), 'undefined is true');
+      assert.isTrue(root.validate(null), 'null is true');
       assert.isTrue(root.validate('1963-06-19T08:30:06.283185Z'), 'a valid date-time string');
       assert.isTrue(root.validate('1963-06-19T08:30:06Z'), 'a valid date-time string without second fraction');
       assert.isTrue(root.validate('1937-01-01T12:00:27.87+00:20'), 'a valid date-time string with plus offset');
       assert.isTrue(root.validate('1990-12-31T15:59:50.123-08:00'), 'a valid date-time string with minus offset');
       assert.isFalse(root.validate('1990-02-31T15:59:60.123-08:00'), 'an invalid day in date-time string');
       assert.isFalse(root.validate('1990-12-31T15:59:60-24:00'), 'an invalid offset in date-time string');
-      // assert.isFalse(root.validate('06/19/1963 08:30:06 PST'), 'an invalid date-time string');
-      assert.isTrue(root.validate('06/19/1963 08:30:06 PST'), 'a local date-time string');
+      assert.isFalse(root.validate('06/19/1963 08:30:06 PST'), 'an invalid date-time string');
+      // assert.isTrue(root.validate('06/19/1963 08:30:06 PST'), 'a local date-time string');
       assert.isTrue(root.validate('1963-06-19t08:30:06.283185z'), 'case-insensitive T and Z');
       assert.isFalse(root.validate('2013-350T01:01:01'), 'only RFC3339 not all of ISO 8601 are valid');
     });
-    it('should validate a date string', function () {
+    it('should validate a RFC3339 date string', function () {
       compileJSONSchema('fdate1', { format: 'date' });
 
       const root = getJSONSchema('fdate1');
+      assert.isTrue(root.validate(undefined), 'undefined is true');
+      assert.isTrue(root.validate(null), 'null is true');
       assert.isTrue(root.validate('1963-06-19'), 'a valid date string');
-      assert.isTrue(root.validate('06/19/1963'), 'a different valid date string');
+      assert.isFalse(root.validate('06/19/1963'), 'a different valid date string');
       // assert.isFalse(root.validate('06/19/1963'), 'an invalid date string');
       assert.isFalse(root.validate('2013-350'), 'only RFC3339 not all of ISO 8601 are valid');
     });
-    it('should validate a time string', function () {
+    it('should validate a RFC3339 time string', function () {
       compileJSONSchema('ftime1', { format: 'time' });
 
       const root = getJSONSchema('ftime1');
-      assert.isTrue(root.validate('08:30:06.283185Z'), 'a valid time string');
+      assert.isTrue(root.validate(undefined), 'undefined is true');
+      assert.isTrue(root.validate(null), 'null is true');
+      assert.isTrue(root.validate('08:30:06Z'), 'a valid time string');
+      assert.isTrue(root.validate('08:30:06.283185Z'), 'a valid time string with milliseconds');
+      assert.isTrue(root.validate('08:30:06+01:00'), 'a valid time string with plus offset');
+      assert.isTrue(root.validate('08:30:06.123+01:00'), 'a valid time string with millseconds and plus offset');
+      assert.isTrue(root.validate('08:30:06-01:00'), 'a valid time string with min offset');
+      assert.isFalse(root.validate('08:30:06'), 'an invalid time string without Z');
       assert.isFalse(root.validate('08:30:06 PST'), 'an invalid time string');
       assert.isFalse(root.validate('01:01:01,1111'), 'only RFC3339 not all of ISO 8601 are valid');
     });
