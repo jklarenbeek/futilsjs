@@ -1,5 +1,4 @@
 import { isStringType } from '../../types/core';
-import { falseThat } from '../../types/functions';
 
 import {
   getSchemaFormatCompiler,
@@ -11,5 +10,5 @@ export function compileFormatBasic(schemaObj, jsonSchema) {
   if (compiler)
     return compiler(schemaObj, jsonSchema);
   else
-    return falseThat;
+    return undefined; // TODO: add syntax/undefined format error to loading process!
 }

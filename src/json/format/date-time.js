@@ -101,6 +101,7 @@ export const numberFormats = {
   },
 };
 
+//#region generalized
 function compileFormatMinimumByType(parseType, schemaObj, jsonSchema) {
   const [min, emin] = getTypeExclusiveBound(
     parseType,
@@ -114,8 +115,8 @@ function compileFormatMinimumByType(parseType, schemaObj, jsonSchema) {
       parseType);
     if (addError == null) return undefined;
 
-    return function isFormatExclusiveMinimum(data) {
-      return (data != null && data > emin) || addError(data);
+    return function isFormatExclusiveMinimum(date) {
+      return date > emin || addError(date);
     };
   }
   else if (min) {
@@ -125,8 +126,8 @@ function compileFormatMinimumByType(parseType, schemaObj, jsonSchema) {
       parseType);
     if (addError == null) return undefined;
 
-    return function isFormatMinimum(data) {
-      return (data != null && data >= min) || addError(data);
+    return function isFormatMinimum(date) {
+      return date >= min || addError(date);
     };
   }
 
@@ -146,8 +147,8 @@ function compileFormatMaximumByType(parseType, schemaObj, jsonSchema) {
       parseType);
     if (addError == null) return undefined;
 
-    return function isFormatExclusiveMaximum(data) {
-      return (data != null && data < emax) || addError(data);
+    return function isFormatExclusiveMaximum(date) {
+      return date < emax || addError(date);
     };
   }
   else if (max != null) {
@@ -157,8 +158,8 @@ function compileFormatMaximumByType(parseType, schemaObj, jsonSchema) {
       parseType);
     if (addError == null) return undefined;
 
-    return function isFormatMaximum(data) {
-      return (data != null && data <= max) || addError(data);
+    return function isFormatMaximum(date) {
+      return date <= max || addError(date);
     };
   }
   return undefined;
@@ -233,6 +234,7 @@ function compileFormatByType(name, parseType, schemaObj, jsonSchema) {
     else return true;
   };
 }
+//#endregion
 
 function compileDateTimeFormat(schemaObj, jsonSchema) {
   return compileFormatByType(
