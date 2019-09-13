@@ -1,3 +1,5 @@
+/* eslint-disable no-labels */
+/* eslint-disable no-unused-labels */
 /* eslint-disable function-paren-newline */
 // eslint-disable-next-line import/no-cycle
 import {
@@ -11,6 +13,7 @@ import {
 import {
   getIntishType,
   getArrayType,
+  getArrayTypeMinItems,
   getObjectType,
   getMapTypeOfArray,
   getBoolOrObjectType,
@@ -477,4 +480,188 @@ export function compileObjectChildren(schemaObj, jsonSchema) {
     }
     return true;
   };
+}
+
+// validate state of return value in check of wirestatestoactions!
+
+function compileMinProperties(schemaObj, jsonSchema) {
+  const min = getIntishType(jsonSchema.minProperties, 0);
+  if (min < 1) return undefined;
+
+  const addError = schemaObj.createSingleErrorHandler(
+    'minProperties',
+    min,
+    compileMinProperties);
+  if (addError == null) return undefined;
+
+  return function isMinProperties(len = 0) {
+    return len >= min || addError(len);
+  };
+}
+
+function compileMaxProperties(schemaObj, jsonSchema) {
+  const max = getIntishType(jsonSchema.maxProperties, 0);
+  if (max < 0) return undefined;
+
+  const addError = schemaObj.createSingleErrorHandler(
+    'maxProperties',
+    max,
+    compileMaxProperties);
+  if (addError == null) return undefined;
+
+  return function isMaxProperties(len = 0) {
+    return len <= max || addError(len);
+  };
+}
+
+function compileRequiredProperties2(schemaObj, jsonSchema) {
+  const required = getArrayTypeMinItems(jsonSchema.required, 1);
+  if (required == null) return undefined;
+
+  const addError = schemaObj.createSingleErrorHandler(
+    'requiredProperties',
+    required,
+    compileRequiredProperties);
+  if (addError == null) return undefined;
+
+  return function validateRequiredProperties(dataKeys) {
+    let valid = true;
+    for (let i = 0; i < required.length; ++i) {
+      const key = required[i];
+      const idx = dataKeys.indexOf(key);
+      if (idx === -1)
+        valid = addError(key);
+    }
+    return valid;
+  }
+}
+
+function compileRequiredPattern2(schemaObj, jsonSchema) {
+  const patterns = getArrayTypeMinLength(jsonSchema.patternRequired, 1);
+  if (patterns == null) return undefined;
+
+  const regexps = {};
+  for (let i = 0; i < patterns.length; ++i) {
+    const pattern = patterns[i];
+    const regexp = createRegExp(pattern);
+    if (regexp != null)
+      regexps[String(pattern)] = regexp;
+  }
+  const regexpKeys = Object.keys(regexps);
+  if (regexpKeys.length === 0) return undefined;
+
+  const addError = schemaObj.createSingleErrorHandler(
+    'patternRequired',
+    regexpKeys,
+    compileRequiredPattern2);
+  if (addError == null) return undefined;
+
+  return function validateRequiredPattern(dataKeys) {
+    let valid = true;
+    outer: for (let r = 0; r < regexpKeys.length; ++r) {
+      const regexp = regexps[regexpKeys[r]];
+      // find first match
+      inner: for (let i = 0; i < dataKeys.length; ++i) {
+        const dataKey = dataKeys[i];
+        if (regexp.test(dataKey)) continue outer;
+      }
+      valid = addError(regexp);
+    }
+    return valid;
+  };
+}
+
+function compileDependencyArray2(schemaObj, member, key, items) {
+  if (items.length === 0) return undefined;
+
+  const addError = schemaObj.createPairErrorHandler(member, key, items, compileDependencyArray);
+  if (addError == null) return undefined;
+
+  return function validateDependencyArray(data) {
+    if (!isObjectOrMapType(data)) return true;
+    let valid = true;
+    if (data.constructor === Map) {
+      for (let i = 0; i < items.length; ++i) {
+        if (data.has(items[i]) === false) {
+          addError(items[i]);
+          valid = false;
+        }
+      }
+    }
+    else {
+      const keys = Object.keys(data);
+      for (let i = 0; i < items.length; ++i) {
+        if (keys.includes(items[i]) === false) {
+          addError(items[i]);
+          valid = false;
+        }
+      }
+    }
+    return valid;
+  };
+}
+
+function compileDependencies2(schemaObj, jsonSchema) {
+  const dependencies = getObjectType(schemaObj.dependencies);
+  if (dependencies == null) return undefined;
+
+  const dependKeys = Object.keys(dependencies);
+  if (dependKeys.length === 0) return undefined;
+
+  const member = schemaObj.createMember('dependencies', compileDependencies);
+  if (member == null) return undefined;
+
+  const validators = {};
+  for (let i = 0; i < dependKeys.length; ++i) {
+    const key = dependKeys[i];
+    const item = dependencies[key];
+    if (isArrayType(item)) {
+      const validator = compileDependencyArray2(schemaObj, member, key, item);
+      if (validator != null) validators[key] = validator;
+    }
+    else if (isBoolOrObjectType(item)) {
+      const validator = schemaObj.createPairValidator(member, key, item, compileDependencies2);
+      if (validator != null) validators[key] = validator;
+    }
+  }
+
+  const valKeys = Object.keys(validators);
+  if (valKeys.length === 0) return undefined;
+
+  return undefined;
+}
+
+export function compileObjectBasic2(schemaObj, jsonSchema) {
+  if (!isObjectType(jsonSchema.properties)) return undefined;
+
+  const minProperties = compileMinProperties(schemaObj, jsonSchema);
+  const maxProperties = compileMaxProperties(schemaObj, jsonSchema);
+  const requiredProperties = compileRequiredProperties2(schemaObj, jsonSchema);
+  const requiredPattern = compileRequiredPattern2(schemaObj, jsonSchema);
+  const dependencies = compileDependencies2(schemaObj, jsonSchema);
+  
+  const isMinProperties = minProperties || trueThat;
+  const isMaxProperties = maxProperties || trueThat;
+
+  const hasRequiredProperties = requiredProperties || trueThat;
+  const hasRequiredPattern = requiredPattern || trueThat;
+  const hasDependencies = dependencies || trueThat;
+
+  return function validateObjectSchema(data, dataRoot) {
+    if (isObjectType(data)) {
+      const dataKeys = Object.keys(data);
+      const dataLen = dataKeys.length;
+      if (!isMinProperties(dataLen))
+        return false;
+      if (!isMaxProperties(dataLen))
+        return false;
+      if (!hasRequiredProperties(dataKeys))
+        return false;
+      if (!hasDependencies(dataKeys, data, dataRoot))
+        return false;
+      if (!hasRequiredPattern(dataKeys))
+        return false;
+    }
+    return true;
+  }
 }

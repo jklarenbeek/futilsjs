@@ -182,6 +182,16 @@ export function isStringOrArrayTyped(obj) {
     || isArrayTyped(obj);
 }
 
+export function isMapOrArrayType(obj) {
+  return isMapType(obj) || isArrayType(obj);
+}
+
+export function isMapOfArrayType(obj) {
+  return isMapType(obj)
+    || (isArrayType(obj)
+      && (new Map(obj).size === obj.length));
+}
+
 export function isBoolOrObjectType(obj) {
   return isBooleanType(obj)
     || isObjectType(obj);
