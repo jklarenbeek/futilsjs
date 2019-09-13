@@ -1,3 +1,4 @@
+/* eslint-disable function-paren-newline */
 import {
   isStringType,
 } from '../../types/core';
@@ -10,59 +11,72 @@ import {
   createRegExp,
 } from '../../types/regexp';
 
-function compileMinLength(schemaObj, jsonSchema) {
-  const min = Math.max(getIntishType(jsonSchema.minLength, 0), 0);
-  if (min === 0) return undefined;
+import {
+  trueThat,
+} from '../../types/functions';
 
-  const addError = schemaObj.createSingleErrorHandler('minLength', min, compileMinLength);
+function compileMinLength(schemaObj, jsonSchema) {
+  const min = getIntishType(jsonSchema.minLength, 0);
+  if (min < 1) return undefined;
+
+  const addError = schemaObj.createSingleErrorHandler(
+    'minLength',
+    min,
+    compileMinLength);
   if (addError == null) return undefined;
 
-  return function validateStringMinLength(data) {
-    return isStringType(data)
-      ? data.length >= min
-        ? true
-        : addError(data.length)
-      : true;
+  return function isMinLength(len = 0) {
+    return len >= min || addError(len);
   };
 }
 
 function compileMaxLength(schemaObj, jsonSchema) {
-  const max = Math.max(getIntishType(jsonSchema.maxLength, 0), 0);
-  if (max === 0) return undefined;
+  const max = getIntishType(jsonSchema.maxLength, -1);
+  if (max < 0) return undefined;
 
-  const addError = schemaObj.createSingleErrorHandler('maxLength', max, compileMaxLength);
+  const addError = schemaObj.createSingleErrorHandler(
+    'maxLength',
+    max,
+    compileMaxLength);
   if (addError == null) return undefined;
 
-  return function validateStringMaxLength(data) {
-    return isStringType(data)
-      ? data.length <= max
-        ? true
-        : addError(data.length)
-      : true;
+  return function isMaxLength(len = 0) {
+    return len <= max || addError(len);
   };
 }
 
-function compileStringPattern(schemaObj, jsonSchema) {
-  const ptrn = jsonSchema.pattern;
-  const re = createRegExp(ptrn);
-  if (re == null) return undefined;
+function compilePattern(schemaObj, jsonSchema) {
+  const pattern = createRegExp(jsonSchema.pattern);
+  if (pattern == null) return undefined;
 
-  const addError = schemaObj.createSingleErrorHandler('pattern', ptrn, compileStringPattern);
+  const addError = schemaObj.createSingleErrorHandler(
+    'pattern',
+    pattern,
+    compilePattern);
   if (addError == null) return undefined;
 
-  return function validateStringPattern(data) {
-    return isStringType(data)
-      ? re.test(data)
-        ? true
-        : addError(data)
-      : true;
+  return function isMatch(str = '') {
+    return pattern.test(str) || addError(str);
   };
 }
 
 export function compileStringBasic(schemaObj, jsonSchema) {
-  return [
-    compileMinLength(schemaObj, jsonSchema),
-    compileMaxLength(schemaObj, jsonSchema),
-    compileStringPattern(schemaObj, jsonSchema),
-  ];
+  const minLength = compileMinLength(schemaObj, jsonSchema);
+  const maxLength = compileMaxLength(schemaObj, jsonSchema);
+  const pattern = compilePattern(schemaObj, jsonSchema);
+  if (minLength == null && maxLength == null && pattern == null) return undefined;
+
+  const isMinLength = minLength || trueThat;
+  const isMaxLength = maxLength || trueThat;
+  const isMatch = pattern || trueThat;
+
+  return function validateStringSchema(data) {
+    if (isStringType(data)) {
+      const len = data.length;
+      return isMinLength(len)
+        && isMaxLength(len)
+        && isMatch(data);
+    }
+    return true;
+  };
 }
