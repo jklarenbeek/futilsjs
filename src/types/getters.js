@@ -68,20 +68,6 @@ export function getNumbishType(obj, def = undefined) {
   return isNumbishType(obj) ? Number(obj) : def;
 }
 
-export function getNumberExclusiveBound(inclusive, exclusive) {
-  const includes = isBigIntType(inclusive)
-    ? inclusive
-    : getNumbishType(inclusive);
-  const excludes = exclusive === true
-    ? includes
-    : isBigIntType(exclusive)
-      ? exclusive
-      : getNumbishType(exclusive);
-  return (excludes !== undefined)
-    ? [undefined, excludes]
-    : [includes, undefined];
-}
-
 export function getIntegerType(obj, def = undefined) {
   return isIntegerType(obj) ? obj : def;
 }

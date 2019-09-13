@@ -20,6 +20,7 @@ import {
 import { compileFormatBasic } from './format';
 import { compileEnumBasic } from './enum';
 import { compileNumberBasic } from './number';
+import { compileBigIntBasic } from './bigint';
 import { compileStringBasic } from './string';
 import { compileObjectBasic, compileObjectChildren } from './object';
 import { compileArrayBasic, compileArrayChildren } from './array';
@@ -206,10 +207,11 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
   const fnType = compileTypeBasic(schemaObj, jsonSchema);
 
   const validators = [];
-  addFunctionToArray(validators, compileFormatBasic(schemaObj, jsonSchema));
   addFunctionToArray(validators, compileEnumBasic(schemaObj, jsonSchema));
   addFunctionToArray(validators, compileNumberBasic(schemaObj, jsonSchema));
+  addFunctionToArray(validators, compileBigIntBasic(schemaObj, jsonSchema));
   addFunctionToArray(validators, compileStringBasic(schemaObj, jsonSchema));
+  addFunctionToArray(validators, compileFormatBasic(schemaObj, jsonSchema));
   addFunctionToArray(validators, compileObjectBasic(schemaObj, jsonSchema));
   addFunctionToArray(validators, compileArrayBasic(schemaObj, jsonSchema));
 

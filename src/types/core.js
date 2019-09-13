@@ -56,7 +56,8 @@ export function isNumberType(data) {
 }
 
 export function isNumbishType(data) {
-  return !Number.isNaN(Number(data));
+  // eslint-disable-next-line valid-typeof
+  return typeof data !== 'bigint' && !Number.isNaN(Number(data));
 }
 
 export function isIntegerType(data) {

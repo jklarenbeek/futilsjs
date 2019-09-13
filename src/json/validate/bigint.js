@@ -1,18 +1,18 @@
 /* eslint-disable function-paren-newline */
 /* eslint-disable valid-typeof */
 import {
-  isNumberType,
+  isBigIntType,
 } from '../../types/core';
 
 import {
-  getNumbishType,
+  getBigIntType,
   getTypeExclusiveBound,
 } from '../../types/getters';
 import { trueThat } from '../../types/functions';
 
-function compileNumberMaximum(schemaObj, jsonSchema) {
+function compileBigIntMaximum(schemaObj, jsonSchema) {
   const [max, emax] = getTypeExclusiveBound(
-    getNumbishType,
+    getBigIntType,
     jsonSchema.maximum,
     jsonSchema.exclusiveMaximum,
   );
@@ -21,10 +21,10 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'exclusiveMaximum',
       emax,
-      compileNumberMaximum);
+      compileBigIntMaximum);
     if (addError == null) return undefined;
 
-    return function exclusiveMaximum(data) {
+    return function exclusiveMaximumBigInt(data) {
       return data < emax || addError(data);
     };
   }
@@ -32,10 +32,10 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'maximum',
       max,
-      compileNumberMaximum);
+      compileBigIntMaximum);
     if (addError == null) return undefined;
 
-    return function maximum(data) {
+    return function maximumBigInt(data) {
       return data <= max || addError(data);
     };
   }
@@ -43,9 +43,9 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
   return undefined;
 }
 
-function compileNumberMinimum(schemaObj, jsonSchema) {
+function compileBigIntMinimum(schemaObj, jsonSchema) {
   const [min, emin] = getTypeExclusiveBound(
-    getNumbishType,
+    getBigIntType,
     jsonSchema.minimum,
     jsonSchema.exclusiveMinimum,
   );
@@ -54,10 +54,10 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'exclusiveMinimum',
       emin,
-      compileNumberMinimum);
+      compileBigIntMinimum);
     if (addError == null) return undefined;
 
-    return function exclusiveMinimum(data) {
+    return function exclusiveMinimumBigInt(data) {
       return data > emin || addError(data);
     };
   }
@@ -65,10 +65,10 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'minimum',
       min,
-      compileNumberMinimum);
+      compileBigIntMinimum);
     if (addError == null) return undefined;
 
-    return function minimum(data) {
+    return function minimumBigInt(data) {
       return data >= min || addError(data);
     };
   }
@@ -76,33 +76,33 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
   return undefined;
 }
 
-function compileNumberMultipleOf(schemaObj, jsonSchema) {
-  const mulOf = getNumbishType(jsonSchema.multipleOf);
+function compileBigIntMultipleOf(schemaObj, jsonSchema) {
+  const mulOf = getBigIntType(jsonSchema.multipleOf);
   if (mulOf == null) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler(
     'multipleOf',
     mulOf,
-    compileNumberMultipleOf);
+    compileBigIntMultipleOf);
   if (addError == null) return undefined;
 
   return function multipleOf(data) {
-    return data % mulOf === 0 || addError(data);
+    return data % mulOf === BigInt(0) || addError(data);
   };
 }
 
-export function compileNumberBasic(schemaObj, jsonSchema) {
-  const maximum = compileNumberMaximum(schemaObj, jsonSchema);
-  const minimum = compileNumberMinimum(schemaObj, jsonSchema);
-  const multipleOf = compileNumberMultipleOf(schemaObj, jsonSchema);
+export function compileBigIntBasic(schemaObj, jsonSchema) {
+  const maximum = compileBigIntMaximum(schemaObj, jsonSchema);
+  const minimum = compileBigIntMinimum(schemaObj, jsonSchema);
+  const multipleOf = compileBigIntMultipleOf(schemaObj, jsonSchema);
   if (maximum == null && minimum == null && multipleOf == null) return undefined;
 
   const isMax = maximum || trueThat;
   const isMin = minimum || trueThat;
   const isMul = multipleOf || trueThat;
 
-  return function validateNumberSchema(data) {
-    if (isNumberType(data)) {
+  return function validateBigIntSchema(data) {
+    if (isBigIntType(data)) {
       return isMax(data)
         && isMin(data)
         && isMul(data);
