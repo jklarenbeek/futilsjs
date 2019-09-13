@@ -2440,7 +2440,8 @@ function isNumberType$1(data) {
 }
 
 function isNumbishType(data) {
-  return !Number.isNaN(Number(data));
+  // eslint-disable-next-line valid-typeof
+  return typeof data !== 'bigint' && !Number.isNaN(Number(data));
 }
 
 function isIntegerType(data) {
@@ -2774,20 +2775,6 @@ function getNumberType(obj, def = undefined) {
 
 function getNumbishType(obj, def = undefined) {
   return isNumbishType(obj) ? Number(obj) : def;
-}
-
-function getNumberExclusiveBound(inclusive, exclusive) {
-  const includes = isBigIntType(inclusive)
-    ? inclusive
-    : getNumbishType(inclusive);
-  const excludes = exclusive === true
-    ? includes
-    : isBigIntType(exclusive)
-      ? exclusive
-      : getNumbishType(exclusive);
-  return (excludes !== undefined)
-    ? [undefined, excludes]
-    : [includes, undefined];
 }
 
 function getIntegerType(obj, def = undefined) {
@@ -5042,7 +5029,8 @@ function compileEnumBasic(schemaObj, jsonSchema) {
 /* eslint-disable function-paren-newline */
 
 function compileNumberMaximum(schemaObj, jsonSchema) {
-  const [max, emax] = getNumberExclusiveBound(
+  const [max, emax] = getTypeExclusiveBound(
+    getNumbishType,
     jsonSchema.maximum,
     jsonSchema.exclusiveMaximum,
   );
@@ -5054,24 +5042,9 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
       compileNumberMaximum);
     if (addError == null) return undefined;
 
-    if (isBigIntType(emax)) {
-      return function exclusiveMaximumBigInt(data) {
-        return (isBigIntType(data) || isNumberType$1(data)) // are we forgiving?
-          ? data < emax
-            ? true
-            : addError(data)
-          : true; // other type, ignore
-      };
-    }
-    else {
-      return function exclusiveMaximum(data) {
-        return isNumberType$1(data)
-          ? data < emax
-            ? true
-            : addError(data)
-          : true; // other type, ignore
-      };
-    }
+    return function exclusiveMaximum(data) {
+      return data < emax || addError(data);
+    };
   }
   else if (max != null) {
     const addError = schemaObj.createSingleErrorHandler(
@@ -5080,30 +5053,17 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
       compileNumberMaximum);
     if (addError == null) return undefined;
 
-    if (isBigIntType(max)) {
-      return function maximumBigInt(data) {
-        return (isBigIntType(data) || isNumberType$1(data)) // are we that forgiving?
-          ? data <= max
-            ? true
-            : addError(data)
-          : true; // other type, ignore
-      };
-    }
-    else {
-      return function maximum(data) {
-        return isNumberType$1(data)
-          ? data <= max
-            ? true
-            : addError(data)
-          : true; // other type, ignore
-      };
-    }
+    return function maximum(data) {
+      return data <= max || addError(data);
+    };
   }
+
   return undefined;
 }
 
 function compileNumberMinimum(schemaObj, jsonSchema) {
-  const [min, emin] = getNumberExclusiveBound(
+  const [min, emin] = getTypeExclusiveBound(
+    getNumbishType,
     jsonSchema.minimum,
     jsonSchema.exclusiveMinimum,
   );
@@ -5115,24 +5075,9 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
       compileNumberMinimum);
     if (addError == null) return undefined;
 
-    if (isBigIntType(emin)) {
-      return function exclusiveMinimumBigInt(data) {
-        return (isBigIntType(data) || isNumberType$1(data))
-          ? data > emin
-            ? true
-            : addError(data)
-          : true; // other type, ignore
-      };
-    }
-    else {
-      return function exclusiveMinimum(data) {
-        return isNumberType$1(data)
-          ? data > emin
-            ? true
-            : addError(data)
-          : true; // other type, ignore
-      };
-    }
+    return function exclusiveMinimum(data) {
+      return data > emin || addError(data);
+    };
   }
   else if (min != null) {
     const addError = schemaObj.createSingleErrorHandler(
@@ -5141,33 +5086,16 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
       compileNumberMinimum);
     if (addError == null) return undefined;
 
-    if (isBigIntType(min)) {
-      return function minimumBigInt(data) {
-        return (isBigIntType(data) || isNumberType$1(data))
-          ? data >= min
-            ? true
-            : addError(data)
-          : true; // other type, ignore
-      };
-    }
-    else {
-      return function minimum(data) {
-        return isNumberType$1(data)
-          ? data >= min
-            ? true
-            : addError(data)
-          : true; // other type, ignore
-      };
-    }
+    return function minimum(data) {
+      return data >= min || addError(data);
+    };
   }
+
   return undefined;
 }
 
 function compileNumberMultipleOf(schemaObj, jsonSchema) {
-  const mulOf = isBigIntType(jsonSchema.multipleOf)
-    ? jsonSchema.multipleOf
-    : getNumbishType(jsonSchema.multipleOf);
-
+  const mulOf = getNumbishType(jsonSchema.multipleOf);
   if (mulOf == null) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler(
@@ -5176,93 +5104,200 @@ function compileNumberMultipleOf(schemaObj, jsonSchema) {
     compileNumberMultipleOf);
   if (addError == null) return undefined;
 
-  if (isBigIntType(mulOf)) {
-    return function multipleOfBigInt(data) {
-      return isBigIntType(data)
-        ? data % mulOf === BigInt(0)
-          ? true
-          : addError(data)
-        : isNumberType$1(data)
-          ? data % Number(mulOf) === 0
-            ? true
-            : addError(data)
-          : true;
-    };
-  }
-  else {
-    return function multipleOf(data) {
-      return isNumberType$1(data)
-        ? data % mulOf === 0
-          ? true
-          : addError(data)
-        : true;
-    };
-  }
+  return function multipleOf(data) {
+    return data % mulOf === 0 || addError(data);
+  };
 }
 
 function compileNumberBasic(schemaObj, jsonSchema) {
-  return [
-    compileNumberMinimum(schemaObj, jsonSchema),
-    compileNumberMaximum(schemaObj, jsonSchema),
-    compileNumberMultipleOf(schemaObj, jsonSchema),
-  ];
+  const maximum = compileNumberMaximum(schemaObj, jsonSchema);
+  const minimum = compileNumberMinimum(schemaObj, jsonSchema);
+  const multipleOf = compileNumberMultipleOf(schemaObj, jsonSchema);
+  if (maximum == null && minimum == null && multipleOf == null) return undefined;
+
+  const isMax = maximum || trueThat;
+  const isMin = minimum || trueThat;
+  const isMul = multipleOf || trueThat;
+
+  return function validateNumberSchema(data) {
+    if (isNumberType$1(data)) {
+      return isMax(data)
+        && isMin(data)
+        && isMul(data);
+    }
+    return true;
+  };
 }
 
-function compileMinLength(schemaObj, jsonSchema) {
-  const min = Math.max(getIntishType(jsonSchema.minLength, 0), 0);
-  if (min === 0) return undefined;
+/* eslint-disable function-paren-newline */
 
-  const addError = schemaObj.createSingleErrorHandler('minLength', min, compileMinLength);
+function compileBigIntMaximum(schemaObj, jsonSchema) {
+  const [max, emax] = getTypeExclusiveBound(
+    getBigIntType,
+    jsonSchema.maximum,
+    jsonSchema.exclusiveMaximum,
+  );
+
+  if (emax != null) {
+    const addError = schemaObj.createSingleErrorHandler(
+      'exclusiveMaximum',
+      emax,
+      compileBigIntMaximum);
+    if (addError == null) return undefined;
+
+    return function exclusiveMaximumBigInt(data) {
+      return data < emax || addError(data);
+    };
+  }
+  else if (max != null) {
+    const addError = schemaObj.createSingleErrorHandler(
+      'maximum',
+      max,
+      compileBigIntMaximum);
+    if (addError == null) return undefined;
+
+    return function maximumBigInt(data) {
+      return data <= max || addError(data);
+    };
+  }
+
+  return undefined;
+}
+
+function compileBigIntMinimum(schemaObj, jsonSchema) {
+  const [min, emin] = getTypeExclusiveBound(
+    getBigIntType,
+    jsonSchema.minimum,
+    jsonSchema.exclusiveMinimum,
+  );
+
+  if (emin != null) {
+    const addError = schemaObj.createSingleErrorHandler(
+      'exclusiveMinimum',
+      emin,
+      compileBigIntMinimum);
+    if (addError == null) return undefined;
+
+    return function exclusiveMinimumBigInt(data) {
+      return data > emin || addError(data);
+    };
+  }
+  else if (min != null) {
+    const addError = schemaObj.createSingleErrorHandler(
+      'minimum',
+      min,
+      compileBigIntMinimum);
+    if (addError == null) return undefined;
+
+    return function minimumBigInt(data) {
+      return data >= min || addError(data);
+    };
+  }
+
+  return undefined;
+}
+
+function compileBigIntMultipleOf(schemaObj, jsonSchema) {
+  const mulOf = getBigIntType(jsonSchema.multipleOf);
+  if (mulOf == null) return undefined;
+
+  const addError = schemaObj.createSingleErrorHandler(
+    'multipleOf',
+    mulOf,
+    compileBigIntMultipleOf);
   if (addError == null) return undefined;
 
-  return function validateStringMinLength(data) {
-    return isStringType(data)
-      ? data.length >= min
-        ? true
-        : addError(data.length)
-      : true;
+  return function multipleOf(data) {
+    return data % mulOf === BigInt(0) || addError(data);
+  };
+}
+
+function compileBigIntBasic(schemaObj, jsonSchema) {
+  const maximum = compileBigIntMaximum(schemaObj, jsonSchema);
+  const minimum = compileBigIntMinimum(schemaObj, jsonSchema);
+  const multipleOf = compileBigIntMultipleOf(schemaObj, jsonSchema);
+  if (maximum == null && minimum == null && multipleOf == null) return undefined;
+
+  const isMax = maximum || trueThat;
+  const isMin = minimum || trueThat;
+  const isMul = multipleOf || trueThat;
+
+  return function validateBigIntSchema(data) {
+    if (isBigIntType(data)) {
+      return isMax(data)
+        && isMin(data)
+        && isMul(data);
+    }
+    return true;
+  };
+}
+
+/* eslint-disable function-paren-newline */
+
+function compileMinLength(schemaObj, jsonSchema) {
+  const min = getIntishType(jsonSchema.minLength, 0);
+  if (min < 1) return undefined;
+
+  const addError = schemaObj.createSingleErrorHandler(
+    'minLength',
+    min,
+    compileMinLength);
+  if (addError == null) return undefined;
+
+  return function isMinLength(len = 0) {
+    return len >= min || addError(len);
   };
 }
 
 function compileMaxLength(schemaObj, jsonSchema) {
-  const max = Math.max(getIntishType(jsonSchema.maxLength, 0), 0);
-  if (max === 0) return undefined;
+  const max = getIntishType(jsonSchema.maxLength, -1);
+  if (max < 0) return undefined;
 
-  const addError = schemaObj.createSingleErrorHandler('maxLength', max, compileMaxLength);
+  const addError = schemaObj.createSingleErrorHandler(
+    'maxLength',
+    max,
+    compileMaxLength);
   if (addError == null) return undefined;
 
-  return function validateStringMaxLength(data) {
-    return isStringType(data)
-      ? data.length <= max
-        ? true
-        : addError(data.length)
-      : true;
+  return function isMaxLength(len = 0) {
+    return len <= max || addError(len);
   };
 }
 
-function compileStringPattern(schemaObj, jsonSchema) {
-  const ptrn = jsonSchema.pattern;
-  const re = createRegExp(ptrn);
-  if (re == null) return undefined;
+function compilePattern(schemaObj, jsonSchema) {
+  const pattern = createRegExp(jsonSchema.pattern);
+  if (pattern == null) return undefined;
 
-  const addError = schemaObj.createSingleErrorHandler('pattern', ptrn, compileStringPattern);
+  const addError = schemaObj.createSingleErrorHandler(
+    'pattern',
+    pattern,
+    compilePattern);
   if (addError == null) return undefined;
 
-  return function validateStringPattern(data) {
-    return isStringType(data)
-      ? re.test(data)
-        ? true
-        : addError(data)
-      : true;
+  return function isMatch(str = '') {
+    return pattern.test(str) || addError(str);
   };
 }
 
 function compileStringBasic(schemaObj, jsonSchema) {
-  return [
-    compileMinLength(schemaObj, jsonSchema),
-    compileMaxLength(schemaObj, jsonSchema),
-    compileStringPattern(schemaObj, jsonSchema),
-  ];
+  const minLength = compileMinLength(schemaObj, jsonSchema);
+  const maxLength = compileMaxLength(schemaObj, jsonSchema);
+  const pattern = compilePattern(schemaObj, jsonSchema);
+  if (minLength == null && maxLength == null && pattern == null) return undefined;
+
+  const isMinLength = minLength || trueThat;
+  const isMaxLength = maxLength || trueThat;
+  const isMatch = pattern || trueThat;
+
+  return function validateStringSchema(data) {
+    if (isStringType(data)) {
+      const len = data.length;
+      return isMinLength(len)
+        && isMaxLength(len)
+        && isMatch(data);
+    }
+    return true;
+  };
 }
 
 /* eslint-disable function-paren-newline */
@@ -6309,10 +6344,11 @@ function compileSchemaObject(schemaObj, jsonSchema) {
   const fnType = compileTypeBasic(schemaObj, jsonSchema);
 
   const validators = [];
-  addFunctionToArray(validators, compileFormatBasic(schemaObj, jsonSchema));
   addFunctionToArray(validators, compileEnumBasic(schemaObj, jsonSchema));
   addFunctionToArray(validators, compileNumberBasic(schemaObj, jsonSchema));
+  addFunctionToArray(validators, compileBigIntBasic(schemaObj, jsonSchema));
   addFunctionToArray(validators, compileStringBasic(schemaObj, jsonSchema));
+  addFunctionToArray(validators, compileFormatBasic(schemaObj, jsonSchema));
   addFunctionToArray(validators, compileObjectBasic(schemaObj, jsonSchema));
   addFunctionToArray(validators, compileArrayBasic(schemaObj, jsonSchema));
 
@@ -6859,5 +6895,5 @@ function getJSONSchema(baseUri) {
   return undefined;
 }
 
-export { VN, VNode, addCssClass, addFunctionToArray, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseShallowArray, collapseToString, compileJSONSchema, copyAttributes, createIsDataTypeHandler, createIsObjectOfTypeHandler, createStorageCache, def_vec2f64, def_vec2i32, def_vec3f64, equalsDeep, base$1 as f64, fallbackFn, falseThat, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, math$1 as fm64, forEachItem, forOfObject, getArrayOrSetType, getArrayOrSetTypeLength, getArrayOrSetTypeMinItems, getArrayOrSetTypeUnique, getArrayType, getArrayTypeMinItems, getArrayTypeOfSet, getArrayTyped, getArrayTypedMinItems, getBigIntType, getBigIntishType, getBoolOrArrayTyped, getBoolOrNumbishType, getBoolOrObjectType, getBooleanType, getBoolishType, getDateType, getDateishType, getFastIntersectArray, getIntegerType, getIntersectArray, getIntishType, getJSONSchema, getMapType, getMapTypeOfArray, getNumberExclusiveBound, getNumberType, getNumbishType, getObjectAllKeys, getObjectAllValues, getObjectCountItems, getObjectFirstItem, getObjectFirstKey, getObjectItem, getObjectOrMapType, getObjectOrMapTyped, getObjectType, getObjectTyped, getScalarNormalised, getSetType, getSetTypeOfArray, getStringOrArrayTyped, getStringOrArrayTypedUnique, getStringOrObjectType, getStringType, getTypeExclusiveBound, getUniqueArray, getVNodeAttr, getVNodeKey, getVNodeName, h, hasCssClass, base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isArrayOrSetType, isArrayOrSetTyped, isArrayType, isArrayTyped, isBigIntType, isBoolOrArrayTyped, isBoolOrNumbishType, isBoolOrObjectType, isBooleanType, isBoolishType, isComplexType, isDateType, isDateishType, isEveryItem, isFn, isFnEx, isIntegerType, isIntishType, isMapType, isNullValue, isNumberType$1 as isNumberType, isNumbishType, isObjectEmpty, isObjectOfType, isObjectOrMapType, isObjectOrMapTyped, isObjectType, isObjectTyped, isRegExpType, isScalarType, isScalarTypeEx, isSetType, isStringOrArrayTyped, isStringOrDateType, isStringOrObjectType, isStringType, isTypedArray, isUniqueArray, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, mergeUniqueArray, math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, registerDefaultFormatCompilers, registerFormatCompiler, removeCssClass, shape as s2f64, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, setObjectItem, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, trueThat, undefThat, vec2$1 as v2f64, vec2 as v2i32, vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_add, vec3f64_adds, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_dot, vec3f64_iadd, vec3f64_iadds, vec3f64_idiv, vec3f64_idivs, vec3f64_imul, vec3f64_imuls, vec3f64_isub, vec3f64_isubs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_mul, vec3f64_muls, vec3f64_new, vec3f64_sub, vec3f64_subs, vec3f64_unit, workletState, wrapVN };
+export { VN, VNode, addCssClass, addFunctionToArray, app, circle2f64, circle2f64_POINTS, cloneDeep, cloneObject, collapseCssClass, collapseShallowArray, collapseToString, compileJSONSchema, copyAttributes, createIsDataTypeHandler, createIsObjectOfTypeHandler, createStorageCache, def_vec2f64, def_vec2i32, def_vec3f64, equalsDeep, base$1 as f64, fallbackFn, falseThat, fetchImage, float64_clamp, float64_clampu, float64_cosHp, float64_cosLp, float64_cosMp, float64_cross, float64_dot, float64_fib, float64_fib2, float64_gcd, float64_hypot, float64_hypot2, float64_inRange, float64_intersectsRange, float64_intersectsRect, float64_isqrt, float64_lerp, float64_map, float64_norm, float64_phi, float64_sinLp, float64_sinLpEx, float64_sinMp, float64_sinMpEx, float64_sqrt, float64_theta, float64_toDegrees, float64_toRadian, float64_wrapRadians, math$1 as fm64, forEachItem, forOfObject, getArrayOrSetType, getArrayOrSetTypeLength, getArrayOrSetTypeMinItems, getArrayOrSetTypeUnique, getArrayType, getArrayTypeMinItems, getArrayTypeOfSet, getArrayTyped, getArrayTypedMinItems, getBigIntType, getBigIntishType, getBoolOrArrayTyped, getBoolOrNumbishType, getBoolOrObjectType, getBooleanType, getBoolishType, getDateType, getDateishType, getFastIntersectArray, getIntegerType, getIntersectArray, getIntishType, getJSONSchema, getMapType, getMapTypeOfArray, getNumberType, getNumbishType, getObjectAllKeys, getObjectAllValues, getObjectCountItems, getObjectFirstItem, getObjectFirstKey, getObjectItem, getObjectOrMapType, getObjectOrMapTyped, getObjectType, getObjectTyped, getScalarNormalised, getSetType, getSetTypeOfArray, getStringOrArrayTyped, getStringOrArrayTypedUnique, getStringOrObjectType, getStringType, getTypeExclusiveBound, getUniqueArray, getVNodeAttr, getVNodeKey, getVNodeName, h, hasCssClass, base as i32, int32_clamp, int32_clampu, int32_clampu_u8a, int32_clampu_u8b, int32_cross, int32_dot, int32_fib, int32_hypot, int32_hypotEx, int32_inRange, int32_intersectsRange, int32_intersectsRect, int32_lerp, int32_mag2, int32_map, int32_norm, int32_random, int32_sinLp, int32_sinLpEx, int32_sqrt, int32_sqrtEx, int32_toDegreesEx, int32_toRadianEx, int32_wrapRadians, isArrayOrSetType, isArrayOrSetTyped, isArrayType, isArrayTyped, isBigIntType, isBoolOrArrayTyped, isBoolOrNumbishType, isBoolOrObjectType, isBooleanType, isBoolishType, isComplexType, isDateType, isDateishType, isEveryItem, isFn, isFnEx, isIntegerType, isIntishType, isMapType, isNullValue, isNumberType$1 as isNumberType, isNumbishType, isObjectEmpty, isObjectOfType, isObjectOrMapType, isObjectOrMapTyped, isObjectType, isObjectTyped, isRegExpType, isScalarType, isScalarTypeEx, isSetType, isStringOrArrayTyped, isStringOrDateType, isStringOrObjectType, isStringType, isTypedArray, isUniqueArray, mathf64_EPSILON, mathf64_PI, mathf64_PI1H, mathf64_PI2, mathf64_PI41, mathf64_PI42, mathf64_SQRTFIVE, mathf64_abs, mathf64_asin, mathf64_atan2, mathf64_ceil, mathf64_cos, mathf64_floor, mathf64_max, mathf64_min, mathf64_pow, mathf64_random, mathf64_round, mathf64_sin, mathf64_sqrt, mathi32_MULTIPLIER, mathi32_PI, mathi32_PI1H, mathi32_PI2, mathi32_PI41, mathi32_PI42, mathi32_abs, mathi32_asin, mathi32_atan2, mathi32_ceil, mathi32_floor, mathi32_max, mathi32_min, mathi32_round, mathi32_sqrt, mergeObjects, mergeUniqueArray, math as mi32, myRegisterPaint, path2f64, point2f64, point2f64_POINTS, rectangle2f64, rectangle2f64_POINTS, registerDefaultFormatCompilers, registerFormatCompiler, removeCssClass, shape as s2f64, segm2f64, segm2f64_M, segm2f64_Z, segm2f64_c, segm2f64_h, segm2f64_l, segm2f64_q, segm2f64_s, segm2f64_t, segm2f64_v, setObjectItem, shape2f64, toggleCssClass, trapezoid2f64, trapezoid2f64_POINTS, triangle2f64, triangle2f64_POINTS, triangle2f64_intersectsRect, triangle2f64_intersectsTriangle, triangle2i64_intersectsRect, trueThat, undefThat, vec2$1 as v2f64, vec2 as v2i32, vec3 as v3f64, vec2f64, vec2f64_about, vec2f64_add, vec2f64_addms, vec2f64_adds, vec2f64_ceil, vec2f64_cross, vec2f64_cross3, vec2f64_dist, vec2f64_dist2, vec2f64_div, vec2f64_divs, vec2f64_dot, vec2f64_eq, vec2f64_eqs, vec2f64_eqstrict, vec2f64_floor, vec2f64_iabout, vec2f64_iadd, vec2f64_iaddms, vec2f64_iadds, vec2f64_iceil, vec2f64_idiv, vec2f64_idivs, vec2f64_ifloor, vec2f64_iinv, vec2f64_imax, vec2f64_imin, vec2f64_imul, vec2f64_imuls, vec2f64_ineg, vec2f64_inv, vec2f64_iperp, vec2f64_irot90, vec2f64_irotate, vec2f64_irotn90, vec2f64_iround, vec2f64_isub, vec2f64_isubs, vec2f64_iunit, vec2f64_lerp, vec2f64_mag, vec2f64_mag2, vec2f64_max, vec2f64_min, vec2f64_mul, vec2f64_muls, vec2f64_neg, vec2f64_new, vec2f64_phi, vec2f64_rot90, vec2f64_rotate, vec2f64_rotn90, vec2f64_round, vec2f64_sub, vec2f64_subs, vec2f64_theta, vec2f64_unit, vec2i32, vec2i32_add, vec2i32_adds, vec2i32_angleEx, vec2i32_cross, vec2i32_cross3, vec2i32_div, vec2i32_divs, vec2i32_dot, vec2i32_iadd, vec2i32_iadds, vec2i32_idiv, vec2i32_idivs, vec2i32_imul, vec2i32_imuls, vec2i32_ineg, vec2i32_inorm, vec2i32_iperp, vec2i32_irot90, vec2i32_irotn90, vec2i32_isub, vec2i32_isubs, vec2i32_mag, vec2i32_mag2, vec2i32_mul, vec2i32_muls, vec2i32_neg, vec2i32_new, vec2i32_norm, vec2i32_perp, vec2i32_phiEx, vec2i32_rot90, vec2i32_rotn90, vec2i32_sub, vec2i32_subs, vec2i32_thetaEx, vec3f64, vec3f64_add, vec3f64_adds, vec3f64_crossABAB, vec3f64_div, vec3f64_divs, vec3f64_dot, vec3f64_iadd, vec3f64_iadds, vec3f64_idiv, vec3f64_idivs, vec3f64_imul, vec3f64_imuls, vec3f64_isub, vec3f64_isubs, vec3f64_iunit, vec3f64_mag, vec3f64_mag2, vec3f64_mul, vec3f64_muls, vec3f64_new, vec3f64_sub, vec3f64_subs, vec3f64_unit, workletState, wrapVN };
 //# sourceMappingURL=index.js.map
