@@ -17,11 +17,12 @@ describe('Schema Numeric Type', function () {
       compileJSONSchema('numberBasic1', { type: 'number' });
 
       const root = getJSONSchema('numberBasic1');
+      assert.isFalse(root.validate(BigInt(42)), 'bigint is invalid');
+      assert.isFalse(root.validate('42'), 'string is invalid');
       assert.isTrue(root.validate(42), 'validates an integer');
       assert.isTrue(root.validate(-1), 'validates a negative integer');
       assert.isTrue(root.validate(Math.PI), 'validates a number');
       assert.isTrue(root.validate(2.99792458e8), 'validates a float literal');
-      assert.isFalse(root.validate('42'), 'not validates a string');
     });
 
     it('should validate exclusiveMaximum', function () {
@@ -30,10 +31,11 @@ describe('Schema Numeric Type', function () {
       }));
 
       const root = getJSONSchema('exclusiveMaximum1');
+      assert.isTrue(root.validate(BigInt(3)), 'ignores bigint');
+      assert.isTrue(root.validate('3.5'), 'ignores strings');
       assert.isTrue(root.validate(2.2), 'below the exclusiveMaximum is valid');
       assert.isFalse(root.validate(3.0), 'boundary point is invalid');
       assert.isFalse(root.validate(3.5), 'above the exclusiveMaximum is invalid');
-      assert.isTrue(root.validate('x'), 'ignores non-numbers');
     });
 
     it('should validate exclusiveMinimum', function () {
@@ -42,10 +44,11 @@ describe('Schema Numeric Type', function () {
       }));
 
       const root = getJSONSchema('exclusiveMinimum1');
+      assert.isTrue(root.validate(BigInt(1)), 'ignores bigint');
+      assert.isTrue(root.validate('0.6'), 'ignores strings');
       assert.isTrue(root.validate(1.2), 'above the exclusiveMinimum is valid');
       assert.isFalse(root.validate(1.1), 'boundary point is invalid');
       assert.isFalse(root.validate(0.6), 'below the exclusiveMinimum is invalid');
-      assert.isTrue(root.validate('x'), 'ignores non-numbers');
     });
 
     it('should validate number maximum', function () {
@@ -54,10 +57,11 @@ describe('Schema Numeric Type', function () {
       }));
 
       const root = getJSONSchema('numberMaximum1');
+      assert.isTrue(root.validate(BigInt(4)), 'ignores bigint');
+      assert.isTrue(root.validate('4'), 'ignores strings');
       assert.isTrue(root.validate(2.6), 'below the maximum is valid');
       assert.isTrue(root.validate(3.0), 'boundary point is valid');
       assert.isFalse(root.validate(3.5), 'above the maximum is invalid');
-      assert.isTrue(root.validate('x'), 'ignores non-numbers');
     });
 
     it('should validate number minimum', function () {
@@ -66,22 +70,25 @@ describe('Schema Numeric Type', function () {
       }));
 
       const root = getJSONSchema('numberMinimum1');
+      assert.isTrue(root.validate(BigInt(1)), 'ignores bigint');
+      assert.isTrue(root.validate('1'), 'ignores string');
       assert.isTrue(root.validate(1.2), 'above the minimum is valid');
       assert.isTrue(root.validate(1.1), 'boundary point is valid');
       assert.isFalse(root.validate(0.6), 'below the minimum is invalid');
-      assert.isTrue(root.validate('x'), 'ignores non-numbers');
     });
 
     it('should validate multipleOf numbers', function () {
       compileJSONSchema('numberMulOf1', { multipleOf: 1.5 });
 
       const root = getJSONSchema('numberMulOf1');
+      assert.isTrue(root.validate(BigInt(1)), 'ignores bigint');
+      assert.isTrue(root.validate('1'), 'ignores string');
       assert.isTrue(root.validate(0), 'zero is multipleOf everything');
+      assert.isTrue(root.validate(3), 'three is a multipleof one point five');
       assert.isTrue(root.validate(4.5), 'four point five is a multipleOf one point five');
-      assert.isTrue(root.validate(30), 'tortyfive is a not a multipleOf one point five');
+      assert.isFalse(root.validate(31), 'tortyone is a not a multipleOf one point five');
       assert.isTrue(root.validate('42'), 'ignores a string');
     });
-
   });
 
   describe('#integer()', function () {
@@ -126,12 +133,12 @@ describe('Schema Numeric Type', function () {
       compileJSONSchema('bigintBasic1', { type: 'bigint' });
 
       const root = getJSONSchema('bigintBasic1');
-      assert.isTrue(root.validate(BigInt(42)), 'validates a big integer');
-      assert.isTrue(root.validate(BigInt(-1)), 'validates a negative big integer');
       assert.isFalse(root.validate(42), 'not validates an integer');
       assert.isFalse(root.validate(-1), 'not validates a negative integer');
       assert.isFalse(root.validate(Math.PI), 'validates a number');
       assert.isFalse(root.validate('42'), 'not validates a string');
+      assert.isTrue(root.validate(BigInt(42)), 'validates a big integer');
+      assert.isTrue(root.validate(BigInt(-1)), 'validates a negative big integer');
     });
 
     it('should validate bigint exclusiveMaximum', function () {
@@ -140,10 +147,11 @@ describe('Schema Numeric Type', function () {
       }));
 
       const root = getJSONSchema('bigintExclusiveMaximum1');
+      assert.isTrue(root.validate(52), 'it should ignore numbers');
+      assert.isTrue(root.validate('52'), 'ignores non-numbers');
       assert.isTrue(root.validate(BigInt(32)), 'below the exclusiveMaximum is valid');
       assert.isFalse(root.validate(BigInt(42)), 'boundary point is invalid');
       assert.isFalse(root.validate(BigInt(52)), 'above the exclusiveMaximum is invalid');
-      assert.isTrue(root.validate('x'), 'ignores non-numbers');
     });
 
     it('should validate bigint exclusiveMinimum', function () {
@@ -152,10 +160,11 @@ describe('Schema Numeric Type', function () {
       }));
 
       const root = getJSONSchema('bigintExclusiveMinimum1');
+      assert.isTrue(root.validate(10), 'it should ignore numbers');
+      assert.isTrue(root.validate('10'), 'ignores non-numbers');
       assert.isTrue(root.validate(BigInt(21)), 'above the exclusiveMinimum is valid');
       assert.isFalse(root.validate(BigInt(16)), 'boundary point is invalid');
       assert.isFalse(root.validate(BigInt(10)), 'below the exclusiveMinimum is invalid');
-      assert.isTrue(root.validate('x'), 'ignores non-numbers');
     });
 
     it('should validate bigint maximum', function () {
@@ -164,10 +173,11 @@ describe('Schema Numeric Type', function () {
       }));
 
       const root = getJSONSchema('bigintMaximum1');
+      assert.isTrue(root.validate(52), 'it should ignore numbers');
+      assert.isTrue(root.validate('52'), 'ignores non-numbers');
       assert.isTrue(root.validate(BigInt(32)), 'below the maximum is valid');
       assert.isTrue(root.validate(BigInt(42)), 'boundary point is valid');
       assert.isFalse(root.validate(BigInt(52)), 'above the maximum is invalid');
-      assert.isTrue(root.validate('x'), 'ignores non-numbers');
     });
 
     it('should validate bigint minimum', function () {
@@ -176,21 +186,22 @@ describe('Schema Numeric Type', function () {
       }));
 
       const root = getJSONSchema('bigintMinimum1');
+      assert.isTrue(root.validate(10), 'it should ignore numbers');
+      assert.isTrue(root.validate('10'), 'ignores non-numbers');
       assert.isTrue(root.validate(BigInt(21)), 'above the minimum is valid');
       assert.isTrue(root.validate(BigInt(16)), 'boundary point is valid');
       assert.isFalse(root.validate(BigInt(10)), 'below the minimum is invalid');
-      assert.isTrue(root.validate('x'), 'ignores non-numbers');
     });
 
     it('should validate multipleOf bigint', function () {
       compileJSONSchema('bigintMulOf1', { multipleOf: BigInt(2) });
 
       const root = getJSONSchema('bigintMulOf1');
-      assert.isTrue(root.validate(BigInt(10)), 'ten is multipleOf 2');
-      assert.isFalse(root.validate(BigInt(7)), 'seven is not a multipleOf 2');
-      assert.isTrue(root.validate('42'), 'ignores a string');
+      assert.isTrue(root.validate(7), 'it should ignore numbers');
+      assert.isTrue(root.validate('7'), 'ignores a string');
+      assert.isTrue(root.validate(BigInt(0)), 'zero is multipleOf everything');
+      assert.isTrue(root.validate(BigInt(4)), 'four is a multipleof two');
+      assert.isFalse(root.validate(BigInt(7)), 'seven is a not a multipleOf two');
     });
-
   });
-
 });
