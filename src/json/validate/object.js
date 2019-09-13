@@ -533,11 +533,11 @@ function compileRequiredProperties2(schemaObj, jsonSchema) {
         valid = addError(key);
     }
     return valid;
-  }
+  };
 }
 
 function compileRequiredPattern2(schemaObj, jsonSchema) {
-  const patterns = getArrayTypeMinLength(jsonSchema.patternRequired, 1);
+  const patterns = getArrayTypeMinItems(jsonSchema.patternRequired, 1);
   if (patterns == null) return undefined;
 
   const regexps = {};
@@ -639,7 +639,7 @@ export function compileObjectBasic2(schemaObj, jsonSchema) {
   const requiredProperties = compileRequiredProperties2(schemaObj, jsonSchema);
   const requiredPattern = compileRequiredPattern2(schemaObj, jsonSchema);
   const dependencies = compileDependencies2(schemaObj, jsonSchema);
-  
+
   const isMinProperties = minProperties || trueThat;
   const isMaxProperties = maxProperties || trueThat;
 
@@ -663,5 +663,5 @@ export function compileObjectBasic2(schemaObj, jsonSchema) {
         return false;
     }
     return true;
-  }
+  };
 }
