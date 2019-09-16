@@ -23,7 +23,7 @@ import { compileNumberBasic } from './number';
 import { compileBigIntBasic } from './bigint';
 import { compileStringBasic } from './string';
 import { compileObjectSchema } from './object';
-import { compileArrayBasic, compileArrayChildren } from './array';
+import { compileArraySchema } from './array';
 import { compileCombineSchema } from './combine';
 import { compileConditionSchema } from './condition';
 
@@ -212,10 +212,10 @@ export function compileSchemaObject(schemaObj, jsonSchema) {
   addFunctionToArray(validators, compileBigIntBasic(schemaObj, jsonSchema));
   addFunctionToArray(validators, compileStringBasic(schemaObj, jsonSchema));
   addFunctionToArray(validators, compileFormatBasic(schemaObj, jsonSchema));
+
+  addFunctionToArray(validators, compileArraySchema(schemaObj, jsonSchema));
   addFunctionToArray(validators, compileObjectSchema(schemaObj, jsonSchema));
 
-  addFunctionToArray(validators, compileArrayBasic(schemaObj, jsonSchema));
-  addFunctionToArray(validators, compileArrayChildren(schemaObj, jsonSchema));
 
   addFunctionToArray(validators, compileCombineSchema(schemaObj, jsonSchema));
   addFunctionToArray(validators, compileConditionSchema(schemaObj, jsonSchema));

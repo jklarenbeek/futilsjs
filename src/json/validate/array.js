@@ -73,31 +73,6 @@ function compileUniqueItems(schemaObj, jsonSchema) {
 
 //#endregion
 
-export function compileArrayBasic(schemaObj, jsonSchema) {
-  const minItems = compileMinItems(schemaObj, jsonSchema);
-  const maxItems = compileMaxItems(schemaObj, jsonSchema);
-  const uniqueItems = compileUniqueItems(schemaObj, jsonSchema);
-
-  if ((minItems
-    || maxItems
-    || uniqueItems) === undefined)
-    return undefined;
-
-  const isMinItems = minItems || trueThat;
-  const isMaxItems = maxItems || trueThat;
-  const isUniqueItems = uniqueItems || trueThat;
-
-  return function validateArraySchema(data, dataRoot) {
-    if (isArrayType(data)) {
-      const len = data.length;
-      return isMinItems(len)
-        && isMaxItems(len)
-        && isUniqueItems(data);
-    }
-    return true;
-  };
-}
-
 function compileArrayItemsBoolean(schemaObj, jsonSchema) {
   const items = getBoolishType(jsonSchema.items);
   if (items === true) return trueThat;
@@ -110,11 +85,7 @@ function compileArrayItemsBoolean(schemaObj, jsonSchema) {
   if (addError == null) return undefined;
 
   return function validateArrayItemsFalse(data) {
-    return !isArrayTyped(data)
-      ? true
-      : data.length === 0
-        ? true
-        : addError(data);
+    return data.length === 0 || addError(data);
   };
 }
 
@@ -128,11 +99,7 @@ function compileArrayContainsBoolean(schemaObj, jsonSchema) {
     if (addError == null) return undefined;
 
     return function validateArrayContainsTrue(data, dataRoot) {
-      return !isArrayTyped(data)
-        ? true
-        : data.length > 0
-          ? true
-          : addError(data);
+      return data.length > 0 || addError(data);
     };
   }
   if (contains === false) {
@@ -143,9 +110,7 @@ function compileArrayContainsBoolean(schemaObj, jsonSchema) {
     if (addError == null) return undefined;
 
     return function validateArrayContainsFalse(data, dataRoot) {
-      return !isArrayTyped(data)
-        ? true
-        : addError(data);
+      return addError(data);
     };
   }
   return undefined;
@@ -218,52 +183,72 @@ function compileArrayContains(schemaObj, jsonSchema) {
     compileArrayContains);
 }
 
-function compileChildValidators(schemaObj, jsonSchema) {
-  const validateItem = compileArrayItems(schemaObj, jsonSchema)
+function compileArrayChildren(schemaObj, jsonSchema) {
+  const validateItem = compileArrayItemsBoolean(schemaObj, jsonSchema)
+    || compileArrayItems(schemaObj, jsonSchema)
     || compileTupleItems(schemaObj, jsonSchema);
-  const validateContains = compileArrayContains(schemaObj, jsonSchema);
-  if (validateItem == null
-    && validateContains == null)
+
+  const validateContains = compileArrayContainsBoolean(schemaObj, jsonSchema)
+    || compileArrayContains(schemaObj, jsonSchema);
+  if ((validateItem || validateContains) == null)
     return undefined;
 
   const maxItems = getIntishType(jsonSchema.maxItems, 0);
 
   return function validateArrayChildren(data, dataRoot) {
-    if (isArrayTyped(data)) {
-      let valid = true;
-      let contains = false;
-      let errors = 0;
-      const len = maxItems > 0
-        ? Math.min(maxItems, data.length)
-        : data.length;
+    let valid = true;
+    let contains = false;
+    let errors = 0;
+    const len = maxItems > 0
+      ? Math.min(maxItems, data.length)
+      : data.length;
 
-      for (let i = 0; i < len; ++i) {
-        if (errors > 32) break;
-        const obj = data[i];
-        if (validateItem) {
-          if (validateItem(obj, dataRoot, i) === false) {
-            valid = false;
-            errors++;
-            continue;
-          }
-        }
-        if (validateContains) {
-          if (contains === false && validateContains(obj, dataRoot) === true) {
-            if (validateItem == null) return true;
-            contains = true;
-          }
+    for (let i = 0; i < len; ++i) {
+      if (errors > 32) break;
+      const obj = data[i];
+      if (validateItem) {
+        if (validateItem(obj, dataRoot, i) === false) {
+          valid = false;
+          errors++;
+          continue;
         }
       }
-      return valid && (validateContains == null || contains === true);
+      if (validateContains) {
+        if (contains === false && validateContains(obj, dataRoot) === true) {
+          if (validateItem == null) return true;
+          contains = true;
+        }
+      }
     }
-    return true;
+    return valid && (validateContains == null || contains === true);
   };
 }
 
-export function compileArrayChildren(schemaObj, jsonSchema) {
-  return [
-    compileArrayItemsBoolean(schemaObj, jsonSchema),
-    compileArrayContainsBoolean(schemaObj, jsonSchema),
-    compileChildValidators(schemaObj, jsonSchema),
-  ];
+export function compileArraySchema(schemaObj, jsonSchema) {
+  const minItems = compileMinItems(schemaObj, jsonSchema);
+  const maxItems = compileMaxItems(schemaObj, jsonSchema);
+  const uniqueItems = compileUniqueItems(schemaObj, jsonSchema);
+  const arrayChildren = compileArrayChildren(schemaObj, jsonSchema);
+
+  if ((minItems
+    || maxItems
+    || uniqueItems
+    || arrayChildren) === undefined)
+    return undefined;
+
+  const isMinItems = minItems || trueThat;
+  const isMaxItems = maxItems || trueThat;
+  const isUniqueItems = uniqueItems || trueThat;
+  const validateItems = arrayChildren || trueThat;
+
+  return function validateArraySchema(data, dataRoot) {
+    if (isArrayType(data)) {
+      const len = data.length;
+      return isMinItems(len)
+        && isMaxItems(len)
+        && isUniqueItems(data)
+        && validateItems(data, dataRoot);
+    }
+    return true;
+  };
 }
