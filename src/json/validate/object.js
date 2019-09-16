@@ -417,7 +417,7 @@ export function compileObjectSchema(schemaObj, jsonSchema) {
     || requiredProperties
     || requiredPattern
     || dependencies
-    || objectChildren) === undefined)
+    || objectChildren) == null)
     return undefined;
 
   const isMinProperties = minProperties || trueThat;
