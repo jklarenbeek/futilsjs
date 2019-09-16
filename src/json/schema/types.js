@@ -14,9 +14,11 @@ import {
 
 export function isOfSchemaType(schema, type) {
   if (type == null) return false;
-  if (schema.type === type) return true;
-  if (schema.type.constructor === Array) {
-    return schema.type.includes(type);
+  const stype = schema.type;
+  if (stype == null) return false;
+  if (stype === type) return true;
+  if (stype.constructor === Array) {
+    return stype.includes(type);
   }
   return false;
 }

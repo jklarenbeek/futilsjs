@@ -1,3 +1,4 @@
+/* eslint-disable object-curly-newline */
 import {
   compileJSONSchema,
   getJSONSchema,
@@ -10,12 +11,29 @@ import {
 
 registerDefaultFormatCompilers();
 
-assert.isTrue(compileJSONSchema('bigintExclusiveMaximum1', {
-  exclusiveMaximum: BigInt(42),
-}));
+compileJSONSchema('objectReq1', {
+  type: 'object',
+  properties: {
+    name: { type: 'string' },
+    email: { type: 'string' },
+    address: { type: 'string' },
+    telephone: { type: 'string' },
+  },
+  required: ['name', 'email'],
+});
 
-const root = getJSONSchema('bigintExclusiveMaximum1');
-assert.isTrue(root.validate(BigInt(32)), 'below the exclusiveMaximum is valid');
-assert.isFalse(root.validate(BigInt(42)), 'boundary point is invalid');
-assert.isFalse(root.validate(BigInt(52)), 'above the exclusiveMaximum is invalid');
-assert.isTrue(root.validate('x'), 'ignores non-numbers');
+const root = getJSONSchema('objectReq1');
+assert.isTrue(root.validate({
+  name: 'William Shakespeare',
+  email: 'bill@stratford-upon-avon.co.uk',
+}), 'minimal required properties to validate');
+assert.isTrue(root.validate({
+  name: 'William Shakespeare',
+  email: 'bill@stratford-upon-avon.co.uk',
+  address: 'Henley Street, Stratford-upon-Avon, Warwickshire, England',
+  authorship: 'in question',
+}), 'required properties satisfied with addional properties');
+assert.isFalse(root.validate({
+  name: 'William Shakespeare',
+  address: 'Henley Street, Stratford-upon-Avon, Warwickshire, England',
+}), 'missing email address');
