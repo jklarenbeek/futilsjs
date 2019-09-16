@@ -132,10 +132,11 @@ export function isArrayOrSetTyped(data) {
 
 //#region object and map
 export function isObjectType(data) {
-  return isComplexType(data)
-    && !(data instanceof Array
-      || data.constructor === Map
-      || data.constructor === Set);
+  return data != null
+    && (data.constructor === Object
+      || !(data instanceof Array
+        || data.constructor === Map
+        || data.constructor === Set));
 }
 
 export function isObjectTyped(data) {
