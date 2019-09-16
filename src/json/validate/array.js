@@ -3,6 +3,7 @@
 import {
   isArrayTyped,
   isArrayOrSetTyped,
+  isArrayType,
 } from '../../types/core';
 
 import {
@@ -23,9 +24,11 @@ import {
   isUniqueArray,
 } from '../../types/arrays';
 
+//#region compile array constraints
+
 function compileMinItems(schemaObj, jsonSchema) {
-  const min = getIntishType(jsonSchema.minItems);
-  if (!(min > 0)) return undefined;
+  const min = getIntishType(jsonSchema.minItems, 0);
+  if (min < 1) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler(
     'minItems',
@@ -33,18 +36,14 @@ function compileMinItems(schemaObj, jsonSchema) {
     compileMinItems);
   if (addError == null) return undefined;
 
-  return function minItems(data) {
-    return !isArrayOrSetTyped(data)
-      ? true
-      : getArrayOrSetTypeLength(data) >= min
-        ? true
-        : addError(data);
+  return function minItems(len = 0) {
+    return len >= min || addError(len);
   };
 }
 
 function compileMaxItems(schemaObj, jsonSchema) {
-  const max = getIntishType(jsonSchema.maxItems);
-  if (!(max > 0)) return undefined;
+  const max = getIntishType(jsonSchema.maxItems, -1);
+  if (max < 0) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler(
     'maxItems',
@@ -52,40 +51,51 @@ function compileMaxItems(schemaObj, jsonSchema) {
     compileMaxItems);
   if (addError == null) return undefined;
 
-  return function maxItems(data) {
-    return !isArrayOrSetTyped(data)
-      ? true
-      : getArrayOrSetTypeLength(data) <= max
-        ? true
-        : addError(data);
+  return function maxItems(len = 0) {
+    return len <= max || addError(len);
   };
 }
 
-function compileArrayUniqueness(schemaObj, jsonSchema) {
+function compileUniqueItems(schemaObj, jsonSchema) {
   const unique = getBoolishType(jsonSchema.uniqueItems);
   if (unique !== true) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler(
     'uniqueItems',
     unique,
-    compileArrayUniqueness);
+    compileUniqueItems);
   if (addError == null) return undefined;
 
   return function validateUniqueItems(data) {
-    return !isArrayTyped(data)
-      ? true
-      : isUniqueArray(data)
-        ? true
-        : addError(data);
+    return isUniqueArray(data) || addError(data);
   };
 }
 
+//#endregion
+
 export function compileArrayBasic(schemaObj, jsonSchema) {
-  return [
-    compileMinItems(schemaObj, jsonSchema),
-    compileMaxItems(schemaObj, jsonSchema),
-    compileArrayUniqueness(schemaObj, jsonSchema),
-  ];
+  const minItems = compileMinItems(schemaObj, jsonSchema);
+  const maxItems = compileMaxItems(schemaObj, jsonSchema);
+  const uniqueItems = compileUniqueItems(schemaObj, jsonSchema);
+
+  if ((minItems
+    || maxItems
+    || uniqueItems) === undefined)
+    return undefined;
+
+  const isMinItems = minItems || trueThat;
+  const isMaxItems = maxItems || trueThat;
+  const isUniqueItems = uniqueItems || trueThat;
+
+  return function validateArraySchema(data, dataRoot) {
+    if (isArrayType(data)) {
+      const len = data.length;
+      return isMinItems(len)
+        && isMaxItems(len)
+        && isUniqueItems(data);
+    }
+    return true;
+  };
 }
 
 function compileArrayItemsBoolean(schemaObj, jsonSchema) {
