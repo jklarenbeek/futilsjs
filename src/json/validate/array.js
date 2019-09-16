@@ -184,12 +184,10 @@ function compileArrayContains(schemaObj, jsonSchema) {
 }
 
 function compileArrayChildren(schemaObj, jsonSchema) {
-  const validateItem = compileArrayItemsBoolean(schemaObj, jsonSchema)
-    || compileArrayItems(schemaObj, jsonSchema)
+  const validateItem = compileArrayItems(schemaObj, jsonSchema)
     || compileTupleItems(schemaObj, jsonSchema);
 
-  const validateContains = compileArrayContainsBoolean(schemaObj, jsonSchema)
-    || compileArrayContains(schemaObj, jsonSchema);
+  const validateContains = compileArrayContains(schemaObj, jsonSchema);
   if ((validateItem || validateContains) == null)
     return undefined;
 
@@ -228,17 +226,23 @@ export function compileArraySchema(schemaObj, jsonSchema) {
   const minItems = compileMinItems(schemaObj, jsonSchema);
   const maxItems = compileMaxItems(schemaObj, jsonSchema);
   const uniqueItems = compileUniqueItems(schemaObj, jsonSchema);
+  const itemsBoolean = compileArrayItemsBoolean(schemaObj, jsonSchema);
+  const containsBoolean = compileArrayContainsBoolean(schemaObj, jsonSchema);
   const arrayChildren = compileArrayChildren(schemaObj, jsonSchema);
 
   if ((minItems
     || maxItems
     || uniqueItems
+    || itemsBoolean
+    || containsBoolean
     || arrayChildren) === undefined)
     return undefined;
 
   const isMinItems = minItems || trueThat;
   const isMaxItems = maxItems || trueThat;
   const isUniqueItems = uniqueItems || trueThat;
+  const hasBooleanItems = itemsBoolean || trueThat;
+  const hasBooleanContains = containsBoolean || trueThat;
   const validateItems = arrayChildren || trueThat;
 
   return function validateArraySchema(data, dataRoot) {
@@ -247,6 +251,8 @@ export function compileArraySchema(schemaObj, jsonSchema) {
       return isMinItems(len)
         && isMaxItems(len)
         && isUniqueItems(data)
+        && hasBooleanItems(data)
+        && hasBooleanContains(data)
         && validateItems(data, dataRoot);
     }
     return true;
