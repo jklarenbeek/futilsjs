@@ -433,18 +433,12 @@ export function compileObjectSchema(schemaObj, jsonSchema) {
     if (isObjectType(data)) {
       const dataKeys = Object.keys(data);
       const dataLen = dataKeys.length;
-      if (!isMinProperties(dataLen))
-        return false;
-      if (!isMaxProperties(dataLen))
-        return false;
-      if (!hasRequiredProperties(dataKeys))
-        return false;
-      if (!hasRequiredPattern(dataKeys))
-        return false;
-      if (!hasDependencies(data, dataRoot, dataKeys))
-        return false;
-      if (!validateChildren(data, dataRoot, dataKeys))
-        return false;
+      return isMinProperties(dataLen)
+        && isMaxProperties(dataLen)
+        && hasRequiredProperties(dataKeys)
+        && hasRequiredPattern(dataKeys)
+        && hasDependencies(data, dataRoot, dataKeys)
+        && validateChildren(data, dataRoot, dataKeys);
     }
     return true;
   };
