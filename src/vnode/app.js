@@ -23,9 +23,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 //
-import { collapseCssClass } from '../browser/css';
 import { cloneObject } from '../types/objects';
-import { VNode, getVNodeKey } from './base';
+import { VNode } from './base';
 import { isFn } from '../types/core';
 
 function Path_getValue(path, source) {
@@ -48,112 +47,9 @@ function Path_setValue(path, value, source) {
   return value;
 }
 
-function eventListener(event) {
-  return event.currentTarget.events[event.type](event);
-}
-
-function updateAttribute(element, name, value, oldValue, isSvg) {
-  if (name === 'style') {
-    if (typeof value === 'string') {
-      element.style.cssText = value;
-    }
-    else {
-      if (typeof oldValue === 'string') {
-        oldValue = element.style.cssText = '';
-      }
-      const lval = cloneObject(oldValue, value);
-      for (const i in lval) {
-        if (lval.hasOwnProperty(i)) {
-          const style = (value == null || value[i] == null) ? '' : value[i];
-          if (i[0] === '-') {
-            element.style.setProperty(i, style);
-          }
-          else {
-            element.style[i] = style;
-          }
-        }
-      }
-    }
-  }
-  else if (name !== 'key') {
-    if (name.indexOf('on') === 0) {
-      name = name.slice(2);
-
-      if (element.events) {
-        if (!oldValue) oldValue = element.events[name];
-      }
-      else {
-        element.events = {};
-      }
-
-      element.events[name] = value;
-
-      if (value) {
-        if (!oldValue) {
-          element.addEventListener(name, eventListener);
-        }
-      }
-      else {
-        element.removeEventListener(name, eventListener);
-      }
-    }
-    else if (value != null && value !== false) {
-      if (name === 'class') {
-        const cls = collapseCssClass(value);
-        if (cls !== '')
-          element.className = collapseCssClass(value);
-        else
-          element.removeAttribute('class');
-      }
-      else if (name in element
-        && name !== 'list'
-        && name !== 'type'
-        && name !== 'draggable'
-        && name !== 'spellcheck'
-        && name !== 'translate'
-        && !isSvg) {
-        element[name] = value == null ? '' : value;
-      }
-      else {
-        element.setAttribute(name, value === true ? '' : value);
-      }
-    }
-    else {
-      element.removeAttribute(name);
-    }
-  }
-}
-
-function removeChildren(element, node) {
-  const attributes = node.attributes;
-  if (attributes) {
-    const children = node.children;
-    for (let i = 0; i < children.length; ++i)
-      removeChildren(element.childNodes[i], children[i]);
-
-    if (attributes.ondestroy)
-      attributes.ondestroy(element);
-  }
-  return element;
-}
-
-function removeElement(parent, element, node) {
-  function done() {
-    parent.removeChild(removeChildren(element, node));
-  }
-
-  const cb = node.attributes
-    && node.attributes.onremove;
-  if (cb)
-    cb(element, done);
-  else
-    done();
-}
-
 export function app(state, actions, view, container) {
-  const map = [].map;
   let rootElement = (container && container.children[0]) || null;
-  let _oldNode = rootElement && recycleElement(rootElement);
+  let _oldNode = VNode.fromElement(rootElement);
   const lifecycle = [];
   let skipRender = false;
   let isRecycling = true;
@@ -163,18 +59,6 @@ export function app(state, actions, view, container) {
   scheduleRender();
 
   return wiredActions;
-
-  function recycleElement(element) {
-    return new VNode(
-      element.nodeName.toLowerCase(),
-      {},
-      map.call(element.childNodes, function recycleElement_inner(el) {
-        return el.nodeType === 3 // Node.TEXT_NODE
-          ? el.nodeValue
-          : recycleElement(el);
-      }),
-    );
-  }
 
   function resolveNode(node) {
     if (isFn(node))
@@ -272,7 +156,7 @@ export function app(state, actions, view, container) {
       for (const name in attributes) {
         if (attributes.hasOwnProperty(name)) {
           const value = attributes[name];
-          updateAttribute(element, name, value, null, isSvg);
+          VNode.updateDOMAttribute(element, name, value, null, isSvg);
         }
       }
     }
@@ -287,7 +171,7 @@ export function app(state, actions, view, container) {
         (name === 'value' || name === 'checked'
           ? element[name]
           : oldAttributes[name])) {
-        updateAttribute(
+        VNode.updateDOMAttribute(
           element,
           name,
           attributes[name],
@@ -312,7 +196,7 @@ export function app(state, actions, view, container) {
         parent.insertBefore(newElement, element);
 
         if (oldNode != null) {
-          removeElement(parent, element, oldNode);
+          VNode.removeElement(parent, element, oldNode);
         }
 
         element = newElement;
@@ -337,7 +221,7 @@ export function app(state, actions, view, container) {
         for (let i = 0; i < oldChildren.length; i++) {
           oldElements[i] = element.childNodes[i];
 
-          const oldKey = getVNodeKey(oldChildren[i]);
+          const oldKey = VNode.getVKey(oldChildren[i]);
           if (oldKey != null) {
             oldKeyed[oldKey] = [oldElements[i], oldChildren[i]];
           }
@@ -347,8 +231,8 @@ export function app(state, actions, view, container) {
         let k = 0;
         const l = children.length;
         while (k < l) {
-          const oldKey = getVNodeKey(oldChildren[i]);
-          const newKey = getVNodeKey((children[k] = resolveNode(children[k])));
+          const oldKey = VNode.getVKey(oldChildren[i]);
+          const newKey = VNode.getVKey((children[k] = resolveNode(children[k])));
 
           if (newKeyed[oldKey]) {
             i++;
@@ -388,8 +272,8 @@ export function app(state, actions, view, container) {
         }
 
         while (i < oldChildren.length) {
-          if (getVNodeKey(oldChildren[i]) == null) {
-            removeElement(element, oldElements[i], oldChildren[i]);
+          if (VNode.getVKey(oldChildren[i]) == null) {
+            VNode.removeElement(element, oldElements[i], oldChildren[i]);
           }
           i++;
         }
@@ -397,7 +281,7 @@ export function app(state, actions, view, container) {
         for (const ik in oldKeyed) {
           if (oldKeyed.hasOwnProperty(ik)) {
             if (!newKeyed[ik]) {
-              removeElement(element, oldKeyed[ik][0], oldKeyed[ik][1]);
+              VNode.removeElement(element, oldKeyed[ik][0], oldKeyed[ik][1]);
             }
           }
         }
