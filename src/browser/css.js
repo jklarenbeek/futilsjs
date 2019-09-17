@@ -5,12 +5,11 @@ export function collapseToString(source, matchRegEx) {
   }
   else if (typeof source !== 'object') {
     r = String(source).trim();
-
-    if (!matchRegEx) return r;
     if (r === '') return r;
+    if (!matchRegEx) return r;
 
     const m = r.match(matchRegEx);
-    if (!m) return '';
+    if (m == null) return '';
     if (m.length !== 1) return '';
     return r === m[0] && r;
   }
@@ -39,7 +38,6 @@ export function collapseToString(source, matchRegEx) {
 
 const matchClassName = /[a-zA-Z_][a-zA-Z0-9_-]*/g;
 export function collapseCssClass(...source) {
-  if (!source) return '';
   const cl = source.length;
   if (cl === 0) return '';
   let i = 0;

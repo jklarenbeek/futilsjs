@@ -48,6 +48,107 @@ function Path_setValue(path, value, source) {
   return value;
 }
 
+function eventListener(event) {
+  return event.currentTarget.events[event.type](event);
+}
+
+function updateAttribute(element, name, value, oldValue, isSvg) {
+  if (name === 'style') {
+    if (typeof value === 'string') {
+      element.style.cssText = value;
+    }
+    else {
+      if (typeof oldValue === 'string') {
+        oldValue = element.style.cssText = '';
+      }
+      const lval = cloneObject(oldValue, value);
+      for (const i in lval) {
+        if (lval.hasOwnProperty(i)) {
+          const style = (value == null || value[i] == null) ? '' : value[i];
+          if (i[0] === '-') {
+            element.style.setProperty(i, style);
+          }
+          else {
+            element.style[i] = style;
+          }
+        }
+      }
+    }
+  }
+  else if (name !== 'key') {
+    if (name.indexOf('on') === 0) {
+      name = name.slice(2);
+
+      if (element.events) {
+        if (!oldValue) oldValue = element.events[name];
+      }
+      else {
+        element.events = {};
+      }
+
+      element.events[name] = value;
+
+      if (value) {
+        if (!oldValue) {
+          element.addEventListener(name, eventListener);
+        }
+      }
+      else {
+        element.removeEventListener(name, eventListener);
+      }
+    }
+    else if (value != null && value !== false) {
+      if (name === 'class') {
+        const cls = collapseCssClass(value);
+        if (cls !== '')
+          element.className = collapseCssClass(value);
+        else
+          element.removeAttribute('class');
+      }
+      else if (name in element
+        && name !== 'list'
+        && name !== 'type'
+        && name !== 'draggable'
+        && name !== 'spellcheck'
+        && name !== 'translate'
+        && !isSvg) {
+        element[name] = value == null ? '' : value;
+      }
+      else {
+        element.setAttribute(name, value === true ? '' : value);
+      }
+    }
+    else {
+      element.removeAttribute(name);
+    }
+  }
+}
+
+function removeChildren(element, node) {
+  const attributes = node.attributes;
+  if (attributes) {
+    const children = node.children;
+    for (let i = 0; i < children.length; ++i)
+      removeChildren(element.childNodes[i], children[i]);
+
+    if (attributes.ondestroy)
+      attributes.ondestroy(element);
+  }
+  return element;
+}
+
+function removeElement(parent, element, node) {
+  function done() {
+    parent.removeChild(removeChildren(element, node));
+  }
+
+  const cb = node.attributes
+    && node.attributes.onremove;
+  if (cb)
+    cb(element, done);
+  else
+    done();
+}
 
 export function app(state, actions, view, container) {
   const map = [].map;
@@ -148,82 +249,6 @@ export function app(state, actions, view, container) {
     return myActions;
   }
 
-  function eventListener(event) {
-    return event.currentTarget.events[event.type](event);
-  }
-
-  function updateAttribute(element, name, value, oldValue, isSvg) {
-    if (name === 'style') {
-      if (typeof value === 'string') {
-        element.style.cssText = value;
-      }
-      else {
-        if (typeof oldValue === 'string') {
-          oldValue = element.style.cssText = '';
-        }
-        const lval = cloneObject(oldValue, value);
-        for (const i in lval) {
-          if (lval.hasOwnProperty(i)) {
-            const style = (value == null || value[i] == null) ? '' : value[i];
-            if (i[0] === '-') {
-              element.style.setProperty(i, style);
-            }
-            else {
-              element.style[i] = style;
-            }
-          }
-        }
-      }
-    }
-    else if (name !== 'key') {
-      if (name.indexOf('on') === 0) {
-        name = name.slice(2);
-
-        if (element.events) {
-          if (!oldValue) oldValue = element.events[name];
-        }
-        else {
-          element.events = {};
-        }
-
-        element.events[name] = value;
-
-        if (value) {
-          if (!oldValue) {
-            element.addEventListener(name, eventListener);
-          }
-        }
-        else {
-          element.removeEventListener(name, eventListener);
-        }
-      }
-      else if (value != null && value !== false) {
-        if (name === 'class') {
-          const cls = collapseCssClass(value);
-          if (cls !== '')
-            element.className = collapseCssClass(value);
-          else
-            element.removeAttribute('class');
-        }
-        else if (name in element
-          && name !== 'list'
-          && name !== 'type'
-          && name !== 'draggable'
-          && name !== 'spellcheck'
-          && name !== 'translate'
-          && !isSvg) {
-          element[name] = value == null ? '' : value;
-        }
-        else {
-          element.setAttribute(name, value === true ? '' : value);
-        }
-      }
-      else {
-        element.removeAttribute(name);
-      }
-    }
-  }
-
   function createElement(node, isSvg) {
     const element = (typeof node === 'string' || typeof node === 'number')
       ? document.createTextNode(node)
@@ -277,34 +302,6 @@ export function app(state, actions, view, container) {
       lifecycle.push(function hyperapp_updateElement_lifecycle() {
         cb(element, oldAttributes);
       });
-    }
-  }
-
-  function removeChildren(element, node) {
-    const attributes = node.attributes;
-    if (attributes) {
-      for (let i = 0; i < node.children.length; i++) {
-        removeChildren(element.childNodes[i], node.children[i]);
-      }
-
-      if (attributes.ondestroy) {
-        attributes.ondestroy(element);
-      }
-    }
-    return element;
-  }
-
-  function removeElement(parent, element, node) {
-    function done() {
-      parent.removeChild(removeChildren(element, node));
-    }
-
-    const cb = node.attributes && node.attributes.onremove;
-    if (cb) {
-      cb(element, done);
-    }
-    else {
-      done();
     }
   }
 
