@@ -91,22 +91,42 @@ function compileNumberMultipleOf(schemaObj, jsonSchema) {
   };
 }
 
-export function compileNumberBasic(schemaObj, jsonSchema) {
+function compileNumberRaw(schemaObj, jsonSchema) {
   const maximum = compileNumberMaximum(schemaObj, jsonSchema);
   const minimum = compileNumberMinimum(schemaObj, jsonSchema);
   const multipleOf = compileNumberMultipleOf(schemaObj, jsonSchema);
-  if (maximum == null && minimum == null && multipleOf == null) return undefined;
+  if (maximum == null && minimum == null && multipleOf == null)
+    return undefined;
 
   const isMax = maximum || trueThat;
   const isMin = minimum || trueThat;
   const isMul = multipleOf || trueThat;
 
-  return function validateNumberSchema(data) {
-    if (isNumberType(data)) {
-      return isMax(data)
-        && isMin(data)
-        && isMul(data);
-    }
-    return true;
+  return function validateNumberRaw(data) {
+    return isMax(data)
+      && isMin(data)
+      && isMul(data);
   };
+}
+
+export function compileNumberBasic(schemaObj, jsonSchema) {
+  const raw = compileNumberRaw(schemaObj, jsonSchema);
+  return function validateNumber(data) {
+    return isNumberType(data) && raw(data);
+  };
+}
+
+export function getDefaultValue(jsonSchema) {
+  return (isNumberType(jsonSchema.default) && jsonSchema.default)
+    || (isNumberType(jsonSchema.const) && jsonSchema.const);
+}
+
+export function renderNumberControl(schemaObj, jsonSchema) {
+  const widget = jsonSchema.widget;
+  if (widget !== 'number') return undefined;
+
+  const validator = compileNumberRaw(schemaObj, jsonSchema);
+  if (validator == null) return undefined;
+
+  return (<input type='number' value={ getDefaultValue(jsonSchema) } />);
 }
