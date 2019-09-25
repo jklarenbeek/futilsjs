@@ -117,8 +117,8 @@ export function compileNumberBasic(schemaObj, jsonSchema) {
 }
 
 export function getDefaultValue(jsonSchema) {
-  return (isNumberType(jsonSchema.default) && jsonSchema.default)
-    || (isNumberType(jsonSchema.const) && jsonSchema.const);
+  return (isNumberType(jsonSchema.const) && jsonSchema.const)
+    || (isNumberType(jsonSchema.default) && jsonSchema.default);
 }
 
 export function renderNumberControl(schemaObj, jsonSchema) {
