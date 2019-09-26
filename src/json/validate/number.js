@@ -13,6 +13,7 @@ import { trueThat } from '../../types/functions';
 import {
   CONST_SCHEMA_TYPE_NUMBER,
 } from '../schema/types';
+import { generateKeyPairSync } from 'crypto';
 
 function compileNumberMaximum(schemaObj, jsonSchema) {
   const [max, emax] = getTypeExclusiveBound(
@@ -134,5 +135,7 @@ export function renderNumberControl(schemaObj, jsonSchema) {
   const validator = compileNumberRaw(schemaObj, jsonSchema);
   if (validator == null) return undefined;
 
+  //const pairs = schemaObj.getMembers(CONST_SCHEMA_TYPE_NUMBER);
+  //return h('input', { ...pairs, type: 'number', value: getDefaultValue(jsonSchema) });
   return undefined; //(<input type='number' value={ getDefaultValue(jsonSchema) } />);
 }
