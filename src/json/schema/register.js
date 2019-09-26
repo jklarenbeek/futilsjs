@@ -8,6 +8,8 @@ import {
   isStringType,
 } from '../../types/core';
 
+// added schema type members param to ErrorHdlr
+
 export function createFormatNumberCompiler(name, format) {
   if (isComplexType(format)) {
     // TODO: isNumeric
@@ -45,7 +47,7 @@ export function createFormatNumberCompiler(name, format) {
             const addError = schemaObj.createSingleErrorHandler(
               ['formatExclusiveMinimum', 'formatExclusiveMaximum'],
               [fie, fae],
-              compileFormatNumber,
+              format.type,
             );
             return function betweenExclusive(data) {
               if (!isDataType(data)) return true;
@@ -57,7 +59,7 @@ export function createFormatNumberCompiler(name, format) {
             const addError = schemaObj.createSingleErrorHandler(
               ['formatExclusiveMinimum', 'formatMaximum'],
               [fie, fax],
-              compileFormatNumber,
+              format.type,
             );
             return function betweenExclusiveMinimum(data) {
               if (!isDataType(data)) return true;
@@ -69,7 +71,7 @@ export function createFormatNumberCompiler(name, format) {
             const addError = schemaObj.createSingleErrorHandler(
               ['formatMinimum', 'formatExclusiveMaximum'],
               [fix, fae],
-              compileFormatNumber,
+              format.type,
             );
             return function betweenExclusiveMaximum(data) {
               if (!isDataType(data)) return true;
@@ -81,7 +83,7 @@ export function createFormatNumberCompiler(name, format) {
             const addError = schemaObj.createSingleErrorHandler(
               ['formatMinimum', 'formatMaximum'],
               [fie, fae],
-              compileFormatNumber,
+              format.type,
             );
             return function formatBetween(data) {
               if (!isDataType(data)) return true;
@@ -93,7 +95,7 @@ export function createFormatNumberCompiler(name, format) {
             const addError = schemaObj.createSingleErrorHandler(
               'formatExclusiveMinimum',
               fie,
-              compileFormatNumber,
+              format.type,
             );
             return function formatExclusiveMinimum(data) {
               if (!isDataType(data)) return true;
@@ -105,7 +107,7 @@ export function createFormatNumberCompiler(name, format) {
             const addError = schemaObj.createSingleErrorHandler(
               'formatExclusiveMaximum',
               fae,
-              compileFormatNumber,
+              format.type,
             );
             return function formatExclusiveMaximum(data) {
               if (!isDataType(data)) return true;
@@ -117,7 +119,7 @@ export function createFormatNumberCompiler(name, format) {
             const addError = schemaObj.createSingleErrorHandler(
               'formatMaximum',
               fax,
-              compileFormatNumber,
+              format.type,
             );
             return function formatMaximum(data) {
               if (!isDataType(data)) return true;
@@ -129,7 +131,7 @@ export function createFormatNumberCompiler(name, format) {
             const addError = schemaObj.createSingleErrorHandler(
               'formatMinimum',
               fix,
-              compileFormatNumber,
+              format.type,
             );
             return function formatMinimum(data) {
               if (!isDataType(data)) return true;
