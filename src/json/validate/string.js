@@ -15,6 +15,8 @@ import {
   trueThat,
 } from '../../types/functions';
 
+const CONST_SCHEMA_TYPE_STRING = 'string';
+
 function compileMinLength(schemaObj, jsonSchema) {
   const min = getIntishType(jsonSchema.minLength, 0);
   if (min < 1) return undefined;
@@ -22,7 +24,7 @@ function compileMinLength(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'minLength',
     min,
-    compileMinLength);
+    CONST_SCHEMA_TYPE_STRING);
   if (addError == null) return undefined;
 
   return function isMinLength(len = 0) {
@@ -37,7 +39,7 @@ function compileMaxLength(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'maxLength',
     max,
-    compileMaxLength);
+    CONST_SCHEMA_TYPE_STRING);
   if (addError == null) return undefined;
 
   return function isMaxLength(len = 0) {
@@ -52,7 +54,7 @@ function compilePattern(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'pattern',
     pattern,
-    compilePattern);
+    CONST_SCHEMA_TYPE_STRING);
   if (addError == null) return undefined;
 
   return function isMatch(str = '') {
@@ -60,23 +62,31 @@ function compilePattern(schemaObj, jsonSchema) {
   };
 }
 
-export function compileStringBasic(schemaObj, jsonSchema) {
+export function compileStringRaw(schemaObj, jsonSchema) {
   const minLength = compileMinLength(schemaObj, jsonSchema);
   const maxLength = compileMaxLength(schemaObj, jsonSchema);
   const pattern = compilePattern(schemaObj, jsonSchema);
-  if (minLength == null && maxLength == null && pattern == null) return undefined;
+  if (minLength == null
+    && maxLength == null
+    && pattern == null) return undefined;
 
   const isMinLength = minLength || trueThat;
   const isMaxLength = maxLength || trueThat;
   const isMatch = pattern || trueThat;
 
-  return function validateStringSchema(data) {
-    if (isStringType(data)) {
-      const len = data.length;
-      return isMinLength(len)
-        && isMaxLength(len)
-        && isMatch(data);
-    }
-    return true;
+  return function validateStringRaw(data) {
+    const len = data.length;
+    return isMinLength(len)
+      && isMaxLength(len)
+      && isMatch(data);
+  };
+}
+
+export function compileStringBasic(schemaObj, jsonSchema) {
+  const raw = compileStringRaw(schemaObj, jsonSchema);
+  if (raw == null) return undefined;
+
+  return function validateStringBasic(data) {
+    return isStringType(data) && raw(data);
   };
 }
