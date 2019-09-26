@@ -27,6 +27,8 @@ import {
   isStringNumeric,
 } from '../../types/regexp';
 
+const CONST_SCHEMA_TYPE_STRING = 'string';
+
 function createStringFormatCompiler(formatName, isFormatTest) {
   return function compileStringFormat(schemaObj, jsonSchema) {
     if (jsonSchema.format !== formatName) return undefined;
@@ -34,6 +36,7 @@ function createStringFormatCompiler(formatName, isFormatTest) {
     const addError = schemaObj.createSingleErrorHandler(
       'format',
       formatName,
+      CONST_SCHEMA_TYPE_STRING,
     );
     if (addError == null) return undefined;
 
