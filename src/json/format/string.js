@@ -27,7 +27,9 @@ import {
   isStringNumeric,
 } from '../../types/regexp';
 
-const CONST_SCHEMA_TYPE_STRING = 'string';
+import {
+  CONST_SCHEMA_TYPE_STRING,
+} from '../schema/types';
 
 function createStringFormatCompiler(formatName, isFormatTest) {
   return function compileStringFormat(schemaObj, jsonSchema) {

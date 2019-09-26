@@ -25,6 +25,10 @@ import {
 } from '../../types/arrays';
 
 //#region compile array constraints
+import {
+  CONST_SCHEMA_TYPE_ARRAY,
+  CONST_SCHEMA_TYPE_TUPLE,
+} from '../schema/types';
 
 function compileMinItems(schemaObj, jsonSchema) {
   const min = getIntishType(jsonSchema.minItems, 0);
@@ -33,7 +37,7 @@ function compileMinItems(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'minItems',
     min,
-    compileMinItems);
+    CONST_SCHEMA_TYPE_ARRAY);
   if (addError == null) return undefined;
 
   return function minItems(len = 0) {
@@ -48,7 +52,7 @@ function compileMaxItems(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'maxItems',
     max,
-    compileMaxItems);
+    CONST_SCHEMA_TYPE_ARRAY);
   if (addError == null) return undefined;
 
   return function maxItems(len = 0) {
@@ -63,7 +67,7 @@ function compileUniqueItems(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'uniqueItems',
     unique,
-    compileUniqueItems);
+    CONST_SCHEMA_TYPE_ARRAY);
   if (addError == null) return undefined;
 
   return function validateUniqueItems(data) {
@@ -81,7 +85,7 @@ function compileArrayItemsBoolean(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'items',
     false,
-    compileArrayItemsBoolean);
+    CONST_SCHEMA_TYPE_ARRAY);
   if (addError == null) return undefined;
 
   return function validateArrayItemsFalse(data) {
@@ -95,7 +99,7 @@ function compileArrayContainsBoolean(schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'contains',
       true,
-      compileArrayContainsBoolean);
+      CONST_SCHEMA_TYPE_ARRAY);
     if (addError == null) return undefined;
 
     return function validateArrayContainsTrue(data, dataRoot) {
@@ -106,7 +110,7 @@ function compileArrayContainsBoolean(schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'contains',
       false,
-      compileArrayContainsBoolean);
+      CONST_SCHEMA_TYPE_ARRAY);
     if (addError == null) return undefined;
 
     return function validateArrayContainsFalse(data, dataRoot) {
@@ -123,7 +127,7 @@ function compileArrayItems(schemaObj, jsonSchema) {
   return schemaObj.createSingleValidator(
     'items',
     items,
-    compileArrayItems);
+    CONST_SCHEMA_TYPE_ARRAY);
 }
 
 function compileTupleItems(schemaObj, jsonSchema) {
@@ -132,7 +136,7 @@ function compileTupleItems(schemaObj, jsonSchema) {
 
   const additional = getBoolOrObjectType(jsonSchema.additionalItems, true);
 
-  const member = schemaObj.createMember('items', compileTupleItems);
+  const member = schemaObj.createMember('items', CONST_SCHEMA_TYPE_TUPLE);
   const validators = new Array(items.length);
   for (let i = 0; i < items.length; ++i) {
     const item = items[i];
@@ -160,7 +164,7 @@ function compileTupleItems(schemaObj, jsonSchema) {
   const validateAdditional = schemaObj.createSingleValidator(
     'additionalItems',
     additional,
-    compileTupleItems);
+    CONST_SCHEMA_TYPE_TUPLE);
 
   return function validateTupleItemSchema(data, dataRoot, i) {
     if (i < validators.length) {
@@ -180,7 +184,7 @@ function compileArrayContains(schemaObj, jsonSchema) {
   return schemaObj.createSingleValidator(
     'contains',
     contains,
-    compileArrayContains);
+    CONST_SCHEMA_TYPE_ARRAY);
 }
 
 function compileArrayChildren(schemaObj, jsonSchema) {

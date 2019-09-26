@@ -14,6 +14,10 @@ import {
   getDateTypeOfTimeOnlyRFC3339,
 } from '../../types/dates';
 
+import {
+  CONST_SCHEMA_TYPE_STRING,
+} from '../schema/types';
+
 // dataTimeFormats
 export const numberFormats = {
   year: {
@@ -100,8 +104,6 @@ export const numberFormats = {
     maximum: 59,
   },
 };
-
-const CONST_SCHEMA_TYPE_STRING = 'string';
 
 //#region generalized
 function compileFormatMinimumByType(parseType, schemaObj, jsonSchema) {

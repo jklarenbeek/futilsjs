@@ -25,6 +25,7 @@ import {
 } from '../../types/functions';
 
 import {
+  CONST_SCHEMA_TYPE_OBJECT,
   isOfSchemaType,
 } from '../schema/types';
 
@@ -37,7 +38,7 @@ function compileMinProperties(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'minProperties',
     min,
-    compileMinProperties);
+    CONST_SCHEMA_TYPE_OBJECT);
   if (addError == null) return undefined;
 
   return function isMinProperties(len = 0) {
@@ -52,7 +53,7 @@ function compileMaxProperties(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'maxProperties',
     max,
-    compileMaxProperties);
+    CONST_SCHEMA_TYPE_OBJECT);
   if (addError == null) return undefined;
 
   return function isMaxProperties(len = 0) {
@@ -67,7 +68,7 @@ function compileRequiredProperties(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'requiredProperties',
     required,
-    compileRequiredProperties);
+    CONST_SCHEMA_TYPE_OBJECT);
   if (addError == null) return undefined;
 
   return function validateRequiredProperties(dataKeys) {
@@ -99,7 +100,7 @@ function compileRequiredPattern(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'patternRequired',
     regexpKeys,
-    compileRequiredPattern);
+    CONST_SCHEMA_TYPE_OBJECT);
   if (addError == null) return undefined;
 
   return function validateRequiredPattern(dataKeys) {
@@ -124,7 +125,7 @@ function compileDependencyArray(schemaObj, member, depKey, depItems) {
     member,
     depKey,
     depItems,
-    compileDependencyArray);
+    CONST_SCHEMA_TYPE_OBJECT);
   if (addError == null) return undefined;
 
   return function validateDependencyArray(data, dataRoot, dataKeys) {
@@ -149,7 +150,7 @@ function compileDependencies(schemaObj, jsonSchema) {
 
   const member = schemaObj.createMember(
     'dependencies',
-    compileDependencies);
+    CONST_SCHEMA_TYPE_OBJECT);
   if (member == null) return undefined;
 
   const validators = {};
@@ -207,7 +208,7 @@ function compileObjectPropertyNames(schemaObj, propNames) {
   const validator = schemaObj.createSingleValidator(
     'propertyNames',
     propNames,
-    compileObjectPropertyNames);
+    CONST_SCHEMA_TYPE_OBJECT);
   if (validator == null) return undefined;
 
   return validator;
@@ -219,7 +220,9 @@ function createObjectPropertyValidators(schemaObj, properties) {
   const keys = Object.keys(properties);
   if (keys.length === 0) return undefined;
 
-  const member = schemaObj.createMember('properties', compileObjectPropertyItem);
+  const member = schemaObj.createMember(
+    'properties',
+    CONST_SCHEMA_TYPE_OBJECT);
   if (member == null) return undefined;
 
   const children = {};
@@ -263,7 +266,9 @@ function compileObjectPatternItem(schemaObj, entries) {
   const patternKeys = Object.keys(patterns);
   if (patternKeys.length === 0) return undefined;
 
-  const member = schemaObj.createMember('patternProperties', compileObjectPatternItem);
+  const member = schemaObj.createMember(
+    'patternProperties',
+    CONST_SCHEMA_TYPE_OBJECT);
   if (member == null) return undefined;
 
   const validators = {};
@@ -298,7 +303,7 @@ function compileObjectAdditionalProperty(schemaObj, additional) {
     const addError = schemaObj.createSingleErrorHandler(
       'additionalProperties',
       false,
-      compileObjectAdditionalProperty);
+      CONST_SCHEMA_TYPE_OBJECT);
     if (addError == null) return undefined;
 
     // eslint-disable-next-line no-unused-vars
@@ -310,7 +315,7 @@ function compileObjectAdditionalProperty(schemaObj, additional) {
   const validator = schemaObj.createSingleValidator(
     'additionalProperties',
     additional,
-    compileObjectAdditionalProperty);
+    CONST_SCHEMA_TYPE_OBJECT);
   if (validator == null) return undefined;
 
   return function validateAdditionalProperty(key, data, dataRoot) {

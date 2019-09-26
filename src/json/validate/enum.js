@@ -12,6 +12,10 @@ import {
   equalsDeep,
 } from '../../types/objects';
 
+import {
+  CONST_SCHEMA_TYPE_GENERAL,
+} from '../schema/types';
+
 export const exampleEnumDataStructure = {
   allOf: [
     {
@@ -80,7 +84,7 @@ function compileConst(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'const',
     constant,
-    compileConst);
+    CONST_SCHEMA_TYPE_GENERAL);
   if (addError == null) return undefined;
 
   if (constant === null || isScalarType(constant)) {
@@ -111,7 +115,7 @@ function compileEnum(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'enum',
     enums,
-    compileEnum);
+    CONST_SCHEMA_TYPE_GENERAL);
   if (addError == null) return undefined;
 
   if (hasObjects === false) {

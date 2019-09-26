@@ -15,7 +15,9 @@ import {
   trueThat,
 } from '../../types/functions';
 
-const CONST_SCHEMA_TYPE_STRING = 'string';
+import {
+  CONST_SCHEMA_TYPE_STRING,
+} from '../schema/types';
 
 function compileMinLength(schemaObj, jsonSchema) {
   const min = getIntishType(jsonSchema.minLength, 0);

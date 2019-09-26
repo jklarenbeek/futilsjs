@@ -12,6 +12,15 @@ import {
   getBoolishType,
 } from '../../types/getters';
 
+export const CONST_SCHEMA_TYPE_GENERAL = 'schema';
+export const CONST_SCHEMA_TYPE_INTEGER = 'integer';
+export const CONST_SCHEMA_TYPE_NUMBER = 'number';
+export const CONST_SCHEMA_TYPE_BIGINT = 'bigint';
+export const CONST_SCHEMA_TYPE_STRING = 'string';
+export const CONST_SCHEMA_TYPE_TUPLE = 'tuple';
+export const CONST_SCHEMA_TYPE_ARRAY = 'array';
+export const CONST_SCHEMA_TYPE_OBJECT = 'object';
+
 export function isOfSchemaType(schema, type) {
   if (type == null) return false;
   const stype = schema.type;

@@ -8,8 +8,6 @@ import {
   isStringType,
 } from '../../types/core';
 
-// added schema type members param to ErrorHdlr
-
 export function createFormatNumberCompiler(name, format) {
   if (isComplexType(format)) {
     // TODO: isNumeric

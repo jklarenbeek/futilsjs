@@ -10,7 +10,9 @@ import {
 } from '../../types/getters';
 import { trueThat } from '../../types/functions';
 
-const CONST_SCHEMA_TYPE_NUMBER = 'number';
+import {
+  CONST_SCHEMA_TYPE_NUMBER,
+} from '../schema/types';
 
 function compileNumberMaximum(schemaObj, jsonSchema) {
   const [max, emax] = getTypeExclusiveBound(

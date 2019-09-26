@@ -10,8 +10,9 @@ import {
 } from '../../types/getters';
 import { trueThat } from '../../types/functions';
 
-// added CONST_SCHEMA_TYPE_BIGINT param to ErrorHdlr
-const CONST_SCHEMA_TYPE_BIGINT = 'bigint';
+import {
+  CONST_SCHEMA_TYPE_BIGINT,
+} from '../schema/types';
 
 function compileBigIntMaximum(schemaObj, jsonSchema) {
   const [max, emax] = getTypeExclusiveBound(
