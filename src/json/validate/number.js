@@ -93,7 +93,7 @@ function compileNumberMultipleOf(schemaObj, jsonSchema) {
   };
 }
 
-function compileNumberRaw(schemaObj, jsonSchema) {
+export function compileNumberRaw(schemaObj, jsonSchema) {
   const maximum = compileNumberMaximum(schemaObj, jsonSchema);
   const minimum = compileNumberMinimum(schemaObj, jsonSchema);
   const multipleOf = compileNumberMultipleOf(schemaObj, jsonSchema);
@@ -113,6 +113,8 @@ function compileNumberRaw(schemaObj, jsonSchema) {
 
 export function compileNumberBasic(schemaObj, jsonSchema) {
   const raw = compileNumberRaw(schemaObj, jsonSchema);
+  if (raw == null) return undefined;
+
   return function validateNumber(data) {
     return isNumberType(data) && raw(data);
   };
