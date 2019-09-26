@@ -10,6 +10,8 @@ import {
 } from '../../types/getters';
 import { trueThat } from '../../types/functions';
 
+const CONST_SCHEMA_TYPE_NUMBER = 'number';
+
 function compileNumberMaximum(schemaObj, jsonSchema) {
   const [max, emax] = getTypeExclusiveBound(
     getNumbishType,
@@ -19,6 +21,7 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
 
   if (emax != null) {
     const addError = schemaObj.createSingleErrorHandler(
+      CONST_SCHEMA_TYPE_NUMBER,
       'exclusiveMaximum',
       emax,
       compileNumberMaximum);
@@ -30,6 +33,7 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
   }
   else if (max != null) {
     const addError = schemaObj.createSingleErrorHandler(
+      CONST_SCHEMA_TYPE_NUMBER,
       'maximum',
       max,
       compileNumberMaximum);
@@ -52,6 +56,7 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
 
   if (emin != null) {
     const addError = schemaObj.createSingleErrorHandler(
+      CONST_SCHEMA_TYPE_NUMBER,
       'exclusiveMinimum',
       emin,
       compileNumberMinimum);
@@ -63,6 +68,7 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
   }
   else if (min != null) {
     const addError = schemaObj.createSingleErrorHandler(
+      CONST_SCHEMA_TYPE_NUMBER,
       'minimum',
       min,
       compileNumberMinimum);
@@ -81,6 +87,7 @@ function compileNumberMultipleOf(schemaObj, jsonSchema) {
   if (mulOf == null) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler(
+    CONST_SCHEMA_TYPE_NUMBER,
     'multipleOf',
     mulOf,
     compileNumberMultipleOf);
