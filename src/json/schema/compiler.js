@@ -119,13 +119,13 @@ class SchemaObject {
     );
 
     if (isStringType(key)) {
-      self.members.push(key);
+      self.members.push(member);
       return function addErrorSingle(data, ...meta) {
         return self.addErrorSingle(member, data, meta);
       };
     }
     else if (isArrayType(key)) {
-      self.members.push(...key);
+      self.members.push(member);
       return function addErrorPair(dataKey, data, ...meta) {
         return self.addErrorPair(member, dataKey, data, meta);
       };
@@ -136,6 +136,8 @@ class SchemaObject {
 
   createPairErrorHandler(member, key, expected, ...rest) {
     const self = this;
+    if (!isStringType(key)) return undefined;
+
     const submember = new SchemaMember(
       self,
       JSONPointer_concatPath(member.memberKey, key),
@@ -143,9 +145,7 @@ class SchemaObject {
       rest,
     );
 
-    if (!isStringType(key)) return undefined;
-
-    self.members.push(submember.memberKey);
+    self.members.push(submember);
     return function addErrorPair(dataKey, data, ...meta) {
       return self.addErrorPair(submember, dataKey, data, meta);
     };
@@ -161,8 +161,13 @@ class SchemaObject {
       JSONPointer_concatPath(self.schemaPath, key),
       rest,
     );
+
     const validator = compileSchemaObject(childObj, child);
+    if (validator == null) return undefined;
+
     childObj.validateFn = validator;
+
+    self.members.push(childObj);
     return validator;
   }
 
@@ -179,8 +184,13 @@ class SchemaObject {
       JSONPointer_concatPath(self.schemaPath, member.schemaKey, key),
       rest,
     );
+
     const validator = compileSchemaObject(childObj, child);
+    if (validator == null) return undefined;
+
     childObj.validateFn = validator;
+
+    self.members.push(childObj);
     return validator;
   }
 }
