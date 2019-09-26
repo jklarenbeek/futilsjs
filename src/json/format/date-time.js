@@ -101,6 +101,8 @@ export const numberFormats = {
   },
 };
 
+const CONST_SCHEMA_TYPE_STRING = 'string';
+
 //#region generalized
 function compileFormatMinimumByType(parseType, schemaObj, jsonSchema) {
   const [min, emin] = getTypeExclusiveBound(
@@ -112,6 +114,7 @@ function compileFormatMinimumByType(parseType, schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'formatExclusiveMinimum',
       emin,
+      CONST_SCHEMA_TYPE_STRING,
       parseType);
     if (addError == null) return undefined;
 
@@ -123,6 +126,7 @@ function compileFormatMinimumByType(parseType, schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'formatMinimum',
       min,
+      CONST_SCHEMA_TYPE_STRING,
       parseType);
     if (addError == null) return undefined;
 
@@ -144,6 +148,7 @@ function compileFormatMaximumByType(parseType, schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'formatExclusiveMaximum',
       emax,
+      CONST_SCHEMA_TYPE_STRING,
       parseType);
     if (addError == null) return undefined;
 
@@ -155,6 +160,7 @@ function compileFormatMaximumByType(parseType, schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'formatMaximum',
       max,
+      CONST_SCHEMA_TYPE_STRING,
       parseType);
     if (addError == null) return undefined;
 
@@ -172,7 +178,8 @@ function compileFormatByType(name, parseType, schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'format',
     jsonSchema.format,
-    compileDateTimeFormat);
+    CONST_SCHEMA_TYPE_STRING,
+    parseType);
   if (addError == null) return undefined;
 
   const validateMin = compileFormatMinimumByType(
