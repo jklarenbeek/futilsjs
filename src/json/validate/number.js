@@ -21,10 +21,9 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
 
   if (emax != null) {
     const addError = schemaObj.createSingleErrorHandler(
-      CONST_SCHEMA_TYPE_NUMBER,
       'exclusiveMaximum',
       emax,
-      compileNumberMaximum);
+      CONST_SCHEMA_TYPE_NUMBER);
     if (addError == null) return undefined;
 
     return function exclusiveMaximum(data) {
@@ -33,10 +32,9 @@ function compileNumberMaximum(schemaObj, jsonSchema) {
   }
   else if (max != null) {
     const addError = schemaObj.createSingleErrorHandler(
-      CONST_SCHEMA_TYPE_NUMBER,
       'maximum',
       max,
-      compileNumberMaximum);
+      CONST_SCHEMA_TYPE_NUMBER);
     if (addError == null) return undefined;
 
     return function maximum(data) {
@@ -56,10 +54,9 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
 
   if (emin != null) {
     const addError = schemaObj.createSingleErrorHandler(
-      CONST_SCHEMA_TYPE_NUMBER,
       'exclusiveMinimum',
       emin,
-      compileNumberMinimum);
+      CONST_SCHEMA_TYPE_NUMBER);
     if (addError == null) return undefined;
 
     return function exclusiveMinimum(data) {
@@ -68,10 +65,9 @@ function compileNumberMinimum(schemaObj, jsonSchema) {
   }
   else if (min != null) {
     const addError = schemaObj.createSingleErrorHandler(
-      CONST_SCHEMA_TYPE_NUMBER,
       'minimum',
       min,
-      compileNumberMinimum);
+      CONST_SCHEMA_TYPE_NUMBER);
     if (addError == null) return undefined;
 
     return function minimum(data) {
@@ -87,10 +83,9 @@ function compileNumberMultipleOf(schemaObj, jsonSchema) {
   if (mulOf == null) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler(
-    CONST_SCHEMA_TYPE_NUMBER,
     'multipleOf',
     mulOf,
-    compileNumberMultipleOf);
+    CONST_SCHEMA_TYPE_NUMBER);
   if (addError == null) return undefined;
 
   return function multipleOf(data) {
@@ -135,5 +130,5 @@ export function renderNumberControl(schemaObj, jsonSchema) {
   const validator = compileNumberRaw(schemaObj, jsonSchema);
   if (validator == null) return undefined;
 
-  return (<input type='number' value={ getDefaultValue(jsonSchema) } />);
+  return undefined; //(<input type='number' value={ getDefaultValue(jsonSchema) } />);
 }

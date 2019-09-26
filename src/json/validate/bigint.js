@@ -10,6 +10,9 @@ import {
 } from '../../types/getters';
 import { trueThat } from '../../types/functions';
 
+// added CONST_SCHEMA_TYPE_BIGINT param to ErrorHdlr
+const CONST_SCHEMA_TYPE_BIGINT = 'bigint';
+
 function compileBigIntMaximum(schemaObj, jsonSchema) {
   const [max, emax] = getTypeExclusiveBound(
     getBigIntType,
@@ -21,7 +24,7 @@ function compileBigIntMaximum(schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'exclusiveMaximum',
       emax,
-      compileBigIntMaximum);
+      CONST_SCHEMA_TYPE_BIGINT);
     if (addError == null) return undefined;
 
     return function exclusiveMaximumBigInt(data) {
@@ -32,7 +35,7 @@ function compileBigIntMaximum(schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'maximum',
       max,
-      compileBigIntMaximum);
+      CONST_SCHEMA_TYPE_BIGINT);
     if (addError == null) return undefined;
 
     return function maximumBigInt(data) {
@@ -54,7 +57,7 @@ function compileBigIntMinimum(schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'exclusiveMinimum',
       emin,
-      compileBigIntMinimum);
+      CONST_SCHEMA_TYPE_BIGINT);
     if (addError == null) return undefined;
 
     return function exclusiveMinimumBigInt(data) {
@@ -65,7 +68,7 @@ function compileBigIntMinimum(schemaObj, jsonSchema) {
     const addError = schemaObj.createSingleErrorHandler(
       'minimum',
       min,
-      compileBigIntMinimum);
+      CONST_SCHEMA_TYPE_BIGINT);
     if (addError == null) return undefined;
 
     return function minimumBigInt(data) {
@@ -83,7 +86,7 @@ function compileBigIntMultipleOf(schemaObj, jsonSchema) {
   const addError = schemaObj.createSingleErrorHandler(
     'multipleOf',
     mulOf,
-    compileBigIntMultipleOf);
+    CONST_SCHEMA_TYPE_BIGINT);
   if (addError == null) return undefined;
 
   return function multipleOf(data) {
