@@ -134,9 +134,10 @@ export function isArrayOrSetTyped(data) {
 export function isObjectType(data) {
   return data != null
     && (data.constructor === Object
-      || !(data instanceof Array
-        || data.constructor === Map
-        || data.constructor === Set));
+      || (typeof data === 'object'
+        && !(data instanceof Array
+          || data.constructor === Map
+          || data.constructor === Set)));
 }
 
 export function isObjectTyped(data) {

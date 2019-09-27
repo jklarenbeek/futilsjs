@@ -13,7 +13,6 @@ import { trueThat } from '../../types/functions';
 import {
   CONST_SCHEMA_TYPE_NUMBER,
 } from '../schema/types';
-import { generateKeyPairSync } from 'crypto';
 
 function compileNumberMaximum(schemaObj, jsonSchema) {
   const [max, emax] = getTypeExclusiveBound(
@@ -119,7 +118,7 @@ export function compileNumberBasic(schemaObj, jsonSchema) {
   if (raw == null) return undefined;
 
   return function validateNumber(data) {
-    return isNumberType(data) && raw(data);
+    return isNumberType(data) ? raw(data) : true;
   };
 }
 

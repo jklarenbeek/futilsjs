@@ -336,7 +336,7 @@ function compileObjectChildren(schemaObj, jsonSchema) {
 
   if (!(patternValidator
     || nameValidator
-    || additionalValidator) == null) {
+    || additionalValidator)) {
     if (validatorChildren == null) return undefined;
 
     const childrenKeys = Object.keys(validatorChildren);
