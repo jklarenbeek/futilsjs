@@ -8,7 +8,10 @@ import {
   getNumbishType,
   getTypeExclusiveBound,
 } from '../../types/getters';
-import { trueThat } from '../../types/functions';
+
+import {
+  trueThat,
+} from '../../types/functions';
 
 import {
   CONST_SCHEMA_TYPE_NUMBER,
@@ -120,21 +123,4 @@ export function compileNumberBasic(schemaObj, jsonSchema) {
   return function validateNumber(data) {
     return isNumberType(data) ? raw(data) : true;
   };
-}
-
-export function getDefaultValue(jsonSchema) {
-  return (isNumberType(jsonSchema.const) && jsonSchema.const)
-    || (isNumberType(jsonSchema.default) && jsonSchema.default);
-}
-
-export function renderNumberControl(schemaObj, jsonSchema) {
-  const widget = jsonSchema.widget;
-  if (widget !== 'number') return undefined;
-
-  const validator = compileNumberRaw(schemaObj, jsonSchema);
-  if (validator == null) return undefined;
-
-  //const pairs = schemaObj.getMembers(CONST_SCHEMA_TYPE_NUMBER);
-  //return h('input', { ...pairs, type: 'number', value: getDefaultValue(jsonSchema) });
-  return undefined; //(<input type='number' value={ getDefaultValue(jsonSchema) } />);
 }

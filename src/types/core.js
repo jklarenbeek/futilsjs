@@ -77,6 +77,10 @@ export function isStringType(data) {
   return typeof data === 'string';
 }
 
+export function isStringEmpty(data) {
+  return data == null || data === '';
+}
+
 export function isDateType(data) {
   return isObjectOfType(data, Date);
 }
