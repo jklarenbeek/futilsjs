@@ -1,5 +1,4 @@
 import {
-  isNumberType,
   isStringType,
   isArrayType,
   isObjectType,
