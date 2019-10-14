@@ -47,8 +47,9 @@ function compileMinProperties(schemaObj, jsonSchema) {
 }
 
 function compileMaxProperties(schemaObj, jsonSchema) {
+  const min = getIntishType(jsonSchema.minProperties, 0);
   const max = getIntishType(jsonSchema.maxProperties, -1);
-  if (max < 0) return undefined;
+  if (max < 0 || max < min) return undefined;
 
   const addError = schemaObj.createSingleErrorHandler(
     'maxProperties',
